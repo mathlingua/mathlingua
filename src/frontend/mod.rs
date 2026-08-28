@@ -1,4 +1,4 @@
-use crate::events::EventLog;
+use crate::events::{Event, EventLog};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -60,21 +60,61 @@ pub fn parse_source_file(
         }
     };
 
+    Some(parse_source_file_from_source(
+        path.to_path_buf(),
+        source,
+        event_log,
+    ))
+}
+
+pub(crate) fn parse_source_file_from_source(
+    path: PathBuf,
+    source: String,
+    event_log: &mut EventLog,
+) -> ParsedSourceFile {
+    parse_source_file_from_source_with_groups(path, source, event_log).0
+}
+
+pub(crate) fn parse_source_file_from_source_with_groups(
+    path: PathBuf,
+    source: String,
+    event_log: &mut EventLog,
+) -> (ParsedSourceFile, Vec<ProtoGroup>) {
     let mut file_event_log = EventLog::new();
-    let document = parse_document(&source, &mut file_event_log);
-    let item_ids = top_level_item_ids(&source);
+    let groups = {
+        let mut parser = ProtoParser::new(&source, &mut file_event_log);
+        parser.parse()
+    };
+    let proto_events = file_event_log.events().to_vec();
+    let parsed = parse_source_file_from_proto(path, source, &groups, proto_events, event_log);
+    (parsed, groups)
+}
+
+pub(crate) fn parse_source_file_from_proto(
+    path: PathBuf,
+    source: String,
+    groups: &[ProtoGroup],
+    proto_events: Vec<Event>,
+    event_log: &mut EventLog,
+) -> ParsedSourceFile {
+    let mut file_event_log = EventLog::new();
+    for event in proto_events {
+        file_event_log.push(event);
+    }
+    let document = structural::parse_document_from_groups(groups, &mut file_event_log);
+    let item_ids = top_level_item_ids_from_groups(groups);
 
     for event in file_event_log.events() {
-        event_log.push(event.clone().with_file_path(path.to_path_buf()));
+        event_log.push(event.clone().with_file_path(path.clone()));
     }
 
-    Some(ParsedSourceFile {
-        path: path.to_path_buf(),
+    ParsedSourceFile {
+        path,
         source,
         document,
         item_ids,
         view_metadata: SourceFileViewMetadata::default(),
-    })
+    }
 }
 
 pub(crate) fn top_level_item_ids(source: &str) -> Vec<TopLevelItemId> {
@@ -84,6 +124,10 @@ pub(crate) fn top_level_item_ids(source: &str) -> Vec<TopLevelItemId> {
         parser.parse()
     };
 
+    top_level_item_ids_from_groups(&groups)
+}
+
+pub(crate) fn top_level_item_ids_from_groups(groups: &[ProtoGroup]) -> Vec<TopLevelItemId> {
     groups.iter().map(top_level_item_id).collect()
 }
 

@@ -3,11 +3,11 @@ use crate::backend::semantic::{
     CollectionTypeInfo, DocumentTypeInfo, check_documents_collecting_all_type_info,
     check_documents_collecting_type_info,
 };
-use crate::backend::view::{CollectionView, build_collection_view_with_type_info};
+use crate::backend::view::{CollectionView, build_collection_view_with_cached_proto_groups};
 use crate::events::{Event, EventLocation, EventLog};
 use crate::frontend::{
     ParsedSourceFile, ProtoGroup, ProtoParser, SourceFileViewMetadata, parse_source_file,
-    top_level_group_id,
+    parse_source_file_from_proto, top_level_group_id,
 };
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
@@ -28,10 +28,19 @@ pub(crate) struct SourceCollection {
     source_files: Vec<PathBuf>,
     source_file_view_metadata: BTreeMap<PathBuf, SourceFileViewMetadata>,
     source_directory_view_metadata: Vec<(PathBuf, SourceFileViewMetadata)>,
+    #[cfg(test)]
     toc_files: Vec<PathBuf>,
     preface_files: Vec<(PathBuf, PathBuf)>,
     parsed_files: Vec<ParsedSourceFile>,
+    loaded_source_files: BTreeMap<PathBuf, LoadedProtoSource>,
+    proto_groups: BTreeMap<PathBuf, Vec<ProtoGroup>>,
     view_type_info: CollectionTypeInfo,
+}
+
+struct LoadedProtoSource {
+    source: String,
+    groups: Vec<ProtoGroup>,
+    events: Vec<Event>,
 }
 
 pub(crate) enum SourceFileFilter {
@@ -46,7 +55,7 @@ impl SourceFileFilter {
             Self::Only(files) => collection
                 .source_files
                 .iter()
-                .filter(|file| files.contains(&normalize_path(file)))
+                .filter(|file| files.contains(*file))
                 .count(),
         }
     }
@@ -54,9 +63,7 @@ impl SourceFileFilter {
     fn allows(&self, event: &Event) -> bool {
         match self {
             Self::All => true,
-            Self::Only(files) => event_file_path(event)
-                .map(normalize_path)
-                .is_some_and(|path| files.contains(&path)),
+            Self::Only(files) => event_file_path(event).is_some_and(|path| files.contains(path)),
         }
     }
 }
@@ -78,25 +85,33 @@ impl SourceCollection {
         );
 
         let source_files = resolve_collection_source_files(&root, event_log, origin);
-        ensure_source_file_ids(&source_files.source_files, event_log, origin);
+        let loaded_source_files =
+            ensure_source_file_ids(&source_files.source_files, event_log, origin);
         let preface_paths = source_files
             .preface_files
             .iter()
             .map(|(_, preface)| preface.clone())
             .collect::<Vec<_>>();
-        ensure_source_file_ids(&preface_paths, event_log, origin);
-        Self::new(root, source_files)
+        let _ = ensure_source_file_ids(&preface_paths, event_log, origin);
+        Self::new(root, source_files, loaded_source_files)
     }
 
-    fn new(root: PathBuf, source_files: SourceFileDiscovery) -> Self {
+    fn new(
+        root: PathBuf,
+        source_files: SourceFileDiscovery,
+        loaded_source_files: BTreeMap<PathBuf, LoadedProtoSource>,
+    ) -> Self {
         Self {
             root,
             source_files: source_files.source_files,
             source_file_view_metadata: source_files.view_metadata,
             source_directory_view_metadata: source_files.directory_metadata,
+            #[cfg(test)]
             toc_files: source_files.toc_files,
             preface_files: source_files.preface_files,
             parsed_files: Vec::new(),
+            loaded_source_files,
+            proto_groups: BTreeMap::new(),
             view_type_info: CollectionTypeInfo::new(),
         }
     }
@@ -105,6 +120,7 @@ impl SourceCollection {
         &self.source_files
     }
 
+    #[cfg(test)]
     pub(crate) fn toc_files(&self) -> &[PathBuf] {
         &self.toc_files
     }
@@ -206,14 +222,34 @@ impl SourceCollection {
 
     fn parse_structural(&mut self, event_log: &mut EventLog, origin: &str) {
         self.parsed_files.clear();
+        self.proto_groups.clear();
 
         for file in &self.source_files {
-            if let Some(mut parsed_file) = parse_source_file(file, event_log, origin) {
+            event_log.system_debug(Some(origin), format!("Parsing {}", file.display()));
+            let parsed = if let Some(loaded) = self.loaded_source_files.remove(file) {
+                let parsed_file = parse_source_file_from_proto(
+                    file.clone(),
+                    loaded.source,
+                    &loaded.groups,
+                    loaded.events,
+                    event_log,
+                );
+                Some((parsed_file, loaded.groups))
+            } else {
+                parse_source_file(file, event_log, origin).map(|parsed_file| {
+                    let mut proto_log = EventLog::new();
+                    let groups = ProtoParser::new(&parsed_file.source, &mut proto_log).parse();
+                    (parsed_file, groups)
+                })
+            };
+
+            if let Some((mut parsed_file, groups)) = parsed {
                 parsed_file.view_metadata = self
                     .source_file_view_metadata
-                    .get(&normalize_path(file))
+                    .get(file)
                     .cloned()
                     .unwrap_or_default();
+                self.proto_groups.insert(file.clone(), groups);
                 self.parsed_files.push(parsed_file);
             }
         }
@@ -238,22 +274,20 @@ impl SourceCollection {
         check_documents_collecting_type_info(&self.parsed_files, event_log, type_info_for)
     }
 
-    pub(crate) fn build_view(&self, event_log: &mut EventLog) -> Option<CollectionView> {
-        build_collection_view_with_type_info(
+    pub(crate) fn build_view(&mut self, event_log: &mut EventLog) -> Option<CollectionView> {
+        build_collection_view_with_cached_proto_groups(
             &self.root,
             &self.parsed_files,
             &self.source_directory_view_metadata,
             &self.preface_files,
             &self.view_type_info,
+            &mut self.proto_groups,
             event_log,
         )
     }
 
     fn normalized_source_files(&self) -> BTreeSet<PathBuf> {
-        self.source_files
-            .iter()
-            .map(|file| normalize_path(file))
-            .collect()
+        self.source_files.iter().cloned().collect()
     }
 }
 
@@ -290,7 +324,11 @@ fn collection_source_root(root: &Path) -> PathBuf {
     }
 }
 
-fn ensure_source_file_ids(files: &[PathBuf], event_log: &mut EventLog, origin: &str) {
+fn ensure_source_file_ids(
+    files: &[PathBuf],
+    event_log: &mut EventLog,
+    origin: &str,
+) -> BTreeMap<PathBuf, LoadedProtoSource> {
     let mut records = Vec::new();
     let mut used_ids = BTreeSet::new();
 
@@ -298,32 +336,41 @@ fn ensure_source_file_ids(files: &[PathBuf], event_log: &mut EventLog, origin: &
         let Ok(source) = fs::read_to_string(file) else {
             continue;
         };
-        let groups = parse_proto_groups_for_ids(&source);
-        for id in groups.iter().filter_map(top_level_group_id) {
+        let loaded = parse_proto_source(source);
+        for id in loaded.groups.iter().filter_map(top_level_group_id) {
             used_ids.insert(id);
         }
-        records.push((file.clone(), source, groups));
+        records.push((file.clone(), loaded));
     }
 
-    for (file, source, groups) in records {
-        let Some(updated) = source_with_generated_ids(&source, &groups, &mut used_ids) else {
-            continue;
-        };
-
-        if let Err(error) = fs::write(&file, updated) {
-            event_log.user_error_at_path(
-                Some(origin),
-                file,
-                format!("Failed to write generated Id sections: {error}"),
-            );
+    let mut loaded_files = BTreeMap::new();
+    for (file, mut loaded) in records {
+        if let Some(updated) =
+            source_with_generated_ids(&loaded.source, &loaded.groups, &mut used_ids)
+        {
+            match fs::write(&file, &updated) {
+                Ok(()) => loaded = parse_proto_source(updated),
+                Err(error) => event_log.user_error_at_path(
+                    Some(origin),
+                    file.clone(),
+                    format!("Failed to write generated Id sections: {error}"),
+                ),
+            }
         }
+        loaded_files.insert(file, loaded);
     }
+
+    loaded_files
 }
 
-fn parse_proto_groups_for_ids(source: &str) -> Vec<ProtoGroup> {
+fn parse_proto_source(source: String) -> LoadedProtoSource {
     let mut event_log = EventLog::new();
-    let mut parser = ProtoParser::new(source, &mut event_log);
-    parser.parse()
+    let groups = ProtoParser::new(&source, &mut event_log).parse();
+    LoadedProtoSource {
+        source,
+        groups,
+        events: event_log.events().to_vec(),
+    }
 }
 
 fn source_with_generated_ids(
@@ -602,10 +649,15 @@ fn collect_filter_directory_source_files(
 
     for entry in entries {
         let path = entry.path();
+        let file_type = entry.file_type().ok();
+        let is_directory = file_type.as_ref().is_some_and(fs::FileType::is_dir)
+            || file_type.as_ref().is_some_and(fs::FileType::is_symlink) && path.is_dir();
+        let is_file = file_type.as_ref().is_some_and(fs::FileType::is_file)
+            || file_type.as_ref().is_some_and(fs::FileType::is_symlink) && path.is_file();
 
-        if path.is_dir() {
+        if is_directory {
             collect_filter_directory_source_files(&path, files, event_log, origin);
-        } else if path.is_file() && is_mathlingua_source_file(&path) {
+        } else if is_file && is_mathlingua_source_file(&path) {
             files.insert(path);
         }
     }
@@ -626,35 +678,36 @@ struct SourceFileDiscovery {
 
 impl SourceFileDiscovery {
     fn add_preface_file(&mut self, directory: PathBuf, preface: PathBuf) {
-        self.preface_files.push((directory, preface));
+        self.preface_files
+            .push((normalize_path(&directory), normalize_path(&preface)));
     }
 
     fn add_source_file(&mut self, path: PathBuf, metadata: SourceFileViewMetadata) {
         let normalized = normalize_path(&path);
         if self.seen_source_files.insert(normalized.clone()) {
-            self.source_files.push(path);
+            self.source_files.push(normalized.clone());
         }
         self.view_metadata.insert(normalized, metadata);
     }
 
     fn add_toc_file(&mut self, path: PathBuf) {
         let normalized = normalize_path(&path);
-        if self.seen_toc_files.insert(normalized) {
-            self.toc_files.push(path);
+        if self.seen_toc_files.insert(normalized.clone()) {
+            self.toc_files.push(normalized);
         }
     }
 
     fn add_directory(&mut self, path: PathBuf, metadata: SourceFileViewMetadata) {
         let normalized = normalize_path(&path);
         if self.seen_directories.insert(normalized.clone()) {
-            self.directory_metadata.push((path, metadata));
+            self.directory_metadata.push((normalized, metadata));
             return;
         }
 
         if let Some((_, existing_metadata)) = self
             .directory_metadata
             .iter_mut()
-            .find(|(existing_path, _)| normalize_path(existing_path) == normalized)
+            .find(|(existing_path, _)| existing_path == &normalized)
         {
             *existing_metadata = metadata;
         }
@@ -675,13 +728,19 @@ fn directory_children(entries: Vec<fs::DirEntry>) -> Vec<DirectoryChild> {
         .into_iter()
         .map(|entry| {
             let path = entry.path();
-            if path.is_dir() {
+            let file_type = entry.file_type().ok();
+            let is_directory = file_type.as_ref().is_some_and(fs::FileType::is_dir)
+                || file_type.as_ref().is_some_and(fs::FileType::is_symlink) && path.is_dir();
+            let is_file = file_type.as_ref().is_some_and(fs::FileType::is_file)
+                || file_type.as_ref().is_some_and(fs::FileType::is_symlink) && path.is_file();
+
+            if is_directory {
                 DirectoryChild::Directory(path)
-            } else if path.is_file() && is_preface_file(&path) {
+            } else if is_file && is_preface_file(&path) {
                 DirectoryChild::PrefaceFile(path)
-            } else if path.is_file() && is_mathlingua_source_file(&path) {
+            } else if is_file && is_mathlingua_source_file(&path) {
                 DirectoryChild::SourceFile(path)
-            } else if path.is_file() && path.file_name().is_some_and(|name| name == "toc") {
+            } else if is_file && path.file_name().is_some_and(|name| name == "toc") {
                 DirectoryChild::TocFile(path)
             } else {
                 DirectoryChild::Other

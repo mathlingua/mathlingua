@@ -16727,7 +16727,14 @@ fn command_requirement_facts(
         substitutions.insert(name.clone(), "#".repeat(index + 1));
     }
 
-    let mut requirement_context = context.clone();
+    // This derived context is used only to normalize instantiated requirement
+    // facts. Avoid cloning every known fact, symbol, literal, and
+    // disambiguation during each recursive type lookup.
+    let mut requirement_context = TypeContext {
+        substitutions: context.substitutions.clone(),
+        substitution_map: context.substitution_map.clone(),
+        ..TypeContext::default()
+    };
     for (left, right) in &info.substitutions {
         requirement_context.add_substitution(
             substitute_key(left, &substitutions),
@@ -16986,6 +16993,9 @@ fn instantiate_function_type_spec(spec: &FunctionTypeFactSpec, subject: &str) ->
 struct TypeContext {
     facts: Vec<TypeFact>,
     substitutions: Vec<(String, String)>,
+    /// The same equivalence edges as `substitutions`, indexed once so the very
+    /// frequent normalization path does not rebuild this map for every key.
+    substitution_map: HashMap<String, String>,
     collection_literals: HashMap<String, SetExpression>,
     symbols: HashSet<String>,
     defined_symbols: HashSet<String>,
@@ -17010,6 +17020,10 @@ impl TypeContext {
     }
 
     fn add_substitution(&mut self, left: String, right: String) {
+        let representative = std::cmp::min(&left, &right).clone();
+        self.substitution_map
+            .insert(left.clone(), representative.clone());
+        self.substitution_map.insert(right.clone(), representative);
         self.substitutions.push((left, right));
     }
 
@@ -17181,16 +17195,9 @@ impl TypeContext {
     }
 
     fn normalize_key(&self, key: &str) -> String {
-        let mut map = HashMap::new();
-        for (left, right) in &self.substitutions {
-            let representative = left.min(right).clone();
-            map.insert(left.clone(), representative.clone());
-            map.insert(right.clone(), representative);
-        }
-
         let mut result = key.to_owned();
         for _ in 0..self.substitutions.len().saturating_add(1) {
-            let next = substitute_key(&result, &map);
+            let next = substitute_key(&result, &self.substitution_map);
             if next == result {
                 break;
             }
@@ -18505,27 +18512,35 @@ fn substitute_key(key: &str, substitutions: &HashMap<String, String>) -> String 
         return key.to_owned();
     }
 
-    let mut result = String::new();
-    let mut index = 0;
-    while index < key.len() {
-        let rest = &key[index..];
-        let mut replacement = None;
-        for (name, value) in substitutions {
-            if rest.starts_with(name)
-                && is_name_boundary(key, index, false)
+    // Find token-aligned occurrences with the standard library's optimized
+    // substring search. The former character-by-character loop tested every
+    // substitution at every byte position, making normalization quadratic in
+    // `key length × substitution count` on large typing contexts.
+    let mut replacements: Vec<Option<(usize, &str)>> = vec![None; key.len()];
+    for (name, value) in substitutions {
+        if name.is_empty() {
+            continue;
+        }
+        for (index, _) in key.match_indices(name) {
+            if is_name_boundary(key, index, false)
                 && is_name_boundary(key, index + name.len(), true)
-                && replacement.is_none_or(|(length, _)| name.len() > length)
+                && replacements[index].is_none_or(|(length, _)| name.len() > length)
             {
-                replacement = Some((name.len(), value.as_str()));
+                replacements[index] = Some((name.len(), value));
             }
         }
+    }
 
-        if let Some((len, value)) = replacement {
+    let mut result = String::with_capacity(key.len());
+    let mut index = 0;
+    while index < key.len() {
+        if let Some((len, value)) = replacements[index] {
             result.push_str(value);
             index += len;
             continue;
         }
 
+        let rest = &key[index..];
         let ch = rest.chars().next().expect("non-empty rest");
         result.push(ch);
         index += ch.len_utf8();
@@ -21370,6 +21385,33 @@ fn format_function_type_spec(spec: &FunctionTypeFactSpec) -> String {
     match spec {
         FunctionTypeFactSpec::Is { ty, .. } => format!("_ is {ty}"),
         FunctionTypeFactSpec::Spec { operator, target } => format!("_ \"{operator}\" {target}"),
+    }
+}
+
+#[cfg(test)]
+mod normalization_tests {
+    use super::*;
+
+    #[test]
+    fn substitute_key_uses_longest_token_aligned_match() {
+        let substitutions = HashMap::from([
+            ("a".to_string(), "short".to_string()),
+            ("a.b".to_string(), "long".to_string()),
+        ]);
+
+        assert_eq!(
+            substitute_key("a.b + a + data", &substitutions),
+            "long + short + data"
+        );
+    }
+
+    #[test]
+    fn cached_substitutions_preserve_transitive_normalization() {
+        let mut context = TypeContext::default();
+        context.add_substitution("z".to_string(), "y".to_string());
+        context.add_substitution("y".to_string(), "x".to_string());
+
+        assert_eq!(context.normalize_key("f(z, y)"), "f(x, x)");
     }
 }
 

@@ -51,6 +51,27 @@ pub(crate) fn build_collection_view_with_type_info(
     type_info: &CollectionTypeInfo,
     event_log: &mut EventLog,
 ) -> Option<CollectionView> {
+    let mut proto_groups = BTreeMap::new();
+    build_collection_view_with_cached_proto_groups(
+        collection_root,
+        parsed_files,
+        directory_metadata,
+        preface_files,
+        type_info,
+        &mut proto_groups,
+        event_log,
+    )
+}
+
+pub(crate) fn build_collection_view_with_cached_proto_groups(
+    collection_root: &Path,
+    parsed_files: &[ParsedSourceFile],
+    directory_metadata: &[(PathBuf, SourceFileViewMetadata)],
+    preface_files: &[(PathBuf, PathBuf)],
+    type_info: &CollectionTypeInfo,
+    proto_groups: &mut BTreeMap<PathBuf, Vec<ProtoGroup>>,
+    event_log: &mut EventLog,
+) -> Option<CollectionView> {
     let registry = build_linked_render_registry(parsed_files);
     let rendered_files = parsed_files
         .iter()
@@ -59,6 +80,7 @@ pub(crate) fn build_collection_view_with_type_info(
             build_file_view(
                 collection_root,
                 file,
+                proto_groups.remove(&file.path),
                 type_info.get(&file.path),
                 &registry,
                 event_log,
@@ -140,18 +162,25 @@ fn build_directory_prefaces(
 fn build_file_view(
     collection_root: &Path,
     file: &ParsedSourceFile,
+    cached_groups: Option<Vec<ProtoGroup>>,
     type_info: Option<&DocumentTypeInfo>,
     registry: &RenderRegistry,
     event_log: &mut EventLog,
 ) -> Option<FileView> {
-    let mut proto_log = EventLog::new();
-    let groups = ProtoParser::new(&file.source, &mut proto_log).parse();
-    for event in proto_log.events() {
-        event_log.push(event.clone().with_file_path(file.path.clone()));
-    }
-    if has_blocking_user_issues(proto_log.events()) {
-        return None;
-    }
+    let groups = match cached_groups {
+        Some(groups) => groups,
+        None => {
+            let mut proto_log = EventLog::new();
+            let groups = ProtoParser::new(&file.source, &mut proto_log).parse();
+            for event in proto_log.events() {
+                event_log.push(event.clone().with_file_path(file.path.clone()));
+            }
+            if has_blocking_user_issues(proto_log.events()) {
+                return None;
+            }
+            groups
+        }
+    };
 
     let group_sources = source_for_groups(&file.source, &groups);
 

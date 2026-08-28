@@ -1,9 +1,11 @@
-use crate::backend::collection::SourceCollection;
+use crate::backend::collection::{CONTENT_DIR, SourceCollection, find_collection_root};
+use crate::backend::config::CONFIG_FILE;
 use crate::backend::view::CollectionView;
 use crate::events::{Event, EventLog, EventLogListener};
 use crate::mlg::util::{has_blocking_user_issues_since, no_errors_since};
 use crate::mlg::view_assets::{ViewerPageConfig, configured_viewer_index, viewer_asset};
-use serde_json::to_writer_pretty;
+use serde_json::to_writer;
+use std::collections::BTreeSet;
 use std::fs;
 use std::io;
 use std::net::TcpListener;
@@ -45,6 +47,11 @@ pub fn view(cwd: &Path, port: u16, listener: Option<Box<dyn EventLogListener>>) 
 
 pub(super) fn view_in(cwd: &Path, port: u16, event_log: &mut EventLog) -> io::Result<()> {
     let starting_event_count = event_log.events().len();
+    // Reserve the port before doing collection-wide parsing and rendering. This
+    // both avoids wasted startup work on an unavailable port and closes the
+    // check-then-bind race with another process.
+    let listener = bind_view_listener(port, event_log)?;
+    let bound_port = listener.local_addr()?.port();
     let mut collection = SourceCollection::load(cwd, event_log, ORIGIN);
     if collection.source_files().is_empty() {
         return finish_view_setup_with_possible_errors(event_log);
@@ -86,8 +93,6 @@ pub(super) fn view_in(cwd: &Path, port: u16, event_log: &mut EventLog) -> io::Re
         ));
     };
 
-    let listener = bind_view_listener(port, event_log)?;
-    let bound_port = listener.local_addr()?.port();
     let server = Server::from_listener(listener, None)
         .map_err(|error| io::Error::other(format!("Could not start viewer server: {error}")))?;
     let index = configured_viewer_index(&ViewerPageConfig {
@@ -272,7 +277,7 @@ fn write_collection_view_data(path: &Path, collection_view: &CollectionView) -> 
     let temp_path = temporary_view_data_path(path);
     let result = (|| {
         let file = fs::File::create(&temp_path)?;
-        to_writer_pretty(file, collection_view)
+        to_writer(file, collection_view)
             .map_err(|error| io::Error::other(format!("Failed to write view data: {error}")))?;
         fs::rename(&temp_path, path)?;
         Ok(())
@@ -391,19 +396,78 @@ struct ViewFileFingerprint {
 }
 
 fn view_source_fingerprint(cwd: &Path) -> ViewSourceFingerprint {
-    let mut event_log = EventLog::new();
-    let collection = SourceCollection::load(cwd, &mut event_log, ORIGIN);
-    let files = collection
-        .source_files()
-        .iter()
-        .chain(collection.toc_files().iter())
-        .map(|path| view_file_fingerprint(path))
-        .collect();
+    let start = cwd.canonicalize().unwrap_or_else(|_| cwd.to_path_buf());
+    let root = find_collection_root(&start).unwrap_or(start);
+    let source_root = if root.join(CONTENT_DIR).is_dir() {
+        root.join(CONTENT_DIR)
+    } else {
+        root.clone()
+    };
+    let mut files = Vec::new();
+    let mut visited_directories = BTreeSet::new();
+    collect_view_fingerprint_entries(&source_root, &mut visited_directories, &mut files);
 
-    ViewSourceFingerprint {
-        root: collection.root().to_path_buf(),
-        files,
+    let config = root.join(CONFIG_FILE);
+    if config.is_file() {
+        files.push(view_file_fingerprint(&config));
     }
+
+    ViewSourceFingerprint { root, files }
+}
+
+/// Records only filesystem metadata while watching. Rebuilding a
+/// `SourceCollection` here would read and proto-parse every source file four
+/// times a second merely to learn that nothing changed.
+fn collect_view_fingerprint_entries(
+    path: &Path,
+    visited_directories: &mut BTreeSet<PathBuf>,
+    entries: &mut Vec<ViewFileFingerprint>,
+) {
+    let Ok(metadata) = fs::metadata(path) else {
+        return;
+    };
+    collect_view_fingerprint_entry(path, metadata, visited_directories, entries);
+}
+
+fn collect_view_fingerprint_entry(
+    path: &Path,
+    metadata: fs::Metadata,
+    visited_directories: &mut BTreeSet<PathBuf>,
+    entries: &mut Vec<ViewFileFingerprint>,
+) {
+    if metadata.is_dir() {
+        let normalized = path.canonicalize().unwrap_or_else(|_| path.to_path_buf());
+        if !visited_directories.insert(normalized) {
+            return;
+        }
+        entries.push(view_file_fingerprint_from_metadata(path, &metadata));
+
+        let Ok(read_dir) = fs::read_dir(path) else {
+            return;
+        };
+        let mut children = read_dir
+            .flatten()
+            .map(|entry| (entry.path(), entry.metadata()))
+            .collect::<Vec<_>>();
+        children.sort_by(|(left, _), (right, _)| left.cmp(right));
+        for (child, metadata) in children {
+            if let Ok(metadata) = metadata
+                && (metadata.is_dir() || is_view_source_dependency(&child))
+            {
+                collect_view_fingerprint_entry(&child, metadata, visited_directories, entries);
+            }
+        }
+    } else if metadata.is_file() && is_view_source_dependency(path) {
+        entries.push(view_file_fingerprint_from_metadata(path, &metadata));
+    }
+}
+
+fn is_view_source_dependency(path: &Path) -> bool {
+    path.file_name().is_some_and(|name| name == "toc")
+        || path
+            .extension()
+            .and_then(|extension| extension.to_str())
+            .is_some_and(|extension| extension.eq_ignore_ascii_case("mlg"))
 }
 
 fn view_file_fingerprint(path: &Path) -> ViewFileFingerprint {
@@ -414,6 +478,17 @@ fn view_file_fingerprint(path: &Path) -> ViewFileFingerprint {
         modified: metadata
             .and_then(|metadata| metadata.modified().ok())
             .unwrap_or(UNIX_EPOCH),
+    }
+}
+
+fn view_file_fingerprint_from_metadata(
+    path: &Path,
+    metadata: &fs::Metadata,
+) -> ViewFileFingerprint {
+    ViewFileFingerprint {
+        path: path.to_path_buf(),
+        len: metadata.len(),
+        modified: metadata.modified().unwrap_or(UNIX_EPOCH),
     }
 }
 
@@ -508,8 +583,9 @@ mod tests {
 
         write_collection_view_data(&path, &collection).expect("expected json file");
         let contents = fs::read_to_string(&path).expect("expected collection data");
-        assert!(contents.contains("\"title\": \"demo\""));
-        assert!(contents.contains("\"path\": \"content/example.mlg\""));
+        let json: Value = serde_json::from_str(&contents).expect("expected valid json");
+        assert_eq!(json["title"], "demo");
+        assert_eq!(json["files"][0]["path"], "content/example.mlg");
         let _ = fs::remove_dir_all(dir);
     }
 

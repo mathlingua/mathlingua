@@ -1,5 +1,5 @@
 pub use builder::build_collection_view;
-pub(crate) use builder::build_collection_view_with_type_info;
+pub(crate) use builder::build_collection_view_with_cached_proto_groups;
 pub use model::{
     ArgumentView, CollectionView, DirectoryView, FileView, GroupView, PageView, SectionView,
     TypeEntryView,

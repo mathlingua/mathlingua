@@ -32,8 +32,20 @@ pub fn parse_document(input: &str, tracker: &mut EventLog) -> Document {
         proto_parser.parse()
     };
 
+    parse_document_from_groups(&groups, tracker)
+}
+
+/// Recognizes an already proto-parsed source document.
+///
+/// Collection commands need both the proto groups (for ids and rendering) and
+/// the structural document. Keeping this entry point separate lets those
+/// callers pay for the proto parse only once.
+pub(crate) fn parse_document_from_groups(
+    groups: &[ProtoGroup],
+    tracker: &mut EventLog,
+) -> Document {
     let mut items = Vec::new();
-    for group in &groups {
+    for group in groups {
         if let Some(item) = parse_top_level_group(group, tracker) {
             items.push(item);
         }

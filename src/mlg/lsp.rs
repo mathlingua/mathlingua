@@ -4,22 +4,25 @@ use crate::mlg::check::{CheckDiagnostic, check_collecting_type_info, check_diagn
 use crate::mlg::completion::{
     CandidateKind, CompletionCandidate, Signature, collect_signatures, complete_with_signatures,
 };
-use lsp_server::{Connection, ErrorCode, Message, Notification, Response};
+use lsp_server::{Connection, ErrorCode, Message, Notification, Request, RequestId, Response};
 use lsp_types::{
     CompletionItem, CompletionItemKind, CompletionOptions, CompletionParams, CompletionResponse,
     CompletionTextEdit, Diagnostic, DiagnosticSeverity, GotoDefinitionParams,
     GotoDefinitionResponse, Hover, HoverContents, HoverParams, HoverProviderCapability,
-    InitializeParams, InsertTextFormat, Location, MarkupContent, MarkupKind, OneOf, Position,
-    PrepareRenameResponse, PublishDiagnosticsParams, Range, RenameOptions, RenameParams,
-    SaveOptions, ServerCapabilities, TextDocumentPositionParams, TextDocumentSyncCapability,
-    TextDocumentSyncKind, TextDocumentSyncOptions, TextDocumentSyncSaveOptions, TextEdit, Url,
+    InitializeParams, InsertTextFormat, Location, MarkupContent, MarkupKind, NumberOrString, OneOf,
+    Position, PrepareRenameResponse, ProgressParams, ProgressParamsValue, PublishDiagnosticsParams,
+    Range, RenameOptions, RenameParams, SaveOptions, ServerCapabilities,
+    TextDocumentPositionParams, TextDocumentSyncCapability, TextDocumentSyncKind,
+    TextDocumentSyncOptions, TextDocumentSyncSaveOptions, TextEdit, Url, WorkDoneProgress,
+    WorkDoneProgressBegin, WorkDoneProgressCreateParams, WorkDoneProgressEnd,
     WorkDoneProgressOptions, WorkspaceEdit,
     notification::{
         DidChangeTextDocument, DidCloseTextDocument, DidOpenTextDocument, DidSaveTextDocument,
-        Notification as _, PublishDiagnostics,
+        Notification as _, Progress, PublishDiagnostics,
     },
     request::{
         Completion, GotoDefinition, HoverRequest, PrepareRenameRequest, Rename, Request as _,
+        WorkDoneProgressCreate,
     },
 };
 use serde_json::Value;
@@ -78,7 +81,8 @@ pub fn lsp() -> LspResult {
 
     let workspace_root = initial_workspace_root(&init_params);
     let snippets = snippet_support(&init_params);
-    let mut state = ServerState::new(workspace_root, snippets);
+    let work_done_progress = work_done_progress_support(&init_params);
+    let mut state = ServerState::new(workspace_root, snippets, work_done_progress);
 
     for msg in &connection.receiver {
         match msg {
@@ -104,7 +108,7 @@ pub fn lsp() -> LspResult {
                 }
             }
             Message::Notification(note) => state.handle_notification(&connection, note),
-            Message::Response(_) => {}
+            Message::Response(response) => state.handle_response(&connection, response),
         }
     }
 
@@ -128,10 +132,16 @@ struct ServerState {
     /// Whether the client can render completion snippets (tab stops); when it
     /// cannot, command completions fall back to inserting the plain signature.
     snippets: bool,
+    /// Whether the editor supports the standard LSP progress indicator used
+    /// while a collection check is running.
+    work_done_progress: bool,
+    /// Checks waiting for the editor to acknowledge their progress token.
+    pending_checks: HashMap<RequestId, PendingCheck>,
+    next_progress_id: u64,
 }
 
 impl ServerState {
-    fn new(workspace_root: Option<PathBuf>, snippets: bool) -> Self {
+    fn new(workspace_root: Option<PathBuf>, snippets: bool, work_done_progress: bool) -> Self {
         Self {
             workspace_root,
             last_diagnostic_files: HashSet::new(),
@@ -139,6 +149,9 @@ impl ServerState {
             type_info: HashMap::new(),
             edited_since_check: HashSet::new(),
             snippets,
+            work_done_progress,
+            pending_checks: HashMap::new(),
+            next_progress_id: 1,
         }
     }
 
@@ -195,7 +208,59 @@ impl ServerState {
         };
 
         let root = project_root_for(&file_path, self.workspace_root.as_deref());
-        self.refresh_diagnostics(connection, &root, &uri, &file_path);
+        self.start_check(connection, root, uri, file_path);
+    }
+
+    /// Ask the editor to create a progress token before starting the check. The
+    /// check is deferred until the response arrives, as required by the LSP.
+    fn start_check(&mut self, connection: &Connection, root: PathBuf, uri: Url, file: PathBuf) {
+        if !self.work_done_progress {
+            self.refresh_diagnostics(connection, &root, &uri, &file);
+            return;
+        }
+
+        let token = format!("mlg-type-check-{}", self.next_progress_id);
+        self.next_progress_id += 1;
+        let id = RequestId::from(token.clone());
+        let request = Request {
+            id: id.clone(),
+            method: WorkDoneProgressCreate::METHOD.to_string(),
+            params: serde_json::to_value(WorkDoneProgressCreateParams {
+                // Zed intentionally ignores numeric progress tokens.
+                token: NumberOrString::String(token.clone()),
+            })
+            .unwrap_or(Value::Null),
+        };
+
+        if connection.sender.send(Message::Request(request)).is_ok() {
+            self.pending_checks.insert(
+                id,
+                PendingCheck {
+                    token,
+                    root,
+                    uri,
+                    file,
+                },
+            );
+        } else {
+            self.refresh_diagnostics(connection, &root, &uri, &file);
+        }
+    }
+
+    /// Begin a pending check once the client has created its progress token.
+    fn handle_response(&mut self, connection: &Connection, response: Response) {
+        let Some(check) = self.pending_checks.remove(&response.id) else {
+            return;
+        };
+
+        let show_progress = response.error.is_none();
+        if show_progress {
+            send_check_progress_begin(connection, &check.token);
+        }
+        self.refresh_diagnostics(connection, &check.root, &check.uri, &check.file);
+        if show_progress {
+            send_check_progress_end(connection, &check.token);
+        }
     }
 
     fn handle_completion(&self, id: lsp_server::RequestId, params: &Value) -> Response {
@@ -430,6 +495,13 @@ impl ServerState {
     }
 }
 
+struct PendingCheck {
+    token: String,
+    root: PathBuf,
+    uri: Url,
+    file: PathBuf,
+}
+
 /// The widest expression column a hover will pad to. Beyond this the type moves
 /// to its own line rather than pushing the popup off the side of the editor.
 const MAX_EXPRESSION_COLUMN: usize = 56;
@@ -500,6 +572,39 @@ fn publish(connection: &Connection, uri: Url, diagnostics: Vec<Diagnostic>) {
     };
     let note = Notification {
         method: PublishDiagnostics::METHOD.to_string(),
+        params: serde_json::to_value(params).unwrap_or(Value::Null),
+    };
+    let _ = connection.sender.send(Message::Notification(note));
+}
+
+fn send_check_progress_begin(connection: &Connection, token: &str) {
+    send_progress(
+        connection,
+        token,
+        WorkDoneProgress::Begin(WorkDoneProgressBegin {
+            title: "Mathlingua: checking types".to_string(),
+            cancellable: Some(false),
+            message: None,
+            percentage: None,
+        }),
+    );
+}
+
+fn send_check_progress_end(connection: &Connection, token: &str) {
+    send_progress(
+        connection,
+        token,
+        WorkDoneProgress::End(WorkDoneProgressEnd { message: None }),
+    );
+}
+
+fn send_progress(connection: &Connection, token: &str, progress: WorkDoneProgress) {
+    let params = ProgressParams {
+        token: NumberOrString::String(token.to_string()),
+        value: ProgressParamsValue::WorkDone(progress),
+    };
+    let note = Notification {
+        method: Progress::METHOD.to_string(),
         params: serde_json::to_value(params).unwrap_or(Value::Null),
     };
     let _ = connection.sender.send(Message::Notification(note));
@@ -644,6 +749,14 @@ fn snippet_support(init_params: &Value) -> bool {
         .unwrap_or(false)
 }
 
+/// Whether the client advertised support for server-initiated work progress.
+fn work_done_progress_support(init_params: &Value) -> bool {
+    init_params
+        .pointer("/capabilities/window/workDoneProgress")
+        .and_then(Value::as_bool)
+        .unwrap_or(false)
+}
+
 fn project_root_for(file: &Path, workspace_root: Option<&Path>) -> PathBuf {
     let start = file.parent().unwrap_or(file);
     let mut cur = Some(start);
@@ -713,7 +826,7 @@ fn position_from(line: Option<usize>, column: Option<usize>) -> Position {
 
 #[cfg(test)]
 mod tests {
-    use super::render_line_types;
+    use super::{render_line_types, work_done_progress_support};
     use crate::backend::semantic::TypeEntry;
 
     fn entry(depth: usize, text: &str, types: &[&str]) -> TypeEntry {
@@ -780,5 +893,16 @@ mod tests {
             render_line_types(0, &entries, true)
                 .starts_with("Types on line 1 (from the last `mlg check` — this file has been edited since; save to refresh)")
         );
+    }
+
+    #[test]
+    fn detects_work_done_progress_support() {
+        let supported = serde_json::json!({
+            "capabilities": { "window": { "workDoneProgress": true } }
+        });
+        let unsupported = serde_json::json!({ "capabilities": {} });
+
+        assert!(work_done_progress_support(&supported));
+        assert!(!work_done_progress_support(&unsupported));
     }
 }

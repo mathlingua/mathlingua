@@ -1610,8 +1610,12 @@ specified outside of `when:`, and `via X` is a recognized structural view.
 
 ## Type Facts and Requirements
 
-A command definition may declare requirements through `using:` and `when:`.
-Those requirements must be provable whenever the command is used as an
+A command definition declares use-site requirements through `when:`. A `using:`
+declaration introduces auxiliary symbols and facts for the definition itself;
+facts that mention an unbound `using:` symbol are therefore not obligations at
+an ordinary call site. If a call supplies that symbol explicitly with a
+`#using{...}` context, requirements involving it are instantiated and checked.
+The remaining requirements must be provable whenever the command is used as an
 expression or predicate, and whenever a parameterized command type expression is
 used in an `is` statement.
 

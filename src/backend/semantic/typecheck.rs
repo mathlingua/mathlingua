@@ -7951,6 +7951,10 @@ fn inject_inferred_parameters(
             .hidden_parameters
             .iter()
             .any(|name| fact_mentions_name(requirement, name))
+            || info
+                .using_parameters
+                .iter()
+                .any(|name| fact_mentions_name(requirement, name))
         {
             continue;
         }
@@ -13350,6 +13354,10 @@ fn check_command_requirements(
             .hidden_parameters
             .iter()
             .any(|name| key_mentions_name(left, name) || key_mentions_name(right, name))
+            || info.using_parameters.iter().any(|name| {
+                !substitutions.contains_key(name)
+                    && (key_mentions_name(left, name) || key_mentions_name(right, name))
+            })
         {
             continue;
         }
@@ -13364,6 +13372,9 @@ fn check_command_requirements(
             .hidden_parameters
             .iter()
             .any(|name| fact_mentions_name(requirement, name))
+            || info.using_parameters.iter().any(|name| {
+                !substitutions.contains_key(name) && fact_mentions_name(requirement, name)
+            })
         {
             continue;
         }
@@ -16726,6 +16737,12 @@ fn command_requirement_facts(
 
     info.requirements
         .iter()
+        .filter(|requirement| {
+            !info
+                .using_parameters
+                .iter()
+                .any(|name| fact_mentions_name(requirement, name))
+        })
         .map(|requirement| {
             requirement_context.normalize_fact(&substitute_fact(requirement, &substitutions))
         })

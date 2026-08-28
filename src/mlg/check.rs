@@ -13132,6 +13132,51 @@ Id: "c812728f-5e16-4774-a62d-00c911127a75"
     }
 
     #[test]
+    fn check_treats_unbound_using_symbols_as_definition_local() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("definition-local-using.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+Declares: X
+Requires:
+. capability: x_ "in" X :-> \\abstract
+Documented:
+. called: "set"
+
+[\singleton.set:of{X}]
+Defines: Y is \set
+using: U is \set
+when: X "in" U
+Documented:
+. called: "singleton set"
+
+[\set.successor:of{X}]
+Defines: Y is \set
+when: X is \set
+expresses: \singleton.set:of{X}
+Documented:
+. called: "set successor"
+"#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("definition-local-using.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_accepts_complex_view_expression() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("relationships.mlg");

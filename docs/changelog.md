@@ -9,7 +9,9 @@ the feature is valid.
 
 The redundant nested `given:` / `where?:` / `then:` clause group has been
 removed. Use `let:` / `where?:` / `then:` for local bindings and assumptions.
-The `given:` section on theorem-like top-level groups remains supported.
+The corresponding inline builtin is now `\\let{...}:where{...}:then{...}`;
+`\\given` is no longer supported. The `given:` section on theorem-like top-level
+groups remains supported.
 
 ## Duplicate Symbol Introductions Are Rejected
 

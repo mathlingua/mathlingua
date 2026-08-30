@@ -1002,7 +1002,9 @@ Unlike an ordinary `parse_is_or_spec` declaration context, an `is` target here
 may use a refined command expression, such as
 `x_ "in" X :-> x_ is \(inductive)::set`. As with `parse_is_or_spec`, the quoted
 operator is extracted by raw scanning and may contain arbitrary text.
-Built-in targets use two leading backslashes, for example `\\abstract`.
+Built-in targets use two leading backslashes. The supported target is
+`\\abstract`; although the grammar accepts any raw chain in this position,
+other names have no defined builtin behavior.
 
 ## Header Parsers
 

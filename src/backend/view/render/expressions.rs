@@ -793,10 +793,10 @@ fn render_builtin_command_expression(
                 iff.join(" \\textrm{ and } ")
             )
         }
-        "given" => {
+        "let" => {
             let where_ = tail("where");
             let then = tail("then");
-            let mut rendered = format!("\\textrm{{given }} {}", head.join("; "));
+            let mut rendered = format!("\\textrm{{let }} {}", head.join("; "));
             if !where_.is_empty() {
                 rendered.push_str(" \\textrm{ where } ");
                 rendered.push_str(&where_.join(" \\textrm{ and } "));

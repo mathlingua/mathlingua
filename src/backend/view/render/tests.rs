@@ -176,6 +176,22 @@ fn renders_variadic_map_and_reduce_builtins() {
 }
 
 #[test]
+fn renders_let_builtin() {
+    let registry = registry_for("");
+
+    assert_eq!(
+        render_formulation_latex(
+            r#"\\let{x is \\anything}:where{x = x}:then{x = x}"#,
+            &registry
+        ),
+        Some(
+            r#"\textrm{let } x \textrm{ is } \textrm{anything} \textrm{ where } x = x \textrm{ then } x = x"#
+                .to_string()
+        )
+    );
+}
+
+#[test]
 fn renders_variadic_parameters_and_slices_symbolically() {
     let registry = registry_for(
         r#"[\plain{x...}]
@@ -1704,4 +1720,3 @@ Documented:
         Some(r#"S(n)"#.to_string())
     );
 }
-

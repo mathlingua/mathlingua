@@ -7179,7 +7179,7 @@ Documented:
     Theorem:
     given: x is \real
     then:
-    . \\and{x = x; \\forAll{y is \real}:then{\\exists{a, b is \real; n is \natural}:suchThat{x = y}}}
+    . \\and{x = x; \\let{z is \real}:where{z = x}:then{z = z}; \\forAll{y is \real}:then{\\exists{a, b is \real; n is \natural}:suchThat{x = y}}}
     Id: "f1a2b3c4-3333-4a22-8333-333333333333"
     "#,
         )
@@ -7190,6 +7190,40 @@ Documented:
 
         assert_eq!(result.files_checked, 1);
         assert_checked_cleanly(&event_log, "Checked 1 file");
+    }
+
+    #[test]
+    fn check_rejects_removed_given_builtin() {
+        let temp_dir = TestDir::new();
+        let root = temp_dir.path();
+        let content = root.join("content");
+        fs::create_dir(&content).unwrap();
+        fs::write(root.join("mlg.json"), default_config_contents()).unwrap();
+        write_mlg_fixture(
+            &content.join("removed-given-builtin.mlg"),
+            r#"[\real]
+    Declares: x
+    Documented:
+    . called: "real"
+    Id: "f1a2b3c4-1111-4a22-8333-111111111111"
+
+    Theorem:
+    then: \\given{x is \real}:then{x = x}
+    Id: "f1a2b3c4-2222-4a22-8333-222222222222"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(root, &[], &mut event_log);
+
+        assert_eq!(result.files_checked, 1);
+        assert!(user_events(&event_log).iter().any(|event| {
+            event.as_message().is_some_and(|message| {
+                message.message == "Unknown builtin clause command `\\\\given`"
+            })
+        }));
+        assert!(event_log.has_errors());
     }
 
     #[test]

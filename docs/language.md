@@ -207,11 +207,37 @@ x is? \set
 \set is? \\type
 ```
 
-Builtin types and targets are written with two leading backslashes: `\\type`
-(the type of `Declares` types), `\\statement`, `\\expression`,
-`\\specification` (the types of statements, expressions, and specification
-literals), `\\anything` (an unstructured value), and `\\abstract` (the abstract
-`:->` or `:<->:` capability target).
+### Double-backslash builtins
+
+Double-backslash names are reserved for language-provided behavior. The
+supported spellings are case-sensitive and fall into three families:
+
+- Builtin types: `\\type`, `\\statement`, `\\expression`,
+  `\\specification`, and `\\anything`.
+- Builtin statement commands: `\\not`, `\\and`, `\\allOf`, `\\or`,
+  `\\anyOf`, `\\oneOf`, `\\exists`, `\\existsUnique`, `\\forAll` (with
+  alias `\\forall`), `\\if`, `\\have`, `\\let`, and `\\piecewise`.
+- Variadic expression commands: `\\map`, `\\leftReduce`, and
+  `\\rightReduce`.
+
+There is also one builtin capability target, `\\abstract`. It is not a type;
+it marks the abstract target of a `:->` or `:<->:` specification capability.
+
+The type meanings are:
+
+- `\\type` classifies command references declared by top-level `Declares:`
+  items.
+- `\\statement`, `\\expression`, and `\\specification` classify those
+  formulation categories.
+- `\\anything` accepts an otherwise unconstrained value and establishes no
+  more specific type information.
+
+The grammar currently parses an arbitrary double-backslash chain in a builtin
+type or capability-target position. That permissive parsing does not make the
+name a supported builtin: only the names above have defined builtin behavior.
+Unknown builtin statement or variadic commands are semantic errors. The former
+`\\given`, `\\opaque`, `\\coercion`, and `\\encoding` spellings are not
+supported.
 
 A named mapping call accepts both the legacy `:=` assignment spelling and `=`.
 The catch-all slot `... = value` supplies the value for parameters not named by
@@ -1047,12 +1073,24 @@ For example, a `let:` clause can introduce a member for use in its body:
 ```
 
 The formulation language also provides builtin *command* forms used inline in
-a statement position: `\\not{...}`, `\\allOf{...}`, `\\anyOf{...}`, `\\oneOf{...}`,
-`\\forAll{...}:then{...}`, `\\have{...}:iff{...}`, `\\given{...}:then{...}`, and
-`\\piecewise{...}:then{...}:else{...}`. They are checked with the same scoping
-rules as their structural counterparts where one exists, and a malformed one
-(wrong arity, missing required tail, or unknown builtin clause command) is
-reported.
+a statement position: `\\not`, `\\and`/`\\allOf`, `\\or`/`\\anyOf`,
+`\\oneOf`, `\\exists`, `\\existsUnique`, `\\forAll`/`\\forall`, `\\if`,
+`\\have`, `\\let`, and `\\piecewise`. Arguments use braces and are separated
+by semicolons; the accepted tails are:
+
+- `\\exists` and `\\existsUnique`: optional `:suchThat{...}`
+- `\\forAll`/`\\forall` and `\\let`: optional `:where{...}` and required
+  `:then{...}`
+- `\\if`: optional `:then{...}`
+- `\\have`: required `:iff{...}`
+- `\\piecewise`: optional `:if{...}`, required `:then{...}`, and optional
+  `:else{...}`
+- `\\not`, `\\and`, `\\allOf`, `\\or`, `\\anyOf`, and `\\oneOf`: no tails;
+  `\\not` requires exactly one clause
+
+They are checked with the same scoping rules as their structural counterparts
+where one exists. A malformed form (wrong arity, missing required tail,
+unexpected tail, or unknown builtin clause command) is reported.
 
 Declarations can combine `::=` with `:=` to introduce symbols and create local
 syntactic substitutions.

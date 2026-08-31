@@ -785,6 +785,148 @@
   font-size: 1.1rem;
 }
 
+:global(html[data-theme="manuscript"]) .readerLayout {
+  background:
+    linear-gradient(
+      90deg,
+      rgba(82, 48, 23, 0.1),
+      transparent 1.1rem,
+      transparent calc(100% - 1.1rem),
+      rgba(82, 48, 23, 0.09)
+    ),
+    var(--surface);
+}
+
+:global(html[data-theme="manuscript"]) .outlinePanel {
+  border-right: 3px double var(--line-strong);
+  background:
+    radial-gradient(
+      circle at 16% 9%,
+      rgba(255, 247, 213, 0.35),
+      transparent 20rem
+    ),
+    linear-gradient(90deg, rgba(98, 57, 28, 0.055), transparent 1.2rem),
+    var(--surface);
+  box-shadow: inset -0.65rem 0 1rem rgba(80, 45, 20, 0.055);
+}
+
+:global(html[data-theme="manuscript"]) .outlineCover {
+  font-variant: small-caps;
+  letter-spacing: 0.055em;
+}
+
+:global(html[data-theme="manuscript"]) .outlineHeader {
+  border-bottom: 3px double var(--line-strong);
+}
+
+:global(html[data-theme="manuscript"]) .outlineSectionTitle,
+:global(html[data-theme="manuscript"]) .outlineLinkDirectory {
+  font-variant: small-caps;
+  letter-spacing: 0.035em;
+}
+
+:global(html[data-theme="manuscript"]) .outlineLinkActive {
+  background: transparent;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+:global(html[data-theme="manuscript"]) .outlineLinkActive::before {
+  content: "";
+  position: absolute;
+  top: 0.32rem;
+  bottom: 0.32rem;
+  left: 0;
+  width: 2px;
+  background: var(--accent);
+}
+
+:global(html[data-theme="manuscript"]) .documentStream {
+  background:
+    radial-gradient(
+      circle at 50% 8%,
+      rgba(255, 249, 218, 0.34),
+      transparent 32rem
+    ),
+    radial-gradient(
+      circle at 94% 86%,
+      rgba(103, 62, 29, 0.055),
+      transparent 25rem
+    ),
+    transparent;
+}
+
+:global(html[data-theme="manuscript"]) .breadcrumbLink,
+:global(html[data-theme="manuscript"]) .breadcrumbCurrent,
+:global(html[data-theme="manuscript"]) .pageNavButton {
+  font-family: var(--font-display);
+  font-style: italic;
+}
+
+:global(html[data-theme="manuscript"]) .dividerTitle,
+:global(html[data-theme="manuscript"]) .dividerHeadTitle,
+:global(html[data-theme="manuscript"]) .pageItem h1,
+:global(html[data-theme="manuscript"]) .pageItem h2,
+:global(html[data-theme="manuscript"]) .pageItem h3,
+:global(html[data-theme="manuscript"]) .pageItem h4 {
+  font-variant: small-caps;
+  letter-spacing: 0.035em;
+  text-wrap: balance;
+}
+
+:global(html[data-theme="manuscript"]) .dividerTitle::first-letter,
+:global(html[data-theme="manuscript"]) .dividerHeadTitle::first-letter,
+:global(html[data-theme="manuscript"]) .pageTitle h1::first-letter {
+  color: var(--accent);
+  font-size: 1.14em;
+}
+
+:global(html[data-theme="manuscript"]) .dividerRule {
+  position: relative;
+  width: 7rem;
+  height: 3px;
+  border-top: 1px solid var(--line-strong);
+  border-bottom: 1px solid var(--line-strong);
+  background: transparent;
+}
+
+:global(html[data-theme="manuscript"]) .dividerRule::after {
+  content: "◆";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  padding: 0 0.35rem;
+  background: var(--surface);
+  color: var(--accent);
+  font-size: 0.65rem;
+  line-height: 1;
+  transform: translate(-50%, -50%);
+}
+
+:global(html[data-theme="manuscript"]) .pageSectionTitle h2,
+:global(html[data-theme="manuscript"]) .pageNavigation {
+  border-color: var(--line-strong);
+  border-style: double;
+}
+
+:global(html[data-theme="manuscript"]) .pageSectionTitle h2 {
+  border-bottom-width: 3px;
+}
+
+:global(html[data-theme="manuscript"]) .pageNavigation {
+  border-top-width: 3px;
+}
+
+:global(html[data-theme="manuscript"]) .pageNavLabel {
+  color: var(--accent);
+  font-family: var(--font-ui);
+  font-style: normal;
+}
+
+:global(html[data-theme="manuscript"]) .definitionTrail {
+  border: 3px double var(--line-strong);
+}
+
 @media (max-width: 1100px) {
   .readerLayout {
     transition: none;

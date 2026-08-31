@@ -134,6 +134,82 @@ html[data-theme="sepia"] {
   --syntax-string: #7b652b;
 }
 
+/* An illuminated-reference-book theme: warm rag paper, faded oxblood
+   headings, fine double rules, and enough tonal variation to feel handled
+   without compromising the legibility of dense mathematical notation. */
+html[data-theme="manuscript"] {
+  color-scheme: light;
+  --font-body:
+    "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, Georgia,
+    serif;
+  --font-display:
+    Baskerville, "Baskerville Old Face", "Hoefler Text", "Iowan Old Style",
+    Georgia, serif;
+  --font-ui:
+    "Gill Sans", "Gill Sans MT", "Avenir Next Condensed", "Trebuchet MS",
+    sans-serif;
+  --page-bg: #9d7b50;
+  --surface: #efe0b8;
+  --surface-alt: #e2cca0;
+  --ink: #35281c;
+  --muted: #8a765a;
+  --muted-strong: #695039;
+  --line: #a7875b;
+  --line-strong: #6c4b32;
+  --accent: #7a2f26;
+  --accent-soft: #d9bc88;
+  --shadow: 0 1px 0 rgba(255, 248, 218, 0.8), 0 7px 18px rgba(48, 29, 13, 0.18);
+  --chrome-bg: rgba(224, 202, 157, 0.94);
+  --card-bg:
+    radial-gradient(
+      circle at 14% 12%,
+      rgba(255, 250, 220, 0.34),
+      transparent 26%
+    ),
+    radial-gradient(
+      circle at 88% 82%,
+      rgba(117, 70, 35, 0.08),
+      transparent 28%
+    ),
+    #efe0b8;
+  --definition-bg:
+    linear-gradient(rgba(239, 224, 184, 0.9), rgba(231, 211, 170, 0.94)),
+    #ead8ad;
+  --definition-shadow:
+    inset 0 0 0 3px rgba(239, 224, 184, 0.9),
+    inset 0 0 0 4px rgba(108, 75, 50, 0.62), 0 8px 22px rgba(48, 29, 13, 0.17);
+  --control-shadow: 0 1px 2px rgba(48, 29, 13, 0.2);
+  --syntax-comment: #8f795a;
+  --syntax-command: #7a2f26;
+  --syntax-keyword: #7b5628;
+  --syntax-label: #6b3c31;
+  --syntax-operator: #934c30;
+  --syntax-placeholder: #52623f;
+  --syntax-punctuation: #806e55;
+  --syntax-string: #716127;
+  --radius-card: 0.18rem;
+  --radius-control: 0.15rem;
+  --radius-popover: 0.15rem;
+  --radius-option: 0.08rem;
+  --radius-nav: 0.08rem;
+  --radius-definition: 0.18rem;
+  --radius-code: 0.08rem;
+  --radius-code-block: 0.12rem;
+  --radius-inline-ref: 0.08rem;
+  --card-border-width: 3px;
+  --popover-border-width: 3px;
+  --definition-border-width: 1px;
+  --divider-border-width: 1px;
+  --heading-color: #692a23;
+  --heading-weight: 600;
+  --section-heading-color: #7a2f26;
+  --section-heading-weight: 600;
+  --card-heading-color: #4a281f;
+  --card-heading-weight: 600;
+  --prose-heading-color: #692a23;
+  --prose-heading-weight: 600;
+}
+
 html[data-theme="flat-gray"] {
   color-scheme: light;
   --page-bg: #eeeeee;
@@ -594,6 +670,52 @@ body {
   background: var(--page-bg);
   color: var(--ink);
   font-family: var(--font-body);
+}
+
+html[data-theme="manuscript"] body {
+  background:
+    radial-gradient(
+      circle at 17% 8%,
+      rgba(255, 234, 183, 0.22),
+      transparent 24rem
+    ),
+    radial-gradient(
+      circle at 86% 88%,
+      rgba(63, 35, 17, 0.2),
+      transparent 28rem
+    ),
+    repeating-linear-gradient(
+      93deg,
+      transparent 0,
+      rgba(56, 35, 18, 0.025) 1px,
+      transparent 2px,
+      transparent 7px
+    ),
+    var(--page-bg);
+}
+
+html[data-theme="manuscript"] body::after {
+  content: "";
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      circle at 22% 31%,
+      rgba(86, 51, 24, 0.08) 0 0.6px,
+      transparent 0.9px
+    ),
+    radial-gradient(
+      circle at 73% 66%,
+      rgba(255, 249, 218, 0.12) 0 0.7px,
+      transparent 1px
+    );
+  background-size:
+    17px 19px,
+    23px 29px;
+  mix-blend-mode: multiply;
+  opacity: 0.5;
 }
 
 html[data-theme="lcd"] body::after,

@@ -228,6 +228,54 @@
   color: var(--accent);
 }
 
+:global(html[data-theme="manuscript"]) .chrome {
+  border-bottom: 3px double var(--line-strong);
+  background:
+    linear-gradient(rgba(224, 202, 157, 0.93), rgba(214, 187, 139, 0.93)),
+    var(--chrome-bg);
+  box-shadow: 0 2px 8px rgba(48, 29, 13, 0.16);
+  backdrop-filter: blur(9px);
+}
+
+:global(html[data-theme="manuscript"]) .button,
+:global(html[data-theme="manuscript"]) .typesButton,
+:global(html[data-theme="manuscript"]) .themeIconButton {
+  border: 1px solid transparent;
+  color: var(--line-strong);
+}
+
+:global(html[data-theme="manuscript"]) .button:hover,
+:global(html[data-theme="manuscript"]) .typesButton:hover,
+:global(html[data-theme="manuscript"]) .typesButtonActive,
+:global(html[data-theme="manuscript"]) .themeIconButton:hover,
+:global(html[data-theme="manuscript"]) .themeIconButton[aria-expanded="true"] {
+  border-color: var(--line-strong);
+  background: var(--accent-soft);
+  color: var(--accent);
+  box-shadow: inset 0 0 0 1px rgba(239, 224, 184, 0.72);
+}
+
+:global(html[data-theme="manuscript"]) .themePopover {
+  border-style: double;
+  background:
+    radial-gradient(
+      circle at 15% 10%,
+      rgba(255, 248, 215, 0.3),
+      transparent 45%
+    ),
+    var(--surface);
+}
+
+:global(html[data-theme="manuscript"]) .themeOption {
+  letter-spacing: 0.035em;
+}
+
+:global(html[data-theme="manuscript"]) .themeOptionActive {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
+
 @media (max-width: 860px) {
   .chrome {
     grid-template-columns: 2rem minmax(0, 1fr) auto;

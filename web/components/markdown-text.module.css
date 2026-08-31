@@ -151,28 +151,28 @@
   margin: 0;
 }
 
-:global(html[data-theme="manuscript"]) .markdown {
+:global(html[data-theme^="manuscript"]) .markdown {
   font-size: 1.06rem;
   line-height: 1.68;
 }
 
-:global(html[data-theme="manuscript"]) .markdown h1,
-:global(html[data-theme="manuscript"]) .markdown h2,
-:global(html[data-theme="manuscript"]) .markdown h3,
-:global(html[data-theme="manuscript"]) .markdown h4,
-:global(html[data-theme="manuscript"]) .markdown h5,
-:global(html[data-theme="manuscript"]) .markdown h6 {
+:global(html[data-theme^="manuscript"]) .markdown h1,
+:global(html[data-theme^="manuscript"]) .markdown h2,
+:global(html[data-theme^="manuscript"]) .markdown h3,
+:global(html[data-theme^="manuscript"]) .markdown h4,
+:global(html[data-theme^="manuscript"]) .markdown h5,
+:global(html[data-theme^="manuscript"]) .markdown h6 {
   font-variant: small-caps;
   letter-spacing: 0.035em;
 }
 
-:global(html[data-theme="manuscript"]) .markdown h2 {
+:global(html[data-theme^="manuscript"]) .markdown h2 {
   padding-bottom: 0.22rem;
   border-bottom: 3px double var(--line-strong);
 }
 
-:global(html[data-theme="manuscript"]) .markdownMlgCode,
-:global(html[data-theme="manuscript"]) .markdown pre {
+:global(html[data-theme^="manuscript"]) .markdownMlgCode,
+:global(html[data-theme^="manuscript"]) .markdown pre {
   border-color: var(--line-strong);
   background: color-mix(in srgb, var(--surface-alt) 64%, transparent);
   box-shadow: inset 0 0 1.2rem rgba(88, 51, 24, 0.05);

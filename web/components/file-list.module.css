@@ -785,7 +785,7 @@
   font-size: 1.1rem;
 }
 
-:global(html[data-theme="manuscript"]) .readerLayout {
+:global(html[data-theme^="manuscript"]) .readerLayout {
   background:
     linear-gradient(
       90deg,
@@ -797,7 +797,7 @@
     var(--surface);
 }
 
-:global(html[data-theme="manuscript"]) .outlinePanel {
+:global(html[data-theme^="manuscript"]) .outlinePanel {
   border-right: 3px double var(--line-strong);
   background:
     radial-gradient(
@@ -810,28 +810,28 @@
   box-shadow: inset -0.65rem 0 1rem rgba(80, 45, 20, 0.055);
 }
 
-:global(html[data-theme="manuscript"]) .outlineCover {
+:global(html[data-theme^="manuscript"]) .outlineCover {
   font-variant: small-caps;
   letter-spacing: 0.055em;
 }
 
-:global(html[data-theme="manuscript"]) .outlineHeader {
+:global(html[data-theme^="manuscript"]) .outlineHeader {
   border-bottom: 3px double var(--line-strong);
 }
 
-:global(html[data-theme="manuscript"]) .outlineSectionTitle,
-:global(html[data-theme="manuscript"]) .outlineLinkDirectory {
+:global(html[data-theme^="manuscript"]) .outlineSectionTitle,
+:global(html[data-theme^="manuscript"]) .outlineLinkDirectory {
   font-variant: small-caps;
   letter-spacing: 0.035em;
 }
 
-:global(html[data-theme="manuscript"]) .outlineLinkActive {
+:global(html[data-theme^="manuscript"]) .outlineLinkActive {
   background: transparent;
   color: var(--accent);
   font-weight: 600;
 }
 
-:global(html[data-theme="manuscript"]) .outlineLinkActive::before {
+:global(html[data-theme^="manuscript"]) .outlineLinkActive::before {
   content: "";
   position: absolute;
   top: 0.32rem;
@@ -841,7 +841,7 @@
   background: var(--accent);
 }
 
-:global(html[data-theme="manuscript"]) .documentStream {
+:global(html[data-theme^="manuscript"]) .documentStream {
   background:
     radial-gradient(
       circle at 50% 8%,
@@ -856,32 +856,32 @@
     transparent;
 }
 
-:global(html[data-theme="manuscript"]) .breadcrumbLink,
-:global(html[data-theme="manuscript"]) .breadcrumbCurrent,
-:global(html[data-theme="manuscript"]) .pageNavButton {
+:global(html[data-theme^="manuscript"]) .breadcrumbLink,
+:global(html[data-theme^="manuscript"]) .breadcrumbCurrent,
+:global(html[data-theme^="manuscript"]) .pageNavButton {
   font-family: var(--font-display);
   font-style: italic;
 }
 
-:global(html[data-theme="manuscript"]) .dividerTitle,
-:global(html[data-theme="manuscript"]) .dividerHeadTitle,
-:global(html[data-theme="manuscript"]) .pageItem h1,
-:global(html[data-theme="manuscript"]) .pageItem h2,
-:global(html[data-theme="manuscript"]) .pageItem h3,
-:global(html[data-theme="manuscript"]) .pageItem h4 {
+:global(html[data-theme^="manuscript"]) .dividerTitle,
+:global(html[data-theme^="manuscript"]) .dividerHeadTitle,
+:global(html[data-theme^="manuscript"]) .pageItem h1,
+:global(html[data-theme^="manuscript"]) .pageItem h2,
+:global(html[data-theme^="manuscript"]) .pageItem h3,
+:global(html[data-theme^="manuscript"]) .pageItem h4 {
   font-variant: small-caps;
   letter-spacing: 0.035em;
   text-wrap: balance;
 }
 
-:global(html[data-theme="manuscript"]) .dividerTitle::first-letter,
-:global(html[data-theme="manuscript"]) .dividerHeadTitle::first-letter,
-:global(html[data-theme="manuscript"]) .pageTitle h1::first-letter {
+:global(html[data-theme^="manuscript"]) .dividerTitle::first-letter,
+:global(html[data-theme^="manuscript"]) .dividerHeadTitle::first-letter,
+:global(html[data-theme^="manuscript"]) .pageTitle h1::first-letter {
   color: var(--accent);
   font-size: 1.14em;
 }
 
-:global(html[data-theme="manuscript"]) .dividerRule {
+:global(html[data-theme^="manuscript"]) .dividerRule {
   position: relative;
   width: 7rem;
   height: 3px;
@@ -890,7 +890,7 @@
   background: transparent;
 }
 
-:global(html[data-theme="manuscript"]) .dividerRule::after {
+:global(html[data-theme^="manuscript"]) .dividerRule::after {
   content: "◆";
   position: absolute;
   top: 50%;
@@ -903,28 +903,63 @@
   transform: translate(-50%, -50%);
 }
 
-:global(html[data-theme="manuscript"]) .pageSectionTitle h2,
-:global(html[data-theme="manuscript"]) .pageNavigation {
+:global(html[data-theme^="manuscript"]) .pageSectionTitle h2,
+:global(html[data-theme^="manuscript"]) .pageNavigation {
   border-color: var(--line-strong);
   border-style: double;
 }
 
-:global(html[data-theme="manuscript"]) .pageSectionTitle h2 {
+:global(html[data-theme^="manuscript"]) .pageSectionTitle h2 {
   border-bottom-width: 3px;
 }
 
-:global(html[data-theme="manuscript"]) .pageNavigation {
+:global(html[data-theme^="manuscript"]) .pageNavigation {
   border-top-width: 3px;
 }
 
-:global(html[data-theme="manuscript"]) .pageNavLabel {
+:global(html[data-theme^="manuscript"]) .pageNavLabel {
   color: var(--accent);
   font-family: var(--font-ui);
   font-style: normal;
 }
 
-:global(html[data-theme="manuscript"]) .definitionTrail {
+:global(html[data-theme^="manuscript"]) .definitionTrail {
   border: 3px double var(--line-strong);
+}
+
+:global(html[data-theme="manuscript-dark"]) .readerLayout {
+  background:
+    linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.24),
+      transparent 1.1rem,
+      transparent calc(100% - 1.1rem),
+      rgba(0, 0, 0, 0.2)
+    ),
+    var(--surface);
+}
+
+:global(html[data-theme="manuscript-dark"]) .outlinePanel {
+  background:
+    radial-gradient(
+      circle at 16% 9%,
+      rgba(202, 139, 80, 0.07),
+      transparent 20rem
+    ),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.22), transparent 1.2rem),
+    var(--surface);
+  box-shadow: inset -0.65rem 0 1rem rgba(0, 0, 0, 0.16);
+}
+
+:global(html[data-theme="manuscript-dark"]) .documentStream {
+  background:
+    radial-gradient(
+      circle at 50% 8%,
+      rgba(204, 145, 86, 0.055),
+      transparent 32rem
+    ),
+    radial-gradient(circle at 94% 86%, rgba(0, 0, 0, 0.2), transparent 25rem),
+    transparent;
 }
 
 @media (max-width: 1100px) {

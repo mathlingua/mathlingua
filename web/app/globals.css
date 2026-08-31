@@ -210,6 +210,74 @@ html[data-theme="manuscript"] {
   --prose-heading-weight: 600;
 }
 
+html[data-theme="manuscript-dark"] {
+  color-scheme: dark;
+  --font-body:
+    "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, Georgia,
+    serif;
+  --font-display:
+    Baskerville, "Baskerville Old Face", "Hoefler Text", "Iowan Old Style",
+    Georgia, serif;
+  --font-ui:
+    "Gill Sans", "Gill Sans MT", "Avenir Next Condensed", "Trebuchet MS",
+    sans-serif;
+  --page-bg: #120e0c;
+  --surface: #211a15;
+  --surface-alt: #30251d;
+  --ink: #eee1c4;
+  --muted: #95866d;
+  --muted-strong: #c4b28f;
+  --line: #554331;
+  --line-strong: #a77950;
+  --accent: #db8069;
+  --accent-soft: #4a2f26;
+  --shadow: 0 1px 0 rgba(227, 178, 117, 0.12), 0 9px 24px rgba(0, 0, 0, 0.5);
+  --chrome-bg: rgba(25, 19, 16, 0.95);
+  --card-bg:
+    radial-gradient(
+      circle at 14% 12%,
+      rgba(217, 164, 102, 0.07),
+      transparent 28%
+    ),
+    radial-gradient(circle at 88% 82%, rgba(0, 0, 0, 0.16), transparent 30%),
+    #211a15;
+  --definition-bg:
+    linear-gradient(rgba(39, 29, 23, 0.94), rgba(31, 24, 19, 0.96)), #211a15;
+  --definition-shadow:
+    inset 0 0 0 3px rgba(33, 26, 21, 0.92),
+    inset 0 0 0 4px rgba(167, 121, 80, 0.72), 0 10px 28px rgba(0, 0, 0, 0.42);
+  --control-shadow: 0 1px 3px rgba(0, 0, 0, 0.46);
+  --syntax-comment: #8e7f69;
+  --syntax-command: #e28b73;
+  --syntax-keyword: #d7ae69;
+  --syntax-label: #d99b83;
+  --syntax-operator: #e49a72;
+  --syntax-placeholder: #9eb184;
+  --syntax-punctuation: #b2a187;
+  --syntax-string: #c7b56e;
+  --radius-card: 0.18rem;
+  --radius-control: 0.15rem;
+  --radius-popover: 0.15rem;
+  --radius-option: 0.08rem;
+  --radius-nav: 0.08rem;
+  --radius-definition: 0.18rem;
+  --radius-code: 0.08rem;
+  --radius-code-block: 0.12rem;
+  --radius-inline-ref: 0.08rem;
+  --card-border-width: 3px;
+  --popover-border-width: 3px;
+  --definition-border-width: 1px;
+  --divider-border-width: 1px;
+  --heading-color: #df927b;
+  --heading-weight: 600;
+  --section-heading-color: #db8069;
+  --section-heading-weight: 600;
+  --card-heading-color: #ebc6a6;
+  --card-heading-weight: 600;
+  --prose-heading-color: #df927b;
+  --prose-heading-weight: 600;
+}
+
 html[data-theme="flat-gray"] {
   color-scheme: light;
   --page-bg: #eeeeee;
@@ -672,7 +740,7 @@ body {
   font-family: var(--font-body);
 }
 
-html[data-theme="manuscript"] body {
+html[data-theme^="manuscript"] body {
   background:
     radial-gradient(
       circle at 17% 8%,
@@ -694,7 +762,7 @@ html[data-theme="manuscript"] body {
     var(--page-bg);
 }
 
-html[data-theme="manuscript"] body::after {
+html[data-theme^="manuscript"] body::after {
   content: "";
   position: fixed;
   z-index: 1000;
@@ -716,6 +784,29 @@ html[data-theme="manuscript"] body::after {
     23px 29px;
   mix-blend-mode: multiply;
   opacity: 0.5;
+}
+
+html[data-theme="manuscript-dark"] body {
+  background:
+    radial-gradient(
+      circle at 17% 8%,
+      rgba(180, 119, 66, 0.1),
+      transparent 25rem
+    ),
+    radial-gradient(circle at 86% 88%, rgba(0, 0, 0, 0.42), transparent 29rem),
+    repeating-linear-gradient(
+      93deg,
+      transparent 0,
+      rgba(233, 191, 131, 0.018) 1px,
+      transparent 2px,
+      transparent 7px
+    ),
+    var(--page-bg);
+}
+
+html[data-theme="manuscript-dark"] body::after {
+  mix-blend-mode: screen;
+  opacity: 0.16;
 }
 
 html[data-theme="lcd"] body::after,

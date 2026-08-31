@@ -284,12 +284,12 @@
   transform: translateY(0.08rem) rotate(225deg);
 }
 
-:global(html[data-theme="manuscript"]) .cardFace {
+:global(html[data-theme^="manuscript"]) .cardFace {
   border-style: double;
 }
 
-:global(html[data-theme="manuscript"]) .cardFace::before,
-:global(html[data-theme="manuscript"]) .cardFace::after {
+:global(html[data-theme^="manuscript"]) .cardFace::before,
+:global(html[data-theme^="manuscript"]) .cardFace::after {
   content: "";
   position: absolute;
   width: 0.62rem;
@@ -297,27 +297,27 @@
   pointer-events: none;
 }
 
-:global(html[data-theme="manuscript"]) .cardFace::before {
+:global(html[data-theme^="manuscript"]) .cardFace::before {
   top: 0.38rem;
   left: 0.38rem;
   border-top: 1px solid var(--accent);
   border-left: 1px solid var(--accent);
 }
 
-:global(html[data-theme="manuscript"]) .cardFace::after {
+:global(html[data-theme^="manuscript"]) .cardFace::after {
   right: 0.38rem;
   bottom: 0.38rem;
   border-right: 1px solid var(--accent);
   border-bottom: 1px solid var(--accent);
 }
 
-:global(html[data-theme="manuscript"]) .header {
+:global(html[data-theme^="manuscript"]) .header {
   position: relative;
   padding-bottom: 0.68rem;
   border-bottom: 3px double var(--line-strong);
 }
 
-:global(html[data-theme="manuscript"]) .heading {
+:global(html[data-theme^="manuscript"]) .heading {
   color: var(--accent);
   font-family: var(--font-display);
   font-size: 1.05rem;
@@ -325,12 +325,12 @@
   letter-spacing: 0.075em;
 }
 
-:global(html[data-theme="manuscript"]) .headingLatex {
+:global(html[data-theme^="manuscript"]) .headingLatex {
   font-variant: normal;
   letter-spacing: 0;
 }
 
-:global(html[data-theme="manuscript"]) .resourceMetaLabel {
+:global(html[data-theme^="manuscript"]) .resourceMetaLabel {
   color: var(--accent);
   font-family: var(--font-display);
   font-variant: small-caps;
@@ -338,8 +338,8 @@
   letter-spacing: 0.06em;
 }
 
-:global(html[data-theme="manuscript"]) .iconToggle:hover,
-:global(html[data-theme="manuscript"]) .documentedToggle:hover {
+:global(html[data-theme^="manuscript"]) .iconToggle:hover,
+:global(html[data-theme^="manuscript"]) .documentedToggle:hover {
   border-color: var(--line-strong);
   background: var(--accent-soft);
   color: var(--accent);

@@ -23,3 +23,4 @@ pub use marker_event::{MarkerEvent, MarkerPhase};
 pub use marker_id::MarkerId;
 pub use marker_range::MarkerRange;
 pub use message_event::MessageEvent;
+pub(crate) use message_event::MessageStatus;

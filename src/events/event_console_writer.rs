@@ -2,6 +2,7 @@ use super::event_filter::{ColorMode, EventFilter};
 use super::event_log::EventLogListener;
 use super::{
     Audience, Event, EventLocation, EventSpan, Level, MarkerEvent, MarkerPhase, MessageEvent,
+    MessageStatus,
 };
 use std::io::{self, IsTerminal, Write};
 use std::path::{Path, PathBuf};
@@ -10,6 +11,7 @@ pub struct EventConsoleWriter {
     filter: EventFilter,
     base_path: Option<PathBuf>,
     color_mode: ColorMode,
+    status_active: bool,
 }
 
 impl Default for EventConsoleWriter {
@@ -18,6 +20,7 @@ impl Default for EventConsoleWriter {
             filter: EventFilter::default(),
             base_path: None,
             color_mode: ColorMode::Auto,
+            status_active: false,
         }
     }
 }
@@ -82,7 +85,11 @@ impl EventConsoleWriter {
             }
         };
 
-        RenderedEvent { text, destination }
+        RenderedEvent {
+            text,
+            destination,
+            status: event.status,
+        }
     }
 
     fn render_marker(&self, marker: &MarkerEvent) -> RenderedEvent {
@@ -99,6 +106,7 @@ impl EventConsoleWriter {
         RenderedEvent {
             text: format!("marker {phase}{origin}: {} ({})", marker.label, marker.id),
             destination: ConsoleDestination::Stdout,
+            status: None,
         }
     }
 
@@ -161,6 +169,32 @@ impl EventLogListener for EventConsoleWriter {
             return;
         };
 
+        let stdout_is_terminal = std::io::stdout().is_terminal();
+        if stdout_is_terminal {
+            match rendered.status {
+                Some(MessageStatus::Started) => {
+                    if self.status_active {
+                        let _ = finish_status_line(std::io::stdout().lock());
+                    }
+                    let icon = style_label("◌", Style::Blue, self.should_use_color());
+                    let _ = write_status(std::io::stdout().lock(), &icon, &rendered.text, false);
+                    self.status_active = true;
+                    return;
+                }
+                Some(MessageStatus::Finished) => {
+                    let icon = style_label("✓", Style::Green, self.should_use_color());
+                    let _ = write_status(std::io::stdout().lock(), &icon, &rendered.text, true);
+                    self.status_active = false;
+                    return;
+                }
+                None if self.status_active => {
+                    let _ = finish_status_line(std::io::stdout().lock());
+                    self.status_active = false;
+                }
+                None => {}
+            }
+        }
+
         let _ = match rendered.destination {
             ConsoleDestination::Stdout => write_line(std::io::stdout().lock(), &rendered.text),
             ConsoleDestination::Stderr => write_line(std::io::stderr().lock(), &rendered.text),
@@ -168,9 +202,18 @@ impl EventLogListener for EventConsoleWriter {
     }
 }
 
+impl Drop for EventConsoleWriter {
+    fn drop(&mut self) {
+        if self.status_active && std::io::stdout().is_terminal() {
+            let _ = finish_status_line(std::io::stdout().lock());
+        }
+    }
+}
+
 struct RenderedEvent {
     text: String,
     destination: ConsoleDestination,
+    status: Option<MessageStatus>,
 }
 
 enum ConsoleDestination {
@@ -183,6 +226,7 @@ enum Style {
     Red,
     Yellow,
     Blue,
+    Green,
     Magenta,
 }
 
@@ -264,6 +308,7 @@ fn style_label(text: &str, style: Style, use_color: bool) -> String {
         Style::Red => "1;31",
         Style::Yellow => "1;33",
         Style::Blue => "1;34",
+        Style::Green => "1;32",
         Style::Magenta => "1;35",
     };
 
@@ -272,6 +317,20 @@ fn style_label(text: &str, style: Style, use_color: bool) -> String {
 
 fn write_line(mut writer: impl Write, message: &str) -> io::Result<()> {
     writer.write_all(message.as_bytes())?;
+    writer.write_all(b"\n")?;
+    writer.flush()
+}
+
+fn write_status(mut writer: impl Write, icon: &str, message: &str, finish: bool) -> io::Result<()> {
+    writer.write_all(b"\r\x1b[2K")?;
+    write!(writer, "{icon} {message}")?;
+    if finish {
+        writer.write_all(b"\n")?;
+    }
+    writer.flush()
+}
+
+fn finish_status_line(mut writer: impl Write) -> io::Result<()> {
     writer.write_all(b"\n")?;
     writer.flush()
 }
@@ -289,8 +348,8 @@ fn display_relative_path(path: &Path) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{ColorMode, EventConsoleWriter, EventFilter};
-    use crate::events::{Audience, Event, EventLocation, EventSpan, Level};
+    use super::{ColorMode, EventConsoleWriter, EventFilter, write_status};
+    use crate::events::{Audience, Event, EventLocation, EventSpan, Level, MessageStatus};
     use std::path::Path;
 
     #[test]
@@ -345,5 +404,28 @@ mod tests {
             .with_filter(EventFilter::new().with_audiences(vec![Audience::System]));
 
         assert!(writer.render(&Event::user_log("Checked 1 file")).is_none());
+    }
+
+    #[test]
+    fn preserves_status_metadata_for_console_rendering() {
+        let writer = EventConsoleWriter::new().with_color_mode(ColorMode::Never);
+        let rendered = writer
+            .render(&Event::user_status(
+                "Starting viewer",
+                MessageStatus::Started,
+            ))
+            .unwrap();
+
+        assert_eq!(rendered.text, "Starting viewer");
+        assert_eq!(rendered.status, Some(MessageStatus::Started));
+    }
+
+    #[test]
+    fn writes_a_status_update_on_one_terminal_line() {
+        let mut output = Vec::new();
+
+        write_status(&mut output, "✓", "Viewer ready", true).unwrap();
+
+        assert_eq!(output, b"\r\x1b[2K\xe2\x9c\x93 Viewer ready\n");
     }
 }

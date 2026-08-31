@@ -1,6 +1,8 @@
 use std::path::PathBuf;
 
-use super::{EventLocation, Level, MarkerEvent, MarkerId, MarkerPhase, MessageEvent};
+use super::{
+    EventLocation, Level, MarkerEvent, MarkerId, MarkerPhase, MessageEvent, MessageStatus,
+};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Audience {
@@ -26,6 +28,12 @@ impl Event {
 
     pub fn user_log(message: impl Into<String>) -> Self {
         Self::message(message, Level::Log, Audience::User, None)
+    }
+
+    pub(crate) fn user_status(message: impl Into<String>, status: MessageStatus) -> Self {
+        Self::Message(
+            MessageEvent::new(message, Level::Log, Audience::User, None, None).with_status(status),
+        )
     }
 
     pub fn user_warning(message: impl Into<String>) -> Self {

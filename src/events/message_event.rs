@@ -2,6 +2,12 @@ use std::path::PathBuf;
 
 use super::{Audience, EventLocation, Level};
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum MessageStatus {
+    Started,
+    Finished,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MessageEvent {
     pub message: String,
@@ -9,6 +15,7 @@ pub struct MessageEvent {
     pub level: Level,
     pub audience: Audience,
     pub origin: Option<String>,
+    pub(crate) status: Option<MessageStatus>,
 }
 
 impl MessageEvent {
@@ -25,7 +32,13 @@ impl MessageEvent {
             level,
             audience,
             origin,
+            status: None,
         }
+    }
+
+    pub(crate) fn with_status(mut self, status: MessageStatus) -> Self {
+        self.status = Some(status);
+        self
     }
 
     pub fn with_origin(mut self, origin: impl Into<String>) -> Self {

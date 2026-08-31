@@ -1,5 +1,6 @@
 use super::{
     Audience, Event, EventLocation, Level, MarkerEvent, MarkerId, MarkerPhase, MarkerRange,
+    MessageStatus,
 };
 use std::path::PathBuf;
 
@@ -64,6 +65,14 @@ impl EventLog {
 
     pub fn user_log(&mut self, origin: Option<&str>, message: impl Into<String>) {
         self.push(Event::user_log(message).with_origin_option(origin));
+    }
+
+    pub fn user_status_start(&mut self, origin: Option<&str>, message: impl Into<String>) {
+        self.push(Event::user_status(message, MessageStatus::Started).with_origin_option(origin));
+    }
+
+    pub fn user_status_finish(&mut self, origin: Option<&str>, message: impl Into<String>) {
+        self.push(Event::user_status(message, MessageStatus::Finished).with_origin_option(origin));
     }
 
     pub fn user_warning(&mut self, origin: Option<&str>, message: impl Into<String>) {

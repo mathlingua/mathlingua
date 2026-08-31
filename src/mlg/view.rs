@@ -52,10 +52,13 @@ pub(super) fn view_in(cwd: &Path, port: u16, event_log: &mut EventLog) -> io::Re
     // check-then-bind race with another process.
     let listener = bind_view_listener(port, event_log)?;
     let bound_port = listener.local_addr()?.port();
+    let url = format!("http://localhost:{bound_port}");
     let mut collection = SourceCollection::load(cwd, event_log, ORIGIN);
     if collection.source_files().is_empty() {
         return finish_view_setup_with_possible_errors(event_log);
     }
+
+    event_log.user_status_start(Some(ORIGIN), format!("Starting viewer at {url} …"));
 
     event_log.system_debug(
         Some(ORIGIN),
@@ -109,9 +112,6 @@ pub(super) fn view_in(cwd: &Path, port: u16, event_log: &mut EventLog) -> io::Re
         return Err(error);
     }
 
-    let url = format!("http://localhost:{bound_port}/");
-    event_log.user_log(Some(ORIGIN), format!("Starting viewer at {url}"));
-
     let (refresh_sender, refresh_receiver) = mpsc::channel();
     let stop_refresh = Arc::new(AtomicBool::new(false));
     let refresh_thread = spawn_view_data_refresher(
@@ -121,7 +121,7 @@ pub(super) fn view_in(cwd: &Path, port: u16, event_log: &mut EventLog) -> io::Re
         refresh_sender,
     );
 
-    event_log.user_log(Some(ORIGIN), format!("Viewer ready at {url}"));
+    event_log.user_status_finish(Some(ORIGIN), format!("Viewer ready — {url}"));
     let result = run_view_server(
         &server,
         &view_data_path,

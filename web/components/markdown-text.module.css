@@ -177,3 +177,24 @@
   background: color-mix(in srgb, var(--surface-alt) 64%, transparent);
   box-shadow: inset 0 0 1.2rem rgba(88, 51, 24, 0.05);
 }
+
+:global(html[data-theme^="field-guide"]) .markdown h1,
+:global(html[data-theme^="field-guide"]) .markdown h2,
+:global(html[data-theme^="field-guide"]) .markdown h3,
+:global(html[data-theme^="field-guide"]) .markdown h4,
+:global(html[data-theme^="field-guide"]) .markdown h5,
+:global(html[data-theme^="field-guide"]) .markdown h6 {
+  font-family: var(--font-display);
+  letter-spacing: 0.015em;
+}
+
+:global(html[data-theme^="field-guide"]) .markdown h2 {
+  padding-bottom: 0.28rem;
+  border-bottom: 2px solid var(--line-strong);
+}
+
+:global(html[data-theme^="field-guide"]) .markdownMlgCode,
+:global(html[data-theme^="field-guide"]) .markdown pre {
+  border-left: 6px solid var(--accent);
+  background: var(--surface-alt);
+}

@@ -19,6 +19,12 @@ export const VIEWER_THEMES = [
     label: "Manuscript Dark",
     colorScheme: "dark",
   },
+  { id: "field-guide", label: "Field Guide", colorScheme: "light" },
+  {
+    id: "field-guide-dark",
+    label: "Field Guide Dark",
+    colorScheme: "dark",
+  },
   { id: "retro", label: "Retro", colorScheme: "light" },
   { id: "retro-dark", label: "Retro Dark", colorScheme: "dark" },
   { id: "lcd", label: "LCD", colorScheme: "light" },

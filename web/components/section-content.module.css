@@ -36,3 +36,11 @@
   overflow-y: hidden;
   font-family: var(--font-body);
 }
+
+:global(html[data-theme^="field-guide"]) .sectionLabel {
+  color: var(--accent);
+  font-family: var(--font-ui);
+  font-size: 0.88rem;
+  font-weight: 800;
+  letter-spacing: 0.035em;
+}

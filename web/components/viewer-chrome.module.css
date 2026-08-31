@@ -302,6 +302,53 @@
     var(--surface);
 }
 
+:global(html[data-theme^="field-guide"]) .chrome {
+  border-top: 7px solid var(--accent);
+  border-bottom: 2px solid var(--line-strong);
+  background: var(--chrome-bg);
+  box-shadow: 0 2px 0 color-mix(in srgb, var(--ink) 12%, transparent);
+  backdrop-filter: blur(12px);
+}
+
+:global(html[data-theme^="field-guide"]) .button,
+:global(html[data-theme^="field-guide"]) .typesButton,
+:global(html[data-theme^="field-guide"]) .themeIconButton {
+  border: 1px solid transparent;
+  color: var(--ink);
+}
+
+:global(html[data-theme^="field-guide"]) .button:hover,
+:global(html[data-theme^="field-guide"]) .typesButton:hover,
+:global(html[data-theme^="field-guide"]) .typesButtonActive,
+:global(html[data-theme^="field-guide"]) .themeIconButton:hover,
+:global(html[data-theme^="field-guide"])
+  .themeIconButton[aria-expanded="true"] {
+  border-color: var(--line-strong);
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
+
+:global(html[data-theme^="field-guide"]) .themePopover {
+  border-color: var(--line-strong);
+  background: var(--surface);
+  box-shadow: 5px 5px 0 color-mix(in srgb, var(--ink) 22%, transparent);
+}
+
+:global(html[data-theme^="field-guide"]) .themeOption {
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+}
+
+:global(html[data-theme^="field-guide"]) .themeOptionActive {
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
+
+:global(html[data-theme^="field-guide"]) .themeOptionActive .themeCheckIcon {
+  color: currentColor;
+}
+
 @media (max-width: 860px) {
   .chrome {
     grid-template-columns: 2rem minmax(0, 1fr) auto;

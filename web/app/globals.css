@@ -278,6 +278,125 @@ html[data-theme="manuscript-dark"] {
   --prose-heading-weight: 600;
 }
 
+/* A field-reference theme with the visual grammar of classic technical
+   handbooks: warm stock, emphatic rules, vermilion indexing marks, compact
+   sans-serif headings, and restrained print texture. */
+html[data-theme="field-guide"] {
+  color-scheme: light;
+  --font-body: Charter, "Bitstream Charter", Georgia, "Times New Roman", serif;
+  --font-display:
+    "Avenir Next Condensed", "Arial Narrow", "Franklin Gothic Medium",
+    "Helvetica Neue", Arial, sans-serif;
+  --font-ui:
+    "Avenir Next", Avenir, "Helvetica Neue", "Nimbus Sans", Arial, sans-serif;
+  --font-mono:
+    "SFMono-Regular", "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  --page-bg: #d4cfc2;
+  --surface: #fbf8ef;
+  --surface-alt: #ece6da;
+  --ink: #1c1a17;
+  --muted: #7c7569;
+  --muted-strong: #5c554b;
+  --line: #c8c0b2;
+  --line-strong: #2d2924;
+  --accent: #b6472d;
+  --accent-soft: #ead6c7;
+  --shadow: 0 4px 12px rgba(40, 35, 28, 0.12);
+  --chrome-bg: rgba(247, 243, 234, 0.97);
+  --card-bg: #fffdf7;
+  --definition-bg: #f2ede3;
+  --definition-shadow: 0 4px 12px rgba(40, 35, 28, 0.1);
+  --control-shadow: none;
+  --syntax-comment: #81796d;
+  --syntax-command: #a83e27;
+  --syntax-keyword: #765b24;
+  --syntax-label: #395f70;
+  --syntax-operator: #9a422c;
+  --syntax-placeholder: #346b60;
+  --syntax-punctuation: #6e675d;
+  --syntax-string: #65621f;
+  --radius-card: 0;
+  --radius-control: 0;
+  --radius-popover: 0;
+  --radius-option: 0;
+  --radius-nav: 0;
+  --radius-definition: 0;
+  --radius-code: 0.08rem;
+  --radius-code-block: 0;
+  --radius-inline-ref: 0.08rem;
+  --card-border-width: 2px;
+  --popover-border-width: 2px;
+  --definition-border-width: 2px;
+  --divider-border-width: 2px;
+  --accent-contrast: #fffaf0;
+  --heading-color: var(--ink);
+  --heading-weight: 800;
+  --section-heading-color: var(--ink);
+  --section-heading-weight: 700;
+  --card-heading-color: var(--ink);
+  --card-heading-weight: 800;
+  --prose-heading-color: var(--ink);
+  --prose-heading-weight: 800;
+}
+
+html[data-theme="field-guide-dark"] {
+  color-scheme: dark;
+  --font-body: Charter, "Bitstream Charter", Georgia, "Times New Roman", serif;
+  --font-display:
+    "Avenir Next Condensed", "Arial Narrow", "Franklin Gothic Medium",
+    "Helvetica Neue", Arial, sans-serif;
+  --font-ui:
+    "Avenir Next", Avenir, "Helvetica Neue", "Nimbus Sans", Arial, sans-serif;
+  --font-mono:
+    "SFMono-Regular", "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  --page-bg: #0d1011;
+  --surface: #171b1c;
+  --surface-alt: #24292a;
+  --ink: #f0ede4;
+  --muted: #918d84;
+  --muted-strong: #c3beb4;
+  --line: #414849;
+  --line-strong: #d0cabf;
+  --accent: #ff7658;
+  --accent-soft: #432a24;
+  --shadow: 0 5px 16px rgba(0, 0, 0, 0.38);
+  --chrome-bg: rgba(20, 24, 25, 0.97);
+  --card-bg: #1a1e1f;
+  --definition-bg: #202526;
+  --definition-shadow: 0 5px 16px rgba(0, 0, 0, 0.34);
+  --control-shadow: none;
+  --syntax-comment: #89867e;
+  --syntax-command: #ff8367;
+  --syntax-keyword: #d9b36a;
+  --syntax-label: #7fb6c9;
+  --syntax-operator: #ef8b6e;
+  --syntax-placeholder: #7fc0b2;
+  --syntax-punctuation: #aaa69e;
+  --syntax-string: #c8c36e;
+  --radius-card: 0;
+  --radius-control: 0;
+  --radius-popover: 0;
+  --radius-option: 0;
+  --radius-nav: 0;
+  --radius-definition: 0;
+  --radius-code: 0.08rem;
+  --radius-code-block: 0;
+  --radius-inline-ref: 0.08rem;
+  --card-border-width: 2px;
+  --popover-border-width: 2px;
+  --definition-border-width: 2px;
+  --divider-border-width: 2px;
+  --accent-contrast: #111516;
+  --heading-color: var(--ink);
+  --heading-weight: 800;
+  --section-heading-color: var(--ink);
+  --section-heading-weight: 700;
+  --card-heading-color: var(--ink);
+  --card-heading-weight: 800;
+  --prose-heading-color: var(--ink);
+  --prose-heading-weight: 800;
+}
+
 html[data-theme="flat-gray"] {
   color-scheme: light;
   --page-bg: #eeeeee;
@@ -807,6 +926,33 @@ html[data-theme="manuscript-dark"] body {
 html[data-theme="manuscript-dark"] body::after {
   mix-blend-mode: screen;
   opacity: 0.16;
+}
+
+html[data-theme^="field-guide"] body {
+  background:
+    radial-gradient(
+      circle at 12% 8%,
+      color-mix(in srgb, var(--accent) 6%, transparent),
+      transparent 24rem
+    ),
+    var(--page-bg);
+}
+
+html[data-theme^="field-guide"] body::after {
+  content: "";
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    112deg,
+    transparent 0,
+    transparent 3px,
+    color-mix(in srgb, var(--ink) 8%, transparent) 3.5px,
+    transparent 4px
+  );
+  background-size: 9px 9px;
+  opacity: 0.06;
 }
 
 html[data-theme="lcd"] body::after,

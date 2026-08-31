@@ -345,6 +345,60 @@
   color: var(--accent);
 }
 
+:global(html[data-theme^="field-guide"]) .cardFace {
+  border-color: var(--line-strong);
+  box-shadow: var(--shadow);
+}
+
+:global(html[data-theme^="field-guide"]) .header {
+  margin: -1.35rem -1.6rem 0.85rem;
+  padding: 0.82rem 4rem 0.68rem 1.6rem;
+  border-bottom: 2px solid var(--line-strong);
+  background: var(--accent-soft);
+}
+
+:global(html[data-theme^="field-guide"]) .cardFaceClosable .header {
+  margin-top: -3rem;
+  padding-top: 0.9rem;
+}
+
+:global(html[data-theme^="field-guide"]) .heading {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+}
+
+:global(html[data-theme^="field-guide"]) .headingLatex {
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+:global(html[data-theme^="field-guide"]) .resourceMetaLabel {
+  color: var(--accent);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+:global(html[data-theme^="field-guide"]) .iconToggle:hover,
+:global(html[data-theme^="field-guide"]) .documentedToggle:hover {
+  border-color: var(--line-strong);
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
+
+@media (max-width: 520px) {
+  :global(html[data-theme^="field-guide"]) .header {
+    margin-right: -1rem;
+    margin-left: -1rem;
+    padding-left: 1rem;
+  }
+}
+
 @media (max-width: 860px) {
   .card {
     width: 100%;

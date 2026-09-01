@@ -1226,6 +1226,9 @@ fn component_type_facts(
             for fact in facts_from_is_or_via_item_in_context(item, &fact_context) {
                 fact_context.add_fact(fact);
             }
+            for fact in facts_from_is_or_via_views(item, &fact_context, registry) {
+                fact_context.add_fact(fact);
+            }
         }
     }
 
@@ -1372,6 +1375,45 @@ fn facts_from_extends_via(
         return Vec::new();
     };
     let subject = primary_subject_key(&clause.statement.subject);
+    facts_from_type_via(&subject, ty, via, context, registry)
+}
+
+/// The component facts assigned by a `specifies:` `is ... via ...` item,
+/// including through a `[:label:]` wrapper.
+fn facts_from_is_or_via_views(
+    item: &IsOrViaItem,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+) -> Vec<TypeFact> {
+    match item {
+        IsOrViaItem::IsVia(statement) => facts_from_is_via_view(statement, context, registry),
+        IsOrViaItem::Labeled { item, .. } => facts_from_is_or_via_views(item, context, registry),
+        IsOrViaItem::Declaration(_) | IsOrViaItem::Have(_) => Vec::new(),
+    }
+}
+
+fn facts_from_is_via_view(
+    statement: &IsViaStatement,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+) -> Vec<TypeFact> {
+    let subject = primary_subject_key(&statement.is_statement.subject);
+    facts_from_type_via(
+        &subject,
+        &statement.is_statement.ty,
+        &statement.via,
+        context,
+        registry,
+    )
+}
+
+fn facts_from_type_via(
+    subject: &str,
+    ty: &TypeExpression,
+    via: &FormOrDeclaration,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+) -> Vec<TypeFact> {
     match &via.kind {
         FormOrDeclarationKind::Name(name) => {
             fact_from_type_key_assertion(name.clone(), ty, context)
@@ -1380,16 +1422,42 @@ fn facts_from_extends_via(
         }
         FormOrDeclarationKind::TupleDeclaration { form, .. } => {
             let via_names = tuple_form_component_names(form);
-            let Some((_, signature)) = key_for_type_expression(ty) else {
+            let Some(info) = component_type_info_for_via(ty, context, registry) else {
                 return Vec::new();
             };
-            let Some(info) = registry.type_infos.get(&signature) else {
+            if info.component_types.len() != via_names.len() {
                 return Vec::new();
-            };
-            instantiate_component_type_facts(info, &subject, &via_names, context)
+            }
+            instantiate_component_type_facts(info, subject, &via_names, context)
         }
         _ => Vec::new(),
     }
+}
+
+/// Component metadata for a type used by a `via` view. A refinement preserves
+/// the component structure of its base type, so its view is instantiated from
+/// that base definition.
+fn component_type_info_for_via<'a>(
+    ty: &TypeExpression,
+    context: &TypeContext,
+    registry: &'a SignatureRegistry,
+) -> Option<&'a DefinitionTypeInfo> {
+    let signature = match ty {
+        TypeExpression::Command(command) => {
+            let active = active_command_expression(command, context);
+            shape_for_command_expression(&active).signature
+        }
+        TypeExpression::RefinedCommand(command) => {
+            let active = active_refined_command_expression(command, context);
+            shape_for_refined_command_base(&active).signature
+        }
+        TypeExpression::Builtin { .. }
+        | TypeExpression::Tuple(_)
+        | TypeExpression::Set(_)
+        | TypeExpression::Function(_)
+        | TypeExpression::Parameter { .. } => return None,
+    };
+    registry.type_infos.get(&signature)
 }
 
 /// Adds the component types the definition's `is … via …` clauses assign
@@ -1565,10 +1633,19 @@ fn collect_type_extension_rules(
         return;
     };
 
-    for fact in extends_clauses(declares, extends)
+    let mut facts = extends_clauses(declares, extends)
         .into_iter()
         .flat_map(facts_from_extends_clause)
+        .collect::<Vec<_>>();
+    if let TopLevelItem::Declares(group) = item
+        && let Some(specifies) = &group.specifies
     {
+        for specification in &specifies.arguments {
+            collect_specifies_subtype_facts(specification, &mut facts);
+        }
+    }
+
+    for fact in facts {
         let subject = match &fact {
             TypeFact::Is { subject, .. }
             | TypeFact::Spec { subject, .. }
@@ -1583,6 +1660,16 @@ fn collect_type_extension_rules(
             parameters: info.parameters.clone(),
             target: fact,
         });
+    }
+}
+
+fn collect_specifies_subtype_facts(item: &IsOrViaItem, facts: &mut Vec<TypeFact>) {
+    match item {
+        IsOrViaItem::IsVia(statement) => {
+            facts.extend(facts_from_is_statement(&statement.is_statement));
+        }
+        IsOrViaItem::Labeled { item, .. } => collect_specifies_subtype_facts(item, facts),
+        IsOrViaItem::Declaration(_) | IsOrViaItem::Have(_) => {}
     }
 }
 
@@ -4031,6 +4118,9 @@ fn assume_is_or_via_item(
             for fact in facts_from_is_statement(&statement.is_statement) {
                 context.add_fact(fact);
             }
+            for fact in facts_from_is_via_view(statement, context, registry) {
+                context.add_fact(fact);
+            }
         }
         IsOrViaItem::Declaration(statement) => {
             assume_declaration_statement(statement, context, path, locator, registry, event_log);
@@ -4054,7 +4144,7 @@ fn assume_is_or_via_item(
             if establish_labeled_specification(
                 label, item, context, path, locator, registry, event_log,
             ) {
-                assume_is_or_via_item_facts(item, context);
+                assume_is_or_via_item_facts(item, context, registry);
             } else {
                 assume_is_or_via_item(item, context, path, locator, registry, event_log);
             }
@@ -4221,11 +4311,18 @@ fn is_or_via_item_subject_key(item: &IsOrViaItem) -> Option<String> {
 /// Contributes the typing facts of an `IsOrViaItem` to `context` without checking
 /// it — used after a labeled item has already been established via a
 /// `Justification:` entry, so the specification is taken as given.
-fn assume_is_or_via_item_facts(item: &IsOrViaItem, context: &mut TypeContext) {
+fn assume_is_or_via_item_facts(
+    item: &IsOrViaItem,
+    context: &mut TypeContext,
+    registry: &SignatureRegistry,
+) {
     match item {
         IsOrViaItem::IsVia(statement) => {
             declare_is_subject(&statement.is_statement.subject, context);
             for fact in facts_from_is_statement(&statement.is_statement) {
+                context.add_fact(fact);
+            }
+            for fact in facts_from_is_via_view(statement, context, registry) {
                 context.add_fact(fact);
             }
         }
@@ -4243,7 +4340,7 @@ fn assume_is_or_via_item_facts(item: &IsOrViaItem, context: &mut TypeContext) {
                 }
             }
         }
-        IsOrViaItem::Labeled { item, .. } => assume_is_or_via_item_facts(item, context),
+        IsOrViaItem::Labeled { item, .. } => assume_is_or_via_item_facts(item, context, registry),
     }
 }
 
@@ -5159,6 +5256,7 @@ fn validate_declares_target_symbol_specifications(
     registry: &SignatureRegistry,
     event_log: &mut EventLog,
 ) {
+    validate_declares_specifies_via_views(group, context, path, locator, registry, event_log);
     let mut covered = BTreeSet::new();
     covered.insert(described_target_subject_key(&group.declares.argument));
     collect_declares_mapping_alias_names(&group.declares.argument, &mut covered);
@@ -5174,6 +5272,146 @@ fn validate_declares_target_symbol_specifications(
     validate_single_symbol_specification(
         group, &symbols, context, path, locator, registry, event_log,
     );
+}
+
+/// Validates the literal component slices used by `specifies:` subtype views.
+/// Every entry must name an existing `Declares:` tuple component verbatim; a
+/// view cannot compute a component, rename it, or repeat it.
+fn validate_declares_specifies_via_views(
+    group: &DeclaresGroup,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    let declared = declares_target_component_names(&group.declares.argument);
+    let declared_set = declared.iter().cloned().collect::<BTreeSet<_>>();
+    let described = described_target_subject_key(&group.declares.argument);
+    let Some(specifies) = &group.specifies else {
+        return;
+    };
+    for item in &specifies.arguments {
+        validate_is_or_via_view(
+            item,
+            &declared_set,
+            &described,
+            context,
+            path,
+            locator,
+            registry,
+            event_log,
+        );
+    }
+}
+
+fn validate_is_or_via_view(
+    item: &IsOrViaItem,
+    declared: &BTreeSet<String>,
+    described: &str,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    let statement = match item {
+        IsOrViaItem::IsVia(statement) => statement,
+        IsOrViaItem::Labeled { item, .. } => {
+            return validate_is_or_via_view(
+                item, declared, described, context, path, locator, registry, event_log,
+            );
+        }
+        IsOrViaItem::Declaration(_) | IsOrViaItem::Have(_) => return,
+    };
+
+    let subject = primary_subject_key(&statement.is_statement.subject);
+    if subject != described {
+        emit_error(
+            event_log,
+            path,
+            locator.locate_symbol(&subject),
+            format!(
+                "A `specifies:` subtype view must describe `{described}`, but this item describes `{subject}`"
+            ),
+        );
+    }
+
+    let Some(names) = exact_via_component_names(&statement.via) else {
+        emit_error(
+            event_log,
+            path,
+            None,
+            "A `specifies:` `via` view must contain only symbols from the `Declares:` tuple exactly as written",
+        );
+        return;
+    };
+
+    let mut seen = BTreeSet::new();
+    for name in &names {
+        if !declared.contains(name) {
+            emit_error(
+                event_log,
+                path,
+                locator.locate_symbol(name),
+                format!(
+                    "Symbol `{name}` in a `specifies:` `via` view is not a component of the `Declares:` tuple"
+                ),
+            );
+        }
+        if !seen.insert(name.clone()) {
+            emit_error(
+                event_log,
+                path,
+                locator.locate_symbol(name),
+                format!("A `specifies:` `via` view cannot repeat target symbol `{name}`"),
+            );
+        }
+    }
+
+    if matches!(
+        &statement.via.kind,
+        FormOrDeclarationKind::TupleDeclaration { .. }
+    ) && let Some(info) =
+        component_type_info_for_via(&statement.is_statement.ty, context, registry)
+        && info.component_types.len() != names.len()
+    {
+        emit_error(
+            event_log,
+            path,
+            None,
+            format!(
+                "The subtype in a `specifies:` item has {} components, but its `via` view names {}",
+                info.component_types.len(),
+                names.len()
+            ),
+        );
+    }
+}
+
+fn exact_via_component_names(via: &FormOrDeclaration) -> Option<Vec<String>> {
+    match &via.kind {
+        FormOrDeclarationKind::Name(name) => Some(vec![name.clone()]),
+        FormOrDeclarationKind::TupleDeclaration { name: None, form } => form
+            .elements
+            .iter()
+            .map(|element| match element {
+                TupleFormElement::Form(FormOrDeclaration {
+                    kind: FormOrDeclarationKind::Name(name),
+                    ..
+                }) => Some(name.clone()),
+                TupleFormElement::Operator(operator) => Some(operator.text.clone()),
+                TupleFormElement::Form(_) => None,
+            })
+            .collect(),
+        FormOrDeclarationKind::MappingParameter { .. }
+        | FormOrDeclarationKind::FunctionDeclaration { .. }
+        | FormOrDeclarationKind::TupleDeclaration { name: Some(_), .. }
+        | FormOrDeclarationKind::SetDeclaration { .. }
+        | FormOrDeclarationKind::InfixOperator { .. }
+        | FormOrDeclarationKind::PrefixOperator { .. }
+        | FormOrDeclarationKind::PostfixOperator { .. } => None,
+    }
 }
 
 /// A function declaration alias names the same mapping as the function form,
@@ -5418,10 +5656,12 @@ fn validate_declaration_target_symbol_specifications(
 /// (`*` and `e` above) still have to be typed in `specifies:`; that is the
 /// complementary rule in [`validate_target_symbol_specifications`].
 ///
-/// All of the group's subtype clauses count as a *single* source. `extends:`
-/// exists precisely so one definition can extend several types, so two clauses
-/// may legitimately name the same subject (`X is \bar via (A, B)` and
-/// `X is \baz via (B, C)`) or reach the same component through different views.
+/// All of the group's `extends:` subtype clauses count as a *single* source.
+/// `extends:` exists precisely so one definition can extend several types, so
+/// two clauses may legitimately name the same subject (`X is \bar via (A, B)`
+/// and `X is \baz via (B, C)`) or reach the same component through different
+/// views. Separate subtype views in `specifies:` may overlap only when their
+/// instantiated facts for that component are identical.
 ///
 /// `when:` and `using:` are not specification sources in this sense: `when:`
 /// states what a *use* of the command requires and `using:` introduces auxiliary
@@ -5431,6 +5671,7 @@ struct TargetSpecificationSite {
     symbol: String,
     source: &'static str,
     facts: Vec<TypeFact>,
+    subtype_view: bool,
 }
 
 fn validate_single_symbol_specification(
@@ -5463,13 +5704,16 @@ fn validate_single_symbol_specification(
         facts: facts_for_subject(&extended_facts, &symbol),
         symbol,
         source: extends_source,
+        subtype_view: false,
     }));
 
     if let Some(specifies) = &group.specifies {
         for item in &specifies.arguments {
             let mut item_symbols = BTreeSet::new();
-            collect_is_or_via_covered_symbols(item, &mut item_symbols);
-            let item_facts = facts_from_is_or_via_item_in_context(item, context);
+            collect_is_or_via_site_symbols(item, &mut item_symbols);
+            let mut item_facts = facts_from_is_or_via_item_in_context(item, context);
+            item_facts.extend(facts_from_is_or_via_views(item, context, registry));
+            let subtype_view = is_or_via_item_is_subtype_view(item);
             sites.extend(
                 item_symbols
                     .into_iter()
@@ -5477,6 +5721,7 @@ fn validate_single_symbol_specification(
                         facts: facts_for_subject(&item_facts, &symbol),
                         symbol,
                         source: "`specifies:`",
+                        subtype_view,
                     }),
             );
         }
@@ -5492,6 +5737,21 @@ fn validate_single_symbol_specification(
                 first.insert(site.symbol.clone(), site);
             }
             Some(previous) => {
+                if site.subtype_view && previous.subtype_view {
+                    if specification_facts_match(&site.facts, &previous.facts) {
+                        continue;
+                    }
+                    emit_error(
+                        event_log,
+                        path,
+                        locator.locate_symbol(&site.symbol),
+                        format!(
+                            "Conflicting subtype specifications for target symbol `{}`; overlapping `via` views must assign it exactly the same type",
+                            site.symbol
+                        ),
+                    );
+                    continue;
+                }
                 if is_additive_refinement(&site, previous) {
                     continue;
                 }
@@ -5507,6 +5767,37 @@ fn validate_single_symbol_specification(
             }
         }
     }
+}
+
+fn collect_is_or_via_site_symbols(item: &IsOrViaItem, symbols: &mut BTreeSet<String>) {
+    match item {
+        IsOrViaItem::IsVia(statement) => {
+            collect_form_or_declaration_target_symbols(&statement.via, symbols)
+        }
+        IsOrViaItem::Declaration(statement) => {
+            collect_declaration_statement_covered_symbols(statement, symbols)
+        }
+        IsOrViaItem::Have(group) => {
+            for statement in have_group_declarations(group) {
+                collect_declaration_statement_covered_symbols(statement, symbols);
+            }
+        }
+        IsOrViaItem::Labeled { item, .. } => collect_is_or_via_site_symbols(item, symbols),
+    }
+}
+
+fn is_or_via_item_is_subtype_view(item: &IsOrViaItem) -> bool {
+    match item {
+        IsOrViaItem::IsVia(_) => true,
+        IsOrViaItem::Labeled { item, .. } => is_or_via_item_is_subtype_view(item),
+        IsOrViaItem::Declaration(_) | IsOrViaItem::Have(_) => false,
+    }
+}
+
+fn specification_facts_match(current: &[TypeFact], previous: &[TypeFact]) -> bool {
+    !current.is_empty()
+        && current.len() == previous.len()
+        && current.iter().all(|fact| previous.contains(fact))
 }
 
 fn facts_for_subject(facts: &[TypeFact], subject: &str) -> Vec<TypeFact> {

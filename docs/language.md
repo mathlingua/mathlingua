@@ -1468,9 +1468,11 @@ operands.
 **`Declares` target symbols.** Each must be typed directly or through the type
 the definition extends (`Missing specification for target symbol \`{symbol}\`;
 specify it directly or through the type the \`Declares:\` target extends`), and
-**at most once**. A symbol the subtype clauses already type — including the
-components a `via` reaches — may not be typed again in `specifies:`, unless the
-later type is a refinement of that same base type. Refinements are additive, so
+**at most once**, except for compatible overlaps between subtype views stated in
+`specifies:`. A symbol the target or `extends:` subtype clauses already type —
+including the components a `via` reaches — may not be typed again in
+`specifies:`, unless the later type is a refinement of that same base type.
+Refinements are additive, so
 an inherited `* is \binary.operation:on{X}` may be strengthened by
 `* is \(associative)::binary.operation:on{X}`; replacing it with an unrelated
 type such as `\function` is still a duplicate specification:
@@ -1483,6 +1485,25 @@ type such as `\function` is still a duplicate specification:
 All of a group's subtype clauses count as one source, so two `extends:` clauses
 may name the same subject or reach the same component through different views.
 `when:` and `using:` are not specification sources for this rule.
+
+Several `is ... via ...` items in `specifies:` may instead state that different
+slices of one tuple implement different supertypes:
+
+```text
+[\ring]
+Declares: R ::= (X, +, *, 0, 1)
+specifies:
+. R is \(abelian)::group via (X, +, 0)
+. R is \monoid via (X, *, 1)
+```
+
+The left subject of each item must be the thing being declared (`R` here). Each
+`via` entry must be a component symbol from the `Declares:` tuple, written
+exactly as declared; expressions, renamed forms, foreign symbols, and repeated
+symbols are invalid. The supertype supplies the component types positionally.
+Two such views may overlap only when the inferred type is exactly the same — in
+the example both views specify `X is \set`. Different inferred types produce a
+conflicting-subtype-specification error.
 
 **`Refines` target symbols.** These may also be inherited: a symbol the refined
 base type already declares (through the type that base extends, its
@@ -1829,6 +1850,11 @@ Because `via` supplies those types, the `specifies:` section only needs to type
 components no `via` covers (for `\group` above, `*` and `e`) — and it may not
 retype the ones a `via` does cover, since a symbol is specified exactly once. A
 `via` without an `is` relation to accompany it is an error.
+
+The same mapping can be written as an `is ... via ...` item inside
+`specifies:` when a declaration needs several subtype views. In that spelling,
+each view must be a literal slice of the `Declares:` tuple, and overlapping
+components must receive exactly matching types from every supertype.
 
 An operator-form target states its type about the operator itself, so
 `Declares: x_ * y_ is \function:on{X \.cross./ X}:to{X}` records the fact about

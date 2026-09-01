@@ -3795,7 +3795,7 @@ pub fn parse_is_via_statement(input: &str) -> Result<IsViaStatement, ParseError>
     let input = input.trim();
     let index = find_top_level_substring(input, " via ")
         .ok_or_else(|| ParseError::custom("expected top-level ` via `"))?;
-    let statement = parse_is_statement(&input[..index], false)?;
+    let statement = parse_is_statement(&input[..index], true)?;
     let via = parse_form_or_declaration(&input[index + 5..])?;
 
     Ok(IsViaStatement {
@@ -6724,6 +6724,13 @@ mod tests {
         let item = parse_is_via_statement(r#"G is \set via X"#)
             .expect("expected single-form via statement");
         assert!(matches!(item.via.kind, FormOrDeclarationKind::Name(ref name) if name == "X"));
+
+        let item = parse_is_via_statement(r#"R is \(abelian)::group via (X, +, 0)"#)
+            .expect("expected refined is-via statement");
+        assert!(matches!(
+            item.is_statement.ty,
+            TypeExpression::RefinedCommand(_)
+        ));
     }
 
     #[test]

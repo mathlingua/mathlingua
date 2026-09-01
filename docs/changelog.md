@@ -5,6 +5,18 @@ and CLI behavior implemented in this repository. It is intentionally rule-focuse
 each section captures not only the feature, but also the conditions under which
 the feature is valid.
 
+## Subtype Views In `specifies:`
+
+A `Declares:` group may now use several `is ... via ...` items in `specifies:`
+to map different slices of its tuple onto different supertypes. Refined types
+are accepted before `via`. Every view must consist only of component symbols
+from the `Declares:` tuple, written verbatim, and its left subject must be the
+thing the group declares; computed forms, foreign symbols, and repeated symbols
+are rejected. Each supertype supplies the mapped
+components' types positionally. Views may overlap only when they assign the
+overlapping symbol exactly the same type; otherwise the checker reports a
+conflicting subtype specification.
+
 ## Directed Relations
 
 Top-level `Relation:` items now have two distinct endpoint shapes. The existing

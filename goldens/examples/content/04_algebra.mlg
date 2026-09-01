@@ -32,6 +32,27 @@ Documented:
 Id: "bc7fdaea-a45a-4569-8607-78555d8a03eb"
 
 
+-- A refinement preserves its base type's component types.
+[\(abelian)::group]
+Refines: G ::= (X, *, e)
+Documented:
+. adjective: "abelian"
+Id: "9ed8036e-561f-4fb9-80bf-2bd214428bc7"
+
+
+-- Subtype views may live in `specifies:` when different slices of the target
+-- tuple implement different types. The shared `X` component is valid because
+-- both the abelian group and monoid views specify it as a set.
+[\ring]
+Declares: R ::= (X, +, *, 0, 1)
+specifies:
+. R is \(abelian)::group via (X, +, 0)
+. R is \monoid via (X, *, 1)
+Documented:
+. called: "ring"
+Id: "a73b420d-f146-4142-bf5d-270916506a47"
+
+
 -- `extends:` is the same clause written as a section. It exists for what a
 -- target cannot express: extending several types at once, each through a
 -- different view of the tuple.
@@ -57,3 +78,17 @@ then:
 Documented:
 . called: "a group is a set"
 Id: "da7562a6-f7e7-4e0e-ba84-30ed132faeb1"
+
+
+-- Both subtype slices contribute component facts to the resulting type.
+Theorem:
+given: R ::= (X, +, *, 0, 1) is \ring
+then:
+. R is? \(abelian)::group
+. R is? \monoid
+. X is? \set
+. 0 "in"? X
+. 1 "in"? X
+Documented:
+. called: "a ring inherits both subtype views"
+Id: "60f94c0e-e5c7-40cb-b082-f2ab7bb0f6db"

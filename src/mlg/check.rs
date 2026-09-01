@@ -4947,6 +4947,208 @@ then:
     }
 
     #[test]
+    fn check_accepts_compatible_overlapping_specifies_subtype_views() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("overlapping-subtype-views.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Declares: X
+    Documented:
+    . called: "set"
+
+    [\left.triple]
+    Declares: L ::= (A, B, C)
+    specifies:
+    . A is \set
+    . B is \set
+    . C is \set
+    Documented:
+    . called: "left triple"
+
+    [\(refined)::left.triple]
+    Refines: L ::= (A, B, C)
+    Documented:
+    . adjective: "refined"
+
+    [\right.triple]
+    Declares: R ::= (U, V, W)
+    specifies:
+    . U is \set
+    . V is \set
+    . W is \set
+    Documented:
+    . called: "right triple"
+
+    [\combined]
+    Declares: R ::= (X, +, *, 0, 1)
+    specifies:
+    . R is \(refined)::left.triple via (X, +, 0)
+    . R is \right.triple via (X, *, 1)
+    Documented:
+    . called: "combined"
+
+    Theorem:
+    given: R ::= (X, +, *, 0, 1) is \combined
+    then:
+    . R is? \(refined)::left.triple
+    . R is? \right.triple
+    . X is? \set
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("overlapping-subtype-views.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_rejects_conflicting_overlapping_specifies_subtype_views() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("conflicting-subtype-views.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Declares: X
+    Documented:
+    . called: "set"
+
+    [\other]
+    Declares: X
+    Documented:
+    . called: "other"
+
+    [\left.pair]
+    Declares: L ::= (A, B)
+    specifies:
+    . A is \set
+    . B is \set
+    Documented:
+    . called: "left pair"
+
+    [\right.pair]
+    Declares: R ::= (U, V)
+    specifies:
+    . U is \other
+    . V is \set
+    Documented:
+    . called: "right pair"
+
+    [\combined]
+    Declares: R ::= (X, Y, Z)
+    specifies:
+    . R is \left.pair via (X, Y)
+    . R is \right.pair via (X, Z)
+    Documented:
+    . called: "combined"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("conflicting-subtype-views.mlg")],
+            &mut event_log,
+        );
+
+        assert!(user_events(&event_log).iter().any(|event| {
+            event.as_message().is_some_and(|message| {
+                message.message
+                    == "Conflicting subtype specifications for target symbol `X`; overlapping `via` views must assign it exactly the same type"
+            })
+        }), "{:#?}", user_events(&event_log));
+    }
+
+    #[test]
+    fn check_rejects_nonliteral_or_foreign_specifies_via_components() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("invalid-subtype-view.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Declares: X
+    Documented:
+    . called: "set"
+
+    [\triple]
+    Declares: T ::= (A, B, C)
+    specifies:
+    . A is \set
+    . B is \set
+    . C is \set
+    Documented:
+    . called: "triple"
+
+    [\bad]
+    Declares: R ::= (X, Y, Z)
+    specifies:
+    . R is \triple via (X, f(y_), Z)
+    . R is \triple via (X, Q, Z)
+    . R is \triple via (X, Y)
+    . R is \triple via (X, X, Z)
+    . X is \triple via (X, Y, Z)
+    Documented:
+    . called: "bad"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("invalid-subtype-view.mlg")],
+            &mut event_log,
+        );
+
+        let messages = user_events(&event_log)
+            .iter()
+            .filter_map(|event| event.as_message().map(|message| message.message.clone()))
+            .collect::<Vec<_>>();
+        assert!(
+            messages.iter().any(|message| message.contains(
+                "must contain only symbols from the `Declares:` tuple exactly as written"
+            )),
+            "{messages:#?}"
+        );
+        assert!(
+            messages.iter().any(|message| message
+                .contains("Symbol `Q` in a `specifies:` `via` view is not a component")),
+            "{messages:#?}"
+        );
+        assert!(
+            messages.iter().any(|message| message.contains(
+                "A `specifies:` subtype view must describe `R`, but this item describes `X`"
+            )),
+            "{messages:#?}"
+        );
+        assert!(
+            messages.iter().any(|message| message.contains(
+                "The subtype in a `specifies:` item has 3 components, but its `via` view names 2"
+            )),
+            "{messages:#?}"
+        );
+        assert!(
+            messages.iter().any(|message| message
+                .contains("A `specifies:` `via` view cannot repeat target symbol `X`")),
+            "{messages:#?}"
+        );
+    }
+
+    #[test]
     fn check_applies_every_extends_clause_of_a_declares_group() {
         // An `extends:` section may name several types, each through a
         // different `via` view of the target's tuple — the case a single `is`

@@ -512,7 +512,7 @@ The structural parser delegates section content to formulation parsers as follow
 
 Clause formulation arguments are tried as `parse_refined_declaration_statement`, then `parse_expression`. This means helper-only forms such as comma-separated `is` subjects or quoted operators with spaces are represented as declaration statements, while expression-compatible facts can still be parsed as declaration statements when they appear in clause position.
 
-Declaration statements and `parse_is_via_statement` accept comma-separated form lists on the left of `is`, including placeholder forms, for example `f(x_), y_ is \set`. `parse_is_via_statement` accepts any form/declaration after `via`, such as `X` or `(X, Y)`.
+Declaration statements and `parse_is_via_statement` accept comma-separated form lists on the left of `is`, including placeholder forms, for example `f(x_), y_ is \set`. The type before `via` may be refined. `parse_is_via_statement` structurally accepts any form/declaration after `via`, such as `X` or `(X, Y)`; within a `Declares:` `specifies:` section, semantic validation further restricts that view to exact symbols from the declared tuple.
 
 ## Compact AST Schema
 

@@ -769,6 +769,7 @@ Notes:
 
 - the parser looks for the exact top-level substring ` via ` with spaces around it
 - the left side must be an `is` statement, not a quoted-operator spec
+- the `is` type may be a refined command, such as `\(abelian)::group`
 - the right side is a form/declaration such as `X` or `(X, Y)`
 - `split_via_view` performs only the split, on the same top-level ` via ` scan.
   A `Declares:` target and an `extends:` clause use it because their left sides are

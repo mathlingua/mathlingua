@@ -246,10 +246,11 @@ pub fn extends_clauses<'a>(
     }
 }
 
-/// One side of a top-level `Relation:` (`between:`/`and:`). A relationship may
-/// hold between declared concepts, documentation topics, or definitions, in any
-/// combination, so each side is either an ordinary declaration (`a is \real`) or a
-/// quoted-text `Reference` — a `"#topic"` or a `"\signature"` (see [`TopicRelatedItem`]
+/// One endpoint of a top-level `Relation:` (`between:`/`and:` or `from:`/`to:`).
+/// A relationship may connect declared concepts, documentation topics, or
+/// definitions, in any combination, so each endpoint is either an ordinary
+/// declaration (`a is \real`) or a quoted-text `Reference` — a `"#topic"` or a
+/// `"\signature"` (see [`TopicRelatedItem`]
 /// for the signature convention). Quoting keeps a `\signature` reference distinct
 /// from a usage.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -318,6 +319,8 @@ argument_section!(ViewSignifiesSection, Clause);
 zero_or_more_arguments_section!(RelationSection, OpenText);
 argument_section!(RelationBetweenSection, RelationSubject);
 argument_section!(RelationAndSection, RelationSubject);
+argument_section!(RelationFromSection, RelationSubject);
+argument_section!(RelationToSection, RelationSubject);
 argument_section!(RelationSpecifiesSection, RelationSpecifies);
 // Top-level `Topic:` item sections. References (`within:`/`to:`) are quoted text
 // so a `#topic` or a bare `\signature` reads as a reference, never a usage.
@@ -816,15 +819,40 @@ pub struct TextItemGroup {
     pub id: IdSection,
 }
 
-/// A top-level `Relation:` item, which states a bidirectional relationship
-/// between the two concepts declared in `between:` and `and:`. It is a
-/// heading-less, standalone item and does not register a view rule.
+/// The endpoints and direction of a top-level `Relation:` item.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum RelationEndpoints {
+    /// An undirected relationship between two subjects.
+    Undirected {
+        between: RelationBetweenSection,
+        and_: RelationAndSection,
+    },
+    /// A directed relationship from one subject to another.
+    Directed {
+        from: RelationFromSection,
+        to: RelationToSection,
+    },
+}
+
+impl RelationEndpoints {
+    /// Returns the two subjects in source order. For a directed relation these
+    /// are the source and destination respectively.
+    pub fn subjects(&self) -> (&RelationSubject, &RelationSubject) {
+        match self {
+            Self::Undirected { between, and_ } => (&between.argument, &and_.argument),
+            Self::Directed { from, to } => (&from.argument, &to.argument),
+        }
+    }
+}
+
+/// A heading-less, standalone top-level relationship. `between:`/`and:`
+/// describes an undirected edge, while `from:`/`to:` describes a directed edge.
+/// Relations do not register view rules.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RelationGroup {
     pub relation: RelationSection,
     pub using: Option<UsingSection>,
-    pub between: RelationBetweenSection,
-    pub and_: RelationAndSection,
+    pub endpoints: RelationEndpoints,
     pub when: Option<WhenSection>,
     pub specifies: Option<RelationSpecifiesSection>,
     pub justification: Option<JustificationSection>,

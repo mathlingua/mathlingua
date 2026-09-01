@@ -149,8 +149,9 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
         }
         TopLevelItem::Relation(group) => {
             walk_optional_is_or_specs(&group.using, visit);
-            walk_relation_subject(&group.between.argument, visit);
-            walk_relation_subject(&group.and_.argument, visit);
+            let (first, second) = group.endpoints.subjects();
+            walk_relation_subject(first, visit);
+            walk_relation_subject(second, visit);
             walk_optional_clauses(&group.when, visit);
             if let Some(RelationSpecifies::Statement(clause)) =
                 group.specifies.as_ref().map(|m| &m.argument)
@@ -206,9 +207,9 @@ fn walk_optional_justification(
     }
 }
 
-/// Walks one side of a `Relation:`. Only a declared subject introduces symbols; a
-/// quoted reference (a topic or a definition signature) names an external target
-/// and contributes none.
+/// Walks one endpoint of a `Relation:`. Only a declared subject introduces
+/// symbols; a quoted reference (a topic or a definition signature) names an
+/// external target and contributes none.
 fn walk_relation_subject(subject: &RelationSubject, visit: &mut impl FnMut(&SignatureShape)) {
     match subject {
         RelationSubject::Declaration(statement) => walk_declaration_statement(statement, visit),

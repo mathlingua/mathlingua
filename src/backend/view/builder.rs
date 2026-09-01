@@ -1118,6 +1118,55 @@ mod tests {
     }
 
     #[test]
+    fn preserves_directed_relation_endpoints_in_the_view() {
+        let temp_dir = TestDir::new();
+        let root = temp_dir.path().join("repo");
+        let content = root.join("content");
+        let file = content.join("relations.mlg");
+        let source = r##"Relation:
+from: "#source"
+to: "#destination"
+specifies: "A directed relationship."
+"##;
+
+        fs::create_dir_all(&content).unwrap();
+        fs::write(&file, source).unwrap();
+
+        let mut parse_log = EventLog::new();
+        let document = parse_document(source, &mut parse_log);
+        assert!(!parse_log.has_errors(), "{:#?}", parse_log.events());
+        let parsed_file = ParsedSourceFile {
+            path: file,
+            source: source.to_string(),
+            document,
+            item_ids: top_level_item_ids(source),
+            view_metadata: SourceFileViewMetadata::default(),
+        };
+        let mut event_log = EventLog::new();
+        let view = build_collection_view(&root, &[parsed_file], &[], &[], &mut event_log)
+            .expect("expected view");
+
+        let item = &view.files[0].items[0];
+        assert_eq!(item.kind, "Relation");
+        assert_eq!(
+            item.sections
+                .iter()
+                .map(|section| section.label.as_str())
+                .collect::<Vec<_>>(),
+            ["Relation", "from", "to", "specifies"]
+        );
+        assert_eq!(
+            item.sections[1].inline_argument.as_deref(),
+            Some(r##""#source""##)
+        );
+        assert_eq!(
+            item.sections[2].inline_argument.as_deref(),
+            Some(r##""#destination""##)
+        );
+        assert!(!event_log.has_errors());
+    }
+
+    #[test]
     fn renders_let_clause_groups() {
         let temp_dir = TestDir::new();
         let root = temp_dir.path().join("repo");

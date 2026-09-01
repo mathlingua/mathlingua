@@ -245,21 +245,7 @@ const GROUPS: &[GroupSpec] = &[
     },
     GroupSpec {
         head: "Relation",
-        sections: &[
-            ("Relation", true),
-            ("using", false),
-            ("between", true),
-            ("and", true),
-            ("when", false),
-            ("specifies", false),
-            ("Documented", false),
-            ("Justification", false),
-            ("Aliases", false),
-            ("Writing", false),
-            ("References", false),
-            ("Metadata", false),
-            ("Id", false),
-        ],
+        sections: RELATION_UNDIRECTED,
     },
     GroupSpec {
         head: "Equivalent",
@@ -300,6 +286,38 @@ const GROUPS: &[GroupSpec] = &[
         head: "TextDefinition",
         sections: TEXT_ITEM_SECTIONS_DEFINITION,
     },
+];
+
+const RELATION_UNDIRECTED: &[Section] = &[
+    ("Relation", true),
+    ("using", false),
+    ("between", true),
+    ("and", true),
+    ("when", false),
+    ("specifies", false),
+    ("Documented", false),
+    ("Justification", false),
+    ("Aliases", false),
+    ("Writing", false),
+    ("References", false),
+    ("Metadata", false),
+    ("Id", false),
+];
+
+const RELATION_DIRECTED: &[Section] = &[
+    ("Relation", true),
+    ("using", false),
+    ("from", true),
+    ("to", true),
+    ("when", false),
+    ("specifies", false),
+    ("Documented", false),
+    ("Justification", false),
+    ("Aliases", false),
+    ("Writing", false),
+    ("References", false),
+    ("Metadata", false),
+    ("Id", false),
 ];
 
 // The four opaque `Text*` placeholders share one shape, differing only in the
@@ -825,7 +843,20 @@ fn section_completions(lines: &[&str], line: usize, before: &str) -> Vec<Complet
         }
         return Vec::new();
     };
-    let sections = sections_for(head).unwrap();
+    let has_relation_endpoint = |name: &str| present_all.contains(&name);
+    let relation_shape_chosen = head == "Relation"
+        && ["between", "and", "from", "to"]
+            .iter()
+            .any(|name| has_relation_endpoint(name));
+    let sections = if head == "Relation"
+        && ["from", "to"]
+            .iter()
+            .any(|name| has_relation_endpoint(name))
+    {
+        RELATION_DIRECTED
+    } else {
+        sections_for(head).unwrap()
+    };
 
     // Anchor on the last present section above the cursor.
     let last_idx = present_above
@@ -833,7 +864,7 @@ fn section_completions(lines: &[&str], line: usize, before: &str) -> Vec<Complet
         .filter_map(|p| sections.iter().position(|(n, _)| n == p))
         .max();
 
-    sections
+    let mut candidates: Vec<_> = sections
         .iter()
         .enumerate()
         .filter(|(idx, (name, _))| match last_idx {
@@ -845,7 +876,21 @@ fn section_completions(lines: &[&str], line: usize, before: &str) -> Vec<Complet
             let req = if *required { "required" } else { "optional" };
             candidate(name, format!("{req} section of {head}"))
         })
-        .collect()
+        .collect();
+
+    // Until an endpoint spelling chooses a Relation shape, offer `from:` as
+    // the directed counterpart to the undirected `between:` suggestion.
+    if head == "Relation"
+        && !relation_shape_chosen
+        && "from".starts_with(prefix)
+        && !present_all.contains(&"from")
+    {
+        candidates.push(candidate(
+            "from",
+            "required section of Relation".to_string(),
+        ));
+    }
+    candidates
 }
 
 /// Gather the enclosing top-level (column 0) group: its head and the section
@@ -1004,6 +1049,21 @@ mod tests {
 
         let axiom = labels(&complete("Axiom:\nthen: x = x\n\n", 2, 0));
         assert!(!axiom.contains(&"Proof".to_string()));
+    }
+
+    #[test]
+    fn relation_offers_both_endpoint_shapes_before_one_is_chosen() {
+        let got = labels(&complete("Relation:\n\n", 1, 0));
+        assert!(got.contains(&"between".to_string()));
+        assert!(got.contains(&"from".to_string()));
+    }
+
+    #[test]
+    fn directed_relation_offers_to_but_not_undirected_endpoints() {
+        let got = labels(&complete("Relation:\nfrom: a is \\real\n\n", 2, 0));
+        assert!(got.contains(&"to".to_string()));
+        assert!(!got.contains(&"between".to_string()));
+        assert!(!got.contains(&"and".to_string()));
     }
 
     #[test]

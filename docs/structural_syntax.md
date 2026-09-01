@@ -282,7 +282,7 @@ An empty document is supported by the current implementation because `Document.i
 - **`Person`** — `PersonGroup`, heading: author. Sections: `Person: OpenText+`, `biography?: OpenText`
 - **`Resource`** — `ResourceGroup`, heading: resource. Sections: `Resource: ResourceItem+`
 - **`Specify`** — `SpecifyGroup`, heading: none. Sections: `Specify: SpecifyItem+`
-- **`Relation`** — `RelationGroup`, heading: none. Sections: `Relation: OpenText*`, `using?: DeclarationStatement+`, `between: RelationSubject`, `and: RelationSubject`, `when?: Clause+`, `specifies?: RelationSpecifies`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `Writing?: "WritingAlias"+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
+- **`Relation`** — `RelationGroup`, heading: none. Sections: `Relation: OpenText*`, `using?: DeclarationStatement+`, either `between: RelationSubject` / `and: RelationSubject` (undirected) or `from: RelationSubject` / `to: RelationSubject` (directed), `when?: Clause+`, `specifies?: RelationSpecifies`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `Writing?: "WritingAlias"+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
 - **`Equivalent`** — `EquivalentGroup`, heading: command. Sections: `Equivalent:` (marker, no arguments), `using?: DeclarationStatement+`, `when?: Clause+`, `to: Expression+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `References?: ResourceHeader+`
 - **`Topic`** — `TopicGroup`, heading: topic. Sections: `Topic: OpenText*`, `within?: OpenText`, `Related?: TopicRelatedItem+`, `Documented?: CalledDocumentedItem+`
 - **`TextTheorem`** / **`TextAxiom`** / **`TextConjecture`** / **`TextDefinition`** — `TextItemGroup` (one `TextItemKind` per leading label), heading: none. Sections: `<label>: OpenText` (a markdown-with-LaTeX body), `Documented?: TextDocumentedItem+`, `References?: ResourceHeader+`, `Id: OpenText`. These are opaque prose placeholders for a structured theorem/axiom/conjecture/definition to be written later; the type-checker never inspects them. `TextDocumentedItem` is restricted to `called:`, `written:`, `description:`, and `notes:`.
@@ -906,8 +906,28 @@ References?: <ResourceHeader>+
 Metadata?: <MetadataItemUnion>+
 ```
 
-A top-level `Relation:` states a bidirectional relationship between the two
-subjects named in `between:` and `and:` (for example that they are equivalent).
+or, for a directed relationship:
+
+```group
+Relation: <OpenText>*
+using?: <DeclarationStatement>+
+from: <RelationSubject>
+to: <RelationSubject>
+when?: <ClauseUnion>+
+specifies?: <RelationSpecifies>
+Documented?: <DocumentedItemUnion>+
+Justification?: <HaveGroup>+
+Aliases?: <AliasItemUnion>+
+Writing?: "<WritingAlias>"+
+References?: <ResourceHeader>+
+Metadata?: <MetadataItemUnion>+
+```
+
+A top-level `Relation:` states either an undirected relationship between the
+subjects named in `between:` and `and:`, or a directed relationship from the
+`from:` subject to the `to:` subject. In graph terms these correspond to an
+undirected edge and a directed edge respectively; the two endpoint spellings
+cannot be mixed.
 Each `RelationSubject` is either an unquoted declaration (such as `a is \real`)
 for a concept, or a quoted-text reference — a `"#topic"` or a `"\signature"` (a
 `\command` with its arguments removed, like `\function:on:to`) — so a `Relation:`

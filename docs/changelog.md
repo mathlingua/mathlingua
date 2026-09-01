@@ -5,6 +5,16 @@ and CLI behavior implemented in this repository. It is intentionally rule-focuse
 each section captures not only the feature, but also the conditions under which
 the feature is valid.
 
+## Directed Relations
+
+Top-level `Relation:` items now have two distinct endpoint shapes. The existing
+`between:`/`and:` form represents an undirected relationship, while the new
+`from:`/`to:` form represents a directed relationship whose source and
+destination remain explicit in the structural AST. Both forms support the same
+`using:`, `when:`, `specifies:`, documentation, justification, alias, writing,
+reference, and metadata sections. Endpoint spellings from the two forms cannot
+be mixed.
+
 ## Checked MathLingua In Prose
 
 MathLingua fragments embedded in any quoted prose value are now semantically

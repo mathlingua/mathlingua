@@ -706,9 +706,10 @@ parentheses), and its purpose.
 - **`Person`** (author heading) — person metadata.
 - **`Resource`** (resource heading) — bibliography or web metadata.
 - **`Specify`** (no heading) — numeric-domain specification metadata.
-- **`Relation`** (no heading) — bidirectional relationship between two concepts,
-  topics, or definitions (`between:`/`and:`, with quoted
-  `"#topic"`/`"\signature"` references).
+- **`Relation`** (no heading) — an undirected relationship between two concepts,
+  topics, or definitions (`between:`/`and:`), or a directed relationship from
+  one to another (`from:`/`to:`), with quoted `"#topic"`/`"\signature"`
+  references.
 - **`Equivalent`** (command heading) — interchangeable commands under a shared
   name (`to:`).
 - **`Topic`** (topic heading) — names a documentation topic (`#some.name`);

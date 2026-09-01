@@ -2931,10 +2931,11 @@ fn validate_top_level_item_types(
             );
         }
         TopLevelItem::Relation(group) => {
-            // Assume the `using:` declarations and the two related declarations
-            // (introducing their subjects and facts) and the `when:` specs, then
-            // check the `specifies:` statement against that scope. Like a theorem, the
-            // statement is checked for valid symbols/references, not proven.
+            // Assume the `using:` declarations and the two relation endpoints
+            // (introducing subjects and facts for declarations) and the `when:`
+            // specs, then check the `specifies:` statement against that scope.
+            // Like a theorem, the statement is checked for valid symbols and
+            // references, not proven.
             let mut context = TypeContext::default();
             assume_optional_using(
                 &group.using,
@@ -2944,22 +2945,9 @@ fn validate_top_level_item_types(
                 registry,
                 event_log,
             );
-            assume_relation_subject(
-                &group.between.argument,
-                &mut context,
-                path,
-                locator,
-                registry,
-                event_log,
-            );
-            assume_relation_subject(
-                &group.and_.argument,
-                &mut context,
-                path,
-                locator,
-                registry,
-                event_log,
-            );
+            let (first, second) = group.endpoints.subjects();
+            assume_relation_subject(first, &mut context, path, locator, registry, event_log);
+            assume_relation_subject(second, &mut context, path, locator, registry, event_log);
             assume_when_clauses(
                 &group.when,
                 &mut context,
@@ -8057,7 +8045,7 @@ fn check_declaration_statement(
     check_declaration_spec_facts_supported(statement, context, path, locator, registry, event_log);
 }
 
-/// Assumes one side of a `Relation:` (`between:`/`and:`).
+/// Assumes one endpoint of a `Relation:` (`between:`/`and:` or `from:`/`to:`).
 ///
 /// A declared subject introduces its symbol and facts into scope; a `#topic`
 /// reference names an external documentation topic and introduces nothing.

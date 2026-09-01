@@ -49,6 +49,14 @@ specifies: "Groups are the subject matter of algebra."
 Id: "960ef264-b87a-4366-a17a-0b5f4d41679b"
 
 
+-- `from:`/`to:` records a one-way relationship, analogous to a directed edge.
+Relation:
+from: "\group"
+to: "#algebra"
+specifies: "The group definition belongs to the subject of algebra."
+Id: "8c67f45a-2473-4e99-8d86-e27ca89b0fd4"
+
+
 -- `Topic` names documentation subject matter.
 [#algebra]
 Topic: "The study of operations on sets."

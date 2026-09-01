@@ -3611,18 +3611,35 @@ pub(in crate::frontend::structural::parser) fn parse_equivalent(
 
 /// Parses a top-level `Relation:` item.
 ///
-/// A `Relation:` states a bidirectional relationship between the two concepts
-/// declared in the required `between:` and `and:` sections. It takes no command
-/// heading and registers no view rule.
+/// A `Relation:` states either an undirected relationship using `between:` and
+/// `and:`, or a directed relationship using `from:` and `to:`. It takes no
+/// command heading and registers no view rule.
 pub(in crate::frontend::structural::parser) fn parse_relation(
     group: &ProtoGroup,
     tracker: &mut EventLog,
 ) -> Option<RelationGroup> {
     ensure_no_heading(group, tracker)?;
-    let sections = identify_sections(
-        "Relation",
-        &group.sections,
-        tracker,
+    let is_directed = group
+        .sections
+        .iter()
+        .any(|section| matches!(section.label.as_str(), "from" | "to"));
+    let expected = if is_directed {
+        &[
+            "Relation",
+            "using?",
+            "from",
+            "to",
+            "when?",
+            "specifies?",
+            "Documented?",
+            "Justification?",
+            "Aliases?",
+            "Writing?",
+            "References?",
+            "Metadata?",
+            "Id?",
+        ][..]
+    } else {
         &[
             "Relation",
             "using?",
@@ -3637,8 +3654,45 @@ pub(in crate::frontend::structural::parser) fn parse_relation(
             "References?",
             "Metadata?",
             "Id?",
-        ],
-    )?;
+        ][..]
+    };
+    let sections = identify_sections("Relation", &group.sections, tracker, expected)?;
+
+    let endpoints = if is_directed {
+        RelationEndpoints::Directed {
+            from: RelationFromSection {
+                argument: parse_required_relation_subject(
+                    section(&sections, "from")?,
+                    "from",
+                    tracker,
+                )?,
+            },
+            to: RelationToSection {
+                argument: parse_required_relation_subject(
+                    section(&sections, "to")?,
+                    "to",
+                    tracker,
+                )?,
+            },
+        }
+    } else {
+        RelationEndpoints::Undirected {
+            between: RelationBetweenSection {
+                argument: parse_required_relation_subject(
+                    section(&sections, "between")?,
+                    "between",
+                    tracker,
+                )?,
+            },
+            and_: RelationAndSection {
+                argument: parse_required_relation_subject(
+                    section(&sections, "and")?,
+                    "and",
+                    tracker,
+                )?,
+            },
+        }
+    };
 
     Some(RelationGroup {
         relation: RelationSection {
@@ -3653,16 +3707,7 @@ pub(in crate::frontend::structural::parser) fn parse_relation(
             )
             .map(|arguments| UsingSection { arguments })
         }),
-        between: RelationBetweenSection {
-            argument: parse_required_relation_subject(
-                section(&sections, "between")?,
-                "between",
-                tracker,
-            )?,
-        },
-        and_: RelationAndSection {
-            argument: parse_required_relation_subject(section(&sections, "and")?, "and", tracker)?,
-        },
+        endpoints,
         when: sections.get("when").copied().and_then(|section| {
             parse_required_clauses(section, "when", tracker)
                 .map(|arguments| WhenSection { arguments })
@@ -3710,7 +3755,7 @@ fn section_is_quoted_text(section: &ProtoSection) -> bool {
     }
 }
 
-/// Parses one side of a `Relation:` (`between:`/`and:`).
+/// Parses one endpoint of a `Relation:` (`between:`/`and:` or `from:`/`to:`).
 ///
 /// A quoted `"#topic"` or `"\signature"` is a reference (to a topic or a
 /// definition); anything unquoted is parsed as an ordinary refined declaration
@@ -4240,8 +4285,8 @@ mod tests {
     };
     use crate::frontend::structural::ast::{
         AliasItem, AliasKind, Clause, DeclaresTarget, Document, DocumentedItem, EnablesItem,
-        ExampleItem, MetadataItem, RelationSpecifies, RelationSubject, RequiresItem, ResourceItem,
-        SpecifyItem, TextItemKind, TopLevelItem,
+        ExampleItem, MetadataItem, RelationEndpoints, RelationSpecifies, RelationSubject,
+        RequiresItem, ResourceItem, SpecifyItem, TextItemKind, TopLevelItem,
     };
 
     fn split_test_chunks(text: &str) -> Vec<String> {
@@ -5048,6 +5093,10 @@ Documented:
         match &document.items[0] {
             TopLevelItem::Relation(group) => {
                 assert!(group.using.is_some());
+                assert!(matches!(
+                    group.endpoints,
+                    RelationEndpoints::Undirected { .. }
+                ));
                 assert!(group.when.is_some());
                 assert!(group.specifies.is_some());
                 assert!(group.documented.is_some());
@@ -5071,6 +5120,70 @@ specifies: a = a
                 .as_message()
                 .is_some_and(|message| message.message.contains("and"))),
             "expected a diagnostic about the missing `and:` section: {diagnostics:#?}"
+        );
+    }
+
+    #[test]
+    fn parses_directed_relation_from_and_to() {
+        let document = parse_ok(
+            r#"
+Relation: "embeds one structure in another"
+using:
+. n is \integer
+from: a is \real
+to: b is \real
+when:
+. a = b
+specifies: a = b
+"#,
+        );
+
+        match &document.items[0] {
+            TopLevelItem::Relation(group) => {
+                let RelationEndpoints::Directed { from, to } = &group.endpoints else {
+                    panic!("expected directed Relation endpoints");
+                };
+                assert!(matches!(from.argument, RelationSubject::Declaration(_)));
+                assert!(matches!(to.argument, RelationSubject::Declaration(_)));
+                assert!(group.using.is_some());
+                assert!(group.when.is_some());
+                assert!(group.specifies.is_some());
+            }
+            other => panic!("expected Relation item, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn directed_relation_requires_to_section() {
+        let (_, diagnostics) = parse_with_diagnostics(
+            r#"
+Relation:
+from: a is \real
+specifies: a = a
+"#,
+        );
+
+        assert!(
+            diagnostics.iter().any(|event| event
+                .as_message()
+                .is_some_and(|message| message.message.contains("to"))),
+            "expected a diagnostic about the missing `to:` section: {diagnostics:#?}"
+        );
+    }
+
+    #[test]
+    fn relation_rejects_mixed_directed_and_undirected_endpoints() {
+        let (_, diagnostics) = parse_with_diagnostics(
+            r#"
+Relation:
+between: a is \real
+to: b is \real
+"#,
+        );
+
+        assert!(
+            !diagnostics.is_empty(),
+            "expected mixed endpoint labels to be rejected"
         );
     }
 
@@ -5233,11 +5346,14 @@ specifies: "The sine function is studied within real analysis."
 
         match &document.items[0] {
             TopLevelItem::Relation(group) => {
-                match &group.between.argument {
+                let RelationEndpoints::Undirected { between, and_ } = &group.endpoints else {
+                    panic!("expected undirected Relation endpoints");
+                };
+                match &between.argument {
                     RelationSubject::Reference(text) => assert_eq!(text.0, "#real.analysis"),
                     other => panic!("expected a reference subject, got {other:?}"),
                 }
-                match &group.and_.argument {
+                match &and_.argument {
                     RelationSubject::Reference(text) => assert_eq!(text.0, r"\sin"),
                     other => panic!("expected a reference subject, got {other:?}"),
                 }
@@ -5265,10 +5381,10 @@ specifies: a = b
 
         match &document.items[0] {
             TopLevelItem::Relation(group) => {
-                assert!(matches!(
-                    &group.between.argument,
-                    RelationSubject::Declaration(_)
-                ));
+                let RelationEndpoints::Undirected { between, .. } = &group.endpoints else {
+                    panic!("expected undirected Relation endpoints");
+                };
+                assert!(matches!(&between.argument, RelationSubject::Declaration(_)));
                 assert!(matches!(
                     &group.specifies.as_ref().expect("specifies").argument,
                     RelationSpecifies::Statement(_)

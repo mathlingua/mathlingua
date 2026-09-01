@@ -34,28 +34,33 @@
   color: var(--prose-heading-color);
   font-family: var(--font-body);
   font-size: 1.08rem;
-  font-style: italic;
-  font-weight: 600;
+  font-style: normal;
+  font-weight: 700;
   line-height: 1.3;
 }
 
 .proofContent {
-  display: flex;
-  gap: 0.65rem;
-  align-items: flex-end;
   min-width: 0;
 }
 
 .proofBody {
-  flex: 1 1 auto;
-  min-width: 0;
+  display: contents;
+}
+
+.proofBody > div {
+  display: contents;
+}
+
+.proofBody > div > p:last-child {
+  display: inline;
 }
 
 .proofEnd {
-  flex: 0 0 auto;
-  padding-bottom: 0.15rem;
+  display: inline-block;
+  margin-left: 0.38em;
   color: var(--ink);
   line-height: 1.62;
+  vertical-align: baseline;
 }
 
 .cardStageFlipped {

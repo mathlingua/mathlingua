@@ -12,6 +12,7 @@ mod registry;
 mod signatures;
 mod statements;
 mod templates;
+mod text;
 
 use commands::*;
 use escaping::*;
@@ -31,6 +32,7 @@ pub(super) use registry::{
 use signatures::*;
 use statements::*;
 use templates::*;
+pub(super) use text::render_scoped_text_markdown;
 
 #[cfg(test)]
 mod tests;

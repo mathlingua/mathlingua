@@ -747,6 +747,30 @@ word when untitled), with the body as rendered Markdown and `Documented:` behind
 the supporting-sections toggle. Its `References:` and `Id:` sections are hidden
 behind that toggle as well.
 
+### MathLingua in prose text
+
+Any prose text value may embed MathLingua formulations. `{. ... .}` renders the
+enclosed formulation as inline Markdown math (`$...$`), while `{{. ... .}}`
+renders it as display math (`$$...$$`). An immediately following relation
+modifier changes the wording used for that fragment:
+
+```text
+Let {.x is \natural.}[is="be a"] number.
+Choose {.x "in" X.}["in"="from"].
+```
+
+Named `<<name>>` and `<</name>>` markers create lexical rendering scopes. The
+markers themselves are omitted from the rendered Markdown. Scopes may nest;
+variables introduced on the left of `is` or a quoted operator remain known to
+later embedded formulations until their scope closes.
+
+```text
+<<forall>>
+For all {.a, b is \function:on{A?}:to{B?}.},
+  <<exists>>there exists {.x is \real.}.<</exists>>
+<</forall>>
+```
+
 Groups with command headings introduce command signatures: `Declares`,
 `Defines`, `Refines`, `States`, `Equivalent`, and theorem-like groups that have
 an optional heading. Duplicate signatures are rejected across all of these

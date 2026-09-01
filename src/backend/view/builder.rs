@@ -7,7 +7,8 @@ use super::render::{
     join_title_parts, render_documented_text_latex, render_formulation_latex,
     render_group_heading_latex, render_group_parameter_destructurings,
     render_refines_section_latex, render_refines_specifies_latex, render_resource_reference,
-    render_writing_alias_latex, resolve_topic_heading_latex, writing_alias_override,
+    render_scoped_text_markdown, render_writing_alias_latex, resolve_topic_heading_latex,
+    writing_alias_override,
 };
 use crate::backend::config::load_config;
 use crate::backend::semantic::{CollectionTypeInfo, DocumentTypeInfo, TypeEntry};
@@ -269,13 +270,13 @@ fn group_views(
 
     match description {
         Some(description) if !description.trim().is_empty() => {
-            vec![description_page_group(&id, description), card]
+            vec![description_page_group(&id, description, registry), card]
         }
         _ => vec![card],
     }
 }
 
-fn description_page_group(source_id: &str, text: String) -> GroupView {
+fn description_page_group(source_id: &str, text: String, registry: &RenderRegistry) -> GroupView {
     GroupView {
         id: if source_id.is_empty() {
             "description".to_string()
@@ -290,7 +291,7 @@ fn description_page_group(source_id: &str, text: String) -> GroupView {
         body_text: None,
         page: Some(PageView {
             kind: "Text".to_string(),
-            text,
+            text: render_scoped_text_markdown(&text, registry),
         }),
         source: String::new(),
         sections: Vec::new(),
@@ -322,7 +323,7 @@ fn group_view(
         .then(|| registry.with_writing_overrides(item_writing_overrides));
     let registry = scoped_registry.as_ref().unwrap_or(registry);
 
-    let page = page_view(&kind, &group.sections);
+    let page = page_view(&kind, &group.sections, registry);
     let heading_latex = person_heading_latex(&kind, &group.sections)
         .or_else(|| topic_heading_latex(&kind, group.heading.as_deref(), registry))
         .or_else(|| {
@@ -335,8 +336,8 @@ fn group_view(
         })
         .or_else(|| theorem_like_heading_latex(&kind, group.heading.as_deref(), &group.sections))
         .or_else(|| text_item_heading_latex(&kind, &group.sections));
-    let body_text =
-        person_body_text(&kind, &group.sections).or_else(|| text_item_body(&kind, &group.sections));
+    let body_text = person_body_text(&kind, &group.sections, registry)
+        .or_else(|| text_item_body(&kind, &group.sections, registry));
     let parameter_destructurings =
         render_group_parameter_destructurings(&kind, group.heading.as_deref(), registry);
     let section_heading = group.heading.clone();
@@ -497,7 +498,11 @@ fn topic_heading_latex(
     resolve_topic_heading_latex(heading, registry)
 }
 
-fn person_body_text(kind: &str, sections: &[ProtoSection]) -> Option<String> {
+fn person_body_text(
+    kind: &str,
+    sections: &[ProtoSection],
+    registry: &RenderRegistry,
+) -> Option<String> {
     if kind != "Person" {
         return None;
     }
@@ -506,7 +511,7 @@ fn person_body_text(kind: &str, sections: &[ProtoSection]) -> Option<String> {
         .iter()
         .find(|section| section.label == "biography")
         .and_then(section_text)
-        .map(|text| unindent_text(&text))
+        .map(|text| render_scoped_text_markdown(&unindent_text(&text), registry))
         .filter(|text| !text.trim().is_empty())
 }
 
@@ -524,13 +529,17 @@ fn text_item_kind_word(kind: &str) -> Option<&'static str> {
 
 /// The markdown-with-LaTeX body of a `Text*` placeholder, rendered as the card's
 /// prose body. `None` for any other group.
-fn text_item_body(kind: &str, sections: &[ProtoSection]) -> Option<String> {
+fn text_item_body(
+    kind: &str,
+    sections: &[ProtoSection],
+    registry: &RenderRegistry,
+) -> Option<String> {
     text_item_kind_word(kind)?;
     sections
         .iter()
         .find(|section| section.label == kind)
         .and_then(section_text)
-        .map(|text| unindent_text(&text))
+        .map(|text| render_scoped_text_markdown(&unindent_text(&text), registry))
         .filter(|text| !text.trim().is_empty())
 }
 
@@ -648,7 +657,7 @@ fn render_documented_template_argument(kind: DocumentedRenderKind, text: &str) -
     render_documented_text_latex(label, &template)
 }
 
-fn page_view(kind: &str, sections: &[ProtoSection]) -> Option<PageView> {
+fn page_view(kind: &str, sections: &[ProtoSection], registry: &RenderRegistry) -> Option<PageView> {
     if !matches!(kind, "Title" | "SectionTitle" | "SubsectionTitle" | "Text") {
         return None;
     }
@@ -665,7 +674,7 @@ fn page_view(kind: &str, sections: &[ProtoSection]) -> Option<PageView> {
 
     Some(PageView {
         kind: kind.to_string(),
-        text,
+        text: render_scoped_text_markdown(&text, registry),
     })
 }
 
@@ -825,8 +834,9 @@ fn argument_view(
                 documented_render_kind
                     .and_then(|kind| render_documented_template_argument(kind, &text.text))
             };
+            let text = strip_quoted_text(&text.text).unwrap_or(text.text);
             ArgumentView::Text {
-                text: strip_quoted_text(&text.text).unwrap_or(text.text),
+                text: render_scoped_text_markdown(&text, registry),
                 latex,
             }
         }

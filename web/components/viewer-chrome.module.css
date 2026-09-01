@@ -7,12 +7,24 @@
   display: grid;
   grid-template-columns: 2rem minmax(0, 1fr) auto;
   align-items: center;
-  height: 64px;
-  min-height: 64px;
-  padding: 0 16px;
+  height: var(--viewer-chrome-height);
+  min-height: var(--viewer-chrome-height);
+  padding: var(--viewer-safe-area-top) 16px 0;
   background: var(--chrome-bg);
   border-bottom: 1px solid var(--line);
   backdrop-filter: blur(18px);
+}
+
+.chrome::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: var(--viewer-safe-area-top);
+  /* The toolbar itself is translucent. Keep the unsafe strip fully opaque so
+     document content cannot reappear behind the iPhone status area. */
+  background:
+    linear-gradient(var(--chrome-bg), var(--chrome-bg)), var(--surface);
+  pointer-events: none;
 }
 
 .button {
@@ -357,7 +369,7 @@
 
 @media (max-width: 520px) {
   .chrome {
-    padding: 0 12px;
+    padding: var(--viewer-safe-area-top) 12px 0;
   }
 
   .themePopover {

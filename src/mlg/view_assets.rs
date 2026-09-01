@@ -110,6 +110,7 @@ mod tests {
         let index = String::from_utf8(index).expect("expected UTF-8 viewer index");
 
         assert!(index.contains(r#"<base href="/demo/""#));
+        assert!(index.contains("viewport-fit=cover"));
         assert!(index.contains(r#""routeBasePath":"/demo""#));
         assert!(index.contains(r#""staticDataBasePath":"/demo/data""#));
         assert!(!index.contains(BASE_HREF_MARKER));

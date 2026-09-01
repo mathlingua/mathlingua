@@ -1,6 +1,8 @@
 /* Global typography, color tokens, and browser resets for the viewer app. */
 
 :root {
+  --viewer-safe-area-top: env(safe-area-inset-top, 0px);
+  --viewer-chrome-height: calc(64px + var(--viewer-safe-area-top));
   --font-body:
     "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, Georgia,
     serif;

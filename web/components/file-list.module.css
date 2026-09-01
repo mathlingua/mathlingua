@@ -2,7 +2,7 @@
 
 .readerLayout {
   display: grid;
-  min-height: calc(100vh - 64px);
+  min-height: calc(100vh - var(--viewer-chrome-height));
   transition: grid-template-columns 180ms ease;
   background: var(--surface);
 }
@@ -18,8 +18,8 @@
 
 .outlinePanel {
   position: sticky;
-  top: 64px;
-  height: calc(100vh - 64px);
+  top: var(--viewer-chrome-height);
+  height: calc(100vh - var(--viewer-chrome-height));
   overflow: auto;
   padding: 1.6rem 1.5rem 2rem;
   border-right: 1px solid var(--line);

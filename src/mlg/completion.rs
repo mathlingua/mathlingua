@@ -94,6 +94,18 @@ const GROUPS: &[GroupSpec] = &[
         sections: &[("Writing", true), ("Id", false)],
     },
     GroupSpec {
+        head: "Example",
+        sections: &[
+            ("Example", true),
+            ("Justification", false),
+            ("Aliases", false),
+            ("Writing", false),
+            ("References", false),
+            ("Metadata", false),
+            ("Id", false),
+        ],
+    },
+    GroupSpec {
         head: "Declares",
         sections: &[
             ("Declares", true),

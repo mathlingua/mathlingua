@@ -785,6 +785,15 @@ pub(super) fn render_entries(item: &TopLevelItem) -> Vec<RenderEntry> {
         TopLevelItem::Conjecture(group) => {
             render_theorem_like_entries(group.heading.as_ref(), group.documented.as_ref())
         }
+        TopLevelItem::Example(group) => render_entries_from_parts(
+            group
+                .heading
+                .as_ref()
+                .map(command_header_signatures)
+                .unwrap_or_default(),
+            None,
+            None,
+        ),
         TopLevelItem::Equivalent(group) => render_entries_from_parts(
             command_header_signatures(&group.heading),
             None,

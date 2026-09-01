@@ -353,6 +353,7 @@ pub(super) enum DefinitionKind {
     Axiom,
     Theorem,
     Conjecture,
+    Example,
     Equivalent,
 }
 
@@ -367,6 +368,7 @@ impl DefinitionKind {
             Self::Axiom => "Axiom",
             Self::Theorem => "Theorem",
             Self::Conjecture => "Conjecture",
+            Self::Example => "Example",
             Self::Equivalent => "Equivalent",
         }
     }

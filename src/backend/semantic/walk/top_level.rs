@@ -133,6 +133,15 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
             walk_optional_aliases(&group.aliases, visit);
             walk_optional_justification(&group.justification, visit);
         }
+        TopLevelItem::Example(group) => {
+            for item in &group.example.arguments {
+                if let ExampleItem::Clause(clause) = item {
+                    walk_clause(clause, visit);
+                }
+            }
+            walk_optional_aliases(&group.aliases, visit);
+            walk_optional_justification(&group.justification, visit);
+        }
         TopLevelItem::Specify(group) => {
             for item in &group.specify.arguments {
                 walk_specify_item(item, visit);

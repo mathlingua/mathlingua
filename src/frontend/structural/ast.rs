@@ -386,6 +386,7 @@ argument_section!(SectionTitleSection, OpenText);
 argument_section!(SubsectionTitleSection, OpenText);
 argument_section!(TextSection, OpenText);
 arguments_section!(TopLevelWritingSection, WritingAlias);
+zero_or_more_arguments_section!(ExampleSection, ExampleItem);
 
 // ===============================[ items ]=====================================
 
@@ -402,6 +403,7 @@ pub enum TopLevelItem {
     SubsectionTitle(SubsectionTitleGroup),
     Text(TextGroup),
     Writing(TopLevelWritingGroup),
+    Example(ExampleGroup),
     Disambiguates(DisambiguatesGroup),
     Declares(DeclaresGroup),
     Defines(DefinesGroup),
@@ -418,6 +420,13 @@ pub enum TopLevelItem {
     Equivalent(EquivalentGroup),
     Topic(TopicGroup),
     TextItem(TextItemGroup),
+}
+
+/// One entry in a top-level `Example:` section.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum ExampleItem {
+    Clause(Clause),
+    Text(OpenText),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -733,6 +742,18 @@ pub struct TheoremGroup {
     pub iff: Option<IffSection>,
     pub justification: Option<JustificationSection>,
     pub documented: Option<DocumentedSection>,
+    pub aliases: Option<AliasesSection>,
+    pub writing: Option<ItemWritingSection>,
+    pub references: Option<ReferencesSection>,
+    pub metadata: Option<MetadataSection>,
+}
+
+/// A named or anonymous example containing an ordered mixture of clauses and prose.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ExampleGroup {
+    pub heading: Option<CommandHeader>,
+    pub example: ExampleSection,
+    pub justification: Option<JustificationSection>,
     pub aliases: Option<AliasesSection>,
     pub writing: Option<ItemWritingSection>,
     pub references: Option<ReferencesSection>,

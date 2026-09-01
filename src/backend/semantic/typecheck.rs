@@ -765,6 +765,7 @@ fn is_statement_command(key: &str, registry: &SignatureRegistry) -> bool {
                 | DefinitionKind::Axiom
                 | DefinitionKind::Theorem
                 | DefinitionKind::Conjecture
+                | DefinitionKind::Example
         )
     })
 }
@@ -876,6 +877,21 @@ fn definition_type_info(
                 heading,
                 None,
                 group.given.as_ref(),
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                registry,
+            )
+        }),
+        TopLevelItem::Example(group) => group.heading.as_ref().map(|heading| {
+            type_info_from_parts(
+                header_shape,
+                heading,
+                None,
+                None,
                 None,
                 None,
                 None,
@@ -2577,6 +2593,25 @@ fn validate_top_level_item_types(
             registry,
             event_log,
         ),
+        TopLevelItem::Example(group) => {
+            let mut context = TypeContext::default();
+            context.set_justifications(build_justification_map(&group.justification));
+            if let Some(heading) = &group.heading {
+                declare_header_symbols_checked(
+                    heading,
+                    &mut context,
+                    path,
+                    locator,
+                    registry,
+                    event_log,
+                );
+            }
+            for item in &group.example.arguments {
+                if let ExampleItem::Clause(clause) = item {
+                    check_clause(clause, &context, path, locator, registry, event_log);
+                }
+            }
+        }
         TopLevelItem::Equivalent(group) => {
             validate_equivalent_item(group, path, locator, registry, event_log);
         }
@@ -2651,6 +2686,7 @@ fn anchor_top_level_item(item: &TopLevelItem, locator: &mut SourceLocator<'_>) {
         TopLevelItem::Axiom(group) => group.heading.as_ref(),
         TopLevelItem::Theorem(group) => group.heading.as_ref(),
         TopLevelItem::Conjecture(group) => group.heading.as_ref(),
+        TopLevelItem::Example(group) => group.heading.as_ref(),
         TopLevelItem::Equivalent(group) => Some(&group.heading),
         _ => None,
     };

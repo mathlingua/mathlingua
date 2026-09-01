@@ -2446,6 +2446,7 @@ pub(in crate::frontend::structural::parser) fn parse_top_level_group(
         }
         "Text" => parse_text_group(group, tracker).map(TopLevelItem::Text),
         "Writing" => parse_top_level_writing(group, tracker).map(TopLevelItem::Writing),
+        "Example" => parse_example(group, tracker).map(TopLevelItem::Example),
         "Disambiguates" => parse_disambiguates(group, tracker).map(TopLevelItem::Disambiguates),
         "Declares" => parse_declares(group, tracker).map(TopLevelItem::Declares),
         "Defines" => parse_defines(group, tracker).map(TopLevelItem::Defines),
@@ -2482,6 +2483,98 @@ pub(in crate::frontend::structural::parser) fn parse_top_level_group(
             None
         }
     }
+}
+
+/// Parses a top-level `Example:` group. Its body may freely mix clauses and
+/// quoted prose, and both the body and command heading are optional.
+pub(in crate::frontend::structural::parser) fn parse_example(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<ExampleGroup> {
+    let heading = parse_optional_command_heading(group, tracker)?;
+    let sections = identify_sections(
+        "Example",
+        &group.sections,
+        tracker,
+        &[
+            "Example",
+            "Justification?",
+            "Aliases?",
+            "Writing?",
+            "References?",
+            "Metadata?",
+            "Id?",
+        ],
+    )?;
+
+    let mut arguments = Vec::new();
+    for entry in section_entries(section(&sections, "Example")?) {
+        match entry {
+            SectionEntry::Inline { text, row } | SectionEntry::Text { text, row } => {
+                if let Some(text) = strip_quoted_text(text) {
+                    arguments.push(ExampleItem::Text(OpenText(text)));
+                } else if let Ok(statement) = parse_refined_declaration_statement(text) {
+                    arguments.push(ExampleItem::Clause(Clause::Declaration(statement)));
+                } else {
+                    match parse_expression(text) {
+                        Ok(expression) => {
+                            arguments.push(ExampleItem::Clause(Clause::Expression(expression)))
+                        }
+                        Err(error) => tracker.user_error_at_row(
+                            Some(ORIGIN),
+                            row,
+                            format!("Invalid example item: {error}"),
+                        ),
+                    }
+                }
+            }
+            SectionEntry::Formulation { text, row } => {
+                if let Ok(statement) = parse_refined_declaration_statement(text) {
+                    arguments.push(ExampleItem::Clause(Clause::Declaration(statement)));
+                } else {
+                    match parse_expression(text) {
+                        Ok(expression) => {
+                            arguments.push(ExampleItem::Clause(Clause::Expression(expression)))
+                        }
+                        Err(error) => tracker.user_error_at_row(
+                            Some(ORIGIN),
+                            row,
+                            format!("Invalid example clause: {error}"),
+                        ),
+                    }
+                }
+            }
+            SectionEntry::Group { group, .. } => {
+                if let Some(clause) = parse_clause_group(group, tracker) {
+                    arguments.push(ExampleItem::Clause(clause));
+                }
+            }
+        }
+    }
+
+    Some(ExampleGroup {
+        heading,
+        example: ExampleSection {
+            arguments: arguments.into(),
+        },
+        justification: sections.get("Justification").copied().and_then(|section| {
+            parse_required_groups(section, "Justification", tracker, parse_have_group)
+                .map(|arguments| JustificationSection { arguments })
+        }),
+        aliases: sections.get("Aliases").copied().and_then(|section| {
+            parse_required_groups(section, "Aliases", tracker, parse_alias_item_group)
+                .map(|arguments| AliasesSection { arguments })
+        }),
+        writing: parse_optional_item_writing(&sections, tracker),
+        references: sections.get("References").copied().and_then(|section| {
+            parse_required_resource_references(section, tracker)
+                .map(|arguments| ReferencesSection { arguments })
+        }),
+        metadata: sections.get("Metadata").copied().and_then(|section| {
+            parse_required_groups(section, "Metadata", tracker, parse_metadata_item_group)
+                .map(|arguments| MetadataSection { arguments })
+        }),
+    })
 }
 
 // ===============================[ outline ]=====================================
@@ -4134,8 +4227,8 @@ mod tests {
     };
     use crate::frontend::structural::ast::{
         AliasItem, AliasKind, Clause, DeclaresTarget, Document, DocumentedItem, EnablesItem,
-        MetadataItem, RelationSpecifies, RelationSubject, RequiresItem, ResourceItem, SpecifyItem,
-        TextItemKind, TopLevelItem,
+        ExampleItem, MetadataItem, RelationSpecifies, RelationSubject, RequiresItem, ResourceItem,
+        SpecifyItem, TextItemKind, TopLevelItem,
     };
 
     fn split_test_chunks(text: &str) -> Vec<String> {
@@ -6576,5 +6669,39 @@ expresses:
                 .iter()
                 .any(|e| matches!(e, Event::Message(m) if m.message.contains("Expected `then` section after `elseIf`")))
         );
+    }
+
+    #[test]
+    fn parses_named_example_with_mixed_text_and_clauses() {
+        let document = parse_ok(
+            r#"
+[\some.name]
+Example:
+. "A prose example item."
+. x = x
+Writing:
+. "x :~> X"
+"#,
+        );
+
+        let TopLevelItem::Example(group) = &document.items[0] else {
+            panic!("expected example group");
+        };
+        assert!(group.heading.is_some());
+        assert_eq!(group.example.arguments.len(), 2);
+        assert!(matches!(group.example.arguments[0], ExampleItem::Text(_)));
+        assert!(matches!(group.example.arguments[1], ExampleItem::Clause(_)));
+        assert!(group.writing.is_some());
+    }
+
+    #[test]
+    fn parses_empty_anonymous_example() {
+        let document = parse_ok("Example:\n");
+
+        let TopLevelItem::Example(group) = &document.items[0] else {
+            panic!("expected example group");
+        };
+        assert!(group.heading.is_none());
+        assert!(group.example.arguments.is_empty());
     }
 }

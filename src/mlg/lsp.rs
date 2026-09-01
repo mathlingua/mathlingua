@@ -505,6 +505,7 @@ struct PendingCheck {
 /// The widest expression column a hover will pad to. Beyond this the type moves
 /// to its own line rather than pushing the popup off the side of the editor.
 const MAX_EXPRESSION_COLUMN: usize = 56;
+const CHECK_PROGRESS_TITLE: &str = "mlg check";
 
 /// Renders a line's entries as a hover popup: one row per expression, indented
 /// under the expression that contains it, with its resolved types alongside.
@@ -582,7 +583,9 @@ fn send_check_progress_begin(connection: &Connection, token: &str) {
         connection,
         token,
         WorkDoneProgress::Begin(WorkDoneProgressBegin {
-            title: "Mathlingua: checking types".to_string(),
+            // Match rust-analyzer's flycheck presentation: an indeterminate
+            // work-progress spinner labeled with the command being run.
+            title: CHECK_PROGRESS_TITLE.to_string(),
             cancellable: Some(false),
             message: None,
             percentage: None,
@@ -826,7 +829,7 @@ fn position_from(line: Option<usize>, column: Option<usize>) -> Position {
 
 #[cfg(test)]
 mod tests {
-    use super::{render_line_types, work_done_progress_support};
+    use super::{CHECK_PROGRESS_TITLE, render_line_types, work_done_progress_support};
     use crate::backend::semantic::TypeEntry;
 
     fn entry(depth: usize, text: &str, types: &[&str]) -> TypeEntry {
@@ -904,5 +907,10 @@ mod tests {
 
         assert!(work_done_progress_support(&supported));
         assert!(!work_done_progress_support(&unsupported));
+    }
+
+    #[test]
+    fn labels_check_progress_with_the_command() {
+        assert_eq!(CHECK_PROGRESS_TITLE, "mlg check");
     }
 }

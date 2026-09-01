@@ -22,8 +22,7 @@
   height: var(--viewer-safe-area-top);
   /* The toolbar itself is translucent. Keep the unsafe strip fully opaque so
      document content cannot reappear behind the iPhone status area. */
-  background:
-    linear-gradient(var(--chrome-bg), var(--chrome-bg)), var(--surface);
+  background: var(--surface);
   pointer-events: none;
 }
 

@@ -851,6 +851,10 @@ html[data-theme="atomic-dark"] {
 
 html {
   scroll-behavior: smooth;
+  /* Give iOS an opaque canvas behind the viewport safe areas even before the
+     React toolbar mounts. The saved theme is applied synchronously in the
+     document head, so this resolves to that theme's surface on first paint. */
+  background: var(--surface);
 }
 
 body {

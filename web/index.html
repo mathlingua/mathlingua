@@ -6,6 +6,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, viewport-fit=cover"
     />
+    <meta name="theme-color" content="#ffffff" />
     <base href="__MLG_BASE_HREF__" />
     <meta name="description" content="Rendered Mathlingua collection viewer" />
     <link rel="icon" href="./icon.png" />
@@ -41,6 +42,17 @@
           }
           document.documentElement.dataset.theme = theme;
           document.documentElement.style.colorScheme = colorScheme;
+          const initialSafeAreaColors = {
+            "field-guide": "#fbf8ef",
+            "field-guide-dark": "#171b1c",
+          };
+          const safeAreaColor =
+            initialSafeAreaColors[theme] ??
+            (colorScheme === "dark" ? "#111315" : "#ffffff");
+          document.documentElement.style.backgroundColor = safeAreaColor;
+          document
+            .querySelector('meta[name="theme-color"]')
+            ?.setAttribute("content", safeAreaColor);
         } catch (_) {}
       })();
       window.__MLG_VIEW_CONFIG__ = __MLG_RUNTIME_CONFIG_JSON__;

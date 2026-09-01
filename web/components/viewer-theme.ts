@@ -48,7 +48,21 @@ export function isViewerTheme(
 }
 
 export function applyViewerTheme(theme: ViewerTheme) {
-  document.documentElement.dataset.theme = theme;
-  document.documentElement.style.colorScheme =
+  const root = document.documentElement;
+  root.dataset.theme = theme;
+  root.style.colorScheme =
     VIEWER_THEMES.find((item) => item.id === theme)?.colorScheme ?? "light";
+
+  // Safari uses the document canvas and `theme-color` while painting around
+  // the iPhone notch. Keep both opaque and synchronized with the selected
+  // theme, including when a saved theme is restored during initial load.
+  const surfaceColor = getComputedStyle(root)
+    .getPropertyValue("--surface")
+    .trim();
+  if (surfaceColor) {
+    root.style.backgroundColor = surfaceColor;
+    document
+      .querySelector<HTMLMetaElement>('meta[name="theme-color"]')
+      ?.setAttribute("content", surfaceColor);
+  }
 }

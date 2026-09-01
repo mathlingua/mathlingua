@@ -481,6 +481,14 @@
     padding-top: 2.7rem;
   }
 
+  :global(html[data-theme^="field-guide"]) .header {
+    margin-top: -1.1rem;
+  }
+
+  :global(html[data-theme^="field-guide"]) .cardFaceClosable .header {
+    margin-top: -2.7rem;
+  }
+
   .header,
   .bodyText,
   .resourceBody,

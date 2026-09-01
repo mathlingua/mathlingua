@@ -163,7 +163,7 @@ mod tests {
                 Token::WritingAlias,
                 Token::FunctionArrow,
                 Token::TypeArrow,
-                Token::LegacyFunctionArrow,
+                Token::SpecialOperator("|->".to_string()),
                 Token::Is,
                 Token::Via,
                 Token::At,

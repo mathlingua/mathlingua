@@ -190,7 +190,6 @@ fn token_literal(token: &Token) -> &'static str {
         Token::Satisfies => "satisfies",
         Token::FunctionArrow => "=>",
         Token::TypeArrow => "->",
-        Token::LegacyFunctionArrow => "|->",
         Token::CommandStart => "\\",
         Token::Plus => "+",
         Token::Minus => "-",
@@ -4756,8 +4755,15 @@ mod tests {
             ExpressionKind::SubsetCall(_)
         ));
 
-        parse_expression(r#"(x_ is \real) |-> x_"#)
-            .expect_err("the former function-literal arrow must be rejected");
+        let legacy_spelling = parse_expression(r#"(x_ is \real) |-> x_"#)
+            .expect("the former function-literal arrow is now an ordinary operator");
+        let ExpressionKind::Binary { operator, .. } = legacy_spelling.kind else {
+            panic!("expected an ordinary binary operator");
+        };
+        let BinaryOperator::Special(operator) = operator else {
+            panic!("expected an ordinary special operator");
+        };
+        assert_eq!(operator.text, "|->");
         parse_expression(r#"(x_ is \real) -> x_"#)
             .expect_err("the type arrow must not introduce a function literal");
     }

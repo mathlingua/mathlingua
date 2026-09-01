@@ -49,7 +49,6 @@ extern {
         "satisfies" => Token::Satisfies,
         "=>" => Token::FunctionArrow,
         "->" => Token::TypeArrow,
-        "|->" => Token::LegacyFunctionArrow,
         "quoted_name" => Token::QuotedName(<String>),
         "decimal" => Token::Decimal(<String>),
         "magnetic_placeholder" => Token::MagneticPlaceholder(<String>),

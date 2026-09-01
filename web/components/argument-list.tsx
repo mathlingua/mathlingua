@@ -88,7 +88,10 @@ export function ArgumentList({
               </span>
             ) : (
               <div className={styles.textLine}>
-                <MarkdownText text={argument.text} />
+                <MarkdownText
+                  onReferenceClick={onReferenceClick}
+                  text={argument.text}
+                />
               </div>
             )
           ) : null}

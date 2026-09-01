@@ -29,14 +29,37 @@
   color: var(--ink);
 }
 
+.proofHeader {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  min-height: 1.85rem;
+  margin-bottom: 0.38rem;
+}
+
 .proofHeading {
-  margin: 0 0 0.38rem;
+  margin: 0;
   color: var(--prose-heading-color);
   font-family: var(--font-body);
   font-size: 1.08rem;
   font-style: normal;
   font-weight: 700;
   line-height: 1.3;
+}
+
+.proofHeader .proofSourceToggle {
+  position: static;
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
+.proofSource {
+  min-width: 0;
+  padding: 0.85rem 1rem;
+  border: var(--card-border-width) solid var(--line);
+  border-radius: var(--radius-code-block);
+  background: var(--card-bg);
+  box-shadow: var(--shadow);
 }
 
 .proofContent {

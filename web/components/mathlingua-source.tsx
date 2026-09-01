@@ -1,3 +1,5 @@
+"use client";
+
 import styles from "./mathlingua-source.module.css";
 
 type TokenKind =
@@ -14,14 +16,20 @@ type TokenKind =
 type Token = {
   kind: TokenKind;
   text: string;
+  referenceKey?: string;
 };
 
 interface MathLinguaSourceProps {
   source: string;
+  /** Opens the definition card for a referenced command token. */
+  onReferenceClick?: (referenceKey: string) => void;
 }
 
 /** Renders MathLingua source with lightweight syntax coloring. */
-export function MathLinguaSource({ source }: MathLinguaSourceProps) {
+export function MathLinguaSource({
+  source,
+  onReferenceClick,
+}: MathLinguaSourceProps) {
   const lines = source.length > 0 ? source.split("\n") : [""];
 
   return (
@@ -32,14 +40,28 @@ export function MathLinguaSource({ source }: MathLinguaSourceProps) {
 
           return (
             <span className={styles.line} key={`${lineIndex}-${line}`}>
-              {lineTokens.map((token, tokenIndex) => (
-                <span
-                  className={classNameForToken(token.kind)}
-                  key={`${tokenIndex}-${token.kind}-${token.text}`}
-                >
-                  {token.text}
-                </span>
-              ))}
+              {lineTokens.map((token, tokenIndex) => {
+                const className = classNameForToken(token.kind);
+                const key = `${tokenIndex}-${token.kind}-${token.text}`;
+
+                return token.referenceKey && onReferenceClick ? (
+                  <button
+                    aria-label={`Show definition for ${token.text}`}
+                    className={`${className} ${styles.reference}`}
+                    data-mlg-ref={token.referenceKey}
+                    key={key}
+                    onClick={() => onReferenceClick(token.referenceKey!)}
+                    title={`Show definition for ${token.text}`}
+                    type="button"
+                  >
+                    {token.text}
+                  </button>
+                ) : (
+                  <span className={className} key={key}>
+                    {token.text}
+                  </span>
+                );
+              })}
               {lineIndex < lines.length - 1 ? "\n" : null}
             </span>
           );
@@ -96,30 +118,42 @@ function tokenizeLine(line: string): Token[] {
   return tokenizeInline(line);
 }
 
-function tokenizeInline(text: string): Token[] {
+function tokenizeInline(text: string, insideString = false): Token[] {
   const tokens: Token[] = [];
   let index = 0;
+  const plainKind: TokenKind = insideString ? "string" : "plain";
 
   while (index < text.length) {
     const char = text[index];
 
     if (isWhitespace(char)) {
       const end = scanWhile(text, index, isWhitespace);
-      tokens.push({ kind: "plain", text: text.slice(index, end) });
+      tokens.push({ kind: plainKind, text: text.slice(index, end) });
       index = end;
       continue;
     }
 
     if (char === '"') {
       const end = scanString(text, index);
-      tokens.push({ kind: "string", text: text.slice(index, end) });
+      const hasClosingQuote = end > index + 1 && text[end - 1] === '"';
+      const contentEnd = hasClosingQuote ? end - 1 : end;
+      tokens.push({ kind: "string", text: '"' });
+      tokens.push(...tokenizeInline(text.slice(index + 1, contentEnd), true));
+      if (hasClosingQuote) {
+        tokens.push({ kind: "string", text: '"' });
+      }
       index = end;
       continue;
     }
 
     if (char === "\\") {
       const end = scanCommand(text, index);
-      tokens.push({ kind: "command", text: text.slice(index, end) });
+      const signature = commandReferenceSignature(text, index, end);
+      tokens.push({
+        kind: "command",
+        text: text.slice(index, end),
+        referenceKey: encodeReferenceKey(signature),
+      });
       index = end;
       continue;
     }
@@ -148,11 +182,61 @@ function tokenizeInline(text: string): Token[] {
       continue;
     }
 
-    tokens.push({ kind: "plain", text: char });
+    tokens.push({ kind: plainKind, text: char });
     index += 1;
   }
 
   return tokens;
+}
+
+/** Reconstructs a command's definition signature from its named arguments. */
+function commandReferenceSignature(
+  text: string,
+  start: number,
+  commandEnd: number,
+): string {
+  let signature = text.slice(start, commandEnd);
+  let cursor = commandEnd;
+
+  while (text[cursor] === "{") {
+    cursor = scanBalancedGroup(text, cursor);
+    if (text[cursor] !== ":") {
+      break;
+    }
+
+    let labelEnd = cursor + 1;
+    while (labelEnd < text.length && /[A-Za-z0-9_.?]/.test(text[labelEnd])) {
+      labelEnd += 1;
+    }
+    if (labelEnd === cursor + 1) {
+      break;
+    }
+    signature += text.slice(cursor, labelEnd);
+    cursor = labelEnd;
+  }
+
+  return signature;
+}
+
+function scanBalancedGroup(text: string, start: number): number {
+  let depth = 0;
+  for (let index = start; index < text.length; index += 1) {
+    if (text[index] === "{") {
+      depth += 1;
+    } else if (text[index] === "}") {
+      depth -= 1;
+      if (depth === 0) {
+        return index + 1;
+      }
+    }
+  }
+  return text.length;
+}
+
+function encodeReferenceKey(signature: string): string {
+  return Array.from(new TextEncoder().encode(signature), (byte) =>
+    byte.toString(16).padStart(2, "0"),
+  ).join("");
 }
 
 function scanString(text: string, start: number): number {
@@ -170,6 +254,12 @@ function scanCommand(text: string, start: number): number {
 
   while (index < text.length && isCommandPart(text[index])) {
     index += 1;
+  }
+
+  // A dot may be part of a dotted command name, but a final dot before prose
+  // punctuation or a closing formulation delimiter belongs to the sentence.
+  while (index > start + 1 && text[index - 1] === ".") {
+    index -= 1;
   }
 
   return index;
@@ -239,7 +329,7 @@ function isWordPart(char: string): boolean {
 }
 
 function isCommandPart(char: string): boolean {
-  return /[A-Za-z0-9_.:/?\\]/.test(char);
+  return /[A-Za-z0-9_.:?\\+\-*|<>=!]/.test(char) || char === "/";
 }
 
 function isPunctuation(char: string): boolean {

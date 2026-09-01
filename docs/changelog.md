@@ -24,7 +24,10 @@ instead of appearing as literal dollar-delimited source.
 A theorem's optional `Proof:` is rendered as document prose immediately after
 the theorem card instead of as a labeled section inside it. The proof has its
 own heading, retains MathLingua-aware Markdown and LaTeX rendering, and ends
-with a right-aligned proof box.
+with a proof box. A source toggle shows the `Proof:` section alone; commands in
+that source are interactive definition references. `Proof:` now belongs after
+`Documented:` and before `Aliases:`/`Writing:`/`References:`, whose aliases,
+rendering overrides, and citations remain available to the proof.
 
 ## Nested `given:` Clause Removal
 

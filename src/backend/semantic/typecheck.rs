@@ -2862,6 +2862,7 @@ fn validate_top_level_item_types(
                 group.where_.as_ref(),
                 &group.then,
                 group.iff.as_ref(),
+                group.aliases.as_ref(),
                 proto_group,
             ),
             path,
@@ -2876,6 +2877,7 @@ fn validate_top_level_item_types(
                 group.where_.as_ref(),
                 &group.then,
                 group.iff.as_ref(),
+                group.aliases.as_ref(),
                 proto_group,
             ),
             path,
@@ -2890,6 +2892,7 @@ fn validate_top_level_item_types(
                 group.where_.as_ref(),
                 &group.then,
                 group.iff.as_ref(),
+                group.aliases.as_ref(),
                 proto_group,
             ),
             path,
@@ -3852,6 +3855,7 @@ struct TheoremLikeSections<'a> {
     where_: Option<&'a WhereSection>,
     then: &'a ThenSection,
     iff: Option<&'a IffSection>,
+    aliases: Option<&'a AliasesSection>,
     proto_group: Option<&'a ProtoGroup>,
 }
 
@@ -3862,6 +3866,7 @@ impl<'a> TheoremLikeSections<'a> {
         where_: Option<&'a WhereSection>,
         then: &'a ThenSection,
         iff: Option<&'a IffSection>,
+        aliases: Option<&'a AliasesSection>,
         proto_group: Option<&'a ProtoGroup>,
     ) -> Self {
         Self {
@@ -3870,6 +3875,7 @@ impl<'a> TheoremLikeSections<'a> {
             where_,
             then,
             iff,
+            aliases,
             proto_group,
         }
     }
@@ -3921,13 +3927,28 @@ fn validate_theorem_like(
 
     // The prose inherits the theorem introduction, but not names bound only
     // inside an existential (or another nested clause) in the conclusion.
+    let mut prose_context = context.clone();
+    prose_context.set_local_expression_aliases(local_expression_aliases(sections.aliases));
     check_proto_group_scoped_text(
         sections.proto_group,
-        &context,
+        &prose_context,
         path,
         registry,
         event_log,
     );
+}
+
+fn local_expression_aliases(section: Option<&AliasesSection>) -> Vec<ExpressionAlias> {
+    section
+        .into_iter()
+        .flat_map(|section| &section.arguments)
+        .filter_map(|item| match item {
+            AliasItem::Alias(group) => match &group.alias.argument {
+                AliasKind::Expression(alias) => Some(alias.clone()),
+                AliasKind::SpecOperator(_) => None,
+            },
+        })
+        .collect()
 }
 
 fn assume_optional_using(
@@ -9207,6 +9228,13 @@ fn check_expression(
             check_matching_variadic_slices(target, value, path, locator, event_log);
         }
         ExpressionKind::FunctionCall { name, arguments } => {
+            if let Some((alias_key, expanded)) =
+                expand_local_function_alias(name, arguments, context)
+                && let Some(child) = context.activate_local_alias(alias_key)
+            {
+                check_expression(&expanded, &child, path, locator, registry, event_log);
+                return;
+            }
             let function_types = function_type_facts_for_subject(name, context, registry);
             let has_disambiguation =
                 has_function_call_disambiguation(name, arguments.len(), registry);
@@ -9566,6 +9594,45 @@ fn check_expression(
             check_build_expression(value, ty, context, path, locator, registry, event_log);
         }
     }
+}
+
+/// Expands a plain function-form alias such as `twice(x_) :=> x_ * x_` at its
+/// use site. Alias bodies are checked after substituting the proof's actual
+/// arguments, so symbols and command requirements are validated in the same
+/// inherited context as the surrounding prose fragment.
+fn expand_local_function_alias(
+    name: &str,
+    arguments: &[Expression],
+    context: &TypeContext,
+) -> Option<(String, Expression)> {
+    for alias in context.local_expression_aliases.iter() {
+        let ExpressionAliasLhs::Form(form) = &alias.lhs else {
+            continue;
+        };
+        let FormOrDeclarationKind::FunctionDeclaration { form, .. } = &form.kind else {
+            continue;
+        };
+        if form.name != name
+            || form.magnetic_placeholder.is_some()
+            || form.variadic_parameter.is_some()
+        {
+            continue;
+        }
+        let parameters = function_form_parameters(form);
+        if parameters.len() != arguments.len() {
+            continue;
+        }
+        let substitutions = parameters
+            .into_iter()
+            .zip(arguments.iter().cloned())
+            .collect::<HashMap<_, _>>();
+        let key = format!("{name}/{}", arguments.len());
+        return Some((
+            key,
+            substitute_expression(&alias.expression, &substitutions),
+        ));
+    }
+    None
 }
 
 fn direct_variadic_slice(expression: &Expression) -> Option<&VariadicSlice> {
@@ -17380,6 +17447,12 @@ struct TypeContext {
     /// its `have:`/`asserting:` group. A labeled specification `(.x.)[:label:]`
     /// whose label is present here is established via the referenced group.
     justifications: Rc<HashMap<String, HaveGroup>>,
+    /// Item-local expression aliases available while checking prose. The
+    /// theorem stores `Aliases:` after `Proof:`, but both belong to the same
+    /// structural item, so source order must not hide these aliases from proof
+    /// fragments.
+    local_expression_aliases: Rc<Vec<ExpressionAlias>>,
+    active_local_aliases: Vec<String>,
 }
 
 impl TypeContext {
@@ -17465,6 +17538,19 @@ impl TypeContext {
 
     fn set_justifications(&mut self, justifications: HashMap<String, HaveGroup>) {
         self.justifications = Rc::new(justifications);
+    }
+
+    fn set_local_expression_aliases(&mut self, aliases: Vec<ExpressionAlias>) {
+        self.local_expression_aliases = Rc::new(aliases);
+    }
+
+    fn activate_local_alias(&self, key: String) -> Option<Self> {
+        if self.active_local_aliases.contains(&key) {
+            return None;
+        }
+        let mut child = self.clone();
+        child.active_local_aliases.push(key);
+        Some(child)
     }
 
     fn justification(&self, label: &str) -> Option<&HaveGroup> {

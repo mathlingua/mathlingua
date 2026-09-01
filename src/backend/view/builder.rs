@@ -290,6 +290,7 @@ fn description_page_group(source_id: &str, text: String, registry: &RenderRegist
         parameter_destructurings: Vec::new(),
         body_text: None,
         proof_text: None,
+        proof_source: None,
         page: Some(PageView {
             kind: "Text".to_string(),
             text: render_scoped_text_markdown(&text, registry),
@@ -340,6 +341,7 @@ fn group_view(
     let body_text = person_body_text(&kind, &group.sections, registry)
         .or_else(|| text_item_body(&kind, &group.sections, registry));
     let proof_text = theorem_proof_text(&kind, &group.sections, registry);
+    let proof_source = theorem_proof_source(&kind, &group.sections);
     let parameter_destructurings =
         render_group_parameter_destructurings(&kind, group.heading.as_deref(), registry);
     let section_heading = group.heading.clone();
@@ -366,6 +368,7 @@ fn group_view(
         parameter_destructurings,
         body_text,
         proof_text,
+        proof_source,
         definition_keys: definition_reference_keys_for_heading(group.heading.as_deref()),
         kind,
         heading: group.heading,
@@ -389,8 +392,72 @@ fn theorem_proof_text(
         .iter()
         .find(|section| section.label == "Proof")
         .and_then(section_text)
-        .map(|text| render_scoped_text_markdown(&unindent_text(&text), registry))
+        .map(|text| {
+            let text =
+                render_declared_references_in_text(&unindent_text(&text), sections, registry);
+            render_scoped_text_markdown(&text, registry)
+        })
         .filter(|text| !text.trim().is_empty())
+}
+
+fn theorem_proof_source(kind: &str, sections: &[ProtoSection]) -> Option<String> {
+    if kind != "Theorem" {
+        return None;
+    }
+
+    sections
+        .iter()
+        .find(|section| section.label == "Proof")
+        .map(ToString::to_string)
+}
+
+/// Resolves resource citations declared by this item's `References:` section
+/// before the proof is passed to the Markdown renderer. `References:` follows
+/// `Proof:` in source order, but the whole item is available here, so citation
+/// resolution is deliberately independent of textual order.
+fn render_declared_references_in_text(
+    text: &str,
+    sections: &[ProtoSection],
+    registry: &RenderRegistry,
+) -> String {
+    let mut replacements = sections
+        .iter()
+        .find(|section| section.label == "References")
+        .into_iter()
+        .flat_map(|section| &section.arguments)
+        .filter_map(|argument| match argument {
+            ProtoArgument::Formulation(formulation) => Some(formulation.text.as_str()),
+            ProtoArgument::Text(text) => Some(text.text.as_str()),
+            ProtoArgument::Group(_) => None,
+        })
+        .filter_map(|source| {
+            let source = strip_quoted_text(source).unwrap_or_else(|| source.to_string());
+            let reference = parse_resource_header(&source).ok()?;
+            let rendered = render_resource_reference(&reference, registry);
+            let replacement = rendered.href.map_or(rendered.text.clone(), |href| {
+                format!(
+                    "[{}]({})",
+                    escape_markdown_link_label(&rendered.text),
+                    href.replace('(', "%28").replace(')', "%29")
+                )
+            });
+            Some((source, replacement))
+        })
+        .collect::<Vec<_>>();
+
+    // A longer page-qualified reference must win over its unqualified prefix.
+    replacements.sort_by(|left, right| right.0.len().cmp(&left.0.len()));
+    replacements
+        .into_iter()
+        .fold(text.to_string(), |text, (source, replacement)| {
+            text.replace(&source, &replacement)
+        })
+}
+
+fn escape_markdown_link_label(text: &str) -> String {
+    text.replace('\\', "\\\\")
+        .replace('[', "\\[")
+        .replace(']', "\\]")
 }
 
 /// Collects the `name -> LaTeX body` overrides from an item's `Writing:` section.
@@ -1461,7 +1528,7 @@ then: X = X
     }
 
     #[test]
-    fn separates_rendered_proof_prose_from_theorem_card_sections() {
+    fn separates_proof_source_and_renders_later_writing_and_references() {
         let temp_dir = TestDir::new();
         let root = temp_dir.path().join("repo");
         let content = root.join("content");
@@ -1469,9 +1536,23 @@ then: X = X
         let source = r#"Theorem:
 given: x is \natural
 then: x = x
+Documented:
+. called: "reflexivity"
 Proof:
-. "Because {.x = x.}."
+. "Because {.x = x.}; see $book.ref."
+Writing:
+. "x :~> \xi"
+References:
+. $book.ref
 Id: "11111111-1111-4111-8111-111111111111"
+
+
+[$book.ref]
+Resource:
+. title: "Real Analysis"
+. author: "Royden"
+. url: "https://example.com/book.pdf"
+Id: "22222222-2222-4222-8222-222222222222"
 "#;
 
         fs::create_dir_all(&content).unwrap();
@@ -1492,7 +1573,16 @@ Id: "11111111-1111-4111-8111-111111111111"
             .expect("expected view");
         let theorem = &view.files[0].items[0];
 
-        assert_eq!(theorem.proof_text.as_deref(), Some("Because $x = x$."));
+        assert_eq!(
+            theorem.proof_text.as_deref(),
+            Some(
+                "Because $\\xi = \\xi$; see [Real Analysis (Royden)](https://example.com/book.pdf)."
+            )
+        );
+        assert_eq!(
+            theorem.proof_source.as_deref(),
+            Some("Proof:\n. \"Because {.x = x.}; see $book.ref.\"")
+        );
         assert!(
             theorem
                 .sections

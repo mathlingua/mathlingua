@@ -93,6 +93,8 @@ export type GroupView = {
   body_text: string | null;
   /** Optional theorem proof rendered as prose immediately after the card. */
   proof_text?: string | null;
+  /** Source for the theorem proof's source/rendered toggle. */
+  proof_source?: string | null;
   /** Direct page content for document headings/prose instead of card content. */
   page: PageView | null;
   /** Original MathLingua source for this top-level group. */

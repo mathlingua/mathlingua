@@ -331,7 +331,13 @@ export function FileList({
           {isDivider || !selectedFile ? (
             <DividerPage
               breadcrumb={breadcrumb}
+              definitionIndex={definitionIndex}
+              definitionTrails={definitionTrails}
+              loadedDefinitions={loadedDefinitions}
+              onCloseDefinition={handleCloseDefinition}
+              onCloseDefinitionTrail={handleCloseDefinitionTrail}
               onNavigate={(directory) => onNavigateDirectory(directory)}
+              onReferenceClick={handleReferenceClick}
               preface={currentPreface}
               showTypes={showTypes}
               title={selectedNode?.title ?? rootLabel}
@@ -362,67 +368,18 @@ export function FileList({
                 }
 
                 return (
-                  <div className={styles.definitionStack} key={itemKey}>
-                    <GroupCard
-                      anchorId={anchorId}
-                      group={item}
-                      showTypes={showTypes}
-                      onReferenceClick={(referenceKey) =>
-                        handleReferenceClick(anchorId, referenceKey)
-                      }
-                    />
-                    {trail.length > 0 ? (
-                      <div className={styles.definitionTrail}>
-                        <button
-                          aria-label="Close all definitions"
-                          className={styles.definitionTrailClose}
-                          onClick={() => handleCloseDefinitionTrail(anchorId)}
-                          title="Close all definitions"
-                          type="button"
-                        >
-                          <DefinitionTrailCloseIcon />
-                        </button>
-                        {trail.map((referenceKey, trailIndex) => {
-                          const definition =
-                            definitionIndex.get(referenceKey)?.group ??
-                            loadedDefinitions?.[referenceKey];
-
-                          if (!definition) {
-                            return (
-                              <LoadingDefinition
-                                key={`${referenceKey}-${trailIndex}`}
-                              />
-                            );
-                          }
-
-                          return (
-                            <div
-                              className={styles.definitionTrailItem}
-                              key={`${referenceKey}-${trailIndex}`}
-                            >
-                              <GroupCard
-                                anchorId={`${makeGroupAnchor(
-                                  definition,
-                                  `${anchorId}-definition-${trailIndex}`,
-                                )}-definition-${trailIndex}`}
-                                group={definition}
-                                showTypes={showTypes}
-                                onClose={() =>
-                                  handleCloseDefinition(anchorId, trailIndex)
-                                }
-                                onReferenceClick={(nextReferenceKey) =>
-                                  handleReferenceClick(
-                                    anchorId,
-                                    nextReferenceKey,
-                                  )
-                                }
-                              />
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ) : null}
-                  </div>
+                  <GroupStack
+                    anchorId={anchorId}
+                    definitionIndex={definitionIndex}
+                    group={item}
+                    key={itemKey}
+                    loadedDefinitions={loadedDefinitions}
+                    onCloseDefinition={handleCloseDefinition}
+                    onCloseDefinitionTrail={handleCloseDefinitionTrail}
+                    onReferenceClick={handleReferenceClick}
+                    showTypes={showTypes}
+                    trail={trail}
+                  />
                 );
               })}
             </div>
@@ -536,6 +493,85 @@ function ChapterMark() {
  * Chapter-opener header shown when the reader lands on a section's page. It
  * announces the move into a new part of the collection, like a book divider.
  */
+function GroupStack({
+  anchorId,
+  definitionIndex,
+  group,
+  loadedDefinitions,
+  onCloseDefinition,
+  onCloseDefinitionTrail,
+  onReferenceClick,
+  showTypes,
+  trail,
+}: {
+  anchorId: string;
+  definitionIndex: Map<string, DefinitionIndexEntry>;
+  group: GroupView;
+  loadedDefinitions?: Record<string, GroupView>;
+  onCloseDefinition: (rootAnchorId: string, index: number) => void;
+  onCloseDefinitionTrail: (rootAnchorId: string) => void;
+  onReferenceClick: (rootAnchorId: string, referenceKey: string) => void;
+  showTypes: boolean;
+  trail: string[];
+}) {
+  return (
+    <div className={styles.definitionStack}>
+      <GroupCard
+        anchorId={anchorId}
+        group={group}
+        showTypes={showTypes}
+        onReferenceClick={(referenceKey) =>
+          onReferenceClick(anchorId, referenceKey)
+        }
+      />
+      {trail.length > 0 ? (
+        <div className={styles.definitionTrail}>
+          <button
+            aria-label="Close all definitions"
+            className={styles.definitionTrailClose}
+            onClick={() => onCloseDefinitionTrail(anchorId)}
+            title="Close all definitions"
+            type="button"
+          >
+            <DefinitionTrailCloseIcon />
+          </button>
+          {trail.map((referenceKey, trailIndex) => {
+            const definition =
+              definitionIndex.get(referenceKey)?.group ??
+              loadedDefinitions?.[referenceKey];
+
+            if (!definition) {
+              return (
+                <LoadingDefinition key={`${referenceKey}-${trailIndex}`} />
+              );
+            }
+
+            return (
+              <div
+                className={styles.definitionTrailItem}
+                key={`${referenceKey}-${trailIndex}`}
+              >
+                <GroupCard
+                  anchorId={`${makeGroupAnchor(
+                    definition,
+                    `${anchorId}-definition-${trailIndex}`,
+                  )}-definition-${trailIndex}`}
+                  group={definition}
+                  showTypes={showTypes}
+                  onClose={() => onCloseDefinition(anchorId, trailIndex)}
+                  onReferenceClick={(nextReferenceKey) =>
+                    onReferenceClick(anchorId, nextReferenceKey)
+                  }
+                />
+              </div>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 /**
  * A divider page: the collection root or a directory shown as its own stop in
  * the reading order. Without a preface the title is centered (a book part
@@ -544,13 +580,25 @@ function ChapterMark() {
  */
 function DividerPage({
   breadcrumb,
+  definitionIndex,
+  definitionTrails,
+  loadedDefinitions,
+  onCloseDefinition,
+  onCloseDefinitionTrail,
   onNavigate,
+  onReferenceClick,
   preface,
   showTypes,
   title,
 }: {
   breadcrumb: BreadcrumbCrumb[];
+  definitionIndex: Map<string, DefinitionIndexEntry>;
+  definitionTrails: Record<string, string[]>;
+  loadedDefinitions?: Record<string, GroupView>;
+  onCloseDefinition: (rootAnchorId: string, index: number) => void;
+  onCloseDefinitionTrail: (rootAnchorId: string) => void;
   onNavigate: (directory: string) => void;
+  onReferenceClick: (rootAnchorId: string, referenceKey: string) => void;
   preface: GroupView[];
   showTypes: boolean;
   title: string;
@@ -569,12 +617,17 @@ function DividerPage({
           return item.page ? (
             <PageItem anchorId={anchorId} key={key} page={item.page} />
           ) : (
-            <GroupCard
+            <GroupStack
               anchorId={anchorId}
+              definitionIndex={definitionIndex}
               group={item}
               key={key}
-              onReferenceClick={() => {}}
+              loadedDefinitions={loadedDefinitions}
+              onCloseDefinition={onCloseDefinition}
+              onCloseDefinitionTrail={onCloseDefinitionTrail}
+              onReferenceClick={onReferenceClick}
               showTypes={showTypes}
+              trail={definitionTrails[anchorId] ?? []}
             />
           );
         })}

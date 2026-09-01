@@ -38,6 +38,7 @@ export function GroupCard({
 }: GroupCardProps) {
   const [showSupportSections, setShowSupportSections] = useState(false);
   const [showSource, setShowSource] = useState(false);
+  const [showProofSource, setShowProofSource] = useState(false);
   const headingTooltip = group.heading ?? undefined;
   const headingLatex = group.heading_latex
     ? capitalizeLeadingRenderedLatexWord(group.heading_latex)
@@ -47,6 +48,7 @@ export function GroupCard({
   const hasHeading = resourceCard !== null || headingLatex !== null;
   const bodyText = group.body_text?.trim() ? group.body_text : null;
   const proofText = group.proof_text?.trim() ? group.proof_text : null;
+  const proofSource = group.proof_source?.trim() ? group.proof_source : null;
   const hasSupportSections =
     group.sections.some(
       (section) =>
@@ -148,7 +150,10 @@ export function GroupCard({
           ) : null}
           {bodyText ? (
             <div className={styles.bodyText}>
-              <MarkdownText text={bodyText} />
+              <MarkdownText
+                onReferenceClick={onReferenceClick}
+                text={bodyText}
+              />
             </div>
           ) : null}
           {resourceCard ? (
@@ -254,20 +259,57 @@ export function GroupCard({
               <CloseIcon />
             </button>
           ) : null}
-          <MathLinguaSource source={group.source} />
+          <MathLinguaSource
+            onReferenceClick={onReferenceClick}
+            source={group.source}
+          />
         </article>
       </div>
       {proofText ? (
         <article className={styles.proof}>
-          <h4 className={styles.proofHeading}>Proof</h4>
-          <div className={styles.proofContent}>
-            <div className={styles.proofBody}>
-              <MarkdownText text={proofText} />
+          <header className={styles.proofHeader}>
+            <h4 className={styles.proofHeading}>Proof</h4>
+            {proofSource ? (
+              <button
+                aria-label={
+                  showProofSource
+                    ? "Show rendered proof"
+                    : "Show proof MathLingua source"
+                }
+                aria-pressed={showProofSource}
+                className={`${styles.iconToggle} ${styles.proofSourceToggle}`}
+                onClick={() => setShowProofSource((value) => !value)}
+                title={
+                  showProofSource
+                    ? "Show rendered proof"
+                    : "Show proof MathLingua source"
+                }
+                type="button"
+              >
+                {showProofSource ? <CardIcon /> : <CodeIcon />}
+              </button>
+            ) : null}
+          </header>
+          {showProofSource && proofSource ? (
+            <div className={styles.proofSource}>
+              <MathLinguaSource
+                onReferenceClick={onReferenceClick}
+                source={proofSource}
+              />
             </div>
-            <span aria-label="End of proof" className={styles.proofEnd}>
-              <LatexRenderer latex={"\\Box"} />
-            </span>
-          </div>
+          ) : (
+            <div className={styles.proofContent}>
+              <div className={styles.proofBody}>
+                <MarkdownText
+                  onReferenceClick={onReferenceClick}
+                  text={proofText}
+                />
+              </div>
+              <span aria-label="End of proof" className={styles.proofEnd}>
+                <LatexRenderer latex={"\\Box"} />
+              </span>
+            </div>
+          )}
         </article>
       ) : null}
     </section>

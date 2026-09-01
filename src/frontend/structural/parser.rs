@@ -1474,7 +1474,9 @@ pub(super) fn parse_piecewise_clause(
             tracker.user_error_at_row(
                 Some(ORIGIN),
                 section.metadata.row,
-                format!("For piecewise pattern:\n\n{pattern}\n\nExpected `then` section after `elseIf`"),
+                format!(
+                    "For piecewise pattern:\n\n{pattern}\n\nExpected `then` section after `elseIf`"
+                ),
             );
             return None;
         };
@@ -4077,22 +4079,19 @@ pub(in crate::frontend::structural::parser) fn parse_argument_theorem_like(
         "then",
         "iff?",
         "Documented?",
+    ];
+    if accepts_proof {
+        section_specs.push("Proof?");
+    }
+    section_specs.extend([
         "Justification?",
         "Aliases?",
         "Writing?",
         "References?",
         "Metadata?",
-    ];
-    if accepts_proof {
-        section_specs.push("Proof?");
-    }
-    section_specs.push("Id?");
-    let sections = identify_sections(
-        name,
-        &group.sections,
-        tracker,
-        &section_specs,
-    )?;
+        "Id?",
+    ]);
+    let sections = identify_sections(name, &group.sections, tracker, &section_specs)?;
     ensure_no_named_result_arg(sections.get(section_name).copied(), name, tracker);
 
     Some((
@@ -5379,7 +5378,15 @@ then:
             r#"
 Theorem:
 then: x = x
+Documented:
+. called: "reflexivity"
 Proof: "By reflexivity."
+Aliases:
+. alias: reflect(x_) :=> x_
+Writing:
+. "x :~> x"
+References:
+. $book.ref
 Id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
 "#,
         );
@@ -5391,6 +5398,10 @@ Id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
             theorem.proof.as_ref().expect("expected proof").argument.0,
             "By reflexivity."
         );
+        assert!(theorem.documented.is_some());
+        assert!(theorem.aliases.is_some());
+        assert!(theorem.writing.is_some());
+        assert!(theorem.references.is_some());
     }
 
     #[test]
@@ -6616,14 +6627,20 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
         let TopLevelItem::Defines(group) = &document.items[0] else {
             panic!("expected defines group");
         };
-        let crate::frontend::formulation::ast::CommandHeader::Command(ref node) = group.heading else {
+        let crate::frontend::formulation::ast::CommandHeader::Command(ref node) = group.heading
+        else {
             panic!("expected command header");
         };
         assert_eq!(
-            node.chain.parts.iter().map(|p| match p {
-                crate::frontend::formulation::ast::ChainPart::Name(name) => name.as_str(),
-                _ => "",
-            }).collect::<Vec<_>>().join("."),
+            node.chain
+                .parts
+                .iter()
+                .map(|p| match p {
+                    crate::frontend::formulation::ast::ChainPart::Name(name) => name.as_str(),
+                    _ => "",
+                })
+                .collect::<Vec<_>>()
+                .join("."),
             "von.neumann.omega"
         );
     }
@@ -6675,7 +6692,10 @@ expresses:
   then: n_ := 0
 "#,
         );
-        assert!(!diagnostics.is_empty(), "expected error for piecewise with arguments");
+        assert!(
+            !diagnostics.is_empty(),
+            "expected error for piecewise with arguments"
+        );
         assert!(
             diagnostics
                 .iter()
@@ -6697,7 +6717,10 @@ expresses:
   else: n_ := 2
 "#,
         );
-        assert!(!diagnostics.is_empty(), "expected error for elseIf without then");
+        assert!(
+            !diagnostics.is_empty(),
+            "expected error for elseIf without then"
+        );
         assert!(
             diagnostics
                 .iter()

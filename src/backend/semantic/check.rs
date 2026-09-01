@@ -691,7 +691,7 @@ Id: "55555555-5555-4555-8555-555555555555"
     }
 
     #[test]
-    fn theorem_prose_inherits_given_symbols_but_not_conclusion_bindings() {
+    fn theorem_prose_inherits_given_symbols_and_later_aliases_but_not_conclusion_bindings() {
         let valid = parsed_file(
             "valid-proof.mlg",
             r#"Theorem:
@@ -700,7 +700,9 @@ then:
 . exists: y is \\expression
   suchThat: y = y
 Proof:
-. "Suppose {.x = x.}."
+. "Suppose {.reflect(x) = x.}."
+Aliases:
+. alias: reflect(x_) :=> x_
 Id: "11111111-1111-4111-8111-111111111111"
 "#,
         );
@@ -728,6 +730,30 @@ Id: "22222222-2222-4222-8222-222222222222"
                 .is_some_and(|message| message.message.contains("Unrecognized symbol `y`"))),
             "{:#?}",
             invalid_log.events()
+        );
+
+        let invalid_alias = parsed_file(
+            "invalid-proof-alias.mlg",
+            r#"Theorem:
+given: x is \\expression
+then: x = x
+Proof:
+. "Suppose {.reflect(x) = x.}."
+Aliases:
+. alias: reflect(x_) :=> missing
+Id: "33333333-3333-4333-8333-333333333333"
+"#,
+        );
+        let mut invalid_alias_log = EventLog::new();
+        check_documents(&[invalid_alias], &mut invalid_alias_log);
+        assert!(
+            invalid_alias_log.events().iter().any(|event| event
+                .as_message()
+                .is_some_and(|message| message
+                    .message
+                    .contains("Unrecognized symbol `missing`"))),
+            "{:#?}",
+            invalid_alias_log.events()
         );
     }
 }

@@ -46,6 +46,10 @@ pub struct GroupView {
     /// theorem card. Absent for items without a `Proof:` section.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub proof_text: Option<String>,
+    /// Source-like rendering of the theorem's `Proof:` section for the prose
+    /// proof source toggle.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub proof_source: Option<String>,
     pub page: Option<PageView>,
     pub source: String,
     pub sections: Vec<SectionView>,

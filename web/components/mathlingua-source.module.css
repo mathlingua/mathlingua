@@ -36,6 +36,31 @@
   color: var(--syntax-command);
 }
 
+.reference {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  line-height: inherit;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.16em;
+  cursor: pointer;
+}
+
+.reference:hover {
+  text-decoration-color: currentColor;
+}
+
+.reference:focus-visible {
+  border-radius: 0.1rem;
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
 .keyword {
   color: var(--syntax-keyword);
   font-weight: 600;

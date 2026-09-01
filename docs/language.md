@@ -1069,6 +1069,14 @@ the theorem body. Theorem-like `given:` sections accept refined command type
 expressions. Items in `where:` are local assumptions or declarations available
 while checking `then:` and `iff:`.
 
+A theorem's optional `Proof:` appears after `Documented:` and before the
+remaining support sections (`Justification:`, `Aliases:`, `Writing:`,
+`References:`, and `Metadata:`). Although those support sections follow it in
+source order, the proof is checked and rendered against the complete item: it
+may use aliases and item-level writing overrides declared below it, and it may
+cite resources listed in `References:`. The viewer renders the proof as prose
+after the theorem card and offers a source toggle for the `Proof:` section.
+
 If a theorem-like group has a command heading, that heading introduces a
 signature and participates in duplicate-signature and reference checks.
 

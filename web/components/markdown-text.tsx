@@ -1,7 +1,7 @@
 "use client";
 
 import katex from "katex";
-import type { ReactNode } from "react";
+import type { MouseEvent, ReactNode } from "react";
 import { allowMathLinguaCommands } from "./latex-renderer";
 import { MathLinguaSource } from "./mathlingua-source";
 import styles from "./markdown-text.module.css";
@@ -10,14 +10,31 @@ import styles from "./markdown-text.module.css";
 interface MarkdownTextProps {
   /** Markdown source after Mathlingua quote stripping. */
   text: string;
+  /** Called when rendered math references another definition. */
+  onReferenceClick?: (referenceKey: string) => void;
 }
 
 /** Renders document prose Markdown with KaTeX math support. */
-export function MarkdownText({ text }: MarkdownTextProps) {
+export function MarkdownText({ text, onReferenceClick }: MarkdownTextProps) {
+  const handleClick = (event: MouseEvent<HTMLDivElement>) => {
+    handleReferenceClick(event, onReferenceClick);
+  };
+
   return (
-    <div className={styles.markdown}>
+    <div
+      className={
+        onReferenceClick
+          ? `${styles.markdown} ${styles.markdownInteractive}`
+          : styles.markdown
+      }
+      onClick={handleClick}
+    >
       {parseBlocks(text).map((block, index) => (
-        <MarkdownBlock block={block} key={`${block.kind}-${index}`} />
+        <MarkdownBlock
+          block={block}
+          key={`${block.kind}-${index}`}
+          onReferenceClick={onReferenceClick}
+        />
       ))}
     </div>
   );
@@ -52,7 +69,13 @@ type MarkdownBlock =
       latex: string;
     };
 
-function MarkdownBlock({ block }: { block: MarkdownBlock }) {
+function MarkdownBlock({
+  block,
+  onReferenceClick,
+}: {
+  block: MarkdownBlock;
+  onReferenceClick?: (referenceKey: string) => void;
+}) {
   switch (block.kind) {
     case "paragraph":
       return <p>{parseInline(block.text)}</p>;
@@ -82,7 +105,10 @@ function MarkdownBlock({ block }: { block: MarkdownBlock }) {
         // snippet and are never checked.
         return (
           <div className={styles.markdownMlgCode}>
-            <MathLinguaSource source={block.text} />
+            <MathLinguaSource
+              onReferenceClick={onReferenceClick}
+              source={block.text}
+            />
           </div>
         );
       }
@@ -94,6 +120,37 @@ function MarkdownBlock({ block }: { block: MarkdownBlock }) {
     case "math":
       return <KatexMath displayMode latex={block.latex} />;
   }
+}
+
+function handleReferenceClick(
+  event: MouseEvent<HTMLElement>,
+  onReferenceClick?: (referenceKey: string) => void,
+) {
+  if (!onReferenceClick) {
+    return;
+  }
+
+  const target =
+    event.target instanceof Element
+      ? event.target.closest("[data-mlg-ref]")
+      : null;
+  if (!target || !event.currentTarget.contains(target)) {
+    return;
+  }
+  // MathLingua source tokens are real buttons with their own click handler.
+  // Leave those to the source renderer so one click opens only one card.
+  if (target instanceof HTMLButtonElement) {
+    return;
+  }
+
+  const referenceKey = target.getAttribute("data-mlg-ref");
+  if (!referenceKey) {
+    return;
+  }
+
+  event.preventDefault();
+  event.stopPropagation();
+  onReferenceClick(referenceKey);
 }
 
 function MarkdownHeading({ level, text }: { level: number; text: string }) {

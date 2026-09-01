@@ -566,6 +566,7 @@ mod tests {
                         parameter_destructurings: Vec::new(),
                         body_text: None,
                         proof_text: None,
+                        proof_source: None,
                         page: Some(PageView {
                             kind: "Title".to_string(),
                             text: "Intro".to_string(),
@@ -582,6 +583,7 @@ mod tests {
                         parameter_destructurings: Vec::new(),
                         body_text: None,
                         proof_text: None,
+                        proof_source: None,
                         page: None,
                         source: "[\\set]".to_string(),
                         sections: Vec::new(),

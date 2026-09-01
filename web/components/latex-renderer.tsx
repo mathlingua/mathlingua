@@ -66,7 +66,7 @@ const TITLE_WRITTEN_CLASS = "mlg-title-written";
  * that mutes the written half of a two-part card title. Everything else is
  * rejected so arbitrary markup in a formulation cannot reach the page.
  */
-function allowMathLinguaCommands(context: {
+export function allowMathLinguaCommands(context: {
   command?: string;
   attributes?: Record<string, string>;
   class?: string;

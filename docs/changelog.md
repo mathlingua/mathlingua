@@ -5,6 +5,20 @@ and CLI behavior implemented in this repository. It is intentionally rule-focuse
 each section captures not only the feature, but also the conditions under which
 the feature is valid.
 
+## Checked MathLingua In Prose
+
+MathLingua fragments embedded in any quoted prose value are now semantically
+checked as well as rendered. `<<name>>`/`<</name>>` scope markers must be
+balanced and properly nested; declarations using `is`, quoted specification
+operators, or `:=` introduce symbols until the current prose scope closes.
+Prose inherits the enclosing item's symbols, so theorem proof text can use
+heading and `given:`/`where:` names but not bindings local to its conclusion.
+Directory prefaces receive the same checks as navigable source files.
+
+Nested text arguments in cards now pass through the Markdown-and-KaTeX renderer,
+so ordinary `$...$`/`$$...$$` and generated `{. ... .}`/`{{. ... .}}` math render
+instead of appearing as literal dollar-delimited source.
+
 ## Nested `given:` Clause Removal
 
 The redundant nested `given:` / `where?:` / `then:` clause group has been

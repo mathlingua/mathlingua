@@ -32,6 +32,7 @@ pub(crate) struct SourceCollection {
     toc_files: Vec<PathBuf>,
     preface_files: Vec<(PathBuf, PathBuf)>,
     parsed_files: Vec<ParsedSourceFile>,
+    parsed_preface_files: Vec<ParsedSourceFile>,
     loaded_source_files: BTreeMap<PathBuf, LoadedProtoSource>,
     proto_groups: BTreeMap<PathBuf, Vec<ProtoGroup>>,
     view_type_info: CollectionTypeInfo,
@@ -110,6 +111,7 @@ impl SourceCollection {
             toc_files: source_files.toc_files,
             preface_files: source_files.preface_files,
             parsed_files: Vec::new(),
+            parsed_preface_files: Vec::new(),
             loaded_source_files,
             proto_groups: BTreeMap::new(),
             view_type_info: CollectionTypeInfo::new(),
@@ -142,8 +144,8 @@ impl SourceCollection {
     pub(crate) fn run_view_check_passes(&mut self, event_log: &mut EventLog, origin: &str) {
         self.parse_structural(event_log, origin);
         self.check_text_fences(event_log, origin);
-        self.view_type_info =
-            check_documents_collecting_all_type_info(&self.parsed_files, event_log);
+        let files = self.semantic_files();
+        self.view_type_info = check_documents_collecting_all_type_info(&files, event_log);
     }
 
     /// Runs the check passes and, when `type_info_for` names a file of this
@@ -222,6 +224,7 @@ impl SourceCollection {
 
     fn parse_structural(&mut self, event_log: &mut EventLog, origin: &str) {
         self.parsed_files.clear();
+        self.parsed_preface_files.clear();
         self.proto_groups.clear();
 
         for file in &self.source_files {
@@ -253,10 +256,27 @@ impl SourceCollection {
                 self.parsed_files.push(parsed_file);
             }
         }
+
+        // Prefaces are not navigable pages, but their groups and prose are
+        // still ordinary MathLingua and receive the same structural and
+        // semantic checks as page files.
+        for (_, file) in &self.preface_files {
+            if let Some(parsed_file) = parse_source_file(file, event_log, origin) {
+                self.parsed_preface_files.push(parsed_file);
+            }
+        }
     }
 
     fn check_text_fences(&self, event_log: &mut EventLog, origin: &str) {
         for file in &self.parsed_files {
+            crate::backend::text_fence::check_text_fence_syntax(
+                &file.path,
+                &file.source,
+                event_log,
+                origin,
+            );
+        }
+        for file in &self.parsed_preface_files {
             crate::backend::text_fence::check_text_fence_syntax(
                 &file.path,
                 &file.source,
@@ -271,7 +291,16 @@ impl SourceCollection {
         event_log: &mut EventLog,
         type_info_for: Option<&Path>,
     ) -> DocumentTypeInfo {
-        check_documents_collecting_type_info(&self.parsed_files, event_log, type_info_for)
+        let files = self.semantic_files();
+        check_documents_collecting_type_info(&files, event_log, type_info_for)
+    }
+
+    fn semantic_files(&self) -> Vec<ParsedSourceFile> {
+        self.parsed_files
+            .iter()
+            .chain(&self.parsed_preface_files)
+            .cloned()
+            .collect()
     }
 
     pub(crate) fn build_view(&mut self, event_log: &mut EventLog) -> Option<CollectionView> {
@@ -1260,6 +1289,28 @@ mod tests {
 
         // The root preface is attached to the collection cover.
         assert_eq!(view.preface.len(), 1);
+    }
+
+    #[test]
+    fn preface_prose_receives_semantic_scope_checks() {
+        let temp_dir = TestDir::new();
+        let content = temp_dir.path().join("content");
+        fs::create_dir_all(&content).unwrap();
+        fs::write(temp_dir.path().join("mlg.json"), default_config_contents()).unwrap();
+        fs::write(
+            content.join(PREFACE_FILE),
+            "Text: \"<<exists>>unclosed\"\nId: \"11111111-1111-4111-8111-111111111111\"\n",
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let mut collection =
+            SourceCollection::load(temp_dir.path(), &mut event_log, "source_collection");
+        collection.run_check_passes(&mut event_log, "source_collection");
+
+        assert!(event_log.events().iter().any(|event| event
+            .as_message()
+            .is_some_and(|message| message.message.contains("Unclosed prose scope"))));
     }
 
     #[test]

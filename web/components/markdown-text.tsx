@@ -2,6 +2,7 @@
 
 import katex from "katex";
 import type { ReactNode } from "react";
+import { allowMathLinguaCommands } from "./latex-renderer";
 import { MathLinguaSource } from "./mathlingua-source";
 import styles from "./markdown-text.module.css";
 
@@ -310,6 +311,7 @@ function KatexMath({
     displayMode,
     strict: "ignore",
     throwOnError: false,
+    trust: allowMathLinguaCommands,
   });
 
   if (displayMode) {

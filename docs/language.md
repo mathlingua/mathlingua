@@ -759,10 +759,16 @@ Let {.x is \natural.}[is="be a"] number.
 Choose {.x "in" X.}["in"="from"].
 ```
 
-Named `<<name>>` and `<</name>>` markers create lexical rendering scopes. The
-markers themselves are omitted from the rendered Markdown. Scopes may nest;
-variables introduced on the left of `is` or a quoted operator remain known to
-later embedded formulations until their scope closes.
+Named `<<name>>` and `<</name>>` markers create lexical scopes. The markers must
+be balanced and properly nested, and are omitted from the rendered Markdown.
+Scopes may nest; variables introduced on the left of `is`, a quoted operator,
+or `:=` remain known to later embedded formulations until their scope closes.
+Each embedded formulation is parsed and type-checked like ordinary MathLingua.
+
+A prose value also inherits the symbols known at its position in the enclosing
+item. For example, a theorem's proof text knows its heading parameters and
+`given:`/`where:` introductions, but it does not know a variable bound only
+inside an existential conclusion in `then:`.
 
 ```text
 <<forall>>

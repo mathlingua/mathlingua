@@ -1,6 +1,6 @@
 import { ArgumentView } from "../lib/types";
 import { LatexRenderer } from "./latex-renderer";
-import { MarkdownInline } from "./markdown-text";
+import { MarkdownInline, MarkdownText } from "./markdown-text";
 import { MathLinguaInline } from "./mathlingua-inline";
 import { TypeAnnotations } from "./type-annotations";
 import styles from "./argument-list.module.css";
@@ -87,7 +87,9 @@ export function ArgumentList({
                 />
               </span>
             ) : (
-              <p className={styles.textLine}>{argument.text}</p>
+              <div className={styles.textLine}>
+                <MarkdownText text={argument.text} />
+              </div>
             )
           ) : null}
           {argument.kind === "reference" ? (

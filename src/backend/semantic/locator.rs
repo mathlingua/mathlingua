@@ -8,6 +8,10 @@ pub(super) struct SourcePosition {
 
 pub(super) struct SourceLocator<'a> {
     source: &'a str,
+    /// Row added to positions reported from `source`. Embedded MathLingua
+    /// fragments use a locator over the fragment itself while retaining the
+    /// containing text literal's source row.
+    row_offset: usize,
     /// A copy of `source` with all quoted text-value regions (prose, `Text:`
     /// Markdown, ` ```mlg ` fences, `called:`/`written:` values, and so on)
     /// blanked to spaces, keeping every byte offset and newline in place.
@@ -41,6 +45,7 @@ impl<'a> SourceLocator<'a> {
     pub(super) fn new(source: &'a str) -> Self {
         Self {
             source,
+            row_offset: 0,
             search: mask_text_values(source),
             item_boundaries: item_boundaries(source),
             item_boundary_cursor: 0,
@@ -51,6 +56,22 @@ impl<'a> SourceLocator<'a> {
             reference_cursor: 0,
             symbol_cursor: 0,
         }
+    }
+
+    /// Creates a locator for MathLingua embedded in a prose value.
+    pub(super) fn for_text_fragment(source: &'a str, row_offset: usize) -> Self {
+        let mut locator = Self::new(source);
+        // Unlike ordinary semantic source, this entire string is formulation
+        // text and must remain searchable rather than being quote-masked.
+        locator.search = source.to_owned();
+        locator.row_offset = row_offset;
+        locator
+    }
+
+    fn position_at_offset(&self, offset: usize) -> SourcePosition {
+        let mut position = position_at_offset(self.source, offset);
+        position.row += self.row_offset;
+        position
     }
 
     /// The exclusive end of the item beginning at or after `from`.
@@ -115,7 +136,7 @@ impl<'a> SourceLocator<'a> {
         )
         .or_else(|| find_signature_occurrence(&self.search, shape, 0, OccurrenceKind::Heading))?;
         self.heading_cursor = offset.saturating_add(1);
-        Some(position_at_offset(self.source, offset))
+        Some(self.position_at_offset(offset))
     }
 
     pub(super) fn locate_reference(&mut self, shape: &SignatureShape) -> Option<SourcePosition> {
@@ -131,7 +152,7 @@ impl<'a> SourceLocator<'a> {
         })
         .or_else(|| find_signature_occurrence(&self.search, shape, 0, OccurrenceKind::Reference))?;
         self.reference_cursor = offset.saturating_add(1);
-        Some(position_at_offset(self.source, offset))
+        Some(self.position_at_offset(offset))
     }
 
     pub(super) fn locate_symbol(&mut self, name: &str) -> Option<SourcePosition> {
@@ -140,7 +161,7 @@ impl<'a> SourceLocator<'a> {
             .or_else(|| find_symbol_occurrence(window, name, self.item_start))
             .or_else(|| find_symbol_occurrence(&self.search, name, 0))?;
         self.symbol_cursor = offset.saturating_add(name.len());
-        Some(position_at_offset(self.source, offset))
+        Some(self.position_at_offset(offset))
     }
 }
 

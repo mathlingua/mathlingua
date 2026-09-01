@@ -689,6 +689,47 @@ Id: "55555555-5555-4555-8555-555555555555"
         assert!(messages[3].contains("must be exactly `x(i_)` or `x(i)`"));
         assert!(messages[4].contains("must be exactly `x(i_, j_)` or `x(i, j)`"));
     }
+
+    #[test]
+    fn theorem_prose_inherits_given_symbols_but_not_conclusion_bindings() {
+        let valid = parsed_file(
+            "valid-proof.mlg",
+            r#"Theorem:
+given: x is \\expression
+then:
+. exists: y is \\expression
+  suchThat: y = y
+Proof:
+. "Suppose {.x = x.}."
+Id: "11111111-1111-4111-8111-111111111111"
+"#,
+        );
+        let mut valid_log = EventLog::new();
+        check_documents(&[valid], &mut valid_log);
+        assert!(!valid_log.has_errors(), "{:#?}", valid_log.events());
+
+        let invalid = parsed_file(
+            "invalid-proof.mlg",
+            r#"Theorem:
+given: x is \\expression
+then:
+. exists: y is \\expression
+  suchThat: y = y
+Proof:
+. "Suppose {.y = x.}."
+Id: "22222222-2222-4222-8222-222222222222"
+"#,
+        );
+        let mut invalid_log = EventLog::new();
+        check_documents(&[invalid], &mut invalid_log);
+        assert!(
+            invalid_log.events().iter().any(|event| event
+                .as_message()
+                .is_some_and(|message| message.message.contains("Unrecognized symbol `y`"))),
+            "{:#?}",
+            invalid_log.events()
+        );
+    }
 }
 
 pub(super) fn check_documented_rendering(

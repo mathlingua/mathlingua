@@ -134,6 +134,10 @@ fn math_fragment(input: &str, display: bool) -> Option<(&str, usize)> {
         ("{.", ".}")
     };
     let tail = input.strip_prefix(open)?;
+    // `{...`/`{{...` belong to variadic writing templates, not prose math.
+    if tail.starts_with('.') {
+        return None;
+    }
     let end = tail.find(close)?;
     Some((&tail[..end], open.len() + end + close.len()))
 }
@@ -237,6 +241,15 @@ mod tests {
                 &RenderRegistry::default(),
             ),
             "Choose $x \\textrm{ from } X$"
+        );
+    }
+
+    #[test]
+    fn leaves_variadic_template_ellipsis_unchanged() {
+        let text = r#"\left [ x?{{...\:...}...\\} \right ]"#;
+        assert_eq!(
+            render_scoped_text_markdown(text, &RenderRegistry::default()),
+            text
         );
     }
 }

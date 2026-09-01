@@ -1,4 +1,5 @@
 use super::*;
+use crate::frontend::formulation::parse_declaration_statement;
 use std::collections::{BTreeSet, HashMap, HashSet};
 use std::rc::Rc;
 
@@ -497,9 +498,21 @@ pub(super) fn validate_document_types(
     event_log: &mut EventLog,
 ) {
     let mut locator = SourceLocator::new(&file.source);
+    // The semantic AST intentionally reduces prose values to `OpenText`. Keep
+    // the proto groups alongside it so every quoted text position (including
+    // nested documentation and proof items) can be checked uniformly.
+    let mut proto_log = EventLog::new();
+    let proto_groups = ProtoParser::new(&file.source, &mut proto_log).parse();
     for (index, item) in file.document.items.iter().enumerate() {
         begin_type_info_item(file, index, registry);
-        validate_top_level_item_types(item, file.path.as_path(), &mut locator, registry, event_log);
+        validate_top_level_item_types(
+            item,
+            proto_groups.get(index),
+            file.path.as_path(),
+            &mut locator,
+            registry,
+            event_log,
+        );
     }
 }
 
@@ -2086,8 +2099,284 @@ fn validate_equivalent_when_compatibility(
     }
 }
 
+#[derive(Clone)]
+struct ScopedTextFrame {
+    name: Option<String>,
+    context: TypeContext,
+}
+
+/// Checks every quoted prose value in a proto group. All values inherit the
+/// symbols known at this point in the enclosing structural item; declarations
+/// made inside a text value remain local to that value and its named scopes.
+fn check_proto_group_scoped_text(
+    group: Option<&ProtoGroup>,
+    context: &TypeContext,
+    path: &Path,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    let Some(group) = group else {
+        return;
+    };
+    let mut values = Vec::new();
+    collect_proto_group_text_values(group, &mut values);
+    for (text, row) in values {
+        check_scoped_text_value(&text, row, context, path, registry, event_log);
+    }
+}
+
+fn collect_proto_group_text_values(group: &ProtoGroup, values: &mut Vec<(String, usize)>) {
+    for section in &group.sections {
+        if let Some(text) = section
+            .inline_argument
+            .as_deref()
+            .and_then(unquote_proto_text)
+        {
+            values.push((text, section.metadata.row));
+        }
+        for argument in &section.arguments {
+            match argument {
+                ProtoArgument::Text(text) => {
+                    if let Some(value) = unquote_proto_text(&text.text) {
+                        values.push((value, text.metadata.row));
+                    }
+                }
+                ProtoArgument::Group(group) => collect_proto_group_text_values(group, values),
+                ProtoArgument::Formulation(_) => {}
+            }
+        }
+    }
+}
+
+fn unquote_proto_text(text: &str) -> Option<String> {
+    let text = text.trim();
+    (text.len() >= 2 && text.starts_with('"') && text.ends_with('"'))
+        .then(|| unescape_quoted_text(&text[1..text.len() - 1]))
+}
+
+fn check_scoped_text_value(
+    text: &str,
+    source_row: usize,
+    inherited: &TypeContext,
+    path: &Path,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    let mut frames = vec![ScopedTextFrame {
+        name: None,
+        context: inherited.clone(),
+    }];
+    let mut index = 0;
+    while index < text.len() {
+        let rest = &text[index..];
+        if rest.starts_with("<<") {
+            let Some((closing, name, consumed)) = parse_scoped_text_marker(rest) else {
+                scoped_text_error(
+                    path,
+                    source_row + text[..index].matches('\n').count(),
+                    event_log,
+                    "Malformed prose scope marker; expected `<<name>>` or `<</name>>`",
+                );
+                index += rest.chars().next().map(char::len_utf8).unwrap_or(1);
+                continue;
+            };
+            if closing {
+                if frames.len() == 1 {
+                    scoped_text_error(
+                        path,
+                        source_row + text[..index].matches('\n').count(),
+                        event_log,
+                        format!("Unexpected prose scope closing marker `<</{name}>>`"),
+                    );
+                } else {
+                    let expected = frames
+                        .last()
+                        .and_then(|frame| frame.name.as_deref())
+                        .unwrap_or_default();
+                    if expected != name {
+                        scoped_text_error(
+                            path,
+                            source_row + text[..index].matches('\n').count(),
+                            event_log,
+                            format!(
+                                "Mismatched prose scope closing marker `<</{name}>>`; expected `<</{expected}>>`"
+                            ),
+                        );
+                    }
+                    frames.pop();
+                }
+            } else {
+                let context = frames
+                    .last()
+                    .map(|frame| frame.context.clone())
+                    .unwrap_or_else(|| inherited.clone());
+                frames.push(ScopedTextFrame {
+                    name: Some(name.to_string()),
+                    context,
+                });
+            }
+            index += consumed;
+            continue;
+        }
+
+        let display_fragment = scoped_text_fragment_opens(rest, true);
+        let inline_fragment = scoped_text_fragment_opens(rest, false);
+        let fragment = if display_fragment {
+            parse_scoped_text_fragment(rest, true)
+        } else if inline_fragment {
+            parse_scoped_text_fragment(rest, false)
+        } else {
+            None
+        };
+        if let Some((source, consumed)) = fragment {
+            let row = source_row + text[..index].matches('\n').count();
+            if let Some(frame) = frames.last_mut() {
+                check_scoped_text_fragment(
+                    source,
+                    row,
+                    &mut frame.context,
+                    path,
+                    registry,
+                    event_log,
+                );
+            }
+            index += consumed;
+            continue;
+        }
+        if display_fragment || inline_fragment {
+            scoped_text_error(
+                path,
+                source_row + text[..index].matches('\n').count(),
+                event_log,
+                "Unclosed MathLingua prose fragment",
+            );
+        }
+
+        let character = rest.chars().next().expect("non-empty text remainder");
+        index += character.len_utf8();
+    }
+
+    for frame in frames.into_iter().skip(1) {
+        let name = frame.name.unwrap_or_default();
+        scoped_text_error(
+            path,
+            source_row,
+            event_log,
+            format!("Unclosed prose scope `<<{name}>>`; expected `<</{name}>>`"),
+        );
+    }
+}
+
+fn parse_scoped_text_marker(input: &str) -> Option<(bool, &str, usize)> {
+    let (closing, prefix) = if input.starts_with("<</") {
+        (true, "<</")
+    } else {
+        (false, "<<")
+    };
+    let tail = input.strip_prefix(prefix)?;
+    let end = tail.find(">>")?;
+    let name = &tail[..end];
+    if name.is_empty()
+        || !name
+            .chars()
+            .all(|character| character.is_ascii_alphanumeric() || matches!(character, '_' | '-'))
+    {
+        return None;
+    }
+    Some((closing, name, prefix.len() + end + 2))
+}
+
+fn parse_scoped_text_fragment(input: &str, display: bool) -> Option<(&str, usize)> {
+    let (open, close) = if display {
+        ("{{.", ".}}")
+    } else {
+        ("{.", ".}")
+    };
+    let tail = input.strip_prefix(open)?;
+    let end = tail.find(close)?;
+    Some((&tail[..end], open.len() + end + close.len()))
+}
+
+fn scoped_text_fragment_opens(input: &str, display: bool) -> bool {
+    let open = if display { "{{." } else { "{." };
+    input
+        .strip_prefix(open)
+        // Variadic writing templates use `{...` and `{{...`; those are not
+        // embedded-prose delimiters even though their first bytes overlap.
+        .is_some_and(|tail| !tail.starts_with('.'))
+}
+
+fn check_scoped_text_fragment(
+    source: &str,
+    row: usize,
+    context: &mut TypeContext,
+    path: &Path,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    let source = source.trim();
+    if source.is_empty() {
+        scoped_text_error(path, row, event_log, "MathLingua prose fragments cannot be empty");
+        return;
+    }
+
+    if let Ok(statement) = parse_declaration_statement(source, false)
+        && (statement.relation.is_some()
+            || statement.definition.is_some()
+            || statement.expansion.is_some())
+    {
+        let mut locator = SourceLocator::for_text_fragment(source, row);
+        introduce_declaration_statement_symbols(
+            &statement,
+            context,
+            path,
+            &mut locator,
+            event_log,
+        );
+        assume_declaration_statement(
+            &statement,
+            context,
+            path,
+            &mut locator,
+            registry,
+            event_log,
+        );
+        return;
+    }
+
+    match parse_expression(source) {
+        Ok(expression) => {
+            let mut locator = SourceLocator::for_text_fragment(source, row);
+            check_expression(
+                &expression,
+                context,
+                path,
+                &mut locator,
+                registry,
+                event_log,
+            );
+        }
+        Err(error) => scoped_text_error(
+            path,
+            row,
+            event_log,
+            format!("Invalid MathLingua prose fragment `{source}`: {error}"),
+        ),
+    }
+}
+
+fn scoped_text_error(
+    path: &Path,
+    row: usize,
+    event_log: &mut EventLog,
+    message: impl Into<String>,
+) {
+    event_log.user_error_at_file_row(Some(ORIGIN), path.to_path_buf(), row, message);
+}
+
 fn validate_top_level_item_types(
     item: &TopLevelItem,
+    proto_group: Option<&ProtoGroup>,
     path: &Path,
     locator: &mut SourceLocator<'_>,
     registry: &SignatureRegistry,
@@ -2099,6 +2388,13 @@ fn validate_top_level_item_types(
     match item {
         TopLevelItem::Disambiguates(group) => {
             validate_disambiguates(group, path, locator, registry, event_log);
+            check_proto_group_scoped_text(
+                proto_group,
+                &TypeContext::default(),
+                path,
+                registry,
+                event_log,
+            );
         }
         TopLevelItem::Declares(group) => {
             let mut context = TypeContext::default();
@@ -2218,6 +2514,7 @@ fn validate_top_level_item_types(
                 registry,
                 event_log,
             );
+            check_proto_group_scoped_text(proto_group, &context, path, registry, event_log);
         }
         TopLevelItem::Defines(group) => {
             let mut context = TypeContext::default();
@@ -2312,6 +2609,7 @@ fn validate_top_level_item_types(
                 registry,
                 event_log,
             );
+            check_proto_group_scoped_text(proto_group, &context, path, registry, event_log);
         }
         TopLevelItem::Realizes(group) => {
             let mut context = TypeContext::default();
@@ -2401,6 +2699,7 @@ fn validate_top_level_item_types(
                 registry,
                 event_log,
             );
+            check_proto_group_scoped_text(proto_group, &context, path, registry, event_log);
         }
         TopLevelItem::Refines(group) => {
             let mut context = TypeContext::default();
@@ -2495,6 +2794,7 @@ fn validate_top_level_item_types(
                 registry,
                 event_log,
             );
+            check_proto_group_scoped_text(proto_group, &context, path, registry, event_log);
         }
         TopLevelItem::States(group) => {
             let mut context = TypeContext::default();
@@ -2553,6 +2853,7 @@ fn validate_top_level_item_types(
                 registry,
                 event_log,
             );
+            check_proto_group_scoped_text(proto_group, &context, path, registry, event_log);
         }
         TopLevelItem::Axiom(group) => validate_theorem_like(
             TheoremLikeSections::new(
@@ -2561,6 +2862,7 @@ fn validate_top_level_item_types(
                 group.where_.as_ref(),
                 &group.then,
                 group.iff.as_ref(),
+                proto_group,
             ),
             path,
             locator,
@@ -2574,6 +2876,7 @@ fn validate_top_level_item_types(
                 group.where_.as_ref(),
                 &group.then,
                 group.iff.as_ref(),
+                proto_group,
             ),
             path,
             locator,
@@ -2587,6 +2890,7 @@ fn validate_top_level_item_types(
                 group.where_.as_ref(),
                 &group.then,
                 group.iff.as_ref(),
+                proto_group,
             ),
             path,
             locator,
@@ -2611,9 +2915,17 @@ fn validate_top_level_item_types(
                     check_clause(clause, &context, path, locator, registry, event_log);
                 }
             }
+            check_proto_group_scoped_text(proto_group, &context, path, registry, event_log);
         }
         TopLevelItem::Equivalent(group) => {
             validate_equivalent_item(group, path, locator, registry, event_log);
+            check_proto_group_scoped_text(
+                proto_group,
+                &TypeContext::default(),
+                path,
+                registry,
+                event_log,
+            );
         }
         TopLevelItem::Relation(group) => {
             // Assume the `using:` declarations and the two related declarations
@@ -2659,6 +2971,7 @@ fn validate_top_level_item_types(
             {
                 check_clause(clause, &context, path, locator, registry, event_log);
             }
+            check_proto_group_scoped_text(proto_group, &context, path, registry, event_log);
         }
         TopLevelItem::Specify(_)
         | TopLevelItem::Title(_)
@@ -2672,7 +2985,13 @@ fn validate_top_level_item_types(
         // parent, optional rendering override); there is nothing to type-check.
         | TopLevelItem::Topic(_)
         // `Text*` placeholders are opaque prose; the checker never inspects them.
-        | TopLevelItem::TextItem(_) => {}
+        | TopLevelItem::TextItem(_) => check_proto_group_scoped_text(
+            proto_group,
+            &TypeContext::default(),
+            path,
+            registry,
+            event_log,
+        ),
     }
 }
 
@@ -3533,6 +3852,7 @@ struct TheoremLikeSections<'a> {
     where_: Option<&'a WhereSection>,
     then: &'a ThenSection,
     iff: Option<&'a IffSection>,
+    proto_group: Option<&'a ProtoGroup>,
 }
 
 impl<'a> TheoremLikeSections<'a> {
@@ -3542,6 +3862,7 @@ impl<'a> TheoremLikeSections<'a> {
         where_: Option<&'a WhereSection>,
         then: &'a ThenSection,
         iff: Option<&'a IffSection>,
+        proto_group: Option<&'a ProtoGroup>,
     ) -> Self {
         Self {
             heading,
@@ -3549,6 +3870,7 @@ impl<'a> TheoremLikeSections<'a> {
             where_,
             then,
             iff,
+            proto_group,
         }
     }
 }
@@ -3596,6 +3918,16 @@ fn validate_theorem_like(
             check_clause(clause, &context, path, locator, registry, event_log);
         }
     }
+
+    // The prose inherits the theorem introduction, but not names bound only
+    // inside an existential (or another nested clause) in the conclusion.
+    check_proto_group_scoped_text(
+        sections.proto_group,
+        &context,
+        path,
+        registry,
+        event_log,
+    );
 }
 
 fn assume_optional_using(
@@ -21421,6 +21753,87 @@ fn format_function_type_spec(spec: &FunctionTypeFactSpec) -> String {
     match spec {
         FunctionTypeFactSpec::Is { ty, .. } => format!("_ is {ty}"),
         FunctionTypeFactSpec::Spec { operator, target } => format!("_ \"{operator}\" {target}"),
+    }
+}
+
+#[cfg(test)]
+mod scoped_text_tests {
+    use super::*;
+    use crate::events::Event;
+
+    fn messages(log: &EventLog) -> Vec<String> {
+        log.events()
+            .iter()
+            .filter_map(Event::as_message)
+            .map(|message| message.message.clone())
+            .collect()
+    }
+
+    #[test]
+    fn inherits_outer_symbols_and_keeps_introductions_in_their_scope() {
+        let mut context = TypeContext::default();
+        context.declare_defined_symbol("x");
+        let registry = SignatureRegistry::default();
+        let mut log = EventLog::new();
+
+        check_scoped_text_value(
+            "<<let>>{.m := x.} Then {.m = x.}.<</let>> Outside {.x = x.}.",
+            7,
+            &context,
+            Path::new("proof.mlg"),
+            &registry,
+            &mut log,
+        );
+
+        assert!(!log.has_errors(), "{:?}", messages(&log));
+    }
+
+    #[test]
+    fn rejects_a_symbol_after_its_prose_scope_closes() {
+        let mut context = TypeContext::default();
+        context.declare_defined_symbol("x");
+        let registry = SignatureRegistry::default();
+        let mut log = EventLog::new();
+
+        check_scoped_text_value(
+            "<<let>>{.m := x.}<</let>> Outside {.m = x.}.",
+            0,
+            &context,
+            Path::new("proof.mlg"),
+            &registry,
+            &mut log,
+        );
+
+        assert!(
+            messages(&log)
+                .iter()
+                .any(|message| message.contains("Unrecognized symbol `m`")),
+            "{:?}",
+            messages(&log)
+        );
+    }
+
+    #[test]
+    fn rejects_unbalanced_prose_scope_markers() {
+        let registry = SignatureRegistry::default();
+        let mut log = EventLog::new();
+
+        check_scoped_text_value(
+            "<<exists>>{.x := x.}<</other>>",
+            0,
+            &TypeContext::default(),
+            Path::new("proof.mlg"),
+            &registry,
+            &mut log,
+        );
+
+        assert!(
+            messages(&log)
+                .iter()
+                .any(|message| message.contains("Mismatched prose scope closing marker")),
+            "{:?}",
+            messages(&log)
+        );
     }
 }
 

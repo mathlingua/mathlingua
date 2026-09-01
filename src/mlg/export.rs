@@ -565,6 +565,7 @@ mod tests {
                         heading_latex: None,
                         parameter_destructurings: Vec::new(),
                         body_text: None,
+                        proof_text: None,
                         page: Some(PageView {
                             kind: "Title".to_string(),
                             text: "Intro".to_string(),
@@ -580,6 +581,7 @@ mod tests {
                         heading_latex: Some("\\textrm{set}".to_string()),
                         parameter_destructurings: Vec::new(),
                         body_text: None,
+                        proof_text: None,
                         page: None,
                         source: "[\\set]".to_string(),
                         sections: Vec::new(),

@@ -42,6 +42,10 @@ pub struct GroupView {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub parameter_destructurings: Vec<String>,
     pub body_text: Option<String>,
+    /// Markdown-with-LaTeX proof prose rendered after, rather than inside, the
+    /// theorem card. Absent for items without a `Proof:` section.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub proof_text: Option<String>,
     pub page: Option<PageView>,
     pub source: String,
     pub sections: Vec<SectionView>,

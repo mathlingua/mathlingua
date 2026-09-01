@@ -46,6 +46,7 @@ export function GroupCard({
   const parameterDestructurings = group.parameter_destructurings ?? [];
   const hasHeading = resourceCard !== null || headingLatex !== null;
   const bodyText = group.body_text?.trim() ? group.body_text : null;
+  const proofText = group.proof_text?.trim() ? group.proof_text : null;
   const hasSupportSections =
     group.sections.some(
       (section) =>
@@ -256,6 +257,19 @@ export function GroupCard({
           <MathLinguaSource source={group.source} />
         </article>
       </div>
+      {proofText ? (
+        <article className={styles.proof}>
+          <h4 className={styles.proofHeading}>Proof</h4>
+          <div className={styles.proofContent}>
+            <div className={styles.proofBody}>
+              <MarkdownText text={proofText} />
+            </div>
+            <span aria-label="End of proof" className={styles.proofEnd}>
+              <LatexRenderer latex={"\\Box"} />
+            </span>
+          </div>
+        </article>
+      ) : null}
     </section>
   );
 }

@@ -2,7 +2,7 @@
 
 .card {
   box-sizing: border-box;
-  width: min(100%, 31rem);
+  width: 100%;
   max-width: 100%;
   min-width: 0;
   margin: 0 auto;
@@ -12,11 +12,50 @@
 
 .cardStage {
   position: relative;
-  width: 100%;
+  width: min(100%, 31rem);
   max-width: 100%;
   min-width: 0;
+  margin: 0 auto;
   transform-style: preserve-3d;
   transition: transform 220ms ease;
+}
+
+.proof {
+  box-sizing: border-box;
+  width: min(100%, 47rem);
+  min-width: 0;
+  margin: 1.35rem auto 0;
+  padding: 0 0.35rem;
+  color: var(--ink);
+}
+
+.proofHeading {
+  margin: 0 0 0.38rem;
+  color: var(--prose-heading-color);
+  font-family: var(--font-body);
+  font-size: 1.08rem;
+  font-style: italic;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.proofContent {
+  display: flex;
+  gap: 0.65rem;
+  align-items: flex-end;
+  min-width: 0;
+}
+
+.proofBody {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.proofEnd {
+  flex: 0 0 auto;
+  padding-bottom: 0.15rem;
+  color: var(--ink);
+  line-height: 1.62;
 }
 
 .cardStageFlipped {

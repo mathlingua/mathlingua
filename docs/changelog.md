@@ -19,6 +19,13 @@ Nested text arguments in cards now pass through the Markdown-and-KaTeX renderer,
 so ordinary `$...$`/`$$...$$` and generated `{. ... .}`/`{{. ... .}}` math render
 instead of appearing as literal dollar-delimited source.
 
+## Proofs Follow Theorem Cards
+
+A theorem's optional `Proof:` is rendered as document prose immediately after
+the theorem card instead of as a labeled section inside it. The proof has its
+own heading, retains MathLingua-aware Markdown and LaTeX rendering, and ends
+with a right-aligned proof box.
+
 ## Nested `given:` Clause Removal
 
 The redundant nested `given:` / `where?:` / `then:` clause group has been

@@ -91,6 +91,8 @@ export type GroupView = {
   parameter_destructurings?: string[];
   /** Optional prose rendered directly in the card body. */
   body_text: string | null;
+  /** Optional theorem proof rendered as prose immediately after the card. */
+  proof_text?: string | null;
   /** Direct page content for document headings/prose instead of card content. */
   page: PageView | null;
   /** Original MathLingua source for this top-level group. */

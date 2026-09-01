@@ -289,6 +289,7 @@ fn description_page_group(source_id: &str, text: String, registry: &RenderRegist
         heading_latex: None,
         parameter_destructurings: Vec::new(),
         body_text: None,
+        proof_text: None,
         page: Some(PageView {
             kind: "Text".to_string(),
             text: render_scoped_text_markdown(&text, registry),
@@ -338,12 +339,16 @@ fn group_view(
         .or_else(|| text_item_heading_latex(&kind, &group.sections));
     let body_text = person_body_text(&kind, &group.sections, registry)
         .or_else(|| text_item_body(&kind, &group.sections, registry));
+    let proof_text = theorem_proof_text(&kind, &group.sections, registry);
     let parameter_destructurings =
         render_group_parameter_destructurings(&kind, group.heading.as_deref(), registry);
     let section_heading = group.heading.clone();
     let sections = group
         .sections
         .into_iter()
+        // Proof prose has its own document-flow presentation after the theorem
+        // card, rather than appearing as another labeled card section.
+        .filter(|section| section.label != "Proof")
         .map(|section| {
             section_view(
                 section,
@@ -360,6 +365,7 @@ fn group_view(
         heading_latex,
         parameter_destructurings,
         body_text,
+        proof_text,
         definition_keys: definition_reference_keys_for_heading(group.heading.as_deref()),
         kind,
         heading: group.heading,
@@ -367,6 +373,24 @@ fn group_view(
         source,
         sections,
     }
+}
+
+/// A theorem's optional proof, rendered as prose outside the statement card.
+fn theorem_proof_text(
+    kind: &str,
+    sections: &[ProtoSection],
+    registry: &RenderRegistry,
+) -> Option<String> {
+    if kind != "Theorem" {
+        return None;
+    }
+
+    sections
+        .iter()
+        .find(|section| section.label == "Proof")
+        .and_then(section_text)
+        .map(|text| render_scoped_text_markdown(&unindent_text(&text), registry))
+        .filter(|text| !text.trim().is_empty())
 }
 
 /// Collects the `name -> LaTeX body` overrides from an item's `Writing:` section.
@@ -601,9 +625,7 @@ fn section_view(
         arguments: section
             .arguments
             .into_iter()
-            .map(|argument| {
-                argument_view(argument, type_info, registry, &label, render_kind)
-            })
+            .map(|argument| argument_view(argument, type_info, registry, &label, render_kind))
             .collect(),
     }
 }
@@ -858,10 +880,7 @@ fn argument_view(
     }
 }
 
-fn type_entries_for_row(
-    type_info: Option<&DocumentTypeInfo>,
-    row: usize,
-) -> Vec<TypeEntryView> {
+fn type_entries_for_row(type_info: Option<&DocumentTypeInfo>, row: usize) -> Vec<TypeEntryView> {
     type_info
         .and_then(|info| info.get(&row))
         .into_iter()
@@ -1439,6 +1458,48 @@ then: X = X
             view.files[0].items[2].heading_latex,
             Some(r#"\textrm{Axiom of Unordered Pair}"#.to_string())
         );
+    }
+
+    #[test]
+    fn separates_rendered_proof_prose_from_theorem_card_sections() {
+        let temp_dir = TestDir::new();
+        let root = temp_dir.path().join("repo");
+        let content = root.join("content");
+        let file = content.join("proof.mlg");
+        let source = r#"Theorem:
+given: x is \natural
+then: x = x
+Proof:
+. "Because {.x = x.}."
+Id: "11111111-1111-4111-8111-111111111111"
+"#;
+
+        fs::create_dir_all(&content).unwrap();
+        fs::write(&file, source).unwrap();
+
+        let mut parse_log = EventLog::new();
+        let document = parse_document(source, &mut parse_log);
+        assert!(!parse_log.has_errors(), "{:#?}", parse_log.events());
+        let parsed_file = ParsedSourceFile {
+            path: file,
+            source: source.to_string(),
+            document,
+            item_ids: top_level_item_ids(source),
+            view_metadata: SourceFileViewMetadata::default(),
+        };
+        let mut event_log = EventLog::new();
+        let view = build_collection_view(&root, &[parsed_file], &[], &[], &mut event_log)
+            .expect("expected view");
+        let theorem = &view.files[0].items[0];
+
+        assert_eq!(theorem.proof_text.as_deref(), Some("Because $x = x$."));
+        assert!(
+            theorem
+                .sections
+                .iter()
+                .all(|section| section.label != "Proof")
+        );
+        assert!(!event_log.has_errors());
     }
 
     #[test]

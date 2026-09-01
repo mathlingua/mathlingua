@@ -3,7 +3,7 @@ use mlg::cli::{Cli, Command};
 use mlg::events::{ColorMode, EventConsoleWriter, EventFilter, EventLogListener};
 use mlg::{
     check, check_diagnostics_report, check_diagnostics_schema, clean, debug, export, extract,
-    format, init, lsp, release, report, version, view, whte_rbt_obj,
+    format, init, lsp, release, report, version, view, watch_check, watch_view, whte_rbt_obj,
 };
 use serde::Serialize;
 use std::io::{self, Write};
@@ -16,6 +16,9 @@ fn main() {
     let cwd = std::env::current_dir().unwrap_or_else(|_| ".".into());
 
     let successful = match cli.command {
+        Command::Check(args) if args.watch => {
+            watch_check(&cwd, &args.paths, Some(console_listener(filter, &cwd)))
+        }
         Command::Check(args) if args.diagnostic_schema => {
             write_json_stdout(&check_diagnostics_schema())
         }
@@ -63,7 +66,11 @@ fn main() {
         }
         Command::Version => version(Some(console_listener(filter, &cwd))).successful,
         Command::View(args) => {
-            view(&cwd, args.port, Some(console_listener(filter, &cwd))).successful
+            if args.watch {
+                watch_view(&cwd, args.port, Some(console_listener(filter, &cwd))).successful
+            } else {
+                view(&cwd, args.port, Some(console_listener(filter, &cwd))).successful
+            }
         }
         Command::WhteRbtObj => whte_rbt_obj(Some(console_listener(filter, &cwd))).successful,
     };

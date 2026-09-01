@@ -142,14 +142,14 @@ The command layer is split between:
 
 The implemented top-level commands are:
 
-- `mlg check [PATH...]`
+- `mlg check [--watch] [PATH...]`
 - `mlg format`
 - `mlg clean`
 - `mlg export [--base-path PATH] [--cname DOMAIN] [--force]`
 - `mlg init`
 - `mlg release --summary TEXT [--dry-run] [--diff]`
 - `mlg version`
-- `mlg view [--port PORT]`
+- `mlg view [--port PORT] [--watch]`
 
 The following commands are hidden (`#[command(hide = true)]`) but implemented:
 
@@ -162,7 +162,8 @@ The following commands are hidden (`#[command(hide = true)]`) but implemented:
 The CLI also has global diagnostic filtering flags: `--event-audience`
 (`--event-scope` is an alias), `--event-level`, and `--event-markers`.
 `mlg check` supports machine-readable `--json` diagnostics and
-`--diagnostic-schema` output.
+`--diagnostic-schema` output. Those machine-readable modes are mutually
+exclusive with `--watch`.
 
 `src/mlg/mod.rs` re-exports the command entrypoints used by `src/main.rs` and
 `src/lib.rs`.
@@ -625,6 +626,12 @@ right file.
 The command exits with a non-zero process code if any error-level event remains
 in the command event log.
 
+With `--watch`, the command instead waits for changes to MathLingua sources,
+explicitly selected paths, `toc` files, or `mlg.json`, then reruns the same
+check pipeline. Diagnostics do not end the process. Before each rerun, an
+interactive terminal is cleared so every visible diagnostic belongs to the
+latest source state; redirected output remains plain line-oriented text.
+
 ## View Command Data Flow
 
 `mlg view` is implemented by `src/mlg/view.rs`.
@@ -633,6 +640,7 @@ in the command event log.
 main.rs
   -> Cli::parse
   -> mlg::view_in
+  -> bind the requested port once
   -> SourceCollection::load
       -> find collection root
       -> validate mlg.json when a collection root exists
@@ -646,9 +654,14 @@ main.rs
           -> rerun proto parser for display layout
           -> create CollectionView
   -> write temporary collection.json
-  -> bind the requested port once
   -> serve collection.json and the embedded viewer assets from Rust
 ```
+
+`mlg view --watch` also survives errors in the initial source: it keeps the
+port reserved, waits for a change, clears the interactive terminal, and retries
+until it can start the server. Once running, an invalid edit keeps the last
+valid `collection.json`; a later valid edit replaces it. The shared metadata
+poller for check and view watch modes lives in `src/mlg/watch.rs`.
 
 The viewer command treats parser and semantic errors as blocking, because the
 rendered output would otherwise be misleading.

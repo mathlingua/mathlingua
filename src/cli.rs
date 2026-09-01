@@ -128,11 +128,19 @@ pub enum Command {
 
 #[derive(Clone, Debug, Args, PartialEq, Eq)]
 pub struct CheckArgs {
-    #[arg(long, default_value_t = false)]
+    #[arg(long, default_value_t = false, conflicts_with = "watch")]
     pub json: bool,
 
-    #[arg(long = "diagnostic-schema", default_value_t = false)]
+    #[arg(
+        long = "diagnostic-schema",
+        default_value_t = false,
+        conflicts_with = "watch"
+    )]
     pub diagnostic_schema: bool,
+
+    /// Recheck whenever MathLingua source or collection configuration changes.
+    #[arg(long, default_value_t = false)]
+    pub watch: bool,
 
     #[arg(value_name = "PATH")]
     pub paths: Vec<PathBuf>,
@@ -187,6 +195,10 @@ pub struct ReleaseArgs {
 pub struct ViewArgs {
     #[arg(long, default_value_t = 3000)]
     pub port: u16,
+
+    /// Keep running through source errors and refresh when files change.
+    #[arg(long, default_value_t = false)]
+    pub watch: bool,
 }
 
 // ===============================[ tests ]=====================================
@@ -214,6 +226,7 @@ mod tests {
             Command::Check(CheckArgs {
                 json: false,
                 diagnostic_schema: false,
+                watch: false,
                 paths,
             }) if paths.is_empty()
         ));
@@ -228,6 +241,7 @@ mod tests {
             Command::Check(CheckArgs {
                 json: false,
                 diagnostic_schema: false,
+                watch: false,
                 paths,
             })
                 if paths == vec![PathBuf::from("content"), PathBuf::from("notes/example.mlg")]
@@ -249,6 +263,7 @@ mod tests {
             Command::Check(CheckArgs {
                 json: true,
                 diagnostic_schema: true,
+                watch: false,
                 paths,
             }) if paths.is_empty()
         ));
@@ -259,6 +274,22 @@ mod tests {
         let cli = Cli::parse_from(["mlg", "debug"]);
 
         assert!(matches!(cli.command, Command::Debug));
+    }
+
+    #[test]
+    fn parses_check_watch() {
+        let cli = Cli::parse_from(["mlg", "check", "--watch"]);
+
+        assert!(matches!(
+            cli.command,
+            Command::Check(CheckArgs { watch: true, .. })
+        ));
+    }
+
+    #[test]
+    fn check_watch_conflicts_with_json_output() {
+        assert!(Cli::try_parse_from(["mlg", "check", "--watch", "--json"]).is_err());
+        assert!(Cli::try_parse_from(["mlg", "check", "--watch", "--diagnostic-schema"]).is_err());
     }
 
     #[test]
@@ -443,7 +474,23 @@ mod tests {
 
         assert!(matches!(
             cli.command,
-            Command::View(ViewArgs { port: 4000 })
+            Command::View(ViewArgs {
+                port: 4000,
+                watch: false
+            })
+        ));
+    }
+
+    #[test]
+    fn parses_view_watch() {
+        let cli = Cli::parse_from(["mlg", "view", "--watch"]);
+
+        assert!(matches!(
+            cli.command,
+            Command::View(ViewArgs {
+                port: 3000,
+                watch: true
+            })
         ));
     }
 }

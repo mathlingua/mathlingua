@@ -1,4 +1,6 @@
-pub use check::{CheckResult, check, check_diagnostics_report, check_diagnostics_schema};
+pub use check::{
+    CheckResult, check, check_diagnostics_report, check_diagnostics_schema, watch_check,
+};
 pub use clean::{CleanResult, clean};
 pub use debug::{DebugResult, debug};
 pub use export::{ExportResult, export};
@@ -9,7 +11,7 @@ pub use lsp::{LspResult, lsp};
 pub use release::{ReleaseResult, release};
 pub use report::{ReportResult, report};
 pub use version::{VersionResult, version};
-pub use view::{ViewResult, view};
+pub use view::{ViewResult, view, watch_view};
 pub use whte_rbt_obj::{WhteRbtObjResult, whte_rbt_obj};
 
 mod check;
@@ -27,4 +29,5 @@ mod util;
 mod version;
 mod view;
 mod view_assets;
+mod watch;
 mod whte_rbt_obj;

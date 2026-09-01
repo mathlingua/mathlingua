@@ -1,11 +1,10 @@
-use crate::backend::collection::{CONTENT_DIR, SourceCollection, find_collection_root};
-use crate::backend::config::CONFIG_FILE;
+use crate::backend::collection::SourceCollection;
 use crate::backend::view::CollectionView;
-use crate::events::{Event, EventLog, EventLogListener};
+use crate::events::{Event, EventLog, EventLogListener, MessageStatus};
 use crate::mlg::util::{has_blocking_user_issues_since, no_errors_since};
 use crate::mlg::view_assets::{ViewerPageConfig, configured_viewer_index, viewer_asset};
+use crate::mlg::watch::SourceWatcher;
 use serde_json::to_writer;
-use std::collections::BTreeSet;
 use std::fs;
 use std::io;
 use std::net::TcpListener;
@@ -30,14 +29,31 @@ pub struct ViewResult {
 }
 
 pub fn view(cwd: &Path, port: u16, listener: Option<Box<dyn EventLogListener>>) -> ViewResult {
+    view_with_watch(cwd, port, false, listener)
+}
+
+pub fn watch_view(
+    cwd: &Path,
+    port: u16,
+    listener: Option<Box<dyn EventLogListener>>,
+) -> ViewResult {
+    view_with_watch(cwd, port, true, listener)
+}
+
+fn view_with_watch(
+    cwd: &Path,
+    port: u16,
+    watch: bool,
+    listener: Option<Box<dyn EventLogListener>>,
+) -> ViewResult {
     let mut event_log = EventLog::new();
     if let Some(listener) = listener {
         event_log.add_boxed_listener(listener);
     }
 
     let starting_event_count = event_log.events().len();
-    let io_ok = view_in(cwd, port, &mut event_log).is_ok();
-    let successful = io_ok && no_errors_since(&event_log, starting_event_count);
+    let io_ok = view_in(cwd, port, watch, &mut event_log).is_ok();
+    let successful = io_ok && (watch || no_errors_since(&event_log, starting_event_count));
 
     ViewResult {
         event_log,
@@ -45,55 +61,88 @@ pub fn view(cwd: &Path, port: u16, listener: Option<Box<dyn EventLogListener>>) 
     }
 }
 
-pub(super) fn view_in(cwd: &Path, port: u16, event_log: &mut EventLog) -> io::Result<()> {
-    let starting_event_count = event_log.events().len();
+pub(super) fn view_in(
+    cwd: &Path,
+    port: u16,
+    watch: bool,
+    event_log: &mut EventLog,
+) -> io::Result<()> {
     // Reserve the port before doing collection-wide parsing and rendering. This
     // both avoids wasted startup work on an unavailable port and closes the
     // check-then-bind race with another process.
     let listener = bind_view_listener(port, event_log)?;
     let bound_port = listener.local_addr()?.port();
     let url = format!("http://localhost:{bound_port}");
-    let mut collection = SourceCollection::load(cwd, event_log, ORIGIN);
-    if collection.source_files().is_empty() {
-        return finish_view_setup_with_possible_errors(event_log);
-    }
+    let mut watcher = SourceWatcher::new(cwd);
+    let collection_view = loop {
+        let starting_event_count = event_log.events().len();
+        event_log.user_status_start(Some(ORIGIN), format!("Starting viewer at {url} …"));
 
-    event_log.user_status_start(Some(ORIGIN), format!("Starting viewer at {url} …"));
+        let mut collection = SourceCollection::load(cwd, event_log, ORIGIN);
+        if collection.source_files().is_empty() {
+            if !watch {
+                return finish_view_setup_with_possible_errors(event_log);
+            }
+            event_log.user_log(
+                Some(ORIGIN),
+                "No MathLingua files were found; watching for changes …",
+            );
+            wait_for_view_change(&mut watcher, event_log);
+            continue;
+        }
 
-    event_log.system_debug(
-        Some(ORIGIN),
-        format!(
-            "Checking collection before rendering {} file(s)",
-            collection.source_files().len()
-        ),
-    );
-    collection.run_view_check_passes(event_log, ORIGIN);
-
-    if has_blocking_user_issues_since(event_log, starting_event_count) {
-        event_log.user_error(
+        event_log.system_debug(
             Some(ORIGIN),
-            "View not started because one or more files could not be rendered",
+            format!(
+                "Checking collection before rendering {} file(s)",
+                collection.source_files().len()
+            ),
         );
-        return Err(io::Error::other(
-            "One or more files could not be rendered for viewing",
-        ));
-    }
+        collection.run_view_check_passes(event_log, ORIGIN);
 
-    event_log.system_debug(
-        Some(ORIGIN),
-        format!(
-            "Building a rendered view for {} file(s)",
-            collection.parsed_files().len()
-        ),
-    );
-    let Some(collection_view) = collection.build_view(event_log) else {
-        event_log.user_error(
+        if has_blocking_user_issues_since(event_log, starting_event_count) {
+            if !watch {
+                event_log.user_error(
+                    Some(ORIGIN),
+                    "View not started because one or more files could not be rendered",
+                );
+                return Err(io::Error::other(
+                    "One or more files could not be rendered for viewing",
+                ));
+            }
+            event_log.user_log(
+                Some(ORIGIN),
+                "Fix the current errors to start the viewer; watching for changes …",
+            );
+            wait_for_view_change(&mut watcher, event_log);
+            continue;
+        }
+
+        event_log.system_debug(
             Some(ORIGIN),
-            "View not started because one or more files could not be rendered",
+            format!(
+                "Building a rendered view for {} file(s)",
+                collection.parsed_files().len()
+            ),
         );
-        return Err(io::Error::other(
-            "One or more files could not be rendered for viewing",
-        ));
+        let Some(collection_view) = collection.build_view(event_log) else {
+            if !watch {
+                event_log.user_error(
+                    Some(ORIGIN),
+                    "View not started because one or more files could not be rendered",
+                );
+                return Err(io::Error::other(
+                    "One or more files could not be rendered for viewing",
+                ));
+            }
+            event_log.user_log(
+                Some(ORIGIN),
+                "Fix the current errors to start the viewer; watching for changes …",
+            );
+            wait_for_view_change(&mut watcher, event_log);
+            continue;
+        };
+        break collection_view;
     };
 
     let server = Server::from_listener(listener, None)
@@ -118,6 +167,8 @@ pub(super) fn view_in(cwd: &Path, port: u16, event_log: &mut EventLog) -> io::Re
         cwd.to_path_buf(),
         view_data_path.clone(),
         Arc::clone(&stop_refresh),
+        url.clone(),
+        watch,
         refresh_sender,
     );
 
@@ -133,6 +184,13 @@ pub(super) fn view_in(cwd: &Path, port: u16, event_log: &mut EventLog) -> io::Re
     join_view_data_refresher(refresh_thread, event_log);
     let _ = fs::remove_dir_all(&view_session_dir);
     result
+}
+
+fn wait_for_view_change(watcher: &mut SourceWatcher, event_log: &mut EventLog) {
+    watcher.reset();
+    watcher.wait_for_change();
+    event_log.clear_output();
+    event_log.clear_events();
 }
 
 fn bind_view_listener(port: u16, event_log: &mut EventLog) -> io::Result<TcpListener> {
@@ -178,7 +236,7 @@ fn run_view_server(
     server: &Server,
     view_data_path: &Path,
     index: &[u8],
-    refresh_receiver: &Receiver<Vec<Event>>,
+    refresh_receiver: &Receiver<ViewRefreshMessage>,
     event_log: &mut EventLog,
 ) -> io::Result<()> {
     loop {
@@ -265,10 +323,15 @@ fn header(name: &str, value: &str) -> io::Result<Header> {
         .map_err(|_| io::Error::other(format!("Invalid HTTP header `{name}: {value}`")))
 }
 
-fn drain_refresh_events(receiver: &Receiver<Vec<Event>>, event_log: &mut EventLog) {
-    while let Ok(events) = receiver.try_recv() {
-        for event in events {
-            event_log.push(event);
+fn drain_refresh_events(receiver: &Receiver<ViewRefreshMessage>, event_log: &mut EventLog) {
+    while let Ok(message) = receiver.try_recv() {
+        match message {
+            ViewRefreshMessage::Clear => event_log.clear_output(),
+            ViewRefreshMessage::Events(events) => {
+                for event in events {
+                    event_log.push(event);
+                }
+            }
         }
     }
 }
@@ -301,23 +364,65 @@ fn spawn_view_data_refresher(
     cwd: PathBuf,
     view_data_path: PathBuf,
     stop: Arc<AtomicBool>,
-    diagnostics: Sender<Vec<Event>>,
+    url: String,
+    watch: bool,
+    diagnostics: Sender<ViewRefreshMessage>,
 ) -> JoinHandle<io::Result<()>> {
     thread::spawn(move || {
-        let mut last_fingerprint = view_source_fingerprint(&cwd);
+        let mut watcher = SourceWatcher::new(&cwd);
 
         while !stop.load(Ordering::Relaxed) {
             thread::sleep(Duration::from_millis(250));
-            let fingerprint = view_source_fingerprint(&cwd);
-            if fingerprint == last_fingerprint {
+            if !watcher.changed() {
                 continue;
             }
-
-            last_fingerprint = fingerprint;
+            watcher.reset();
+            if watch {
+                if diagnostics.send(ViewRefreshMessage::Clear).is_err() {
+                    break;
+                }
+                let event = Event::user_status(
+                    "Updating viewer from the latest changes …",
+                    MessageStatus::Started,
+                )
+                .with_origin(ORIGIN);
+                if diagnostics
+                    .send(ViewRefreshMessage::Events(vec![event]))
+                    .is_err()
+                {
+                    break;
+                }
+            }
             match rebuild_collection_view_data(&cwd, &view_data_path) {
-                Ok(ViewDataRefresh::Updated) => {}
-                Ok(ViewDataRefresh::Blocked(events)) => {
-                    if diagnostics.send(events).is_err() {
+                Ok(ViewDataRefresh::Updated) => {
+                    if watch {
+                        let event = Event::user_status(
+                            format!("Viewer updated — {url}"),
+                            MessageStatus::Finished,
+                        )
+                        .with_origin(ORIGIN);
+                        if diagnostics
+                            .send(ViewRefreshMessage::Events(vec![event]))
+                            .is_err()
+                        {
+                            break;
+                        }
+                    }
+                }
+                Ok(ViewDataRefresh::Blocked(mut events)) => {
+                    if watch {
+                        events.push(
+                            Event::user_status(
+                                "Viewer is using the last valid build; watching for changes …",
+                                MessageStatus::Started,
+                            )
+                            .with_origin(ORIGIN),
+                        );
+                    }
+                    if diagnostics
+                        .send(ViewRefreshMessage::Events(events))
+                        .is_err()
+                    {
                         break;
                     }
                 }
@@ -326,7 +431,20 @@ fn spawn_view_data_refresher(
                         "Rendered view was not updated because the view data could not be written: {error}"
                     ))
                     .with_origin(ORIGIN);
-                    if diagnostics.send(vec![event]).is_err() {
+                    let mut events = vec![event];
+                    if watch {
+                        events.push(
+                            Event::user_status(
+                                "Viewer is using the last valid build; watching for changes …",
+                                MessageStatus::Started,
+                            )
+                            .with_origin(ORIGIN),
+                        );
+                    }
+                    if diagnostics
+                        .send(ViewRefreshMessage::Events(events))
+                        .is_err()
+                    {
                         break;
                     }
                 }
@@ -382,114 +500,9 @@ enum ViewDataRefresh {
     Blocked(Vec<Event>),
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-struct ViewSourceFingerprint {
-    root: PathBuf,
-    files: Vec<ViewFileFingerprint>,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-struct ViewFileFingerprint {
-    path: PathBuf,
-    len: u64,
-    modified: SystemTime,
-}
-
-fn view_source_fingerprint(cwd: &Path) -> ViewSourceFingerprint {
-    let start = cwd.canonicalize().unwrap_or_else(|_| cwd.to_path_buf());
-    let root = find_collection_root(&start).unwrap_or(start);
-    let source_root = if root.join(CONTENT_DIR).is_dir() {
-        root.join(CONTENT_DIR)
-    } else {
-        root.clone()
-    };
-    let mut files = Vec::new();
-    let mut visited_directories = BTreeSet::new();
-    collect_view_fingerprint_entries(&source_root, &mut visited_directories, &mut files);
-
-    let config = root.join(CONFIG_FILE);
-    if config.is_file() {
-        files.push(view_file_fingerprint(&config));
-    }
-
-    ViewSourceFingerprint { root, files }
-}
-
-/// Records only filesystem metadata while watching. Rebuilding a
-/// `SourceCollection` here would read and proto-parse every source file four
-/// times a second merely to learn that nothing changed.
-fn collect_view_fingerprint_entries(
-    path: &Path,
-    visited_directories: &mut BTreeSet<PathBuf>,
-    entries: &mut Vec<ViewFileFingerprint>,
-) {
-    let Ok(metadata) = fs::metadata(path) else {
-        return;
-    };
-    collect_view_fingerprint_entry(path, metadata, visited_directories, entries);
-}
-
-fn collect_view_fingerprint_entry(
-    path: &Path,
-    metadata: fs::Metadata,
-    visited_directories: &mut BTreeSet<PathBuf>,
-    entries: &mut Vec<ViewFileFingerprint>,
-) {
-    if metadata.is_dir() {
-        let normalized = path.canonicalize().unwrap_or_else(|_| path.to_path_buf());
-        if !visited_directories.insert(normalized) {
-            return;
-        }
-        entries.push(view_file_fingerprint_from_metadata(path, &metadata));
-
-        let Ok(read_dir) = fs::read_dir(path) else {
-            return;
-        };
-        let mut children = read_dir
-            .flatten()
-            .map(|entry| (entry.path(), entry.metadata()))
-            .collect::<Vec<_>>();
-        children.sort_by(|(left, _), (right, _)| left.cmp(right));
-        for (child, metadata) in children {
-            if let Ok(metadata) = metadata
-                && (metadata.is_dir() || is_view_source_dependency(&child))
-            {
-                collect_view_fingerprint_entry(&child, metadata, visited_directories, entries);
-            }
-        }
-    } else if metadata.is_file() && is_view_source_dependency(path) {
-        entries.push(view_file_fingerprint_from_metadata(path, &metadata));
-    }
-}
-
-fn is_view_source_dependency(path: &Path) -> bool {
-    path.file_name().is_some_and(|name| name == "toc")
-        || path
-            .extension()
-            .and_then(|extension| extension.to_str())
-            .is_some_and(|extension| extension.eq_ignore_ascii_case("mlg"))
-}
-
-fn view_file_fingerprint(path: &Path) -> ViewFileFingerprint {
-    let metadata = fs::metadata(path).ok();
-    ViewFileFingerprint {
-        path: path.to_path_buf(),
-        len: metadata.as_ref().map_or(0, fs::Metadata::len),
-        modified: metadata
-            .and_then(|metadata| metadata.modified().ok())
-            .unwrap_or(UNIX_EPOCH),
-    }
-}
-
-fn view_file_fingerprint_from_metadata(
-    path: &Path,
-    metadata: &fs::Metadata,
-) -> ViewFileFingerprint {
-    ViewFileFingerprint {
-        path: path.to_path_buf(),
-        len: metadata.len(),
-        modified: metadata.modified().unwrap_or(UNIX_EPOCH),
-    }
+enum ViewRefreshMessage {
+    Clear,
+    Events(Vec<Event>),
 }
 
 fn create_view_session_dir() -> io::Result<PathBuf> {

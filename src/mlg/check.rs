@@ -4,6 +4,7 @@ use crate::backend::semantic::DocumentTypeInfo;
 use crate::events::{Audience, EventLocation, EventLog, EventLogListener, Level, MarkerRange};
 use crate::mlg::format::format_collection;
 use crate::mlg::util::{has_blocking_user_issues_since, no_errors_since, user_issue_count_since};
+use crate::mlg::watch::SourceWatcher;
 use serde::Serialize;
 use serde_json::{Value, json};
 use std::path::{Path, PathBuf};
@@ -32,6 +33,34 @@ pub fn check(
     listener: Option<Box<dyn EventLogListener>>,
 ) -> CheckResult {
     check_collecting_type_info(cwd, paths, listener, None)
+}
+
+/// Rechecks the selected files whenever the collection's source inputs change.
+/// Diagnostics never terminate watch mode; each edit starts with a clean
+/// interactive terminal so the visible result always belongs to the latest
+/// source state.
+pub fn watch_check(
+    cwd: &Path,
+    paths: &[PathBuf],
+    listener: Option<Box<dyn EventLogListener>>,
+) -> ! {
+    let mut event_log = EventLog::new();
+    if let Some(listener) = listener {
+        event_log.add_boxed_listener(listener);
+    }
+    let mut watcher = SourceWatcher::with_paths(cwd, paths);
+
+    loop {
+        event_log.clear_events();
+        check_in_collecting_type_info(cwd, paths, &mut event_log, None);
+        event_log.user_status_start(Some(ORIGIN), "Watching for changes …");
+
+        // Ignore changes made by format-on-check during this pass, then wait for
+        // the next user edit before checking again.
+        watcher.reset();
+        watcher.wait_for_change();
+        event_log.clear_output();
+    }
 }
 
 /// Checks the collection and, when `type_info_for` names one of its files, also

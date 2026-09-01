@@ -200,6 +200,15 @@ impl EventLogListener for EventConsoleWriter {
             ConsoleDestination::Stderr => write_line(std::io::stderr().lock(), &rendered.text),
         };
     }
+
+    fn clear_output(&mut self) {
+        if !std::io::stdout().is_terminal() {
+            return;
+        }
+
+        let _ = clear_terminal(std::io::stdout().lock());
+        self.status_active = false;
+    }
 }
 
 impl Drop for EventConsoleWriter {
@@ -335,6 +344,11 @@ fn finish_status_line(mut writer: impl Write) -> io::Result<()> {
     writer.flush()
 }
 
+fn clear_terminal(mut writer: impl Write) -> io::Result<()> {
+    writer.write_all(b"\x1b[2J\x1b[H")?;
+    writer.flush()
+}
+
 fn display_relative_path(path: &Path) -> String {
     let relative = path.strip_prefix("content").unwrap_or(path);
     if relative.as_os_str().is_empty() {
@@ -348,7 +362,7 @@ fn display_relative_path(path: &Path) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{ColorMode, EventConsoleWriter, EventFilter, write_status};
+    use super::{ColorMode, EventConsoleWriter, EventFilter, clear_terminal, write_status};
     use crate::events::{Audience, Event, EventLocation, EventSpan, Level, MessageStatus};
     use std::path::Path;
 
@@ -427,5 +441,14 @@ mod tests {
         write_status(&mut output, "✓", "Viewer ready", true).unwrap();
 
         assert_eq!(output, b"\r\x1b[2K\xe2\x9c\x93 Viewer ready\n");
+    }
+
+    #[test]
+    fn clears_the_terminal_and_returns_to_the_top_left() {
+        let mut output = Vec::new();
+
+        clear_terminal(&mut output).unwrap();
+
+        assert_eq!(output, b"\x1b[2J\x1b[H");
     }
 }

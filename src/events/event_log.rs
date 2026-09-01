@@ -6,6 +6,8 @@ use std::path::PathBuf;
 
 pub trait EventLogListener {
     fn on_event(&mut self, event: &Event);
+
+    fn clear_output(&mut self) {}
 }
 
 #[derive(Default)]
@@ -41,6 +43,16 @@ impl EventLog {
         for listener in &mut self.listeners {
             listener.on_event(&event);
         }
+    }
+
+    pub fn clear_output(&mut self) {
+        for listener in &mut self.listeners {
+            listener.clear_output();
+        }
+    }
+
+    pub(crate) fn clear_events(&mut self) {
+        self.events.clear();
     }
 
     pub fn events(&self) -> &[Event] {
@@ -232,17 +244,22 @@ impl EventLog {
 mod tests {
     use super::{EventLog, EventLogListener};
     use crate::events::Event;
-    use std::cell::RefCell;
+    use std::cell::{Cell, RefCell};
     use std::rc::Rc;
 
     #[derive(Clone)]
     struct RecordingListener {
         events: Rc<RefCell<Vec<Event>>>,
+        clears: Rc<Cell<usize>>,
     }
 
     impl EventLogListener for RecordingListener {
         fn on_event(&mut self, event: &Event) {
             self.events.borrow_mut().push(event.clone());
+        }
+
+        fn clear_output(&mut self) {
+            self.clears.set(self.clears.get() + 1);
         }
     }
 
@@ -254,12 +271,28 @@ mod tests {
         let events = Rc::new(RefCell::new(Vec::new()));
         log.add_listener(RecordingListener {
             events: Rc::clone(&events),
+            clears: Rc::new(Cell::new(0)),
         });
 
         assert_eq!(
             events.borrow().as_slice(),
             [Event::user_log("Checked 1 file").with_origin("mlg_check")]
         );
+    }
+
+    #[test]
+    fn forwards_output_clears_without_recording_an_event() {
+        let mut log = EventLog::new();
+        let clears = Rc::new(Cell::new(0));
+        log.add_listener(RecordingListener {
+            events: Rc::new(RefCell::new(Vec::new())),
+            clears: Rc::clone(&clears),
+        });
+
+        log.clear_output();
+
+        assert_eq!(clears.get(), 1);
+        assert!(log.events().is_empty());
     }
 
     #[test]

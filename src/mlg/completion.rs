@@ -330,7 +330,8 @@ const TEXT_ITEM_SECTIONS_DEFINITION: &[Section] = &[
 ];
 
 // `Axiom`/`Theorem`/`Conjecture` share one shape (see
-// `parse_argument_theorem_like`) differing only in the head label.
+// `parse_argument_theorem_like`), with an additional optional `Proof:` section
+// on the theorem form.
 const THEOREM_LIKE_AXIOM: &[Section] = &[
     ("Axiom", true),
     ("given", false),
@@ -355,6 +356,7 @@ const THEOREM_LIKE_THEOREM: &[Section] = &[
     ("Aliases", false),
     ("References", false),
     ("Metadata", false),
+    ("Proof", false),
     ("Id", false),
 ];
 const THEOREM_LIKE_CONJECTURE: &[Section] = &[
@@ -990,6 +992,15 @@ mod tests {
         let got = labels(&complete(text, 2, 0));
         assert!(got.contains(&"then".to_string()));
         assert!(got.contains(&"where".to_string()));
+    }
+
+    #[test]
+    fn theorem_offers_proof_but_axiom_does_not() {
+        let theorem = labels(&complete("Theorem:\nthen: x = x\n\n", 2, 0));
+        assert!(theorem.contains(&"Proof".to_string()));
+
+        let axiom = labels(&complete("Axiom:\nthen: x = x\n\n", 2, 0));
+        assert!(!axiom.contains(&"Proof".to_string()));
     }
 
     #[test]

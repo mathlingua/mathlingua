@@ -3909,7 +3909,7 @@ pub(in crate::frontend::structural::parser) fn parse_axiom(
     group: &ProtoGroup,
     tracker: &mut EventLog,
 ) -> Option<AxiomGroup> {
-    parse_argument_theorem_like(group, tracker, "Axiom").map(
+    parse_argument_theorem_like(group, tracker, "Axiom", false).map(
         |(
             heading,
             given,
@@ -3922,6 +3922,7 @@ pub(in crate::frontend::structural::parser) fn parse_axiom(
             writing,
             references,
             metadata,
+            _,
         )| {
             AxiomGroup {
                 heading,
@@ -3945,7 +3946,7 @@ pub(in crate::frontend::structural::parser) fn parse_theorem(
     group: &ProtoGroup,
     tracker: &mut EventLog,
 ) -> Option<TheoremGroup> {
-    parse_argument_theorem_like(group, tracker, "Theorem").map(
+    parse_argument_theorem_like(group, tracker, "Theorem", true).map(
         |(
             heading,
             given,
@@ -3958,6 +3959,7 @@ pub(in crate::frontend::structural::parser) fn parse_theorem(
             writing,
             references,
             metadata,
+            proof,
         )| {
             TheoremGroup {
                 heading,
@@ -3971,6 +3973,7 @@ pub(in crate::frontend::structural::parser) fn parse_theorem(
                 writing,
                 references,
                 metadata,
+                proof,
             }
         },
     )
@@ -3981,7 +3984,7 @@ pub(in crate::frontend::structural::parser) fn parse_conjecture(
     group: &ProtoGroup,
     tracker: &mut EventLog,
 ) -> Option<ConjectureGroup> {
-    parse_argument_theorem_like(group, tracker, "Conjecture").map(
+    parse_argument_theorem_like(group, tracker, "Conjecture", false).map(
         |(
             heading,
             given,
@@ -3994,6 +3997,7 @@ pub(in crate::frontend::structural::parser) fn parse_conjecture(
             writing,
             references,
             metadata,
+            _,
         )| {
             ConjectureGroup {
                 heading,
@@ -4049,6 +4053,7 @@ pub(in crate::frontend::structural::parser) fn parse_argument_theorem_like(
     group: &ProtoGroup,
     tracker: &mut EventLog,
     name: &str,
+    accepts_proof: bool,
 ) -> Option<(
     Option<crate::frontend::formulation::ast::CommandHeader>,
     Option<GivenSection>,
@@ -4061,27 +4066,32 @@ pub(in crate::frontend::structural::parser) fn parse_argument_theorem_like(
     Option<ItemWritingSection>,
     Option<ReferencesSection>,
     Option<MetadataSection>,
+    Option<ProofSection>,
 )> {
     let heading = parse_optional_command_heading(group, tracker)?;
     let section_name = name;
+    let mut section_specs = vec![
+        section_name,
+        "given?",
+        "where?",
+        "then",
+        "iff?",
+        "Documented?",
+        "Justification?",
+        "Aliases?",
+        "Writing?",
+        "References?",
+        "Metadata?",
+    ];
+    if accepts_proof {
+        section_specs.push("Proof?");
+    }
+    section_specs.push("Id?");
     let sections = identify_sections(
         name,
         &group.sections,
         tracker,
-        &[
-            section_name,
-            "given?",
-            "where?",
-            "then",
-            "iff?",
-            "Documented?",
-            "Justification?",
-            "Aliases?",
-            "Writing?",
-            "References?",
-            "Metadata?",
-            "Id?",
-        ],
+        &section_specs,
     )?;
     ensure_no_named_result_arg(sections.get(section_name).copied(), name, tracker);
 
@@ -4127,6 +4137,10 @@ pub(in crate::frontend::structural::parser) fn parse_argument_theorem_like(
         sections.get("Metadata").copied().and_then(|section| {
             parse_required_groups(section, "Metadata", tracker, parse_metadata_item_group)
                 .map(|arguments| MetadataSection { arguments })
+        }),
+        sections.get("Proof").copied().and_then(|section| {
+            parse_required_open_text(section, "Proof", tracker)
+                .map(|argument| ProofSection { argument })
         }),
     ))
 }
@@ -5357,6 +5371,26 @@ then:
             }
             other => panic!("expected an equivalently clause, got {other:?}"),
         }
+    }
+
+    #[test]
+    fn parses_optional_theorem_proof_text() {
+        let document = parse_ok(
+            r#"
+Theorem:
+then: x = x
+Proof: "By reflexivity."
+Id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+"#,
+        );
+
+        let TopLevelItem::Theorem(theorem) = &document.items[0] else {
+            panic!("expected Theorem item, got {:?}", document.items[0]);
+        };
+        assert_eq!(
+            theorem.proof.as_ref().expect("expected proof").argument.0,
+            "By reflexivity."
+        );
     }
 
     #[test]

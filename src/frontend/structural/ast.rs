@@ -344,6 +344,7 @@ zero_or_more_arguments_section!(DiscovererSection, OpenText);
 // structured form later.
 arguments_section!(NotesSection, OpenText);
 zero_or_more_arguments_section!(BySection, OpenText);
+argument_section!(ProofSection, OpenText);
 argument_section!(IdSection, OpenText);
 argument_section!(VersionSection, OpenText);
 // The markdown-with-LaTeX body of an opaque `Text*` placeholder group.
@@ -746,6 +747,7 @@ pub struct TheoremGroup {
     pub writing: Option<ItemWritingSection>,
     pub references: Option<ReferencesSection>,
     pub metadata: Option<MetadataSection>,
+    pub proof: Option<ProofSection>,
 }
 
 /// A named or anonymous example containing an ordered mixture of clauses and prose.

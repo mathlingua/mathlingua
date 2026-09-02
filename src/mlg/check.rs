@@ -5586,7 +5586,7 @@ then:
     }
 
     #[test]
-    fn check_accepts_refinement_of_an_inherited_component_specification() {
+    fn check_accepts_and_composes_refinements_of_inherited_components() {
         // `\magma` already specifies `*` as a binary operation. The
         // `semigroup` `specifies:` item adds the `associative` refinement to that
         // same base type, so it is additive rather than a duplicate specification.
@@ -5638,11 +5638,49 @@ then:
     Documented:
     . adjective: "associative"
 
+    [\(commutative)::binary.operation:on{X}]
+    Refines: x_ * y_
+    when: X is \set
+    satisfies:
+    . forAll: a, b "in" X
+      then: a * b = b * a
+    Documented:
+    . adjective: "commutative"
+
     [\semigroup]
     Declares: S ::= (X, *) is \magma via (X, *)
     specifies: * is \(associative)::binary.operation:on{X}
     Documented:
     . written: "\operatorname{semigroup}"
+
+    [\(commutative)::semigroup]
+    Refines: S ::= (X, *)
+    specifies: * is \(commutative)::binary.operation:on{X}
+    Documented:
+    . adjective: "commutative"
+
+    [\named.magma]
+    Declares: M ::= (X, operation) is \set via X
+    specifies: operation is \binary.operation:on{X}
+    Documented:
+    . called: "named magma"
+
+    [\named.semigroup]
+    Declares: S ::= (X, operation) is \named.magma via (X, operation)
+    specifies: operation is \(associative)::binary.operation:on{X}
+    Documented:
+    . called: "named semigroup"
+
+    [\(commutative)::named.semigroup]
+    Refines: S ::= (X, operation)
+    specifies: operation is \(commutative)::binary.operation:on{X}
+    Documented:
+    . adjective: "commutative"
+
+    Theorem:
+    given: S ::= (X, operation) is \(commutative)::named.semigroup
+    then: operation is? \(commutative, associative)::binary.operation:on{X}
+
     "#,
         )
         .unwrap();
@@ -5659,6 +5697,61 @@ then:
             user_events(&event_log),
             [Event::user_log("Checked 1 file").with_origin("mlg_check")]
         );
+    }
+
+    #[test]
+    fn check_rejects_a_refines_component_specification_with_a_different_base_type() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("refines-component-type-change.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Declares: X
+    Documented:
+    . called: "set"
+
+    [\binary.operation:on{X}]
+    Declares: x_ * y_
+    when: X is \set
+    Documented:
+    . called: "binary operation"
+
+    [\magma]
+    Declares: M ::= (X, *) is \set via X
+    specifies: * is \binary.operation:on{X}
+    Documented:
+    . called: "magma"
+
+    [\(finite)::set]
+    Refines: X
+    Documented:
+    . adjective: "finite"
+
+    [\(bad)::magma]
+    Refines: M ::= (X, *)
+    specifies: * is \(finite)::set
+    Documented:
+    . adjective: "bad"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("refines-component-type-change.mlg")],
+            &mut event_log,
+        );
+
+        assert!(user_events(&event_log).iter().any(|event| {
+            event.as_message().is_some_and(|message| {
+                message
+                    .message
+                    .contains("must add a refinement without changing the underlying type")
+            })
+        }));
+        assert!(event_log.has_errors());
     }
 
     #[test]

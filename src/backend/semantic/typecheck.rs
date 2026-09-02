@@ -84,6 +84,7 @@ pub(super) fn collect_definition_type_metadata(
     collect_abstract_declaration(item, header_shape, registry);
     let mut info = info;
     inherit_realized_component_types(item, &mut info, registry);
+    inherit_refined_component_types(item, &mut info, registry);
     collect_collection_body(item, header_shape, registry);
     collect_equivalence_class(item, header_shape, registry);
     registry.definition_summaries.insert(
@@ -125,7 +126,69 @@ fn inherit_realized_component_types(
         return;
     }
     info.component_types = declared.component_types.clone();
+    info.component_refinements = declared.component_refinements.clone();
     info.component_shapes = declared.component_shapes.clone();
+}
+
+/// Gives a structured refinement the component types of the type it refines,
+/// strengthened by a component-level `specifies:` clause when present.
+///
+/// A refinement keeps the underlying tuple intact. For example,
+/// `\(commutative)::ring` still destructures as `(X, +, *, 0, 1)`, while its
+/// specification can strengthen the inherited type of `*`. Recording that
+/// strengthened fact here makes it available whenever a value of the refined
+/// type is later destructured.
+fn inherit_refined_component_types(
+    item: &TopLevelItem,
+    info: &mut DefinitionTypeInfo,
+    registry: &SignatureRegistry,
+) {
+    let TopLevelItem::Refines(group) = item else {
+        return;
+    };
+    let Some(tuple) = group
+        .refines
+        .argument
+        .expansion
+        .as_ref()
+        .and_then(is_subject_first_form)
+        .and_then(form_or_declaration_tuple_form)
+    else {
+        return;
+    };
+    let component_shapes = tuple_form_component_shapes(tuple);
+    let Some(base_info) = matching_refines_base_info(&group.heading, &component_shapes, registry)
+    else {
+        return;
+    };
+
+    let owner = primary_subject_key(&group.refines.argument.subject);
+    let components = tuple_form_component_names(tuple);
+    let context = TypeContext::default();
+    let inherited = instantiate_component_type_facts(base_info, &owner, &components, &context);
+    let primary_count = base_info.component_types.len().min(inherited.len());
+    let component_types = inherited[..primary_count].to_vec();
+    let mut component_refinements = inherited[primary_count..].to_vec();
+
+    if let Some(specifies) = &group.specifies {
+        for added in facts_from_declaration_statement(&specifies.argument) {
+            if matches!(added, TypeFact::RefinedIs { .. })
+                && component_types
+                    .iter()
+                    .any(|base| merge_additive_type_facts(base, &added).is_some())
+                && !component_refinements.contains(&added)
+            {
+                component_refinements.push(added);
+            }
+        }
+    }
+
+    info.described = Some(owner);
+    info.described_subject_shape = base_info.described_subject_shape.clone();
+    info.described_expansion_shape = base_info.described_expansion_shape.clone();
+    info.component_types = component_types;
+    info.component_refinements = component_refinements;
+    info.component_shapes = component_shapes;
 }
 
 /// Records what a `Defines:` marked `abstractly:` leaves for a `Realizes:` to
@@ -1041,6 +1104,23 @@ fn type_info_from_parts(
         }
         (None, None) => Vec::new(),
     };
+    let component_refinements = match (declares, defines) {
+        (Some(declares), _) => component_refinement_facts(
+            declares,
+            extends,
+            declares_specifies,
+            &component_types,
+            &context,
+            registry,
+        ),
+        (None, Some(statement)) => defines_component_refinement_facts(
+            statement,
+            defines_specifies,
+            &component_types,
+            &context,
+        ),
+        (None, None) => Vec::new(),
+    };
     let component_shapes = match (described, defines) {
         (Some(target), _) => declares_target_component_shapes(target),
         (None, Some(statement)) => declaration_component_shapes(statement),
@@ -1079,6 +1159,7 @@ fn type_info_from_parts(
         described_subject_shape,
         described_expansion_shape,
         component_types,
+        component_refinements,
         component_shapes,
         set_element_target,
         set_element_types,
@@ -1206,31 +1287,8 @@ fn component_type_facts(
     if component_names.is_empty() {
         return Vec::new();
     }
-
-    let mut fact_context = context.clone();
-    for clause in extends_clauses(declares, extends) {
-        for fact in facts_from_extends_clause_in_context(clause, &fact_context) {
-            fact_context.add_fact(fact);
-        }
-        for fact in facts_from_extends_via(clause, &fact_context, registry) {
-            fact_context.add_fact(fact);
-        }
-    }
-    if let Some(specifies) = specifies {
-        for item in &specifies.arguments {
-            if let Some(statement) = specifies_item_statement(item) {
-                if let Some((left, right)) = declaration_substitution(statement) {
-                    fact_context.add_substitution(left, right);
-                }
-            }
-            for fact in facts_from_is_or_via_item_in_context(item, &fact_context) {
-                fact_context.add_fact(fact);
-            }
-            for fact in facts_from_is_or_via_views(item, &fact_context, registry) {
-                fact_context.add_fact(fact);
-            }
-        }
-    }
+    let fact_context =
+        declares_component_fact_context(declares, extends, specifies, context, registry);
 
     component_names
         .iter()
@@ -1242,6 +1300,53 @@ fn component_type_facts(
                 .map(|fact| fact_context.normalize_fact(fact))
         })
         .collect()
+}
+
+fn component_refinement_facts(
+    declares: &DeclaresSection,
+    extends: Option<&ExtendsSection>,
+    specifies: Option<&DeclaresSpecifiesSection>,
+    component_types: &[TypeFact],
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+) -> Vec<TypeFact> {
+    let fact_context =
+        declares_component_fact_context(declares, extends, specifies, context, registry);
+    additive_component_refinements(&fact_context, component_types)
+}
+
+fn declares_component_fact_context(
+    declares: &DeclaresSection,
+    extends: Option<&ExtendsSection>,
+    specifies: Option<&DeclaresSpecifiesSection>,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+) -> TypeContext {
+    let mut fact_context = context.clone();
+    for clause in extends_clauses(declares, extends) {
+        for fact in facts_from_extends_clause_in_context(clause, &fact_context) {
+            fact_context.add_fact(fact);
+        }
+        for fact in facts_from_extends_via(clause, &fact_context, registry) {
+            fact_context.add_fact(fact);
+        }
+    }
+    if let Some(specifies) = specifies {
+        for item in &specifies.arguments {
+            if let Some(statement) = specifies_item_statement(item)
+                && let Some((left, right)) = declaration_substitution(statement)
+            {
+                fact_context.add_substitution(left, right);
+            }
+            for fact in facts_from_is_or_via_item_in_context(item, &fact_context) {
+                fact_context.add_fact(fact);
+            }
+            for fact in facts_from_is_or_via_views(item, &fact_context, registry) {
+                fact_context.add_fact(fact);
+            }
+        }
+    }
+    fact_context
 }
 
 /// Type facts for the components of a destructuring `Defines:`/`Realizes:`
@@ -1258,21 +1363,7 @@ fn defines_component_type_facts(
     if component_names.is_empty() {
         return Vec::new();
     }
-
-    let mut fact_context = context.clone();
-    for item in specifies
-        .into_iter()
-        .flat_map(|specifies| specifies.arguments.iter())
-    {
-        if let Some(statement) = specifies_item_statement(item) {
-            if let Some((left, right)) = declaration_substitution(statement) {
-                fact_context.add_substitution(left, right);
-            }
-        }
-        for fact in facts_from_is_or_via_item_in_context(item, &fact_context) {
-            fact_context.add_fact(fact);
-        }
-    }
+    let fact_context = defines_component_fact_context(specifies, context);
 
     component_names
         .iter()
@@ -1284,6 +1375,121 @@ fn defines_component_type_facts(
                 .map(|fact| fact_context.normalize_fact(fact))
         })
         .collect()
+}
+
+fn defines_component_refinement_facts(
+    _statement: &DeclarationStatement,
+    specifies: Option<&DefinesSpecifiesSection>,
+    component_types: &[TypeFact],
+    context: &TypeContext,
+) -> Vec<TypeFact> {
+    let fact_context = defines_component_fact_context(specifies, context);
+    additive_component_refinements(&fact_context, component_types)
+}
+
+fn defines_component_fact_context(
+    specifies: Option<&DefinesSpecifiesSection>,
+    context: &TypeContext,
+) -> TypeContext {
+    let mut fact_context = context.clone();
+    for item in specifies
+        .into_iter()
+        .flat_map(|specifies| specifies.arguments.iter())
+    {
+        if let Some(statement) = specifies_item_statement(item)
+            && let Some((left, right)) = declaration_substitution(statement)
+        {
+            fact_context.add_substitution(left, right);
+        }
+        for fact in facts_from_is_or_via_item_in_context(item, &fact_context) {
+            fact_context.add_fact(fact);
+        }
+    }
+    fact_context
+}
+
+fn additive_component_refinements(
+    context: &TypeContext,
+    component_types: &[TypeFact],
+) -> Vec<TypeFact> {
+    let mut result = Vec::new();
+    for fact in &context.facts {
+        let normalized = context.normalize_fact(fact);
+        if !matches!(normalized, TypeFact::RefinedIs { .. }) {
+            continue;
+        }
+        if component_types
+            .iter()
+            .any(|base| merge_additive_type_facts(base, &normalized).is_some())
+            && !result.contains(&normalized)
+        {
+            result.push(normalized);
+        }
+    }
+    result
+}
+
+/// Combines a base/refined fact with an additive refinement of the same base.
+/// The newly stated adjectives are placed first, matching how a refinement such
+/// as `commutative ring` reads before its inherited `associative` property.
+fn merge_additive_type_facts(inherited: &TypeFact, added: &TypeFact) -> Option<TypeFact> {
+    let TypeFact::RefinedIs {
+        subject,
+        ty,
+        signature,
+        base_ty,
+        base_signature,
+    } = added
+    else {
+        return None;
+    };
+    if fact_subject(inherited) != subject {
+        return None;
+    }
+
+    let (inherited_ty, inherited_signature) = match inherited {
+        TypeFact::Is { signature, .. } if signature == base_signature => {
+            return Some(added.clone());
+        }
+        TypeFact::RefinedIs {
+            ty,
+            signature,
+            base_signature: inherited_base_signature,
+            ..
+        } if inherited_base_signature == base_signature => (ty, signature),
+        _ => return None,
+    };
+
+    let combined_ty = merge_refined_keys(ty, inherited_ty, base_ty)?;
+    let combined_signature = merge_refined_keys(signature, inherited_signature, base_signature)?;
+    Some(TypeFact::RefinedIs {
+        subject: subject.clone(),
+        ty: combined_ty,
+        signature: combined_signature,
+        base_ty: base_ty.clone(),
+        base_signature: base_signature.clone(),
+    })
+}
+
+fn merge_refined_keys(added: &str, inherited: &str, base: &str) -> Option<String> {
+    let added_segments = split_refined_key(added)?;
+    let inherited_segments = split_refined_key(inherited)?;
+    let base_segment = base.strip_prefix('\\')?;
+    if added_segments.last()? != base_segment {
+        return None;
+    }
+
+    let mut refinements = Vec::new();
+    for segment in added_segments[..added_segments.len() - 1]
+        .iter()
+        .chain(&inherited_segments[..inherited_segments.len() - 1])
+    {
+        if !refinements.contains(segment) {
+            refinements.push(segment.clone());
+        }
+    }
+    refinements.push(base_segment.to_owned());
+    Some(format!("\\{}", refinements.join("::")))
 }
 
 /// The tuple form a declaration destructures, e.g. `(N, 0, succ(n_))` for
@@ -1435,21 +1641,24 @@ fn facts_from_type_via(
 }
 
 /// Component metadata for a type used by a `via` view. A refinement preserves
-/// the component structure of its base type, so its view is instantiated from
-/// that base definition.
+/// its base type's component structure and may add component refinements, so
+/// prefer its enriched metadata and fall back to the base definition.
 fn component_type_info_for_via<'a>(
     ty: &TypeExpression,
     context: &TypeContext,
     registry: &'a SignatureRegistry,
 ) -> Option<&'a DefinitionTypeInfo> {
-    let signature = match ty {
+    let signatures = match ty {
         TypeExpression::Command(command) => {
             let active = active_command_expression(command, context);
-            shape_for_command_expression(&active).signature
+            vec![shape_for_command_expression(&active).signature]
         }
         TypeExpression::RefinedCommand(command) => {
             let active = active_refined_command_expression(command, context);
-            shape_for_refined_command_base(&active).signature
+            vec![
+                shape_for_refined_command_expression(&active).signature,
+                shape_for_refined_command_base(&active).signature,
+            ]
         }
         TypeExpression::Builtin { .. }
         | TypeExpression::Tuple(_)
@@ -1457,7 +1666,9 @@ fn component_type_info_for_via<'a>(
         | TypeExpression::Function(_)
         | TypeExpression::Parameter { .. } => return None,
     };
-    registry.type_infos.get(&signature)
+    signatures
+        .iter()
+        .find_map(|signature| registry.type_infos.get(signature))
 }
 
 /// Adds the component types the definition's `is … via …` clauses assign
@@ -1684,13 +1895,22 @@ fn collect_refinement_extension_rules(
     let Some(specifies) = &group.specifies else {
         return;
     };
+    let refines_subject = primary_subject_key(&group.refines.argument.subject);
+    let specifies_subject = primary_subject_key(&specifies.argument.subject);
+    // Owner-level specifications are consequences of the refined nominal type.
+    // A component-level specification instead belongs to the structured type's
+    // component metadata; treating it as an owner rule would substitute the
+    // whole refined value for that component.
+    if specifies_subject != refines_subject {
+        return;
+    }
 
     for target in refinement_extension_targets_from_declaration(&specifies.argument) {
         registry
             .refinement_extension_rules
             .push(RefinementExtensionRule {
                 subtype_signature: info.signature.clone(),
-                subject: primary_subject_key(&specifies.argument.subject),
+                subject: specifies_subject.clone(),
                 parameters: info.parameters.clone(),
                 target,
             });
@@ -3106,13 +3326,35 @@ fn check_refines_specifies(
     };
     let refines_subject = primary_subject_key(&group.refines.argument.subject);
     let specifies_subject = primary_subject_key(&specifies.argument.subject);
-    if specifies_subject != refines_subject {
+    let specifies_component = context
+        .destructured_components_of(&refines_subject)
+        .is_some_and(|components| components.contains(&specifies_subject));
+    if specifies_subject != refines_subject && !specifies_component {
         emit_error(
             event_log,
             path,
             locator.locate_heading(&shape_for_header(&group.heading)),
-            "The `specifies:` subject must match the `Refines:` subject",
+            "The `specifies:` subject must match the `Refines:` subject or one of its destructured components",
         );
+    }
+
+    if specifies_component {
+        check_declaration_statement(
+            &specifies.argument,
+            context,
+            path,
+            locator,
+            registry,
+            event_log,
+        );
+        validate_refined_component_specification(
+            &specifies.argument,
+            context,
+            path,
+            locator,
+            event_log,
+        );
+        return;
     }
 
     let Some(DeclarationRelation::Is(TypeExpression::RefinedCommand(command))) =
@@ -3160,6 +3402,56 @@ fn check_refines_specifies(
         locator,
         registry,
         event_log,
+    );
+}
+
+/// A `Refines:` component specification may only add adjective refinements to
+/// the component's inherited type. It cannot replace that underlying type.
+fn validate_refined_component_specification(
+    statement: &DeclarationStatement,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    let subject = primary_subject_key(&statement.subject);
+    let added = facts_from_declaration_statement_in_context(statement, context);
+    let inherited = context
+        .facts
+        .iter()
+        .filter(|fact| fact_subject(fact) == subject)
+        .map(|fact| context.normalize_fact(fact))
+        .collect::<Vec<_>>();
+
+    let additive = added.iter().any(|added| {
+        matches!(added, TypeFact::RefinedIs { .. })
+            && inherited
+                .iter()
+                .any(|base| merge_additive_type_facts(base, added).is_some())
+    });
+    if additive {
+        return;
+    }
+
+    let detail = if inherited.is_empty() {
+        format!("component `{subject}` has no inherited type to refine")
+    } else {
+        format!(
+            "component `{subject}` inherits `{}`",
+            inherited
+                .iter()
+                .map(format_fact)
+                .collect::<Vec<_>>()
+                .join("` and `")
+        )
+    };
+    emit_error(
+        event_log,
+        path,
+        locator.locate_symbol(&subject),
+        format!(
+            "A component `specifies:` in `Refines:` must add a refinement without changing the underlying type; {detail}"
+        ),
     );
 }
 
@@ -15144,6 +15436,10 @@ fn prove_fact_threaded(
     {
         return true;
     }
+    if composite_refined_requirement_holds(&required, context, registry, allow_viewable, spec_seen)
+    {
+        return true;
+    }
 
     let mut seen = HashSet::new();
     if allow_viewable
@@ -15230,6 +15526,42 @@ fn prove_fact_threaded(
         }
         _ => false,
     }
+}
+
+/// Multiple adjectives are a conjunction: a value has
+/// `\(commutative, associative)::T` when it has the same underlying `T` and
+/// each constituent refinement, even if those facts were inherited through
+/// different definitions.
+fn composite_refined_requirement_holds(
+    required: &TypeFact,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+    allow_viewable: bool,
+    spec_seen: &mut HashSet<TypeFact>,
+) -> bool {
+    let TypeFact::RefinedIs {
+        subject,
+        ty,
+        signature,
+        base_ty,
+        base_signature,
+    } = required
+    else {
+        return false;
+    };
+    let parts = refined_part_facts(subject, ty, signature, base_ty, base_signature);
+    if parts.len() < 2 {
+        return false;
+    }
+    let base = TypeFact::Is {
+        subject: subject.clone(),
+        ty: base_ty.clone(),
+        signature: base_signature.clone(),
+    };
+    prove_fact_threaded(&base, context, registry, allow_viewable, spec_seen)
+        && parts
+            .iter()
+            .all(|part| prove_fact_threaded(part, context, registry, allow_viewable, spec_seen))
 }
 
 fn collection_literal_for_membership(
@@ -20480,6 +20812,7 @@ fn instantiate_component_type_facts(
     }
     info.component_types
         .iter()
+        .chain(&info.component_refinements)
         .map(|fact| context.normalize_fact(&substitute_fact(fact, &substitutions)))
         .collect()
 }
@@ -22226,6 +22559,45 @@ mod normalization_tests {
         context.add_substitution("y".to_string(), "x".to_string());
 
         assert_eq!(context.normalize_key("f(z, y)"), "f(x, x)");
+    }
+
+    #[test]
+    fn additive_component_refinements_accumulate_adjectives() {
+        let associative = TypeFact::RefinedIs {
+            subject: "*".to_owned(),
+            ty: r"\associative::binary.operation:on{X}".to_owned(),
+            signature: r"\associative::binary.operation:on".to_owned(),
+            base_ty: r"\binary.operation:on{X}".to_owned(),
+            base_signature: r"\binary.operation:on".to_owned(),
+        };
+        let commutative = TypeFact::RefinedIs {
+            subject: "*".to_owned(),
+            ty: r"\commutative::binary.operation:on{X}".to_owned(),
+            signature: r"\commutative::binary.operation:on".to_owned(),
+            base_ty: r"\binary.operation:on{X}".to_owned(),
+            base_signature: r"\binary.operation:on".to_owned(),
+        };
+
+        let combined = TypeFact::RefinedIs {
+            subject: "*".to_owned(),
+            ty: r"\commutative::associative::binary.operation:on{X}".to_owned(),
+            signature: r"\commutative::associative::binary.operation:on".to_owned(),
+            base_ty: r"\binary.operation:on{X}".to_owned(),
+            base_signature: r"\binary.operation:on".to_owned(),
+        };
+        assert_eq!(
+            merge_additive_type_facts(&associative, &commutative),
+            Some(combined.clone())
+        );
+
+        let mut context = TypeContext::default();
+        context.add_fact(associative);
+        context.add_fact(commutative);
+        assert!(prove_fact(
+            &combined,
+            &context,
+            &SignatureRegistry::default()
+        ));
     }
 }
 

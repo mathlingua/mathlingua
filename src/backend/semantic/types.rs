@@ -124,6 +124,10 @@ pub(super) struct DefinitionTypeInfo {
     /// type (e.g. a parameter `{M ::= (X, *)}` with `M is \magma`) recover the
     /// component types positionally. Empty when the target is not a tuple.
     pub(super) component_types: Vec<TypeFact>,
+    /// Additive refined-type facts carried by tuple components. These stay
+    /// separate from `component_types` so strengthening a component preserves
+    /// its original fact while accumulating adjective refinements.
+    pub(super) component_refinements: Vec<TypeFact>,
     /// Structural shape of each component in a destructuring `Declares:` target.
     /// Names are intentionally ignored, while distinctions such as a value versus
     /// an operator component are retained so `Refines: G ::= (...)` can be checked

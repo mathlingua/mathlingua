@@ -1,0 +1,12 @@
+== begin:description ==
+Accepts one discoverer entry in a Documented section.
+== end:description ==
+== begin:input ==
+[\item]
+Declares: x
+Documented:
+. called: "item"
+. discoverer: "@ada"
+== end:input ==
+== begin:output ==
+== end:output ==

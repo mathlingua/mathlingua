@@ -1,0 +1,15 @@
+== begin:description ==
+Rejects two quantifier bindings with the same symbol name in one scope.
+== end:description ==
+== begin:input ==
+Theorem:
+then:
+. forAll:
+  . x is \\anything
+  . x is \\anything
+  then: x = x
+== end:input ==
+== begin:output ==
+error: Subject `x` is specified more than once in the same `forAll:` scope (`is` and `is`); choose exactly one of `is`, a quoted specification, a spec-infix specification, or `:=`
+error: Symbol `x` has already been defined
+== end:output ==

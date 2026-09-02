@@ -1,0 +1,15 @@
+== begin:description ==
+Accepts one Related entry on a Topic, including its target reference and prose explanation.
+== end:description ==
+== begin:input ==
+[#algebra]
+Topic: "Algebra."
+
+[#algebra.groups]
+Topic: "Group theory."
+Related:
+. to: "#algebra"
+  specifies: "Group theory is part of algebra."
+== end:input ==
+== begin:output ==
+== end:output ==

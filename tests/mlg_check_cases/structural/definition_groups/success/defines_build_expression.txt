@@ -1,0 +1,17 @@
+== begin:description ==
+Accepts a Defines assignment whose build expression states the type of its value.
+== end:description ==
+== begin:input ==
+[\set]
+Declares: X
+Documented:
+. called: "set"
+
+[\empty.set]
+Defines: E := \set@{x : ...}
+Documented:
+. called: "empty set"
+== end:input ==
+== begin:output ==
+
+== end:output ==

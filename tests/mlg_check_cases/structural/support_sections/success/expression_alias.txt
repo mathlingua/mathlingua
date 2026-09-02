@@ -1,0 +1,14 @@
+== begin:description ==
+Accepts one local expression alias in an Aliases section.
+== end:description ==
+== begin:input ==
+[\item]
+Declares: x
+Documented:
+. called: "item"
+Aliases:
+. alias: same(x_) :=> x_
+  written: "x_?"
+== end:input ==
+== begin:output ==
+== end:output ==

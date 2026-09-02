@@ -1,0 +1,28 @@
+== begin:description ==
+Accepts function-named postfix operator syntax and resolves it through a matching Disambiguates entry.
+== end:description ==
+== begin:input ==
+[\real]
+Declares: x
+Documented:
+. called: "real"
+
+[\postfix.real{x}]
+Defines: y is \real
+when: x is \real
+Documented:
+. called: "postfix real"
+
+[x_ |f]
+Disambiguates:
+when: x_ is \real
+to: \postfix.real{x_}
+Documented:
+. written: "x_? |f"
+
+Theorem:
+given: r is \real
+then: r |f
+== end:input ==
+== begin:output ==
+== end:output ==

@@ -1,0 +1,15 @@
+== begin:description ==
+Accepts a multiline formulation block whose delimiters close at the argument indentation and preserves nested indentation while parsing it.
+== end:description ==
+== begin:input ==
+Theorem:
+given: x is \\anything
+then:
+. (
+  x
+  =
+  x
+  )
+== end:input ==
+== begin:output ==
+== end:output ==

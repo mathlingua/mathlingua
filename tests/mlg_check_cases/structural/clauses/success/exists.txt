@@ -1,0 +1,11 @@
+== begin:description ==
+Accepts an exists clause with one binding and a suchThat body.
+== end:description ==
+== begin:input ==
+Theorem:
+then:
+. exists: x is \\anything
+  suchThat: x = x
+== end:input ==
+== begin:output ==
+== end:output ==

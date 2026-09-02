@@ -1,0 +1,11 @@
+== begin:description ==
+Rejects an unknown top-level structural group.
+== end:description ==
+== begin:input ==
+Corollary:
+then: x = x
+== end:input ==
+== begin:output ==
+error: Unexpected top-level group `Corollary`
+error: Top-level item must include an `Id:` section
+== end:output ==

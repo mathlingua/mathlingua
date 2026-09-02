@@ -1,0 +1,13 @@
+== begin:description ==
+Rejects a bare-parameter mapping literal when no surrounding function type can supply its parameter spec.
+== end:description ==
+== begin:input ==
+Theorem:
+given:
+. a is \\anything
+. f := x_ => x_
+then: a is? \\anything
+== end:input ==
+== begin:output ==
+error: function literal parameter `x` needs a spec (e.g. `(x_ is ...)`) unless the type is known from an `is`
+== end:output ==

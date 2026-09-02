@@ -1,0 +1,11 @@
+== begin:description ==
+Accepts the optional iff section of a Theorem.
+== end:description ==
+== begin:input ==
+Theorem:
+given: P is \\statement
+then: P
+iff: P
+== end:input ==
+== begin:output ==
+== end:output ==

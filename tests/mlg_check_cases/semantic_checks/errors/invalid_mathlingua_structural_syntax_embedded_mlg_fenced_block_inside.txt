@@ -1,0 +1,16 @@
+== begin:description ==
+Rejects invalid MathLingua structural syntax embedded in an `mlg` fenced block inside prose.
+== end:description ==
+== begin:input ==
+Text: "
+Example:
+
+```mlg
+Bogus: \"not a real item\"
+```
+"
+Id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+== end:input ==
+== begin:output ==
+error: Syntax error in `mlg` code block: Unexpected top-level group `Bogus`
+== end:output ==

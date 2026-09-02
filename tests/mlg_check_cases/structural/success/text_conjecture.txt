@@ -1,0 +1,8 @@
+== begin:description ==
+Accepts a prose-only TextConjecture item.
+== end:description ==
+== begin:input ==
+TextConjecture: "Every even integer greater than two is a sum of two primes."
+== end:input ==
+== begin:output ==
+== end:output ==

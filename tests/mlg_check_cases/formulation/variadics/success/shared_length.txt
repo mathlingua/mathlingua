@@ -1,0 +1,20 @@
+== begin:description ==
+Accepts two variadic command parameters that share one required argument length.
+== end:description ==
+== begin:input ==
+[\same.length{x...n}:and{y...n}]
+States:
+when:
+. x[1...n] is \\statement
+. y[1...n] is \\statement
+that: x[1...n] = y[1...n]
+Documented:
+. called: "same length"
+
+Theorem:
+given: P, Q, R, S is \\statement
+then: \same.length{P, Q}:and{R, S}
+== end:input ==
+== begin:output ==
+
+== end:output ==

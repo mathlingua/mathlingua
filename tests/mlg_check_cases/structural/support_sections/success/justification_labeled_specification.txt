@@ -1,0 +1,18 @@
+== begin:description ==
+Accepts a labeled specifies item backed by the matching labeled entry in Justification.
+== end:description ==
+== begin:input ==
+[\pair]
+Declares: P ::= (A, B)
+specifies:
+. A is \\anything
+. (.B is \\anything.)[:second:]
+Documented:
+. called: "pair"
+Justification:
+. [second]
+  have: B is \\anything
+  asserting: B is \\anything
+== end:input ==
+== begin:output ==
+== end:output ==

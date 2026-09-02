@@ -1,0 +1,10 @@
+== begin:description ==
+Accepts a Resource journal item.
+== end:description ==
+== begin:input ==
+[$source]
+Resource:
+. journal: "A Journal"
+== end:input ==
+== begin:output ==
+== end:output ==

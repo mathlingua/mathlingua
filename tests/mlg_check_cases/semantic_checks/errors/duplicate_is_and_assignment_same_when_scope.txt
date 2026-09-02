@@ -1,0 +1,16 @@
+== begin:description ==
+Rejects direct `is` and `:=` specifications for the same subject in one when scope.
+== end:description ==
+== begin:input ==
+[\bad{A}]
+Declares: X
+when:
+. A is \\anything
+. A := A
+Documented:
+. called: "bad"
+== end:input ==
+== begin:output ==
+error: Subject `A` is specified more than once in the same `when:` scope (`is` and `:=`); choose exactly one of `is`, a quoted specification, a spec-infix specification, or `:=`
+error: `when:` clauses only support `<subject> is <type>` or `<subject> "op" <target>` requirements
+== end:output ==

@@ -1,0 +1,14 @@
+== begin:description ==
+Rejects a plain spec-infix heading on a States entry because only Declares may define plain spec-infix signatures.
+== end:description ==
+== begin:input ==
+[A \:related:/ B]
+States:
+when: A, B is \\anything
+that: A = A
+Documented:
+. called: "related"
+== end:input ==
+== begin:output ==
+error: Spec-infix headings may only be used with Declares entries
+== end:output ==

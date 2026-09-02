@@ -1,0 +1,18 @@
+== begin:description ==
+Accepts an indexed element selected from a variadic command parameter.
+== end:description ==
+== begin:input ==
+[\all.same{x...n}]
+States:
+when: x[1...n] is \\statement
+that: x[1] = x[1]
+Documented:
+. called: "all same"
+
+Theorem:
+given: P, Q is \\statement
+then: \all.same{P, Q}
+== end:input ==
+== begin:output ==
+
+== end:output ==

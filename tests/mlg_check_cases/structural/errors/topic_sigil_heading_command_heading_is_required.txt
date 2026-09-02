@@ -1,0 +1,12 @@
+== begin:description ==
+Rejects a topic-sigil heading where a command heading is required.
+== end:description ==
+== begin:input ==
+[#sets]
+Declares: X
+Documented:
+. called: "set"
+== end:input ==
+== begin:output ==
+error: Invalid command heading: command header must start with `\`
+== end:output ==

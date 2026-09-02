@@ -1,0 +1,24 @@
+== begin:description ==
+Rejects an inferred command parameter when the same name is already introduced in the current scope.
+== end:description ==
+== begin:input ==
+[\set]
+Declares: X
+Documented:
+. called: "set"
+
+[\function:on{A}:to{B}]
+Declares: f(x__)
+when: A, B is \set
+Documented:
+. called: "function"
+
+Theorem:
+given:
+. A is \set
+. f is \function:on{A?}:to{B?}
+then: A is? \set
+== end:input ==
+== begin:output ==
+error: Inferred parameter `A` is already introduced
+== end:output ==

@@ -1,0 +1,23 @@
+== begin:description ==
+Rejects direct `is` and quoted-operator specifications for the same subject in one when scope.
+== end:description ==
+== begin:input ==
+[\set]
+Declares: X
+Requires:
+. capability: x_ "in" X :-> \\abstract
+Documented:
+. called: "set"
+
+[\bad{A}:in{B}]
+Declares: X
+when:
+. B is \set
+. A is \set
+. A "in" B
+Documented:
+. called: "bad"
+== end:input ==
+== begin:output ==
+error: Subject `A` is specified more than once in the same `when:` scope (`is` and `quoted specification`); choose exactly one of `is`, a quoted specification, a spec-infix specification, or `:=`
+== end:output ==

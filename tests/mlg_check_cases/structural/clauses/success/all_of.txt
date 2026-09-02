@@ -1,0 +1,13 @@
+== begin:description ==
+Accepts an allOf clause containing two statements.
+== end:description ==
+== begin:input ==
+Theorem:
+given: P, Q is \\statement
+then:
+. allOf:
+  . P
+  . Q
+== end:input ==
+== begin:output ==
+== end:output ==

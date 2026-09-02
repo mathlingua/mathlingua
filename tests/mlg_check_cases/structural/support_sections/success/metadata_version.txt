@@ -1,0 +1,13 @@
+== begin:description ==
+Accepts one semantic version in a Metadata section.
+== end:description ==
+== begin:input ==
+[\item]
+Declares: x
+Documented:
+. called: "item"
+Metadata:
+. version: "1.0.0"
+== end:input ==
+== begin:output ==
+== end:output ==

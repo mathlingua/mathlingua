@@ -1,0 +1,10 @@
+== begin:description ==
+Accepts a Resource title item.
+== end:description ==
+== begin:input ==
+[$source]
+Resource:
+. title: "A Source"
+== end:input ==
+== begin:output ==
+== end:output ==

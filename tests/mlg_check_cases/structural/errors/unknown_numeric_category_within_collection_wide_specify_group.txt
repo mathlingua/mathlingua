@@ -1,0 +1,11 @@
+== begin:description ==
+Rejects an unknown numeric category within the collection-wide Specify group.
+== end:description ==
+== begin:input ==
+Specify:
+. binary:
+  is: \\natural
+== end:input ==
+== begin:output ==
+error: Unexpected specify group `binary`
+== end:output ==

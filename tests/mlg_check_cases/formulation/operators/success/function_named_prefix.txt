@@ -1,0 +1,28 @@
+== begin:description ==
+Accepts function-named prefix operator syntax and resolves it through a matching Disambiguates entry.
+== end:description ==
+== begin:input ==
+[\real]
+Declares: x
+Documented:
+. called: "real"
+
+[\prefix.real{x}]
+Defines: y is \real
+when: x is \real
+Documented:
+. called: "prefix real"
+
+[f| x_]
+Disambiguates:
+when: x_ is \real
+to: \prefix.real{x_}
+Documented:
+. written: "f| x_?"
+
+Theorem:
+given: r is \real
+then: f| r
+== end:input ==
+== begin:output ==
+== end:output ==

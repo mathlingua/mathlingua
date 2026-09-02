@@ -1,0 +1,21 @@
+== begin:description ==
+Accepts a spec-infix Declares heading and a matching predicate expression.
+== end:description ==
+== begin:input ==
+[\set]
+Declares: X
+Documented:
+. called: "set"
+
+[A \:subset:/ B]
+Declares: A is \set
+when: B is \set
+Documented:
+. written: "A? subset B?"
+
+Theorem:
+given: A, B is \set
+then: A \:subset?:/ B
+== end:input ==
+== begin:output ==
+== end:output ==

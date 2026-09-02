@@ -1,0 +1,10 @@
+== begin:description ==
+Rejects a malformed explicit top-level UUID.
+== end:description ==
+== begin:input ==
+Title: "Malformed identifier"
+Id: "not-a-uuid"
+== end:input ==
+== begin:output ==
+error: `Id:` value `not-a-uuid` must be a UUID
+== end:output ==

@@ -1,0 +1,11 @@
+== begin:description ==
+Rejects a States item that has neither a called nor written rendering in Documented.
+== end:description ==
+== begin:input ==
+[\missing]
+States:
+that: 1 = 1
+== end:input ==
+== begin:output ==
+error: States entries must include either a `called:` or `written:` item in `Documented:`
+== end:output ==

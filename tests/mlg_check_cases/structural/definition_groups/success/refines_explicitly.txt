@@ -1,0 +1,30 @@
+== begin:description ==
+Accepts an explicitly marked Refines item that names the corresponding supertype refinement and adds a condition.
+== end:description ==
+== begin:input ==
+[\base]
+Declares: x
+Documented:
+. called: "base"
+
+[\child]
+Declares: x is \base
+Documented:
+. called: "child"
+
+[\(special)::base]
+Refines: x
+satisfies: x is \base
+Documented:
+. adjective: "special"
+
+[\(special)::child]
+Refines: x
+explicitly:
+specifies: x is \(special)::base
+satisfies: x is \child
+Documented:
+. adjective: "special"
+== end:input ==
+== begin:output ==
+== end:output ==

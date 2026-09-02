@@ -1,0 +1,12 @@
+== begin:description ==
+Accepts a let clause whose binding is available in its then body.
+== end:description ==
+== begin:input ==
+Theorem:
+given: a is \\anything
+then:
+. let: x := a
+  then: x = x
+== end:input ==
+== begin:output ==
+== end:output ==

@@ -1,0 +1,11 @@
+== begin:description ==
+Accepts the optional where section of a Theorem.
+== end:description ==
+== begin:input ==
+Theorem:
+given: P is \\statement
+where: P
+then: P
+== end:input ==
+== begin:output ==
+== end:output ==

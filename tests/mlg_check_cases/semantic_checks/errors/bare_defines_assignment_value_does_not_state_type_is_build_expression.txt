@@ -1,0 +1,20 @@
+== begin:description ==
+Rejects a bare Defines assignment whose value does not state its type with `is` or a build expression.
+== end:description ==
+== begin:input ==
+[\set]
+Declares: X
+Requires:
+. capability: x_ "in" X :-> \\abstract
+Documented:
+. called: "set"
+
+[A \.cross./ B]
+Defines: X := {(a_, b_) : a_ "in" A; b_ "in" B}
+when: A, B is \set
+Documented:
+. called: "cross"
+== end:input ==
+== begin:output ==
+error: `Defines:` target `X` must state its type: use `... is <type>` or a top-level `\...@...` build (e.g. `\set@{...}`)
+== end:output ==

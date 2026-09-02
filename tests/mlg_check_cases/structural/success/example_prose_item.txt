@@ -1,0 +1,10 @@
+== begin:description ==
+Accepts one prose item in an Example section.
+== end:description ==
+== begin:input ==
+Example:
+. "A prose example item."
+Id: "22222222-2222-4222-8222-222222222222"
+== end:input ==
+== begin:output ==
+== end:output ==

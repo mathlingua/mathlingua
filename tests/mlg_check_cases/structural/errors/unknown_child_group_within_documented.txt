@@ -1,0 +1,13 @@
+== begin:description ==
+Rejects an unknown child group within Documented.
+== end:description ==
+== begin:input ==
+[\set]
+Declares: X
+Documented:
+. mystery: "set"
+== end:input ==
+== begin:output ==
+error: Unexpected documented group `mystery`
+error: Declares entries must include either a `called:` or `written:` item in `Documented:`
+== end:output ==

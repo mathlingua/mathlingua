@@ -1,0 +1,12 @@
+== begin:description ==
+Accepts the optional where section inside a forAll clause.
+== end:description ==
+== begin:input ==
+Theorem:
+then:
+. forAll: x is \\anything
+  where: x = x
+  then: x = x
+== end:input ==
+== begin:output ==
+== end:output ==

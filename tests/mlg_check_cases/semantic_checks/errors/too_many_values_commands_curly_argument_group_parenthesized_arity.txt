@@ -1,0 +1,18 @@
+== begin:description ==
+Rejects one extra curly-argument value in a command reference whose parenthesized argument count is otherwise correct.
+== end:description ==
+== begin:input ==
+[\some.function{A}(x, y)]
+States:
+when: A is \\anything
+that: 1 = 1
+Documented:
+. called: "some function"
+
+Theorem:
+given: A, B, x, y is \\anything
+then: \some.function{A, B}(x, y)
+== end:input ==
+== begin:output ==
+error: Command signature `\some.function` expects argument shape `{1}(2)` but found `{2}(2)`
+== end:output ==

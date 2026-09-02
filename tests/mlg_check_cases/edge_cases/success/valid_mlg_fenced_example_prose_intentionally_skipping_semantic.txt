@@ -1,0 +1,19 @@
+== begin:description ==
+Accepts a valid `mlg` fenced example in prose while intentionally skipping semantic resolution inside the fence.
+== end:description ==
+== begin:input ==
+Text: "
+Example:
+
+```mlg
+[\function:on{A}:to{B}]
+Declares: f(x__) ::= y_
+Documented:
+. called: \"function\"
+Id: \"123\"
+```
+"
+Id: "fce2c58a-edeb-4af2-b2a3-c1f67b8d31d0"
+== end:input ==
+== begin:output ==
+== end:output ==

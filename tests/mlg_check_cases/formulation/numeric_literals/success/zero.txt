@@ -1,0 +1,25 @@
+== begin:description ==
+Accepts a zero literal at the nominal type configured by the zeroOrPositiveInt Specify item.
+== end:description ==
+== begin:input ==
+[\whole]
+Declares: x
+Documented:
+. called: "whole"
+
+Specify:
+. zeroOrPositiveInt:
+  is: \whole
+
+[\accept{x}]
+States:
+when: x is \whole
+that: x = x
+Documented:
+. called: "accept"
+
+Theorem:
+then: \accept{0}
+== end:input ==
+== begin:output ==
+== end:output ==

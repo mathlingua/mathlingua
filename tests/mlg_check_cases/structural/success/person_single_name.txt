@@ -1,0 +1,9 @@
+== begin:description ==
+Accepts a Person with one inline name.
+== end:description ==
+== begin:input ==
+[@ada]
+Person: "Ada Lovelace"
+== end:input ==
+== begin:output ==
+== end:output ==

@@ -1,0 +1,16 @@
+== begin:description ==
+Rejects a Refines item that has no adjective rendering in Documented.
+== end:description ==
+== begin:input ==
+[\thing]
+Declares: x
+Documented:
+. called: "thing"
+
+[\(special)::thing]
+Refines: x
+satisfies: x is \thing
+== end:input ==
+== begin:output ==
+error: Refines entries must include an `adjective:` item in `Documented:`
+== end:output ==

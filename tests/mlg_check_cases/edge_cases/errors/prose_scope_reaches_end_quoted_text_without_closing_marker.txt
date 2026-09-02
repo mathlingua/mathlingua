@@ -1,0 +1,9 @@
+== begin:description ==
+Rejects a prose scope that reaches the end of the quoted text without its closing marker.
+== end:description ==
+== begin:input ==
+Text: "<<exists>>unclosed"
+== end:input ==
+== begin:output ==
+error: Unclosed prose scope `<<exists>>`; expected `<</exists>>`
+== end:output ==

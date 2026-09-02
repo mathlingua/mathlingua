@@ -1,0 +1,12 @@
+== begin:description ==
+Accepts an if clause with a then branch.
+== end:description ==
+== begin:input ==
+Theorem:
+given: P, Q is \\statement
+then:
+. if: P
+  then: Q
+== end:input ==
+== begin:output ==
+== end:output ==

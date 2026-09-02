@@ -1,0 +1,9 @@
+== begin:description ==
+Accepts a Topic with a dotted topic heading and prose body.
+== end:description ==
+== begin:input ==
+[#abstract.algebra]
+Topic: "The study of algebraic structures."
+== end:input ==
+== begin:output ==
+== end:output ==

@@ -1,0 +1,16 @@
+== begin:description ==
+Rejects an `is` specification in a result clause, where the non-binding `is?` predicate is required.
+== end:description ==
+== begin:input ==
+[\thing]
+Declares: x
+Documented:
+. called: "thing"
+
+Theorem:
+given: x is \thing
+then: x is \thing
+== end:input ==
+== begin:output ==
+error: An `is` specification introduces a symbol and is only allowed in `exists:`, `given:`, `forAll:`, or `let:`; use the statement form `is?` here
+== end:output ==

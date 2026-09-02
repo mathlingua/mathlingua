@@ -1,0 +1,17 @@
+== begin:description ==
+Rejects a Realizes target that names a Declares entry instead of a Defines entry marked abstractly.
+== end:description ==
+== begin:input ==
+[\set]
+Declares: X
+Documented:
+. called: "set"
+
+[\not.a.realization]
+Realizes: X := \set
+Documented:
+. called: "not a realization"
+== end:input ==
+== begin:output ==
+error: `Realizes:` must name a `Defines:` marked `abstractly:`; `\set` is a `Declares:`
+== end:output ==

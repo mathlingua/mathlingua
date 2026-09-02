@@ -1,0 +1,12 @@
+== begin:description ==
+Accepts one related entry in a Documented section.
+== end:description ==
+== begin:input ==
+[\item]
+Declares: x
+Documented:
+. called: "item"
+. related: "#related-topic"
+== end:input ==
+== begin:output ==
+== end:output ==

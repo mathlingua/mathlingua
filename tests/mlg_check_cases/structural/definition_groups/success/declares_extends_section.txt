@@ -1,0 +1,17 @@
+== begin:description ==
+Accepts one supertype declaration in an extends section.
+== end:description ==
+== begin:input ==
+[\base]
+Declares: x
+Documented:
+. called: "base"
+
+[\child]
+Declares: x
+extends: x is \base
+Documented:
+. called: "child"
+== end:input ==
+== begin:output ==
+== end:output ==

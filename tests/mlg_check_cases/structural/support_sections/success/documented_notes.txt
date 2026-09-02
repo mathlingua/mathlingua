@@ -1,0 +1,10 @@
+== begin:description ==
+Accepts one notes entry in a Documented section on a text-only item.
+== end:description ==
+== begin:input ==
+TextDefinition: "A prose definition."
+Documented:
+. notes: "A note."
+== end:input ==
+== begin:output ==
+== end:output ==

@@ -1,0 +1,14 @@
+== begin:description ==
+Rejects an unknown child group within Requires.
+== end:description ==
+== begin:input ==
+[\set]
+Declares: X
+Requires:
+. mystery: X
+Documented:
+. called: "set"
+== end:input ==
+== begin:output ==
+error: Unexpected requires group `mystery`
+== end:output ==

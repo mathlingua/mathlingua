@@ -1,0 +1,21 @@
+== begin:description ==
+Accepts an abstractly marker on a Defines item whose typed components intentionally have no values.
+== end:description ==
+== begin:input ==
+[\thing]
+Declares: x
+Documented:
+. called: "thing"
+
+[\abstract.pair]
+Defines: P ::= (x, y)
+abstractly:
+specifies:
+. x is \thing
+. y is \thing
+Documented:
+. called: "abstract pair"
+== end:input ==
+== begin:output ==
+
+== end:output ==

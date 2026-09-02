@@ -1,0 +1,11 @@
+== begin:description ==
+Accepts a formulation clause as the specifies value of a Relation.
+== end:description ==
+== begin:input ==
+Relation:
+between: x is \\anything
+and: y is \\anything
+specifies: x = x
+== end:input ==
+== begin:output ==
+== end:output ==

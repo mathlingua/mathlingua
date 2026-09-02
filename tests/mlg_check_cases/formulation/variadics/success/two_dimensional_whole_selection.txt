@@ -1,0 +1,22 @@
+== begin:description ==
+Accepts a whole two-dimensional variadic selection in a command requirement.
+== end:description ==
+== begin:input ==
+[\matrix]
+Declares: X
+Documented:
+. called: "matrix"
+
+[\matrix:of{x[(i_, j_) := (1,1)...(m,n)]}]
+Defines: X is \matrix
+when: x[..., ...] is \\statement
+Documented:
+. called: "matrix of"
+
+Theorem:
+given: P, Q, R, S is \\statement
+then: \matrix:of{P, Q; R, S}
+== end:input ==
+== begin:output ==
+
+== end:output ==

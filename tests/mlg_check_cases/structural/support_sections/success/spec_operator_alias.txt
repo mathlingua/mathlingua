@@ -1,0 +1,13 @@
+== begin:description ==
+Accepts one local specification-operator alias in an Aliases section.
+== end:description ==
+== begin:input ==
+[\thing]
+Declares: X
+Documented:
+. called: "thing"
+Aliases:
+. alias: x_ "has" X :-> x_ is \thing
+== end:input ==
+== begin:output ==
+== end:output ==

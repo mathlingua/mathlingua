@@ -1,0 +1,9 @@
+== begin:description ==
+Rejects mismatched prose scope names and reports the name that was expected.
+== end:description ==
+== begin:input ==
+Text: "<<outer>>content<</inner>>"
+== end:input ==
+== begin:output ==
+error: Mismatched prose scope closing marker `<</inner>>`; expected `<</outer>>`
+== end:output ==

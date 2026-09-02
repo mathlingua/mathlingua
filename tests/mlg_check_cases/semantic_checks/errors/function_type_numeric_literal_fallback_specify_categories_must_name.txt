@@ -1,0 +1,11 @@
+== begin:description ==
+Rejects a function type as a numeric-literal fallback because Specify categories must name nominal or built-in types.
+== end:description ==
+== begin:input ==
+Specify:
+. decimal:
+  is: (_ is \\anything) -> (_ is \\anything)
+== end:input ==
+== begin:output ==
+error: Specify `decimal: is:` must name a nominal or built-in type
+== end:output ==

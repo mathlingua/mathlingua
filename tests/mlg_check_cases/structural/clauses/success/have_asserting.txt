@@ -1,0 +1,12 @@
+== begin:description ==
+Accepts the optional asserting section of a have clause.
+== end:description ==
+== begin:input ==
+Theorem:
+given: P is \\statement
+then:
+. have: P
+  asserting: P
+== end:input ==
+== begin:output ==
+== end:output ==

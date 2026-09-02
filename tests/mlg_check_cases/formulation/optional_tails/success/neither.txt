@@ -1,0 +1,21 @@
+== begin:description ==
+Accepts a command expression containing neither optional tail from a two-tail optional command heading.
+== end:description ==
+== begin:input ==
+[\thing]
+Declares: value
+Documented:
+. called: "thing"
+
+[\foo:?baz{A}:?bar{B}]
+Defines: A ::= B "defines" B
+when: A, B is \thing
+Documented:
+. called: "foo"
+
+Theorem:
+given: a, b is \thing
+then: \foo
+== end:input ==
+== begin:output ==
+== end:output ==

@@ -1,0 +1,11 @@
+== begin:description ==
+Accepts the optional prose Proof section of a Theorem.
+== end:description ==
+== begin:input ==
+Theorem:
+given: P is \\statement
+then: P
+Proof: "The conclusion is assumed."
+== end:input ==
+== begin:output ==
+== end:output ==

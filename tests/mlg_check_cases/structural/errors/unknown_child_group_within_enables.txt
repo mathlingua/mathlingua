@@ -1,0 +1,14 @@
+== begin:description ==
+Rejects an unknown child group within Enables.
+== end:description ==
+== begin:input ==
+[\set]
+Declares: X
+Enables:
+. mystery: X
+Documented:
+. called: "set"
+== end:input ==
+== begin:output ==
+error: Unexpected enables group `mystery`
+== end:output ==

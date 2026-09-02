@@ -1,0 +1,11 @@
+== begin:description ==
+Rejects an unknown bibliography child group within Resource.
+== end:description ==
+== begin:input ==
+[$book]
+Resource:
+. isbn: "123"
+== end:input ==
+== begin:output ==
+error: Unexpected resource group `isbn`
+== end:output ==

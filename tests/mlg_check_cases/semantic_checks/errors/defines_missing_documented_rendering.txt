@@ -1,0 +1,10 @@
+== begin:description ==
+Rejects a Defines item that has neither a called nor written rendering in Documented.
+== end:description ==
+== begin:input ==
+[\missing]
+Defines: x is \\anything
+== end:input ==
+== begin:output ==
+error: Defines entries must include either a `called:` or `written:` item in `Documented:`
+== end:output ==

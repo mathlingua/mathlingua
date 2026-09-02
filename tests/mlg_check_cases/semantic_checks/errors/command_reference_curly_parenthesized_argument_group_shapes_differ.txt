@@ -1,0 +1,18 @@
+== begin:description ==
+Rejects a command reference whose curly and parenthesized argument-group shapes differ from its otherwise valid heading.
+== end:description ==
+== begin:input ==
+[\foo{A, B}(x)]
+States:
+when: A, B is \\anything
+that: 1 = 1
+Documented:
+. called: "foo"
+
+Theorem:
+given: A, x, z is \\anything
+then: \foo{A}(x, z)
+== end:input ==
+== begin:output ==
+error: Command signature `\foo` expects argument shape `{2}(1)` but found `{1}(2)`
+== end:output ==

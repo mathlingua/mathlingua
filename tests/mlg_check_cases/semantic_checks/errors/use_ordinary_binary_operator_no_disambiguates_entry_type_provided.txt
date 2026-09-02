@@ -1,0 +1,16 @@
+== begin:description ==
+Rejects use of an ordinary binary operator when no Disambiguates entry or type-provided operator can resolve it.
+== end:description ==
+== begin:input ==
+[\number]
+Declares: n
+Documented:
+. called: "number"
+
+Theorem:
+given: x, y is \number
+then: x + y = x
+== end:input ==
+== begin:output ==
+error: Could not resolve operator `+`: no matching `Disambiguates` entry was found
+== end:output ==

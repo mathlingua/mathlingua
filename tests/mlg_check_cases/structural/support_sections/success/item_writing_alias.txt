@@ -1,0 +1,13 @@
+== begin:description ==
+Accepts one item-local Writing alias.
+== end:description ==
+== begin:input ==
+[\item]
+Declares: x
+Documented:
+. called: "item"
+Writing:
+. "item :~> \\operatorname{item}"
+== end:input ==
+== begin:output ==
+== end:output ==

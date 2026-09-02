@@ -1,0 +1,11 @@
+== begin:description ==
+Accepts a prose specifies value on a Relation.
+== end:description ==
+== begin:input ==
+Relation:
+between: x is \\anything
+and: y is \\anything
+specifies: "The values are related."
+== end:input ==
+== begin:output ==
+== end:output ==

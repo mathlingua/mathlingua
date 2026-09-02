@@ -1,0 +1,9 @@
+== begin:description ==
+Rejects an unmatched prose scope closing marker.
+== end:description ==
+== begin:input ==
+Text: "Unexpected <</scope>> marker."
+== end:input ==
+== begin:output ==
+error: Unexpected prose scope closing marker `<</scope>>`
+== end:output ==

@@ -1,0 +1,13 @@
+== begin:description ==
+Accepts the optional within reference on a Topic.
+== end:description ==
+== begin:input ==
+[#algebra]
+Topic: "Algebra."
+
+[#algebra.groups]
+Topic: "Group theory."
+within: "#algebra"
+== end:input ==
+== begin:output ==
+== end:output ==

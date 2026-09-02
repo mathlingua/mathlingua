@@ -1,0 +1,12 @@
+== begin:description ==
+Accepts one overview entry in a Documented section.
+== end:description ==
+== begin:input ==
+[\item]
+Declares: x
+Documented:
+. called: "item"
+. overview: "A short overview."
+== end:input ==
+== begin:output ==
+== end:output ==

@@ -1,0 +1,16 @@
+== begin:description ==
+Rejects optional command-tail references that put later tails before earlier tails.
+== end:description ==
+== begin:input ==
+[\foo:?baz{A}:?bar{B}]
+Defines: A ::= B "defines" B
+when: A, B is \\anything
+Documented:
+. called: "foo"
+
+Theorem:
+then: \foo:bar{2}:baz{1}
+== end:input ==
+== begin:output ==
+error: Undefined command signature `\foo:bar:baz`
+== end:output ==

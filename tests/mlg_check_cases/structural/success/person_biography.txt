@@ -1,0 +1,10 @@
+== begin:description ==
+Accepts the optional biography section on a Person.
+== end:description ==
+== begin:input ==
+[@ada]
+Person: "Ada Lovelace"
+biography: "English mathematician and writer."
+== end:input ==
+== begin:output ==
+== end:output ==

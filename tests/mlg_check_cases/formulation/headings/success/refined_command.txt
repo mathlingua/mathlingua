@@ -1,0 +1,17 @@
+== begin:description ==
+Accepts a refined command heading introduced by Refines.
+== end:description ==
+== begin:input ==
+[\thing]
+Declares: x
+Documented:
+. called: "thing"
+
+[\(special)::thing]
+Refines: x
+satisfies: x is \thing
+Documented:
+. adjective: "special"
+== end:input ==
+== begin:output ==
+== end:output ==

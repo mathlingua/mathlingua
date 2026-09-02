@@ -1,0 +1,31 @@
+== begin:description ==
+Rejects a Refines item containing both mutually exclusive refinement-kind markers.
+== end:description ==
+== begin:input ==
+[\base]
+Declares: x
+Documented:
+. called: "base"
+
+[\child]
+Declares: x is \base
+Documented:
+. called: "child"
+
+[\(special)::base]
+Refines: x
+satisfies: x is \base
+Documented:
+. adjective: "special"
+
+[\(special)::child]
+Refines: x
+implicitly:
+explicitly:
+specifies: x is \(special)::base
+Documented:
+. adjective: "special"
+== end:input ==
+== begin:output ==
+error: A `Refines:` may specify at most one of `implicitly:` or `explicitly:`
+== end:output ==

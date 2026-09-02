@@ -1,0 +1,14 @@
+== begin:description ==
+Accepts one from-scoped capability in an Enables section.
+== end:description ==
+== begin:input ==
+[\set]
+Declares: X
+Enables:
+. from: Y ::= {y__ : ...}
+  capability: x_ "in" X :-> x_ member_of Y
+Documented:
+. called: "set"
+== end:input ==
+== begin:output ==
+== end:output ==

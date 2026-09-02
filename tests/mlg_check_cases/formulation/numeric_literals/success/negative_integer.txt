@@ -1,0 +1,25 @@
+== begin:description ==
+Accepts a negative integer literal at the nominal type configured by the int Specify item.
+== end:description ==
+== begin:input ==
+[\integer]
+Declares: x
+Documented:
+. called: "integer"
+
+Specify:
+. int:
+  is: \integer
+
+[\accept{x}]
+States:
+when: x is \integer
+that: x = x
+Documented:
+. called: "accept"
+
+Theorem:
+then: \accept{-1}
+== end:input ==
+== begin:output ==
+== end:output ==

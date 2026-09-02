@@ -1,0 +1,14 @@
+== begin:description ==
+Accepts one member capability in an Enables section.
+== end:description ==
+== begin:input ==
+[\thing]
+Declares: x
+Enables:
+. capability: x.self :=> x
+  written: "x?"
+Documented:
+. called: "thing"
+== end:input ==
+== begin:output ==
+== end:output ==

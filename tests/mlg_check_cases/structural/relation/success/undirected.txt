@@ -1,0 +1,10 @@
+== begin:description ==
+Accepts an undirected Relation with between and and endpoints.
+== end:description ==
+== begin:input ==
+Relation:
+between: x is \\anything
+and: y is \\anything
+== end:input ==
+== begin:output ==
+== end:output ==

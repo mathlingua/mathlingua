@@ -1,0 +1,14 @@
+== begin:description ==
+Accepts one from-scoped cast rule in an Enables section.
+== end:description ==
+== begin:input ==
+[\pair]
+Declares: P
+Enables:
+. from: Q ::= {(p_, q_) : ...}
+  as: p_ := q_
+Documented:
+. called: "pair"
+== end:input ==
+== begin:output ==
+== end:output ==

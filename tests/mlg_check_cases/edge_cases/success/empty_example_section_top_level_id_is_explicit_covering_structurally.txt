@@ -1,0 +1,9 @@
+== begin:description ==
+Accepts an empty Example section when the top-level Id is explicit, covering a structurally valid zero-entry section that cannot receive an auto-generated nested Id safely.
+== end:description ==
+== begin:input ==
+Example:
+Id: "3ca5fa85-5e5a-46c2-aa1c-7013fe306d34"
+== end:input ==
+== begin:output ==
+== end:output ==

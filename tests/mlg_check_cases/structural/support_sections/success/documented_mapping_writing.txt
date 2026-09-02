@@ -1,0 +1,13 @@
+== begin:description ==
+Accepts one mapping writing entry in a Documented section.
+== end:description ==
+== begin:input ==
+[\mapping]
+Declares: x(i_)
+Documented:
+. called: "mapping"
+. writing: x(i)
+  as: "x?_{i?}"
+== end:input ==
+== begin:output ==
+== end:output ==

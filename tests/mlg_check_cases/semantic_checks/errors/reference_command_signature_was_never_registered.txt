@@ -1,0 +1,10 @@
+== begin:description ==
+Rejects an expression that references a command signature that was never registered.
+== end:description ==
+== begin:input ==
+Theorem:
+then: \missing
+== end:input ==
+== begin:output ==
+error: Undefined command signature `\missing`
+== end:output ==

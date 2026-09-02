@@ -1,0 +1,18 @@
+== begin:description ==
+Accepts the built-in map command over a ranged variadic slice.
+== end:description ==
+== begin:input ==
+[\map.each{x...n}]
+States:
+when: x[1...n] is \\statement
+that: \\map{x[1...i_...n]}:to{x[i_]}
+Documented:
+. called: "map each"
+
+Theorem:
+given: P, Q is \\statement
+then: \map.each{P, Q}
+== end:input ==
+== begin:output ==
+
+== end:output ==

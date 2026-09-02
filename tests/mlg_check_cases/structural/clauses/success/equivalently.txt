@@ -1,0 +1,13 @@
+== begin:description ==
+Accepts an equivalently clause containing two statements.
+== end:description ==
+== begin:input ==
+Theorem:
+given: P, Q is \\statement
+then:
+. equivalently:
+  . P
+  . Q
+== end:input ==
+== begin:output ==
+== end:output ==

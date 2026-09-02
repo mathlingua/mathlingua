@@ -1,0 +1,9 @@
+== begin:description ==
+Rejects an empty inline MathLingua prose fragment.
+== end:description ==
+== begin:input ==
+Text: "An empty fragment {.   .} is invalid."
+== end:input ==
+== begin:output ==
+error: MathLingua prose fragments cannot be empty
+== end:output ==

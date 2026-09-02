@@ -1,0 +1,10 @@
+== begin:description ==
+Accepts a source containing only comments and blank lines as an empty checked document.
+== end:description ==
+== begin:input ==
+-- There are intentionally no groups in this source.
+
+-- A second comment keeps the edge case visibly nonempty.
+== end:input ==
+== begin:output ==
+== end:output ==

@@ -1,0 +1,13 @@
+== begin:description ==
+Accepts a named Axiom item with its required then section.
+== end:description ==
+== begin:input ==
+[\reflexive]
+Axiom:
+given: x is \\anything
+then: x = x
+Documented:
+. called: "reflexive"
+== end:input ==
+== begin:output ==
+== end:output ==

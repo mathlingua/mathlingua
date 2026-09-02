@@ -1,0 +1,13 @@
+== begin:description ==
+Accepts one capability requirement on a Declares item.
+== end:description ==
+== begin:input ==
+[\set]
+Declares: X
+Requires:
+. capability: x_ "in" X :-> \\abstract
+Documented:
+. called: "set"
+== end:input ==
+== begin:output ==
+== end:output ==

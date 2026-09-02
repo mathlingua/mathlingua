@@ -1,0 +1,14 @@
+== begin:description ==
+Accepts a piecewise clause with if, then, and else branches.
+== end:description ==
+== begin:input ==
+Theorem:
+given: P, Q, R is \\statement
+then:
+. piecewise:
+  if: P
+  then: Q
+  else: R
+== end:input ==
+== begin:output ==
+== end:output ==

@@ -1,0 +1,11 @@
+== begin:description ==
+Accepts a not clause around one statement.
+== end:description ==
+== begin:input ==
+Theorem:
+given: P is \\statement
+then:
+. not: P
+== end:input ==
+== begin:output ==
+== end:output ==

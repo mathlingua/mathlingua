@@ -1,0 +1,24 @@
+== begin:description ==
+Accepts two independent supertype declarations in an extends section.
+== end:description ==
+== begin:input ==
+[\first.type]
+Declares: x
+Documented:
+. called: "first type"
+
+[\second.type]
+Declares: x
+Documented:
+. called: "second type"
+
+[\child]
+Declares: x
+extends:
+. x is \first.type
+. x is \second.type
+Documented:
+. called: "child"
+== end:input ==
+== begin:output ==
+== end:output ==

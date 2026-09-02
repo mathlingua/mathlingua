@@ -1,0 +1,8 @@
+== begin:description ==
+Accepts a prose-only TextAxiom item.
+== end:description ==
+== begin:input ==
+TextAxiom: "Equals may be substituted for equals."
+== end:input ==
+== begin:output ==
+== end:output ==

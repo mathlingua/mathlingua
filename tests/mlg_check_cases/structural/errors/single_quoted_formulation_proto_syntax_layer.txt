@@ -1,0 +1,11 @@
+== begin:description ==
+Rejects a single-quoted formulation at the proto-syntax layer.
+== end:description ==
+== begin:input ==
+Theorem:
+then: 'x'
+== end:input ==
+== begin:output ==
+error: Single-quoted formulations are not allowed
+error: Invalid clause expression in `then`: invalid token
+== end:output ==

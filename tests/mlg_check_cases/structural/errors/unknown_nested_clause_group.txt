@@ -1,0 +1,11 @@
+== begin:description ==
+Rejects an unknown nested clause group.
+== end:description ==
+== begin:input ==
+Theorem:
+then:
+. suppose: x = x
+== end:input ==
+== begin:output ==
+error: Unexpected clause group `suppose`
+== end:output ==

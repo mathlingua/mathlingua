@@ -1,0 +1,23 @@
+== begin:description ==
+Accepts a command invocation with a #using context assignment that satisfies the command's using requirement.
+== end:description ==
+== begin:input ==
+[\set]
+Declares: X
+Documented:
+. called: "set"
+
+[\ordered.pair]
+Declares: p
+using: A is \set
+Documented:
+. called: "ordered pair"
+
+[\ordered.pair:of{A}]
+Defines: p is \ordered.pair#using{A := A}
+when: A is \set
+Documented:
+. called: "ordered pair of $A?$"
+== end:input ==
+== begin:output ==
+== end:output ==

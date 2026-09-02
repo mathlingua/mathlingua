@@ -1,0 +1,11 @@
+== begin:description ==
+Rejects more than one collection-wide Writing item.
+== end:description ==
+== begin:input ==
+Writing: "one :~> 1"
+
+Writing: "two :~> 2"
+== end:input ==
+== begin:output ==
+error: Only one top-level `Writing:` item is allowed per collection; first used at case.mlg:1
+== end:output ==

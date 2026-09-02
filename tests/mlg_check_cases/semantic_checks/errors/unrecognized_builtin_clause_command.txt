@@ -1,0 +1,10 @@
+== begin:description ==
+Rejects an unrecognized builtin clause command.
+== end:description ==
+== begin:input ==
+Theorem:
+then: \\given{x is \\anything}
+== end:input ==
+== begin:output ==
+error: Unknown builtin clause command `\\given`
+== end:output ==

@@ -1,0 +1,9 @@
+== begin:description ==
+Rejects a non-quoted Title value where structural open text is required.
+== end:description ==
+== begin:input ==
+Title: Foundations
+== end:input ==
+== begin:output ==
+error: Expected quoted text, found `Foundations`
+== end:output ==

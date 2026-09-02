@@ -1,0 +1,21 @@
+== begin:description ==
+Accepts `satisfies` with an anonymous specification literal inside a set-builder predicate.
+== end:description ==
+== begin:input ==
+[\real]
+Declares: x
+Documented:
+. called: "real"
+
+[\collect{S}]
+Declares: y
+when: S is \\expression
+Documented:
+. called: "collect"
+
+Theorem:
+given: a is \\anything
+then: a is? \collect{{x_ : x_ satisfies (_ is \real)}}
+== end:input ==
+== begin:output ==
+== end:output ==

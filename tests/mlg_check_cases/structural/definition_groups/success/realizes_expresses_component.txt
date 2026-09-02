@@ -1,0 +1,40 @@
+== begin:description ==
+Accepts an expresses clause that supplies one component value in a Realizes item.
+== end:description ==
+== begin:input ==
+[\thing]
+Declares: x
+Documented:
+. called: "thing"
+
+[\first]
+Defines: a is \thing
+Documented:
+. called: "first"
+
+[\second]
+Defines: b is \thing
+Documented:
+. called: "second"
+
+[\abstract.pair]
+Defines: P ::= (x, y)
+abstractly:
+specifies:
+. x is \thing
+. y is \thing
+Documented:
+. called: "abstract pair"
+
+[\pair]
+Realizes: P := \abstract.pair
+specifies:
+. x is \thing
+. y := \second
+expresses: x := \first
+Documented:
+. called: "pair"
+== end:input ==
+== begin:output ==
+
+== end:output ==

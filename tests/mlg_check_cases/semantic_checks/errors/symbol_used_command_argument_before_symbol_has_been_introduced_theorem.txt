@@ -1,0 +1,25 @@
+== begin:description ==
+Rejects a symbol used in a command argument before that symbol has been introduced into the theorem scope.
+== end:description ==
+== begin:input ==
+[\set]
+Declares: X
+Documented:
+. called: "set"
+
+[\function:on{A}:to{B}]
+Declares: f(x__)
+when: A, B is \set
+Documented:
+. called: "function"
+
+Theorem:
+given:
+. X, Y is \set
+. f is \function:on{X}:to{Y}
+then: f is? \function:on{X}:to{Z}
+== end:input ==
+== begin:output ==
+error: Could not establish requirement `Z is \set` for command `\function:on:to`
+error: Unrecognized symbol `Z`
+== end:output ==

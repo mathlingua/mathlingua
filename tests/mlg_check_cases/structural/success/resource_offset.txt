@@ -1,0 +1,10 @@
+== begin:description ==
+Accepts a Resource offset item.
+== end:description ==
+== begin:input ==
+[$source]
+Resource:
+. offset: "Section G"
+== end:input ==
+== begin:output ==
+== end:output ==

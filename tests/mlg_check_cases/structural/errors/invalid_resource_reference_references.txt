@@ -1,0 +1,12 @@
+== begin:description ==
+Rejects an invalid resource reference in References.
+== end:description ==
+== begin:input ==
+TextTheorem: "A result."
+References:
+. not_a_resource
+Id: "56b68710-3bb5-4930-bd68-8038df845ec8"
+== end:input ==
+== begin:output ==
+error: Invalid References formulation: resource headers must start with `$`
+== end:output ==

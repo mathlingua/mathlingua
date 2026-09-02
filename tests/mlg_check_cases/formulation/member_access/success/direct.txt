@@ -1,0 +1,28 @@
+== begin:description ==
+Accepts direct member access supplied by a capability on the owner's nominal type.
+== end:description ==
+== begin:input ==
+[\set]
+Declares: X
+Requires:
+. capability: x_ "in" X :-> \\abstract
+Documented:
+. called: "set"
+
+[\element:of{X}]
+Declares: x "in" X
+when: X is \set
+Enables:
+. capability: x.self :=> x
+  written: "x?"
+Documented:
+. called: "element"
+
+Theorem:
+given:
+. X is \set
+. p is \element:of{X}
+then: p.self is? \element:of{X}
+== end:input ==
+== begin:output ==
+== end:output ==

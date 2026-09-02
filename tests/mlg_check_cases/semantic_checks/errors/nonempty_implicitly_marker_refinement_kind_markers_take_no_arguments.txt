@@ -1,0 +1,30 @@
+== begin:description ==
+Rejects an implicitly marker with an argument because refinement-kind markers must be empty.
+== end:description ==
+== begin:input ==
+[\base]
+Declares: x
+Documented:
+. called: "base"
+
+[\child]
+Declares: x is \base
+Documented:
+. called: "child"
+
+[\(special)::base]
+Refines: x
+satisfies: x is \base
+Documented:
+. adjective: "special"
+
+[\(special)::child]
+Refines: x
+implicitly: unexpected
+specifies: x is \(special)::base
+Documented:
+. adjective: "special"
+== end:input ==
+== begin:output ==
+error: `implicitly:` is a marker section and takes no arguments
+== end:output ==

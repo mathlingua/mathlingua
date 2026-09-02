@@ -1,0 +1,25 @@
+== begin:description ==
+Accepts a decimal literal at the nominal type configured by the decimal Specify item.
+== end:description ==
+== begin:input ==
+[\real]
+Declares: x
+Documented:
+. called: "real"
+
+Specify:
+. decimal:
+  is: \real
+
+[\accept{x}]
+States:
+when: x is \real
+that: x = x
+Documented:
+. called: "accept"
+
+Theorem:
+then: \accept{1.2}
+== end:input ==
+== begin:output ==
+== end:output ==

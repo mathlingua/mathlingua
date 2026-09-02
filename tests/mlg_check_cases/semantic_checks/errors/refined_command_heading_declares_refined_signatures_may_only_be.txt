@@ -1,0 +1,12 @@
+== begin:description ==
+Rejects a refined command heading on Declares because refined signatures may only be introduced by Refines.
+== end:description ==
+== begin:input ==
+[\(special)::thing]
+Declares: X
+Documented:
+. called: "special thing"
+== end:input ==
+== begin:output ==
+error: Refined command headings may only be used with Refines entries
+== end:output ==

@@ -1,0 +1,13 @@
+== begin:description ==
+Rejects a second consecutive group heading before any sections.
+== end:description ==
+== begin:input ==
+[\first]
+[\second]
+Declares: X
+Documented:
+. called: "first"
+== end:input ==
+== begin:output ==
+error: Unexpected header: [\second]
+== end:output ==

@@ -1,0 +1,15 @@
+== begin:description ==
+Rejects an unterminated multiline formulation block at the proto layer and also reports the resulting incomplete formulation.
+== end:description ==
+== begin:input ==
+Theorem:
+given: x is \\anything
+then:
+. (
+  x = x
+== end:input ==
+== begin:output ==
+error: Unterminated formulation block starting with (
+error: Invalid clause expression in `then`: unexpected name `Id`; expected `(`, `)`, `*:`, `*`, `+:`, `+` or 37 more
+error: Top-level item must include an `Id:` section
+== end:output ==

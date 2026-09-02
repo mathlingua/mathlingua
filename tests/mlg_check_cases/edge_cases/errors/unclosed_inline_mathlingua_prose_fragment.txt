@@ -1,0 +1,9 @@
+== begin:description ==
+Rejects an unclosed inline MathLingua prose fragment.
+== end:description ==
+== begin:input ==
+Text: "An unclosed fragment {.x = x remains open."
+== end:input ==
+== begin:output ==
+error: Unclosed MathLingua prose fragment
+== end:output ==

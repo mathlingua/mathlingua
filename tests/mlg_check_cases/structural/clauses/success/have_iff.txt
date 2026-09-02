@@ -1,0 +1,12 @@
+== begin:description ==
+Accepts a have clause with its optional iff section.
+== end:description ==
+== begin:input ==
+Theorem:
+given: P is \\statement
+then:
+. have: P
+  iff: P
+== end:input ==
+== begin:output ==
+== end:output ==

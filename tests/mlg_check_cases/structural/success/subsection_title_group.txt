@@ -1,0 +1,8 @@
+== begin:description ==
+Accepts a top-level SubsectionTitle group with quoted open text.
+== end:description ==
+== begin:input ==
+SubsectionTitle: "Membership"
+== end:input ==
+== begin:output ==
+== end:output ==

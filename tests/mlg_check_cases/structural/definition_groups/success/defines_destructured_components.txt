@@ -1,0 +1,30 @@
+== begin:description ==
+Accepts a concrete destructured Defines item whose components receive values directly in specifies.
+== end:description ==
+== begin:input ==
+[\thing]
+Declares: x
+Documented:
+. called: "thing"
+
+[\first]
+Defines: a is \thing
+Documented:
+. called: "first"
+
+[\second]
+Defines: b is \thing
+Documented:
+. called: "second"
+
+[\pair]
+Defines: P ::= (x, y)
+specifies:
+. x := \first
+. y := \second
+Documented:
+. called: "pair"
+== end:input ==
+== begin:output ==
+
+== end:output ==

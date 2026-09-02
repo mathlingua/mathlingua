@@ -1,0 +1,10 @@
+== begin:description ==
+Accepts a Resource URL item.
+== end:description ==
+== begin:input ==
+[$source]
+Resource:
+. url: "https://example.com/source"
+== end:input ==
+== begin:output ==
+== end:output ==

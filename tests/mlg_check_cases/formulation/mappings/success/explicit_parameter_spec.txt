@@ -1,0 +1,15 @@
+== begin:description ==
+Accepts a mapping literal whose parameter type is stated explicitly.
+== end:description ==
+== begin:input ==
+[\real]
+Declares: x
+Documented:
+. called: "real"
+
+Theorem:
+given: f := (x_ is \real) => x_
+then: f = f
+== end:input ==
+== begin:output ==
+== end:output ==

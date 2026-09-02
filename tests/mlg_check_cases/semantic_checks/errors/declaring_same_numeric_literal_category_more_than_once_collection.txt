@@ -1,0 +1,20 @@
+== begin:description ==
+Rejects declaring the same numeric-literal category more than once in a collection.
+== end:description ==
+== begin:input ==
+[\natural]
+Declares: n
+Documented:
+. called: "natural"
+
+Specify:
+. positiveInt:
+  is: \natural
+
+Specify:
+. positiveInt:
+  is: \natural
+== end:input ==
+== begin:output ==
+error: Specify `positiveInt:` may be declared only once per collection
+== end:output ==

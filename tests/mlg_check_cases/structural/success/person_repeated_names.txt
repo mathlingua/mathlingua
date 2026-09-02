@@ -1,0 +1,11 @@
+== begin:description ==
+Accepts a Person whose Person section contains more than one name.
+== end:description ==
+== begin:input ==
+[@bourbaki]
+Person:
+. "Nicolas Bourbaki"
+. "N. Bourbaki"
+== end:input ==
+== begin:output ==
+== end:output ==

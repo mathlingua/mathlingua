@@ -1,0 +1,24 @@
+== begin:description ==
+Accepts an Equivalent item whose to section names two existing commands.
+== end:description ==
+== begin:input ==
+[\left]
+Defines: x is \\anything
+Documented:
+. called: "left"
+
+[\right]
+Defines: x is \\anything
+Documented:
+. called: "right"
+
+[\same]
+Equivalent:
+to:
+. \left
+. \right
+Documented:
+. called: "same"
+== end:input ==
+== begin:output ==
+== end:output ==

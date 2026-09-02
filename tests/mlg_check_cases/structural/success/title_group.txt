@@ -1,0 +1,8 @@
+== begin:description ==
+Accepts a top-level Title group with quoted open text.
+== end:description ==
+== begin:input ==
+Title: "Foundations"
+== end:input ==
+== begin:output ==
+== end:output ==

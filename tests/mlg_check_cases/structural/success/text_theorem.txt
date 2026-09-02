@@ -1,0 +1,8 @@
+== begin:description ==
+Accepts a prose-only TextTheorem item.
+== end:description ==
+== begin:input ==
+TextTheorem: "There are infinitely many primes."
+== end:input ==
+== begin:output ==
+== end:output ==

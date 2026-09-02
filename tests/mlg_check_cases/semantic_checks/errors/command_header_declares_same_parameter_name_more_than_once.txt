@@ -1,0 +1,13 @@
+== begin:description ==
+Rejects a command header that declares the same parameter name more than once.
+== end:description ==
+== begin:input ==
+[\pair{A, A}]
+Declares: X
+when: A is \\anything
+Documented:
+. called: "pair"
+== end:input ==
+== begin:output ==
+error: Symbol `A` has already been defined
+== end:output ==

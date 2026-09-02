@@ -1,0 +1,16 @@
+== begin:description ==
+Accepts an infix-command heading and a matching infix-command expression.
+== end:description ==
+== begin:input ==
+[A \.pair./ B]
+Defines: x is \\anything
+when: A, B is \\anything
+Documented:
+. called: "pair"
+
+Theorem:
+given: a, b is \\anything
+then: a \.pair./ b = a \.pair./ b
+== end:input ==
+== begin:output ==
+== end:output ==

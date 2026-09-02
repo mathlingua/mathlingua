@@ -1,0 +1,9 @@
+== begin:description ==
+Accepts one collection-wide Writing alias.
+== end:description ==
+== begin:input ==
+Writing:
+. "naturals :~> \\mathbb{N}"
+== end:input ==
+== begin:output ==
+== end:output ==

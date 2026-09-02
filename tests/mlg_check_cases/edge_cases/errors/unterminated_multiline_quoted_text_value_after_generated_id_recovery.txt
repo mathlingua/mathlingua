@@ -1,0 +1,10 @@
+== begin:description ==
+Rejects an unterminated multiline quoted text value after generated-Id recovery leaves the parsed top-level item without its own Id section.
+== end:description ==
+== begin:input ==
+Text: "This text starts here
+This text never closes.
+== end:input ==
+== begin:output ==
+error: Top-level item must include an `Id:` section
+== end:output ==

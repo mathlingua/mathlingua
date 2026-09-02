@@ -1,0 +1,11 @@
+== begin:description ==
+Accepts a forAll clause with one binding and a then body.
+== end:description ==
+== begin:input ==
+Theorem:
+then:
+. forAll: x is \\anything
+  then: x = x
+== end:input ==
+== begin:output ==
+== end:output ==

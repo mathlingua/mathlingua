@@ -1,0 +1,20 @@
+== begin:description ==
+Rejects a quoted specification fact when the subject's type provides no matching spec operator.
+== end:description ==
+== begin:input ==
+[\set]
+Declares: X
+Documented:
+. called: "set"
+
+[\group]
+Declares: G ::= (X, e)
+specifies:
+. X is \set
+. e "in" G
+Documented:
+. called: "group"
+== end:input ==
+== begin:output ==
+error: Could not validate spec fact `e "in" G`: no provided spec operator `"in"` is available for `G`
+== end:output ==

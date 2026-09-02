@@ -1,0 +1,19 @@
+== begin:description ==
+Accepts one view rule in an Enables section.
+== end:description ==
+== begin:input ==
+[\target]
+Declares: t
+Documented:
+. called: "target"
+
+[\source]
+Declares: s
+Enables:
+. view:
+  as: t := s is \target
+Documented:
+. called: "source"
+== end:input ==
+== begin:output ==
+== end:output ==

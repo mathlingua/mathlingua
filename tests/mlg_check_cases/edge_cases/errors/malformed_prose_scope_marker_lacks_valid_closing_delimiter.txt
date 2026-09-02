@@ -1,0 +1,9 @@
+== begin:description ==
+Rejects a malformed prose scope marker that lacks a valid closing delimiter.
+== end:description ==
+== begin:input ==
+Text: "Malformed <<scope marker."
+== end:input ==
+== begin:output ==
+error: Malformed prose scope marker; expected `<<name>>` or `<</name>>`
+== end:output ==

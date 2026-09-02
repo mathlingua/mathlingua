@@ -1,0 +1,18 @@
+== begin:description ==
+Rejects a mapping literal body that refers to a symbol outside the mapping and surrounding scopes.
+== end:description ==
+== begin:input ==
+[\real]
+Declares: r
+Documented:
+. called: "real"
+
+Theorem:
+given:
+. a is \\anything
+. f := (x_ is \real) => undeclared
+then: a is? \\anything
+== end:input ==
+== begin:output ==
+error: Unrecognized symbol `undeclared`
+== end:output ==

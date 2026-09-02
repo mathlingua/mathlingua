@@ -1,0 +1,11 @@
+== begin:description ==
+Rejects a single-backslash type command that has not been declared in the input.
+== end:description ==
+== begin:input ==
+Theorem:
+given: x is \set
+then: x = x
+== end:input ==
+== begin:output ==
+error: Undefined command signature `\set`
+== end:output ==

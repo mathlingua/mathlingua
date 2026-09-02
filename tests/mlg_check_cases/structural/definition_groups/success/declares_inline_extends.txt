@@ -1,0 +1,16 @@
+== begin:description ==
+Accepts a Declares target that states its supertype inline.
+== end:description ==
+== begin:input ==
+[\base]
+Declares: x
+Documented:
+. called: "base"
+
+[\child]
+Declares: x is \base
+Documented:
+. called: "child"
+== end:input ==
+== begin:output ==
+== end:output ==

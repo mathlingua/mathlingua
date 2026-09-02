@@ -1,0 +1,18 @@
+== begin:description ==
+Accepts a rectangular two-dimensional command argument for a two-dimensional variadic parameter.
+== end:description ==
+== begin:input ==
+[\matrix.statement{x[(i_, j_) := (1,1)...(m,n)]}]
+States:
+when: x[i, j] is \\statement
+that: x[i, j] = x[i, j]
+Documented:
+. called: "matrix statement"
+
+Theorem:
+given: P, Q, R, S is \\statement
+then: \matrix.statement{P, Q; R, S}
+== end:input ==
+== begin:output ==
+
+== end:output ==

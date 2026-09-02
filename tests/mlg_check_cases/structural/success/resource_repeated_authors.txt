@@ -1,0 +1,12 @@
+== begin:description ==
+Accepts a Resource author item containing more than one author.
+== end:description ==
+== begin:input ==
+[$source]
+Resource:
+. author:
+  . "Ada Lovelace"
+  . "Luigi Menabrea"
+== end:input ==
+== begin:output ==
+== end:output ==

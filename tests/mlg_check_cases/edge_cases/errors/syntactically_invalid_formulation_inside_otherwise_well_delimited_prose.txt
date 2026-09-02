@@ -1,0 +1,9 @@
+== begin:description ==
+Rejects a syntactically invalid formulation inside an otherwise well-delimited prose fragment.
+== end:description ==
+== begin:input ==
+Text: "An invalid fragment {.x +.} is diagnosed."
+== end:input ==
+== begin:output ==
+error: Invalid MathLingua prose fragment `x +`: unexpected end of input; expected `(.`, `(`, `+`, `-`, `decimal`, `{` or 5 more
+== end:output ==

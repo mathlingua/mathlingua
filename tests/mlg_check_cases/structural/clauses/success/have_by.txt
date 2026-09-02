@@ -1,0 +1,17 @@
+== begin:description ==
+Accepts the optional by reference section of a have clause.
+== end:description ==
+== begin:input ==
+[\reason]
+Axiom:
+then: 1 = 1
+Documented:
+. called: "reason"
+
+Theorem:
+then:
+. have: 1 = 1
+  by: \reason
+== end:input ==
+== begin:output ==
+== end:output ==

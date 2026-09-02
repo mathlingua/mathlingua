@@ -1,0 +1,18 @@
+== begin:description ==
+Rejects a build expression whose value cannot be built as the command type on its left.
+== end:description ==
+== begin:input ==
+[\set]
+Declares: X
+Requires:
+. capability: x_ "in" X :-> \\abstract
+Documented:
+. called: "set"
+
+Theorem:
+given: n is \\expression
+then: \set@n is? \set
+== end:input ==
+== begin:output ==
+error: Could not build `\set@n`
+== end:output ==

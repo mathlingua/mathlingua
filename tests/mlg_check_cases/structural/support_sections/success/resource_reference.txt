@@ -1,0 +1,14 @@
+== begin:description ==
+Accepts one valid resource citation in a References section.
+== end:description ==
+== begin:input ==
+[$source]
+Resource:
+. title: "Source"
+
+TextTheorem: "A cited theorem."
+References:
+. $source
+== end:input ==
+== begin:output ==
+== end:output ==

@@ -1,0 +1,16 @@
+== begin:description ==
+Accepts a directed Relation with from and to reference endpoints.
+== end:description ==
+== begin:input ==
+[#source]
+Topic: "Source."
+
+[#target]
+Topic: "Target."
+
+Relation:
+from: "#source"
+to: "#target"
+== end:input ==
+== begin:output ==
+== end:output ==

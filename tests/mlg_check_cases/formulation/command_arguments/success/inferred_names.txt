@@ -1,0 +1,25 @@
+== begin:description ==
+Accepts inferred command arguments and introduces their names with the types required by the corresponding command parameters.
+== end:description ==
+== begin:input ==
+[\set]
+Declares: X
+Enables:
+. capability: x_ "in" X :-> \\abstract
+Documented:
+. called: "set"
+
+[\function:on{A}:to{B}]
+Declares: f(x__)
+when: A, B is \set
+Documented:
+. called: "function"
+
+Theorem:
+given:
+. f is \function:on{A?}:to{B?}
+. x "in" A
+then: x "in" A
+== end:input ==
+== begin:output ==
+== end:output ==

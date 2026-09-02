@@ -1,0 +1,13 @@
+== begin:description ==
+Accepts the optional where section inside a let clause.
+== end:description ==
+== begin:input ==
+Theorem:
+given: a is \\anything
+then:
+. let: x := a
+  where: x = x
+  then: x = x
+== end:input ==
+== begin:output ==
+== end:output ==

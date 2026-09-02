@@ -1,0 +1,25 @@
+== begin:description ==
+Rejects a concrete Defines component that states only a type and supplies no value through either `:=` or `expresses:`.
+== end:description ==
+== begin:input ==
+[\set]
+Declares: X
+Documented:
+. called: "set"
+
+[\empty.set]
+Defines: E := \set@{x : ...}
+Documented:
+. called: "empty set"
+
+[\concrete.pair]
+Defines: P ::= (A, B)
+specifies:
+. A := \empty.set
+. B is \set
+Documented:
+. called: "concrete pair"
+== end:input ==
+== begin:output ==
+error: `B` states a specification but no value; define it with `:=`, define it in `expresses:`, or mark this `Defines:` `abstractly:`
+== end:output ==

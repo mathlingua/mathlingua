@@ -1,0 +1,14 @@
+== begin:description ==
+Rejects an unknown child group within Metadata.
+== end:description ==
+== begin:input ==
+[\set]
+Declares: X
+Documented:
+. called: "set"
+Metadata:
+. mystery: "value"
+== end:input ==
+== begin:output ==
+error: Unexpected metadata group `mystery`
+== end:output ==

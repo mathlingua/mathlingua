@@ -1,0 +1,10 @@
+== begin:description ==
+Accepts a Resource institution item.
+== end:description ==
+== begin:input ==
+[$source]
+Resource:
+. institution: "An Institution"
+== end:input ==
+== begin:output ==
+== end:output ==

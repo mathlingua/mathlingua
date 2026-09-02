@@ -1,0 +1,20 @@
+== begin:description ==
+Accepts two variadic command parameters whose argument lengths are independent.
+== end:description ==
+== begin:input ==
+[\independent{x...n}:and{y...m}]
+States:
+when:
+. x[1...n] is \\statement
+. y[1...m] is \\statement
+that: x[1...n] = x[1...n]
+Documented:
+. called: "independent lengths"
+
+Theorem:
+given: P, Q, R is \\statement
+then: \independent{P, Q}:and{R}
+== end:input ==
+== begin:output ==
+
+== end:output ==

@@ -1,0 +1,25 @@
+== begin:description ==
+Accepts a positive integer literal at the nominal type configured by the positiveInt Specify item.
+== end:description ==
+== begin:input ==
+[\natural]
+Declares: x
+Documented:
+. called: "natural"
+
+Specify:
+. positiveInt:
+  is: \natural
+
+[\accept{x}]
+States:
+when: x is \natural
+that: x = x
+Documented:
+. called: "accept"
+
+Theorem:
+then: \accept{1}
+== end:input ==
+== begin:output ==
+== end:output ==

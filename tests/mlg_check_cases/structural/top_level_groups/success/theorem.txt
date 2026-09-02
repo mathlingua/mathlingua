@@ -1,0 +1,10 @@
+== begin:description ==
+Accepts an anonymous Theorem item with its required then section.
+== end:description ==
+== begin:input ==
+Theorem:
+given: x is \\anything
+then: x = x
+== end:input ==
+== begin:output ==
+== end:output ==

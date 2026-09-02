@@ -1,0 +1,22 @@
+== begin:description ==
+Accepts a theorem command invocation with a #given context assignment that satisfies its given requirement.
+== end:description ==
+== begin:input ==
+[\set]
+Declares: X
+Documented:
+. called: "set"
+
+[\uses.context]
+Theorem:
+given: A is \set
+then: A is? \set
+Documented:
+. called: "uses context"
+
+Theorem:
+given: X is \set
+then: \uses.context#given{A := X}
+== end:input ==
+== begin:output ==
+== end:output ==

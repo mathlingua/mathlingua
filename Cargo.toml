@@ -22,3 +22,8 @@ serde_json = { version = "1.0.145", features = ["preserve_order"] }
 sha2 = "0.10"
 tiny_http = "0.12.0"
 uuid = { version = "1", features = ["v4"] }
+
+[[test]]
+name = "mlg_check_e2e"
+path = "tests/mlg_check_e2e.rs"
+harness = false

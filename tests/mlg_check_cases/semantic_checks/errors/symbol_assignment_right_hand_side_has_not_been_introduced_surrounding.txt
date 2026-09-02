@@ -1,0 +1,11 @@
+== begin:description ==
+Rejects a symbol on an assignment right-hand side that has not been introduced by the surrounding binding scope.
+== end:description ==
+== begin:input ==
+Theorem:
+given: x := y
+then: x = x
+== end:input ==
+== begin:output ==
+error: Unrecognized symbol `y`
+== end:output ==

@@ -1,0 +1,13 @@
+== begin:description ==
+Accepts a States item with its required that section.
+== end:description ==
+== begin:input ==
+[\holds{P}]
+States:
+when: P is \\statement
+that: P
+Documented:
+. called: "holds"
+== end:input ==
+== begin:output ==
+== end:output ==

@@ -1,0 +1,16 @@
+== begin:description ==
+Accepts one formulation clause in an Example section; the preceding declaration exists only to define the referenced set type.
+== end:description ==
+== begin:input ==
+[\set]
+Declares: X
+Documented:
+. called: "set"
+
+Example:
+. forAll: x is \set
+  then: x = x
+Id: "11111111-1111-4111-8111-111111111111"
+== end:input ==
+== begin:output ==
+== end:output ==

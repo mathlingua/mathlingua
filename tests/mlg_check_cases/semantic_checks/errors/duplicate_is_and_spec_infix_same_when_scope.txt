@@ -1,0 +1,27 @@
+== begin:description ==
+Rejects direct `is` and spec-infix specifications for the same subject in one when scope.
+== end:description ==
+== begin:input ==
+[\set]
+Declares: X
+Documented:
+. called: "set"
+
+[A \:subset:/ B]
+Declares: A is \set
+when: B is \set
+Documented:
+. called: "subset"
+
+[\bad{A}:in{B}]
+Declares: X
+when:
+. B is \set
+. A is \set
+. A \:subset:/ B
+Documented:
+. called: "bad"
+== end:input ==
+== begin:output ==
+error: Subject `A` is specified more than once in the same `when:` scope (`is` and `spec-infix specification`); choose exactly one of `is`, a quoted specification, a spec-infix specification, or `:=`
+== end:output ==

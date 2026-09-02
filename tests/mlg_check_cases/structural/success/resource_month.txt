@@ -1,0 +1,10 @@
+== begin:description ==
+Accepts a Resource month item.
+== end:description ==
+== begin:input ==
+[$source]
+Resource:
+. month: "September"
+== end:input ==
+== begin:output ==
+== end:output ==

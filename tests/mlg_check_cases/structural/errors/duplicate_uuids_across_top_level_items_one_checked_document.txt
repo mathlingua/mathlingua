@@ -1,0 +1,13 @@
+== begin:description ==
+Rejects duplicate UUIDs across top-level items in one checked document.
+== end:description ==
+== begin:input ==
+Title: "One"
+Id: "18582990-701a-40d3-8ce3-ae12bd08a561"
+
+Title: "Two"
+Id: "18582990-701a-40d3-8ce3-ae12bd08a561"
+== end:input ==
+== begin:output ==
+error: Duplicate Id `18582990-701a-40d3-8ce3-ae12bd08a561`; first used at case.mlg:2
+== end:output ==

@@ -1,0 +1,12 @@
+== begin:description ==
+Accepts the optional because section of a have clause.
+== end:description ==
+== begin:input ==
+Theorem:
+given: P is \\statement
+then:
+. have: P
+  because: P
+== end:input ==
+== begin:output ==
+== end:output ==

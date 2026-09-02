@@ -701,6 +701,8 @@ parentheses), and its purpose.
   body.
 - **`Axiom`** (optional command heading) — theorem-like assertion.
 - **`Theorem`** (optional command heading) — theorem-like assertion.
+- **`Example`** (optional command heading) — an ordered mixture of mathematical
+  clauses and quoted explanatory prose.
 - **`Conjecture`** (optional command heading) — theorem-shaped assertion that
   is not claimed to have a proof.
 - **`Person`** (author heading) — person metadata.
@@ -1077,6 +1079,26 @@ source order, the proof is checked and rendered against the complete item: it
 may use aliases and item-level writing overrides declared below it, and it may
 cite resources listed in `References:`. The viewer renders the proof as prose
 after the theorem card and offers a source toggle for the `Proof:` section.
+
+### Examples
+
+`Example:` records worked mathematical content without claiming a proposition.
+Its body may be empty and may freely interleave declarations, expressions,
+nested clause groups, and quoted Markdown prose. The checker processes clause
+items in order, so declarations and assumptions established earlier are
+available to later items. An optional command heading names the example.
+
+```text
+[\identity.example]
+Example:
+. X is \set
+. "Choose an element $x$ of $X$."
+. x is X
+. x = x
+```
+
+Examples accept `Justification:`, `Aliases:`, `Writing:`, `References:`, and
+`Metadata:` support sections, but not `Documented:`.
 
 If a theorem-like group has a command heading, that heading introduces a
 signature and participates in duplicate-signature and reference checks.

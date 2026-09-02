@@ -277,7 +277,8 @@ An empty document is supported by the current implementation because `Document.i
 - **`Refines`** — `RefinesGroup`, heading: refined command or refined spec-infix command (for example, `[A \:(nonempty)::subset:/ B]`). Sections: `Refines: RefinedDeclarationStatement`, `implicitly?` (marker, no arguments), `explicitly?` (marker, no arguments), `using?: DeclarationStatement+`, `when?: Clause+`, `specifies?: RefinedDeclarationStatement`, `satisfies?: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `Writing?: "WritingAlias"+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`. The `Refines:` target may repeat the base `Declares:` target or omit its expansion and then its subject structure down to a bare name; every included shape must match the base. `implicitly:`/`explicitly:` are optional, mutually exclusive, zero-argument marker sections stored as an `Option<RefinementKind>` (`Implicit`/`Explicit`); see the validation rules under `Refines` refinement markers in `language.md`
 - **`States`** — `StatesGroup`, heading: command. Sections: `States:` (marker, no arguments), `using?: DeclarationStatement+`, `when?: Clause+`, `that: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `Writing?: "WritingAlias"+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
 - **`Axiom`** — `AxiomGroup`, heading: command?. Sections: `Axiom:`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `Writing?: "WritingAlias"+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
-- **`Theorem`** — `TheoremGroup`, heading: command?. Sections: `Theorem:`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `Writing?: "WritingAlias"+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
+- **`Theorem`** — `TheoremGroup`, heading: command?. Sections: `Theorem:`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Documented?: DocumentedItem+`, `Proof?: OpenText`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `Writing?: "WritingAlias"+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
+- **`Example`** — `ExampleGroup`, heading: command?. Sections: `Example: ExampleItem*`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `Writing?: "WritingAlias"+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`. Each `ExampleItem` is quoted `OpenText`, a declaration or expression, or a nested clause group; items retain their source order
 - **`Conjecture`** — `ConjectureGroup`, heading: command?. Sections: `Conjecture:`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `Writing?: "WritingAlias"+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`. It records a theorem-shaped statement that is not claimed to have a proof
 - **`Person`** — `PersonGroup`, heading: author. Sections: `Person: OpenText+`, `biography?: OpenText`
 - **`Resource`** — `ResourceGroup`, heading: resource. Sections: `Resource: ResourceItem+`
@@ -657,6 +658,7 @@ TopLevelItemUnion ::=
     | StatesGroup
     | AxiomGroup
     | TheoremGroup
+    | ExampleGroup
     | ConjectureGroup
     | PersonGroup
     | ResourceGroup
@@ -842,11 +844,26 @@ where?: <ClauseUnion>+
 then: <ClauseUnion>+
 iff?: <ClauseUnion>+
 Documented?: <DocumentedItemUnion>+
+Proof?: <OpenText>
 Justification?: <HaveGroup>+
 Aliases?: <AliasItemUnion>+
 Writing?: "<WritingAlias>"+
 References?: <ResourceHeader>+
 Metadata?: <MetadataItemUnion>+
+```
+
+```group
+[CommandHeader]?
+Example: <ExampleItemUnion>*
+Justification?: <HaveGroup>+
+Aliases?: <AliasItemUnion>+
+Writing?: "<WritingAlias>"+
+References?: <ResourceHeader>+
+Metadata?: <MetadataItemUnion>+
+```
+
+```union
+ExampleItemUnion ::= OpenText | ClauseUnion
 ```
 
 ```group

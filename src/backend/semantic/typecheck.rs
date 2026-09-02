@@ -2691,6 +2691,7 @@ fn validate_top_level_item_types(
 ) {
     locator.begin_item();
     anchor_top_level_item(item, locator);
+    validate_local_specification_scopes(item, path, locator, event_log);
 
     match item {
         TopLevelItem::Disambiguates(group) => {
@@ -3290,6 +3291,704 @@ fn validate_top_level_item_types(
             registry,
             event_log,
         ),
+    }
+}
+
+/// Enforces the one-definition-or-specification rule within every local list:
+/// a subject may have exactly one `is`, quoted spec, spec-infix spec, or `:=`.
+/// Inherited facts live outside the list and are deliberately not considered,
+/// so a subtype remains free to strengthen an inherited type with a refinement.
+fn validate_local_specification_scopes(
+    item: &TopLevelItem,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    match item {
+        TopLevelItem::Disambiguates(group) => {
+            for branch in &group.branches {
+                validate_clause_scope(&branch.when.arguments, "when:", path, locator, event_log);
+            }
+        }
+        TopLevelItem::Declares(group) => {
+            validate_optional_declaration_scope(
+                group.using.as_ref().map(|section| &section.arguments[..]),
+                "using:",
+                path,
+                locator,
+                event_log,
+            );
+            validate_optional_clause_scope(
+                group.when.as_ref().map(|section| &section.arguments[..]),
+                "when:",
+                path,
+                locator,
+                event_log,
+            );
+            validate_is_or_via_scope(
+                match &group.declares.argument {
+                    DeclaresTarget::Declaration(statement) => Some(statement),
+                    DeclaresTarget::Form(_) => None,
+                },
+                &group.specifies,
+                path,
+                locator,
+                event_log,
+            );
+            validate_optional_clause_scope(
+                group
+                    .satisfies
+                    .as_ref()
+                    .map(|section| &section.arguments[..]),
+                "satisfies:",
+                path,
+                locator,
+                event_log,
+            );
+        }
+        TopLevelItem::Defines(group) => {
+            validate_declaration_scope(
+                std::slice::from_ref(&group.defines.argument),
+                "Defines:",
+                path,
+                locator,
+                event_log,
+            );
+            validate_optional_declaration_scope(
+                group.using.as_ref().map(|section| &section.arguments[..]),
+                "using:",
+                path,
+                locator,
+                event_log,
+            );
+            validate_optional_clause_scope(
+                group.when.as_ref().map(|section| &section.arguments[..]),
+                "when:",
+                path,
+                locator,
+                event_log,
+            );
+            validate_defines_specifies_scope(
+                &group.defines.argument,
+                &group.specifies,
+                path,
+                locator,
+                event_log,
+            );
+            validate_optional_clause_scope(
+                group
+                    .expresses
+                    .as_ref()
+                    .map(|section| &section.arguments[..]),
+                "expresses:",
+                path,
+                locator,
+                event_log,
+            );
+        }
+        TopLevelItem::Realizes(group) => {
+            validate_declaration_scope(
+                std::slice::from_ref(&group.realizes.argument),
+                "Realizes:",
+                path,
+                locator,
+                event_log,
+            );
+            validate_optional_declaration_scope(
+                group.using.as_ref().map(|section| &section.arguments[..]),
+                "using:",
+                path,
+                locator,
+                event_log,
+            );
+            validate_optional_clause_scope(
+                group.when.as_ref().map(|section| &section.arguments[..]),
+                "when:",
+                path,
+                locator,
+                event_log,
+            );
+            validate_defines_specifies_scope(
+                &group.realizes.argument,
+                &group.specifies,
+                path,
+                locator,
+                event_log,
+            );
+            validate_optional_clause_scope(
+                group
+                    .expresses
+                    .as_ref()
+                    .map(|section| &section.arguments[..]),
+                "expresses:",
+                path,
+                locator,
+                event_log,
+            );
+        }
+        TopLevelItem::Refines(group) => {
+            validate_declaration_scope(
+                std::slice::from_ref(&group.refines.argument),
+                "Refines:",
+                path,
+                locator,
+                event_log,
+            );
+            validate_optional_declaration_scope(
+                group.using.as_ref().map(|section| &section.arguments[..]),
+                "using:",
+                path,
+                locator,
+                event_log,
+            );
+            validate_optional_clause_scope(
+                group.when.as_ref().map(|section| &section.arguments[..]),
+                "when:",
+                path,
+                locator,
+                event_log,
+            );
+            if let Some(specifies) = &group.specifies {
+                validate_declaration_scope(
+                    &[&group.refines.argument, &specifies.argument],
+                    "specifies:",
+                    path,
+                    locator,
+                    event_log,
+                );
+            }
+            validate_optional_clause_scope(
+                group
+                    .satisfies
+                    .as_ref()
+                    .map(|section| &section.arguments[..]),
+                "satisfies:",
+                path,
+                locator,
+                event_log,
+            );
+        }
+        TopLevelItem::States(group) => {
+            validate_optional_declaration_scope(
+                group.using.as_ref().map(|section| &section.arguments[..]),
+                "using:",
+                path,
+                locator,
+                event_log,
+            );
+            validate_optional_clause_scope(
+                group.when.as_ref().map(|section| &section.arguments[..]),
+                "when:",
+                path,
+                locator,
+                event_log,
+            );
+            validate_clause_scope(&group.that.arguments, "that:", path, locator, event_log);
+        }
+        TopLevelItem::Axiom(group) => validate_theorem_like_specification_scopes(
+            group.given.as_ref(),
+            group.where_.as_ref(),
+            &group.then,
+            group.iff.as_ref(),
+            path,
+            locator,
+            event_log,
+        ),
+        TopLevelItem::Theorem(group) => validate_theorem_like_specification_scopes(
+            group.given.as_ref(),
+            group.where_.as_ref(),
+            &group.then,
+            group.iff.as_ref(),
+            path,
+            locator,
+            event_log,
+        ),
+        TopLevelItem::Conjecture(group) => validate_theorem_like_specification_scopes(
+            group.given.as_ref(),
+            group.where_.as_ref(),
+            &group.then,
+            group.iff.as_ref(),
+            path,
+            locator,
+            event_log,
+        ),
+        TopLevelItem::Example(group) => {
+            let clauses = group
+                .example
+                .arguments
+                .iter()
+                .filter_map(|item| match item {
+                    ExampleItem::Clause(clause) => Some(clause.clone()),
+                    ExampleItem::Text(_) => None,
+                })
+                .collect::<Vec<_>>();
+            validate_clause_scope(&clauses, "Example:", path, locator, event_log);
+        }
+        TopLevelItem::Equivalent(group) => {
+            validate_optional_declaration_scope(
+                group.using.as_ref().map(|section| &section.arguments[..]),
+                "using:",
+                path,
+                locator,
+                event_log,
+            );
+            validate_optional_clause_scope(
+                group.when.as_ref().map(|section| &section.arguments[..]),
+                "when:",
+                path,
+                locator,
+                event_log,
+            );
+        }
+        TopLevelItem::Relation(group) => {
+            validate_optional_declaration_scope(
+                group.using.as_ref().map(|section| &section.arguments[..]),
+                "using:",
+                path,
+                locator,
+                event_log,
+            );
+            validate_optional_clause_scope(
+                group.when.as_ref().map(|section| &section.arguments[..]),
+                "when:",
+                path,
+                locator,
+                event_log,
+            );
+            if let Some(specifies) = &group.specifies
+                && let RelationSpecifies::Statement(clause) = &specifies.argument
+            {
+                validate_clause_scope(
+                    std::slice::from_ref(clause.as_ref()),
+                    "specifies:",
+                    path,
+                    locator,
+                    event_log,
+                );
+            }
+        }
+        TopLevelItem::Title(_)
+        | TopLevelItem::SectionTitle(_)
+        | TopLevelItem::SubsectionTitle(_)
+        | TopLevelItem::Text(_)
+        | TopLevelItem::Writing(_)
+        | TopLevelItem::Person(_)
+        | TopLevelItem::Resource(_)
+        | TopLevelItem::Specify(_)
+        | TopLevelItem::Topic(_)
+        | TopLevelItem::TextItem(_) => {}
+    }
+}
+
+fn validate_theorem_like_specification_scopes(
+    given: Option<&GivenSection>,
+    where_: Option<&WhereSection>,
+    then: &ThenSection,
+    iff: Option<&IffSection>,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    validate_optional_declaration_scope(
+        given.map(|section| &section.arguments[..]),
+        "given:",
+        path,
+        locator,
+        event_log,
+    );
+    validate_optional_clause_scope(
+        where_.map(|section| &section.arguments[..]),
+        "where:",
+        path,
+        locator,
+        event_log,
+    );
+    validate_clause_scope(&then.arguments, "then:", path, locator, event_log);
+    validate_optional_clause_scope(
+        iff.map(|section| &section.arguments[..]),
+        "iff:",
+        path,
+        locator,
+        event_log,
+    );
+}
+
+fn validate_optional_declaration_scope(
+    statements: Option<&[DeclarationStatement]>,
+    label: &str,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    if let Some(statements) = statements {
+        validate_declaration_scope(statements, label, path, locator, event_log);
+    }
+}
+
+fn validate_optional_clause_scope(
+    clauses: Option<&[Clause]>,
+    label: &str,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    if let Some(clauses) = clauses {
+        validate_clause_scope(clauses, label, path, locator, event_log);
+    }
+}
+
+fn validate_is_or_via_scope(
+    target: Option<&DeclarationStatement>,
+    specifies: &Option<DeclaresSpecifiesSection>,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    let mut statements = target.into_iter().collect::<Vec<_>>();
+    if let Some(specifies) = specifies {
+        for item in &specifies.arguments {
+            collect_direct_specifies_declarations(item, &mut statements);
+        }
+    }
+    validate_declaration_scope(&statements, "specifies:", path, locator, event_log);
+    if let Some(specifies) = specifies {
+        for item in &specifies.arguments {
+            validate_nested_is_or_via_scopes(item, path, locator, event_log);
+        }
+    }
+}
+
+fn validate_defines_specifies_scope(
+    target: &DeclarationStatement,
+    specifies: &Option<DefinesSpecifiesSection>,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    let mut statements = vec![target];
+    if let Some(specifies) = specifies {
+        for item in &specifies.arguments {
+            collect_direct_specifies_declarations(item, &mut statements);
+        }
+    }
+    validate_declaration_scope(&statements, "specifies:", path, locator, event_log);
+    if let Some(specifies) = specifies {
+        for item in &specifies.arguments {
+            validate_nested_is_or_via_scopes(item, path, locator, event_log);
+        }
+    }
+}
+
+fn collect_direct_specifies_declarations<'a>(
+    item: &'a IsOrViaItem,
+    statements: &mut Vec<&'a DeclarationStatement>,
+) {
+    match item {
+        IsOrViaItem::Declaration(statement) => statements.push(statement),
+        IsOrViaItem::Labeled { item, .. } => {
+            collect_direct_specifies_declarations(item, statements)
+        }
+        // `is ... via ...` intentionally permits several subtype views over
+        // different tuple slices; their overlap rules are validated separately.
+        IsOrViaItem::IsVia(_) | IsOrViaItem::Have(_) => {}
+    }
+}
+
+fn validate_nested_is_or_via_scopes(
+    item: &IsOrViaItem,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    match item {
+        IsOrViaItem::Have(group) => {
+            validate_have_group_scopes(group, path, locator, event_log)
+        }
+        IsOrViaItem::Labeled { item, .. } => {
+            validate_nested_is_or_via_scopes(item, path, locator, event_log)
+        }
+        IsOrViaItem::IsVia(_) | IsOrViaItem::Declaration(_) => {}
+    }
+}
+
+fn validate_have_group_scopes(
+    group: &HaveGroup,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    validate_clause_scope(&group.have.arguments, "have:", path, locator, event_log);
+    validate_optional_clause_scope(
+        group
+            .asserting
+            .as_ref()
+            .map(|section| &section.arguments[..]),
+        "asserting:",
+        path,
+        locator,
+        event_log,
+    );
+    validate_optional_clause_scope(
+        group.because.as_ref().map(|section| &section.arguments[..]),
+        "because:",
+        path,
+        locator,
+        event_log,
+    );
+}
+
+fn validate_declaration_scope<T: std::borrow::Borrow<DeclarationStatement>>(
+    statements: &[T],
+    label: &str,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    let mut first = HashMap::<String, &'static str>::new();
+    for statement in statements {
+        let statement = statement.borrow();
+        // A relation attached to the same `:=` declaration is its type
+        // annotation, not a second list item. What is forbidden is specifying
+        // that subject again elsewhere in this scope.
+        let kind = if statement.definition.is_some() {
+            Some(":=")
+        } else {
+            match &statement.relation {
+                Some(DeclarationRelation::Is(_)) => Some("is"),
+                Some(DeclarationRelation::Spec { .. }) => Some("quoted specification"),
+                Some(DeclarationRelation::InfixSpec { .. }) => Some("spec-infix specification"),
+                None => None,
+            }
+        };
+        if let Some(kind) = kind {
+            record_local_specification(
+                statement, kind, label, &mut first, path, locator, event_log,
+            );
+        }
+    }
+}
+
+fn record_local_specification(
+    statement: &DeclarationStatement,
+    kind: &'static str,
+    label: &str,
+    first: &mut HashMap<String, &'static str>,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    for subject in declaration_subject_keys(statement) {
+        let Some(previous) = first.get(&subject) else {
+            first.insert(subject, kind);
+            continue;
+        };
+        emit_error(
+            event_log,
+            path,
+            locator.locate_symbol(&subject),
+            format!(
+                "Subject `{subject}` is specified more than once in the same `{label}` scope (`{previous}` and `{kind}`); choose exactly one of `is`, a quoted specification, a spec-infix specification, or `:=`"
+            ),
+        );
+    }
+}
+
+fn validate_clause_scope(
+    clauses: &[Clause],
+    label: &str,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    let mut statements = Vec::new();
+    for clause in clauses {
+        collect_conjunctive_declarations(clause, &mut statements);
+    }
+    validate_declaration_scope(&statements, label, path, locator, event_log);
+    for clause in clauses {
+        validate_nested_clause_scopes(clause, path, locator, event_log);
+    }
+}
+
+fn collect_conjunctive_declarations<'a>(
+    clause: &'a Clause,
+    statements: &mut Vec<&'a DeclarationStatement>,
+) {
+    match clause {
+        Clause::Declaration(statement) => statements.push(statement),
+        Clause::AllOf(group) => {
+            for clause in &group.all_of.arguments {
+                collect_conjunctive_declarations(clause, statements);
+            }
+        }
+        Clause::Equivalently(group) => {
+            for clause in &group.equivalently.arguments {
+                collect_conjunctive_declarations(clause, statements);
+            }
+        }
+        _ => {}
+    }
+}
+
+fn validate_nested_clause_scopes(
+    clause: &Clause,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    match clause {
+        Clause::Not(group) => validate_clause_scope(
+            std::slice::from_ref(group.not.argument.as_ref()),
+            "not:",
+            path,
+            locator,
+            event_log,
+        ),
+        Clause::AllOf(group) => {
+            for clause in &group.all_of.arguments {
+                validate_nested_clause_scopes(clause, path, locator, event_log);
+            }
+        }
+        Clause::Equivalently(group) => {
+            for clause in &group.equivalently.arguments {
+                validate_nested_clause_scopes(clause, path, locator, event_log);
+            }
+        }
+        Clause::AnyOf(group) => {
+            for clause in &group.any_of.arguments {
+                validate_clause_scope(
+                    std::slice::from_ref(clause),
+                    "anyOf:",
+                    path,
+                    locator,
+                    event_log,
+                );
+            }
+        }
+        Clause::OneOf(group) => {
+            for clause in &group.one_of.arguments {
+                validate_clause_scope(
+                    std::slice::from_ref(clause),
+                    "oneOf:",
+                    path,
+                    locator,
+                    event_log,
+                );
+            }
+        }
+        Clause::Exists(group) => {
+            let statements = group
+                .exists
+                .arguments
+                .iter()
+                .map(|item| match item {
+                    BindingOrSpec::Declaration(statement) => statement,
+                })
+                .collect::<Vec<_>>();
+            validate_declaration_scope(&statements, "exists:", path, locator, event_log);
+            validate_optional_clause_scope(
+                group
+                    .such_that
+                    .as_ref()
+                    .map(|section| &section.arguments[..]),
+                "suchThat:",
+                path,
+                locator,
+                event_log,
+            );
+        }
+        Clause::ExistsUnique(group) => {
+            let statements = group
+                .exists_unique
+                .arguments
+                .iter()
+                .map(|item| match item {
+                    BindingOrSpec::Declaration(statement) => statement,
+                })
+                .collect::<Vec<_>>();
+            validate_declaration_scope(&statements, "existsUnique:", path, locator, event_log);
+            validate_optional_clause_scope(
+                group
+                    .such_that
+                    .as_ref()
+                    .map(|section| &section.arguments[..]),
+                "suchThat:",
+                path,
+                locator,
+                event_log,
+            );
+        }
+        Clause::ForAll(group) => {
+            let statements = group
+                .for_all
+                .arguments
+                .iter()
+                .map(|item| match item {
+                    BindingOrSpec::Declaration(statement) => statement,
+                })
+                .collect::<Vec<_>>();
+            validate_declaration_scope(&statements, "forAll:", path, locator, event_log);
+            validate_optional_clause_scope(
+                group.where_.as_ref().map(|section| &section.arguments[..]),
+                "where:",
+                path,
+                locator,
+                event_log,
+            );
+            validate_clause_scope(&group.then.arguments, "then:", path, locator, event_log);
+        }
+        Clause::Let(group) => {
+            let statements = group
+                .let_
+                .arguments
+                .iter()
+                .map(|item| match item {
+                    BindingOrSpec::Declaration(statement) => statement,
+                })
+                .collect::<Vec<_>>();
+            validate_declaration_scope(&statements, "let:", path, locator, event_log);
+            validate_optional_clause_scope(
+                group.where_.as_ref().map(|section| &section.arguments[..]),
+                "where:",
+                path,
+                locator,
+                event_log,
+            );
+            validate_clause_scope(&group.then.arguments, "then:", path, locator, event_log);
+        }
+        Clause::If(group) => {
+            validate_clause_scope(&group.if_.arguments, "if:", path, locator, event_log);
+            validate_clause_scope(&group.then.arguments, "then:", path, locator, event_log);
+        }
+        Clause::Iff(group) => {
+            validate_clause_scope(&group.iff.arguments, "iff:", path, locator, event_log);
+            validate_clause_scope(&group.then.arguments, "then:", path, locator, event_log);
+        }
+        Clause::Piecewise(group) => {
+            validate_clause_scope(&group.if_.arguments, "if:", path, locator, event_log);
+            validate_clause_scope(&group.then.arguments, "then:", path, locator, event_log);
+            for branch in &group.else_if {
+                validate_clause_scope(
+                    &branch.else_if.arguments,
+                    "else_if:",
+                    path,
+                    locator,
+                    event_log,
+                );
+                validate_clause_scope(&branch.then.arguments, "then:", path, locator, event_log);
+            }
+            validate_optional_clause_scope(
+                group.else_.as_ref().map(|section| &section.arguments[..]),
+                "else:",
+                path,
+                locator,
+                event_log,
+            );
+        }
+        Clause::Have(group) => {
+            validate_have_group_scopes(group, path, locator, event_log);
+        }
+        Clause::Declaration(_) | Clause::Expression(_) => {}
     }
 }
 

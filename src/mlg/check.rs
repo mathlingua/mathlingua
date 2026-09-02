@@ -5700,6 +5700,162 @@ then:
     }
 
     #[test]
+    fn check_rejects_multiple_direct_specification_forms_for_one_subject() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("duplicate-specification-forms.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Declares: X
+    Documented:
+    . called: "set"
+
+    [A \:subset:/ B]
+    Declares: A is \set
+    when: B is \set
+    Documented:
+    . called: "subset"
+
+    [\bad{A}:in{B}]
+    Declares: X
+    when:
+    . B is \set
+    . A is \set
+    . A "in" B
+    . A \:subset:/ B
+    . A := B
+    Documented:
+    . called: "bad"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("duplicate-specification-forms.mlg")],
+            &mut event_log,
+        );
+
+        let messages = user_events(&event_log)
+            .iter()
+            .filter_map(|event| event.as_message())
+            .map(|message| message.message.clone())
+            .collect::<Vec<_>>();
+        for pair in [
+            "(`is` and `quoted specification`)",
+            "(`is` and `spec-infix specification`)",
+            "(`is` and `:=`)",
+        ] {
+            assert!(
+                messages.iter().any(|message| message.contains(pair)),
+                "expected duplicate specification diagnostic for {pair}: {messages:#?}"
+            );
+        }
+        assert!(event_log.has_errors());
+    }
+
+    #[test]
+    fn check_rejects_a_base_type_and_its_refinement_in_one_scope() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("duplicate-refined-type.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Declares: X
+    Documented:
+    . called: "set"
+
+    [\(finite)::set]
+    Refines: X
+    Documented:
+    . adjective: "finite"
+
+    [\bad{A}]
+    Declares: X
+    when:
+    . A is \set
+    . A is \(finite)::set
+    Documented:
+    . called: "bad"
+
+    [\also.bad{A}]
+    Declares: A is \set
+    specifies: A is \(finite)::set
+    Documented:
+    . called: "also bad"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("duplicate-refined-type.mlg")],
+            &mut event_log,
+        );
+
+        assert!(user_events(&event_log).iter().any(|event| {
+            event.as_message().is_some_and(|message| {
+                message.message.contains(
+                    "Subject `A` is specified more than once in the same `when:` scope (`is` and `is`)",
+                )
+            })
+        }));
+        assert!(user_events(&event_log).iter().any(|event| {
+            event.as_message().is_some_and(|message| {
+                message.message.contains(
+                    "Subject `A` is specified more than once in the same `specifies:` scope (`is` and `is`)",
+                )
+            })
+        }));
+        assert!(event_log.has_errors());
+    }
+
+    #[test]
+    fn check_rejects_a_type_and_assignment_for_one_specifies_subject() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("duplicate-specifies-subject.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Declares: X
+    Documented:
+    . called: "set"
+
+    [\bad]
+    Declares: X ::= (A, B)
+    specifies:
+    . A is \set
+    . A := B
+    . B is \set
+    Documented:
+    . called: "bad"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("duplicate-specifies-subject.mlg")],
+            &mut event_log,
+        );
+
+        assert!(user_events(&event_log).iter().any(|event| {
+            event.as_message().is_some_and(|message| {
+                message.message.contains(
+                    "Subject `A` is specified more than once in the same `specifies:` scope (`is` and `:=`)",
+                )
+            })
+        }));
+        assert!(event_log.has_errors());
+    }
+
+    #[test]
     fn check_rejects_a_refines_component_specification_with_a_different_base_type() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("refines-component-type-change.mlg");
@@ -6403,7 +6559,7 @@ Documented:
 
     Theorem:
     given:
-    . X, Z is \set
+    . X is \set
     . Z \:subset:/ X
     . r is \op:on{X}
     . q is \uses:of{r}:sub{Z}
@@ -6455,7 +6611,6 @@ Documented:
     [\wrap:of{A}:in{B}]
     Defines: w "in" B
     when:
-    . A is \set
     . B is \set
     . A \:subset:/ B
     Documented:
@@ -6571,7 +6726,6 @@ Documented:
     [\wrap:of{A}:in{B}]
     Defines: w "in" B
     when:
-    . A is \set
     . B is \set
     . A \:subset:/ B
     Documented:
@@ -6668,7 +6822,6 @@ Documented:
     [\wrap:of{A}:in{B}]
     Defines: w "in" B
     when:
-    . A is \set
     . B is \set
     . A \:subset:/ B
     Documented:
@@ -9174,7 +9327,7 @@ Documented:
     [A \:subset:?within{U}:/ B]
     Declares: A is \set
     when:
-    . B, U is \set
+    . U is \set
     . B \:subset:/ U
     satisfies:
     . forAll: a "in" A
@@ -9185,7 +9338,7 @@ Documented:
 
     Theorem:
     given:
-    . A, B, U is \set
+    . A, U is \set
     . B \:subset:/ U
     where:
     . A \:subset:within{U}:/ B
@@ -9226,7 +9379,7 @@ Documented:
     [A \:subset:?within{U}:/ B]
     Declares: A is \set
     when:
-    . B, U is \set
+    . U is \set
     . B \:subset:/ U
     satisfies:
     . forAll: a "in" A
@@ -9245,7 +9398,7 @@ Documented:
     [A \.set.intersect:?within{U}./ B]
     Defines: C \:subset:/ U
     when:
-    . A, B, U is \set
+    . U is \set
     . A \:subset:/ U
     . B \:subset:/ U
     expresses: C := {c_ : c_ "in" U | (.c "in"? A.) \.and./ (.c "in"? B.)}

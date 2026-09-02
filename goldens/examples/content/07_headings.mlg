@@ -37,7 +37,7 @@ Id: "2acb059b-46d8-4cca-a4fc-aaae4bf9b135"
 [A \:contained:?within{U}:/ B]
 Declares: A is \set
 when:
-. B, U is \set
+. U is \set
 . B \:subset:/ U
 Documented:
 . written: "A? \subseteq_{U?} B?"

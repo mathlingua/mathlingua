@@ -11714,6 +11714,61 @@ Documented:
     }
 
     #[test]
+    fn check_uses_an_infix_specification_view_for_spec_operator_resolution() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("infix-spec-view-membership.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Declares: X
+    Requires:
+    . capability: x_ "in" X :-> \\abstract
+    Documented:
+    . called: "set"
+
+    [\group]
+    Declares: G
+    Requires:
+    . capability: x_ "in" G :-> \\abstract
+    Documented:
+    . called: "group"
+
+    [H \:subgroup:/ G]
+    Declares: H
+    when: G is \group
+    Enables:
+    . view:
+      as: H' := H is \group
+    Documented:
+    . called: "subgroup"
+
+    [\members:of{H}:in{G}]
+    Defines: C := \set@{h_ : h_ "in" H}
+    when:
+    . G is \group
+    . H \:subgroup:/ G
+    Documented:
+    . called: "members"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("infix-spec-view-membership.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_uses_views_declared_on_defined_values() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("defined-value-view.mlg");

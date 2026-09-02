@@ -17086,22 +17086,41 @@ fn viewable_fact_implies_required(
     registry: &SignatureRegistry,
     seen: &mut HashSet<TypeFact>,
 ) -> bool {
+    viewable_facts_from_fact(fact, context, registry)
+        .iter()
+        .any(|viewed| fact_implies(viewed, required, context, registry, seen))
+}
+
+/// Instantiates every view owned by the command-backed fact. Views apply to
+/// infix specification facts as well as ordinary `is` facts: for example,
+/// `H \:subgroup:/ G` may expose `H` as a `\group`.
+fn viewable_facts_from_fact(
+    fact: &TypeFact,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+) -> Vec<TypeFact> {
     let fact = context.normalize_fact(fact);
-    let TypeFact::Is {
-        subject,
-        ty,
-        signature,
-    } = &fact
-    else {
-        return false;
+    let (signature, actuals) = match &fact {
+        // Preserve the longstanding behavior for an ordinary `is` fact: a
+        // non-parameterized view still applies if its type key has no actuals.
+        TypeFact::Is { ty, signature, .. } => (
+            signature.clone(),
+            actuals_for_type_key(signature, ty).unwrap_or_default(),
+        ),
+        _ => {
+            let Some(command) = command_fact_signature_and_actuals(&fact) else {
+                return Vec::new();
+            };
+            command
+        }
     };
-    let actuals = actuals_for_type_key(signature, ty).unwrap_or_default();
+    let subject = fact_subject(&fact).to_owned();
 
     registry
         .viewable_rules
         .iter()
-        .filter(|rule| rule.source_signature == *signature)
-        .any(|rule| {
+        .filter(|rule| rule.source_signature == signature)
+        .map(|rule| {
             let mut substitutions = rule
                 .parameters
                 .iter()
@@ -17110,9 +17129,9 @@ fn viewable_fact_implies_required(
                 .collect::<HashMap<_, _>>();
             substitutions.insert(rule.source_subject.clone(), subject.clone());
             substitutions.insert(rule.target_subject.clone(), subject.clone());
-            let viewed = context.normalize_fact(&substitute_fact(&rule.target, &substitutions));
-            fact_implies(&viewed, required, context, registry, seen)
+            context.normalize_fact(&substitute_fact(&rule.target, &substitutions))
         })
+        .collect()
 }
 
 /// A value known to be one member of an equivalence class satisfies a requirement
@@ -17796,7 +17815,12 @@ fn spec_rule_applies_to_target(
     registry: &SignatureRegistry,
 ) -> bool {
     if !rule.owner_is_defined_value {
-        return has_type_signature(target, &rule.owner_signature, context, registry);
+        return has_type_signature_with_views(
+            target,
+            &rule.owner_signature,
+            context,
+            registry,
+        );
     }
 
     let target = context.normalize_key(target);
@@ -18288,19 +18312,62 @@ fn has_type_signature(
     context: &TypeContext,
     registry: &SignatureRegistry,
 ) -> bool {
+    has_type_signature_with_options(subject, signature, context, registry, false)
+}
+
+fn has_type_signature_with_views(
+    subject: &str,
+    signature: &str,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+) -> bool {
+    has_type_signature_with_options(subject, signature, context, registry, true)
+}
+
+fn has_type_signature_with_options(
+    subject: &str,
+    signature: &str,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+    allow_viewable: bool,
+) -> bool {
     let subject = context.normalize_key(subject);
     let mut seen = HashSet::new();
     context.facts.iter().any(|fact| {
-        fact_has_type_signature(fact, &subject, signature, context, registry, &mut seen)
+        fact_has_type_signature(
+            fact,
+            &subject,
+            signature,
+            context,
+            registry,
+            &mut seen,
+            allow_viewable,
+        )
     }) || defined_output_facts_for_key(&subject, context, registry)
         .iter()
         .any(|fact| {
-            fact_has_type_signature(fact, &subject, signature, context, registry, &mut seen)
+            fact_has_type_signature(
+                fact,
+                &subject,
+                signature,
+                context,
+                registry,
+                &mut seen,
+                allow_viewable,
+            )
         })
         || defined_value_view_facts_for_key(&subject, context, registry)
             .iter()
             .any(|fact| {
-                fact_has_type_signature(fact, &subject, signature, context, registry, &mut seen)
+                fact_has_type_signature(
+                    fact,
+                    &subject,
+                    signature,
+                    context,
+                    registry,
+                    &mut seen,
+                    allow_viewable,
+                )
             })
 }
 
@@ -18397,6 +18464,7 @@ fn fact_has_type_signature(
     context: &TypeContext,
     registry: &SignatureRegistry,
     seen: &mut HashSet<TypeFact>,
+    allow_viewable: bool,
 ) -> bool {
     let fact = context.normalize_fact(fact);
     if !seen.insert(fact.clone()) {
@@ -18441,13 +18509,57 @@ fn fact_has_type_signature(
 
     command_requirement_facts(&fact, context, registry)
         .iter()
-        .any(|fact| fact_has_type_signature(fact, subject, signature, context, registry, seen))
+        .any(|fact| {
+            fact_has_type_signature(
+                fact,
+                subject,
+                signature,
+                context,
+                registry,
+                seen,
+                allow_viewable,
+            )
+        })
         || reduce_extension_fact(&fact, context, registry)
             .iter()
-            .any(|fact| fact_has_type_signature(fact, subject, signature, context, registry, seen))
+            .any(|fact| {
+                fact_has_type_signature(
+                    fact,
+                    subject,
+                    signature,
+                    context,
+                    registry,
+                    seen,
+                    allow_viewable,
+                )
+            })
         || reduce_refined_fact(&fact, context, registry)
             .iter()
-            .any(|fact| fact_has_type_signature(fact, subject, signature, context, registry, seen))
+            .any(|fact| {
+                fact_has_type_signature(
+                    fact,
+                    subject,
+                    signature,
+                    context,
+                    registry,
+                    seen,
+                    allow_viewable,
+                )
+            })
+        || allow_viewable
+            && viewable_facts_from_fact(&fact, context, registry)
+                .iter()
+                .any(|fact| {
+                    fact_has_type_signature(
+                        fact,
+                        subject,
+                        signature,
+                        context,
+                        registry,
+                        seen,
+                        true,
+                    )
+                })
 }
 
 fn command_requirement_facts(

@@ -237,7 +237,7 @@ fn reflow_inline_text(
     Some((row, close_row, replacement))
 }
 
-/// One unit of a text value for reflow: a whitespace-delimited word (with LaTeX
+/// One unit of a text value for reflow: a whitespace-delimited word (with math
 /// blobs kept whole, so their internal spaces don't split it), a paragraph break,
 /// a Markdown code fence, or a Markdown list item. A `Fence` carries its lines
 /// dedented to the fence's own base indentation, so the reflow re-indents them to the
@@ -257,11 +257,11 @@ enum Piece {
     },
 }
 
-/// Reflows text content into lines that fit within `margin`, treating LaTeX blobs
-/// (`$…$`, `$$…$$`, `\(…\)`, `\[…\]`) as atomic tokens that are never split or
-/// modified. The first line keeps the verbatim `first_prefix` (`…label: "`); every
-/// other line is indented to `content_col`; a blank line separates paragraphs; the
-/// closing `"` is appended to the final line.
+/// Reflows text content into lines that fit within `margin`, treating math blobs
+/// (`$…$`, `$$…$$`, `\(…\)`, `\[…\]`, `{. … .}`, `{{. … .}}`) as atomic tokens that
+/// are never split or modified. The first line keeps the verbatim `first_prefix`
+/// (`…label: "`); every other line is indented to `content_col`; a blank line
+/// separates paragraphs; the closing `"` is appended to the final line.
 ///
 /// Markdown code fences (```` ``` ````, with or without an info string) are emitted
 /// verbatim on their own lines — their internal spacing and line breaks are never
@@ -269,7 +269,7 @@ enum Piece {
 /// Markdown list items keep their own line and marker, wrapping under a hanging
 /// indent so their structure is preserved.
 ///
-/// Returns `None` (leave the value unchanged) when a LaTeX blob spans multiple
+/// Returns `None` (leave the value unchanged) when a math blob spans multiple
 /// lines or is too wide to fit on a line — the author has laid such content out by
 /// hand and it must not be reflowed.
 fn reflow_text(
@@ -289,10 +289,10 @@ fn reflow_text(
             Piece::Paragraph | Piece::Fence(_) => continue,
         };
         for word in words {
-            let has_latex = word_contains_latex(word);
-            // A multi-line LaTeX blob, or a blob too wide to sit on a line, means the
+            let has_math = word_contains_math(word);
+            // A multi-line math blob, or a blob too wide to sit on a line, means the
             // author has already laid this out — leave the whole value untouched.
-            if word.contains('\n') || (has_latex && word.chars().count() > available) {
+            if word.contains('\n') || (has_math && word.chars().count() > available) {
                 return None;
             }
         }
@@ -409,7 +409,7 @@ fn reflow_text(
 /// fence can be lifted out as a verbatim block. The content is a sequence of blocks —
 /// prose paragraphs and code fences — separated by blank lines; each blank-line gap
 /// between two blocks becomes a `Paragraph` piece (leading and trailing gaps are
-/// dropped). A prose paragraph is tokenized into `Word` pieces (LaTeX blobs kept
+/// dropped). A prose paragraph is tokenized into `Word` pieces (math blobs kept
 /// whole); a fence becomes a verbatim `Fence` piece dedented to its own indentation.
 ///
 /// This mirrors the "split into chunks between fences, reflow each chunk" approach:
@@ -535,7 +535,7 @@ fn split_list_marker(line: &str) -> Option<(String, &str)> {
     None
 }
 
-/// Splits `content` into words, keeping each LaTeX blob whole so its internal
+/// Splits `content` into words, keeping each math blob whole so its internal
 /// whitespace and newlines do not split it — a multi-line blob thus yields a word
 /// containing `\n`, which the caller uses to detect hand-laid-out content and leave
 /// the whole value unchanged.
@@ -553,7 +553,7 @@ fn tokenize_words(content: &str) -> Vec<String> {
 
         let mut word = String::new();
         while index < count {
-            if let Some(end) = latex_blob_end(&chars, index) {
+            if let Some(end) = math_blob_end(&chars, index) {
                 word.extend(&chars[index..end]);
                 index = end;
                 continue;
@@ -575,9 +575,10 @@ fn tokenize_prose_words(content: &str, pieces: &mut Vec<Piece>) {
     pieces.extend(tokenize_words(content).into_iter().map(Piece::Word));
 }
 
-/// If a LaTeX blob opens at `start`, returns the char index just past its close
-/// (an unclosed blob runs to the end). Handles `$…$`, `$$…$$`, `\(…\)`, `\[…\]`.
-fn latex_blob_end(chars: &[char], start: usize) -> Option<usize> {
+/// If a math blob opens at `start`, returns the char index just past its close
+/// (an unclosed blob runs to the end). Handles `$…$`, `$$…$$`, `\(…\)`, `\[…\]`,
+/// `{. … .}`, and `{{. … .}}`.
+fn math_blob_end(chars: &[char], start: usize) -> Option<usize> {
     let count = chars.len();
     if chars[start] == '$' {
         if chars.get(start + 1) == Some(&'$') {
@@ -616,6 +617,48 @@ fn latex_blob_end(chars: &[char], start: usize) -> Option<usize> {
         return Some(count);
     }
 
+    if chars[start] == '{' {
+        // Display math: `{{. ... .}}`
+        if chars.get(start + 1) == Some(&'{') && chars.get(start + 2) == Some(&'.') {
+            // Variadic writing templates use `{{...`; those are not math fragments.
+            if chars.get(start + 3) == Some(&'.') {
+                return None;
+            }
+            let mut index = start + 3;
+            while index + 2 < count {
+                if chars[index] == '.'
+                    && chars[index + 1] == '}'
+                    && chars[index + 2] == '}'
+                    && (index == 0 || chars[index - 1] != '.')
+                {
+                    return Some(index + 3);
+                }
+                index += 1;
+            }
+            return Some(count);
+        }
+
+        // Inline math: `{. ... .}`
+        if chars.get(start + 1) == Some(&'.') {
+            // Variadic writing templates use `{...`; those are not math fragments.
+            if chars.get(start + 2) == Some(&'.') {
+                return None;
+            }
+            let mut index = start + 2;
+            while index + 1 < count {
+                if chars[index] == '.'
+                    && chars[index + 1] == '}'
+                    && chars.get(index + 2) != Some(&'}')
+                    && (index == 0 || chars[index - 1] != '.')
+                {
+                    return Some(index + 2);
+                }
+                index += 1;
+            }
+            return Some(count);
+        }
+    }
+
     None
 }
 
@@ -645,9 +688,30 @@ fn dedent(line: &str, indent: usize) -> String {
     line[leading.min(indent)..].to_string()
 }
 
-/// Whether a word contains any LaTeX delimiter.
-fn word_contains_latex(word: &str) -> bool {
-    word.contains('$') || word.contains("\\(") || word.contains("\\[")
+/// Whether a word contains any math delimiter (LaTeX or Mathlingua).
+fn word_contains_math(word: &str) -> bool {
+    word.contains('$')
+        || word.contains("\\(")
+        || word.contains("\\[")
+        || word_contains_mathlingua_fragment(word)
+}
+
+fn word_contains_mathlingua_fragment(word: &str) -> bool {
+    let chars: Vec<char> = word.chars().collect();
+    for i in 0..chars.len() {
+        if chars[i] == '{' {
+            if chars.get(i + 1) == Some(&'{') && chars.get(i + 2) == Some(&'.') {
+                if chars.get(i + 3) != Some(&'.') {
+                    return true;
+                }
+            } else if chars.get(i + 1) == Some(&'.') {
+                if chars.get(i + 2) != Some(&'.') {
+                    return true;
+                }
+            }
+        }
+    }
+    false
 }
 
 /// Records edits that normalize the blank-line gap between consecutive top-level
@@ -1063,5 +1127,60 @@ mod tests {
     fn leaves_already_formatted_source_unchanged() {
         let source = "Title: \"A\"\nId: \"1\"\n\n\nText: \"short enough\"\nId: \"2\"\n";
         assert_eq!(format_source(source, 120), None);
+    }
+
+    #[test]
+    fn keeps_inline_mathlingua_fragments_whole() {
+        // `{. x is \real .}` has internal spaces but must never be split across lines.
+        let source = "Documented:\n. description: \"aaaa bbbb cccc dddd eeee ffff {. x is \\real .} gggg hhhh\"\nId: \"x\"\n";
+        let formatted = format_source(source, 40).expect("expected wrapping at margin 40");
+        assert!(
+            formatted.contains("{. x is \\real .}"),
+            "inline mathlingua fragment was split: {formatted}"
+        );
+        // The fragment sits entirely on one line.
+        for line in formatted.split('\n') {
+            if line.contains("{.") {
+                assert!(line.contains(".}"), "unclosed fragment on a line: {line:?}");
+            }
+        }
+    }
+
+    #[test]
+    fn keeps_display_mathlingua_fragments_whole() {
+        // `{{. x^2 + y^2 = z^2 .}}` has internal spaces and must never be split across lines.
+        let source = "Documented:\n. description: \"aaaa bbbb cccc dddd eeee {{. x^2 + y^2 = z^2 .}} ffff gggg\"\nId: \"x\"\n";
+        let formatted = format_source(source, 45).expect("expected wrapping at margin 45");
+        assert!(
+            formatted.contains("{{. x^2 + y^2 = z^2 .}}"),
+            "display mathlingua fragment was split: {formatted}"
+        );
+        for line in formatted.split('\n') {
+            if line.contains("{{.") {
+                assert!(line.contains(".}}"), "unclosed display fragment on a line: {line:?}");
+            }
+        }
+    }
+
+    #[test]
+    fn leaves_text_with_multiline_mathlingua_fragment_unchanged() {
+        // A multi-line display fragment must be left untouched.
+        let source = "Documented:\n. description: \"Some text before\n                {{.\n                  x + y = z\n                .}}\n                and some text after\"\nId: \"x\"\n";
+        assert_eq!(format_source(source, 80), None);
+    }
+
+    #[test]
+    fn leaves_text_with_overwide_mathlingua_fragment_unchanged() {
+        // A single-line fragment too wide to fit on a line → leave untouched.
+        let source = "Documented:\n. description: \"text {. blobbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb .} more\"\nId: \"x\"\n";
+        assert_eq!(format_source(source, 30), None);
+    }
+
+    #[test]
+    fn does_not_confuse_ellipsis_or_variadic_templates() {
+        // `{...}` in text must not be treated as `{.`
+        let source = "Documented:\n. description: \"Consider the sequence of terms {...} where each term is clearly specified.\"\nId: \"x\"\n";
+        let formatted = format_source(source, 50).expect("expected wrapping");
+        assert!(formatted.contains("{...}"));
     }
 }

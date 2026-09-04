@@ -118,9 +118,13 @@ fn mlg_fence_open(line: &str) -> Option<usize> {
 /// dropped before checking so that closing fence is still recognized.
 fn is_fence_close(line: &str) -> bool {
     let trimmed = line.trim();
-    let trimmed = match trimmed.strip_suffix('"') {
-        Some(rest) if !rest.ends_with('\\') => rest,
-        _ => trimmed,
+    let trimmed = if let Some(rest) = trimmed.strip_suffix("\"\"\"") {
+        rest
+    } else {
+        match trimmed.strip_suffix('"') {
+            Some(rest) if !rest.ends_with('\\') => rest,
+            _ => trimmed,
+        }
     };
     trimmed.len() >= 3 && trimmed.bytes().all(|byte| byte == b'`')
 }

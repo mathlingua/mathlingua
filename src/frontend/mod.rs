@@ -163,8 +163,15 @@ fn section_quoted_text(section: &ProtoSection) -> Option<String> {
         })
 }
 
-fn strip_quoted_text(input: &str) -> Option<String> {
+pub(crate) fn strip_quoted_text(input: &str) -> Option<String> {
     let input = input.trim();
+    if input.starts_with("\"\"\"") {
+        if input.len() >= 6 && input[3..].ends_with("\"\"\"") {
+            let inner = &input[3..input.len() - 3];
+            return Some(inner.to_string());
+        }
+        return None;
+    }
     let inner = input.strip_prefix('"')?.strip_suffix('"')?;
     Some(unescape_quoted_text(inner))
 }

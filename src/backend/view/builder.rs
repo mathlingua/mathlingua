@@ -867,6 +867,12 @@ fn strip_leading_indent(line: &str, count: usize) -> &str {
 
 fn strip_quoted_text(input: &str) -> Option<String> {
     let input = input.trim();
+    if input.starts_with("\"\"\"") {
+        if input.len() >= 6 && input[3..].ends_with("\"\"\"") {
+            return Some(input[3..input.len() - 3].to_string());
+        }
+        return None;
+    }
     if input.len() < 2 || !input.starts_with('"') || !input.ends_with('"') {
         return None;
     }

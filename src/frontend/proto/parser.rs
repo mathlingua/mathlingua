@@ -319,6 +319,7 @@ impl<'a> Parser<'a> {
     }
 
     fn consume_multiline_text(&mut self, opening_line: String, row: usize) -> String {
+        let is_triple = opening_line.starts_with("\"\"\"");
         let mut lines = vec![opening_line.clone()];
 
         loop {
@@ -331,7 +332,11 @@ impl<'a> Parser<'a> {
             };
 
             let rendered = line.to_string();
-            let is_closing_line = closes_quoted_text(&line.text);
+            let is_closing_line = if is_triple {
+                line_closes_triple_quoted_text(&line.text)
+            } else {
+                closes_quoted_text(&line.text)
+            };
             lines.push(rendered);
 
             if is_closing_line {
@@ -389,7 +394,20 @@ fn multiline_formulation_close(text: &str) -> Option<&'static str> {
 }
 
 fn starts_multiline_text(text: &str) -> bool {
-    text.starts_with('"') && !is_complete_quoted_text(text)
+    if text.starts_with("\"\"\"") {
+        !is_complete_triple_quoted_text(text)
+    } else {
+        text.starts_with('"') && !is_complete_quoted_text(text)
+    }
+}
+
+fn is_complete_triple_quoted_text(text: &str) -> bool {
+    let trimmed = text.trim_end();
+    trimmed.len() >= 6 && trimmed.starts_with("\"\"\"") && trimmed[3..].ends_with("\"\"\"")
+}
+
+fn line_closes_triple_quoted_text(text: &str) -> bool {
+    text.trim_end().ends_with("\"\"\"")
 }
 
 fn is_complete_quoted_text(text: &str) -> bool {
@@ -698,6 +716,49 @@ Id: "11111111-1111-4111-8111-111111111111"
                 .inline_argument
                 .as_deref()
                 .is_some_and(|text| text.contains(r#"Id: \"123\""#))
+        );
+    }
+
+    #[test]
+    fn parses_single_line_triple_quoted_text() {
+        let input = r#"Proof: """Because "A" implies "B"."""
+Id: "1""#;
+        let (groups, diagnostics) = parse_input(input);
+        assert!(diagnostics.is_empty());
+        assert_eq!(groups.len(), 1);
+        assert_eq!(
+            groups[0].sections[0].inline_argument.as_deref(),
+            Some("\"\"\"Because \"A\" implies \"B\".\"\"\"")
+        );
+    }
+
+    #[test]
+    fn parses_multiline_triple_quoted_text_with_unescaped_quotes() {
+        let input = r#"Proof: """
+Suppose "x = y" is true.
+And "y = z" also holds.
+"""
+Id: "1""#;
+        let (groups, diagnostics) = parse_input(input);
+        assert!(diagnostics.is_empty());
+        assert_eq!(groups.len(), 1);
+        let arg = groups[0].sections[0].inline_argument.as_deref().unwrap();
+        assert!(arg.contains(r#"Suppose "x = y" is true."#));
+        assert!(arg.ends_with("\"\"\""));
+    }
+
+    #[test]
+    fn reports_unterminated_triple_quoted_text() {
+        let input = "Proof: \"\"\"\nThis never terminates\n";
+        let (groups, diagnostics) = parse_input(input);
+        assert_eq!(groups.len(), 1);
+        assert_eq!(diagnostics.len(), 1);
+        assert!(
+            diagnostics[0]
+                .as_message()
+                .unwrap()
+                .message
+                .contains("Unterminated text block")
         );
     }
 

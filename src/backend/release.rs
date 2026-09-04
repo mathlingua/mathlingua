@@ -2,7 +2,6 @@ use crate::backend::semantic::{collect_definition_locations, command_occurrences
 use crate::events::EventLog;
 use crate::frontend::{
     ParsedSourceFile, ProtoArgument, ProtoGroup, ProtoParser, top_level_group_id,
-    unescape_quoted_text,
 };
 use std::collections::{BTreeSet, HashMap};
 use std::path::{Path, PathBuf};
@@ -193,8 +192,7 @@ fn item_preview(group: &ProtoGroup) -> Option<String> {
             })
     })?;
     let trimmed = raw.trim();
-    let inner = trimmed.strip_prefix('"')?.strip_suffix('"')?;
-    Some(unescape_quoted_text(inner))
+    crate::frontend::strip_quoted_text(trimmed)
 }
 
 /// The source slice of the top-level item whose `Id:` value is `id` within

@@ -208,16 +208,24 @@ fn reflow_inline_text(
     margin: usize,
 ) -> Option<(usize, usize, Vec<String>)> {
     let open_line = lines.get(row)?;
-    // The opening `"` is the first quote on the line (labels never contain quotes).
+    // The opening quote is the first quote on the line (labels never contain quotes).
     let quote = open_line.find('"')?;
-    let content_col = quote + 1;
+    let is_triple = open_line[quote..].starts_with("\"\"\"");
+    let delim_len = if is_triple { 3 } else { 1 };
+    let content_col = quote + delim_len;
 
     // Find the closing line (the first line from `row` that ends with an unescaped
-    // `"`, considering the opening quote itself for a single-line value).
+    // `"`, or `"""` if triple-quoted, considering the opening quote itself for a
+    // single-line value).
     let close_row = (row..lines.len()).find(|&index| {
         let line = &lines[index];
         let end = if index == row { content_col } else { 0 };
-        closes_quoted_text(&line[end.min(line.len())..])
+        let slice = &line[end.min(line.len())..];
+        if is_triple {
+            line_closes_triple_quoted_text(slice)
+        } else {
+            closes_quoted_text(slice)
+        }
     })?;
 
     // Assemble the raw content lines (between the quotes).
@@ -227,13 +235,18 @@ fn reflow_inline_text(
         let from = if index == row { content_col } else { 0 };
         let mut slice = &line[from.min(line.len())..];
         if index == close_row {
-            slice = slice.strip_suffix('"').unwrap_or(slice);
+            if is_triple {
+                let trimmed = slice.trim_end();
+                slice = trimmed.strip_suffix("\"\"\"").unwrap_or(trimmed);
+            } else {
+                slice = slice.strip_suffix('"').unwrap_or(slice);
+            }
         }
         content_lines.push(slice);
     }
 
     let first_prefix = &open_line[..content_col];
-    let replacement = reflow_text(&content_lines, first_prefix, content_col, margin)?;
+    let replacement = reflow_text(&content_lines, first_prefix, content_col, margin, is_triple)?;
     Some((row, close_row, replacement))
 }
 
@@ -277,6 +290,7 @@ fn reflow_text(
     first_prefix: &str,
     content_col: usize,
     margin: usize,
+    is_triple: bool,
 ) -> Option<Vec<String>> {
     let content = content_lines.join("\n");
     let pieces = tokenize_reflow_pieces(&content, content_col);
@@ -400,7 +414,11 @@ fn reflow_text(
     }
 
     if let Some(last) = out.last_mut() {
-        last.push('"');
+        if is_triple {
+            last.push_str("\"\"\"");
+        } else {
+            last.push('"');
+        }
     }
     Some(out)
 }
@@ -776,7 +794,12 @@ fn group_last_row(group: &ProtoGroup) -> usize {
 }
 
 fn section_last_row(section: &ProtoSection) -> usize {
-    let own = section.metadata.row;
+    let own = section.metadata.row
+        + section
+            .inline_argument
+            .as_deref()
+            .map(|arg| arg.matches('\n').count())
+            .unwrap_or(0);
     let arguments = section
         .arguments
         .iter()
@@ -800,6 +823,10 @@ fn argument_last_row(argument: &ProtoArgument) -> usize {
 fn closes_quoted_text(text: &str) -> bool {
     let text = text.trim_end();
     text.ends_with('"') && !trailing_quote_is_escaped(text)
+}
+
+fn line_closes_triple_quoted_text(text: &str) -> bool {
+    text.trim_end().ends_with("\"\"\"")
 }
 
 fn trailing_quote_is_escaped(text: &str) -> bool {
@@ -1182,5 +1209,28 @@ mod tests {
         let source = "Documented:\n. description: \"Consider the sequence of terms {...} where each term is clearly specified.\"\nId: \"x\"\n";
         let formatted = format_source(source, 50).expect("expected wrapping");
         assert!(formatted.contains("{...}"));
+    }
+
+    #[test]
+    fn reflows_triple_quoted_proof_with_unescaped_quotes() {
+        let source = "Theorem:\nthen: x = x\nProof: \"\"\"\nBecause \"x = y\" and \"y = z\", we have \"x = z\".\n\"\"\"\nId: \"x\"\n";
+        let formatted = format_stable(source, 100);
+        assert_eq!(
+            formatted,
+            "Theorem:\nthen: x = x\nProof: \"\"\"Because \"x = y\" and \"y = z\", we have \"x = z\".\"\"\"\nId: \"x\"\n"
+        );
+        // Idempotent
+        assert_eq!(format_source(&formatted, 100), None);
+    }
+
+    #[test]
+    fn wraps_triple_quoted_text_to_margin_with_unescaped_quotes() {
+        let source = "Proof: \"\"\"Because \"x = y\" and \"y = z\", we know that \"x = z\" holds by transitivity.\"\"\"\nId: \"x\"\n";
+        let formatted = format_source(source, 50).expect("expected wrap");
+        let lines: Vec<&str> = formatted.split('\n').collect();
+        assert!(lines[0].starts_with("Proof: \"\"\"Because \"x = y\""));
+        assert!(lines[1].starts_with("          ")); // indented to col 10 (Proof: """)
+        assert!(lines.last().unwrap().is_empty() || lines[lines.len() - 2].ends_with("\"\"\""));
+        assert_eq!(format_source(&formatted, 50), None);
     }
 }

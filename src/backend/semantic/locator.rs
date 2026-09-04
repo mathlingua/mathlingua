@@ -252,6 +252,7 @@ fn text_value_byte_ranges(source: &str) -> Vec<(usize, usize)> {
             index += 1;
             continue;
         };
+        let is_triple = line[quote_rel..].starts_with("\"\"\"");
         let open = line_start + quote_rel;
         if arg_is_complete_quoted_text(&line[quote_rel..]) {
             ranges.push((open, line_end));
@@ -262,7 +263,12 @@ fn text_value_byte_ranges(source: &str) -> Vec<(usize, usize)> {
         let mut scan = index + 1;
         while scan < spans.len() {
             let (scan_start, scan_end) = spans[scan];
-            if line_closes_quoted_text(&source[scan_start..scan_end]) {
+            let closes = if is_triple {
+                line_closes_triple_quoted_text(&source[scan_start..scan_end])
+            } else {
+                line_closes_quoted_text(&source[scan_start..scan_end])
+            };
+            if closes {
                 close = Some(scan_end);
                 break;
             }
@@ -343,10 +349,20 @@ fn strip_leading_section_label(text: &str) -> Option<&str> {
 /// Whether `arg` (which begins with `"`) is a complete single-line quoted text.
 fn arg_is_complete_quoted_text(arg: &str) -> bool {
     let trimmed = arg.trim_end();
-    trimmed.len() >= 2
-        && trimmed.starts_with('"')
-        && trimmed.ends_with('"')
-        && !trailing_quote_is_escaped(trimmed)
+    if trimmed.starts_with("\"\"\"") {
+        trimmed.len() >= 6 && trimmed[3..].ends_with("\"\"\"")
+    } else {
+        trimmed.len() >= 2
+            && trimmed.starts_with('"')
+            && trimmed.ends_with('"')
+            && !trailing_quote_is_escaped(trimmed)
+    }
+}
+
+/// Whether `line`'s trimmed text ends with `"""`, closing a multiline triple-quoted
+/// text value.
+fn line_closes_triple_quoted_text(line: &str) -> bool {
+    line.trim_end().ends_with("\"\"\"")
 }
 
 /// Whether `line`'s trimmed text ends with an unescaped `"`, closing a multiline

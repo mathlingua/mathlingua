@@ -1101,9 +1101,7 @@ pub(in crate::frontend::structural::parser) fn one_or_more<T>(
 /// Only quote and backslash escapes are interpreted here, so prose can contain
 /// escaped string delimiters without changing LaTeX commands such as `\alpha`.
 pub(in crate::frontend::structural::parser) fn strip_quoted_text(input: &str) -> Option<String> {
-    let input = input.trim();
-    let inner = input.strip_prefix('"')?.strip_suffix('"')?;
-    Some(crate::frontend::unescape_quoted_text(inner))
+    crate::frontend::strip_quoted_text(input)
 }
 
 // ===============================[ clauses ]=====================================
@@ -5518,6 +5516,65 @@ Id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
         assert!(theorem.aliases.is_some());
         assert!(theorem.writing.is_some());
         assert!(theorem.references.is_some());
+    }
+
+    #[test]
+    fn parses_theorem_proof_with_triple_quotes_and_unescaped_quotes() {
+        let document = parse_ok(
+            r#"
+Theorem:
+then: x = x
+Proof: """
+Suppose "x" is an element.
+Then "x = x" by reflexivity.
+"""
+Id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+"#,
+        );
+
+        let TopLevelItem::Theorem(theorem) = &document.items[0] else {
+            panic!("expected Theorem item, got {:?}", document.items[0]);
+        };
+        let proof = &theorem.proof.as_ref().expect("expected proof").argument.0;
+        assert!(proof.contains(r#"Suppose "x" is an element."#));
+        assert!(proof.contains(r#"Then "x = x" by reflexivity."#));
+    }
+
+    #[test]
+    fn parses_single_line_triple_quoted_proof() {
+        let document = parse_ok(
+            r#"
+Theorem:
+then: x = x
+Proof: """Because "x = y" and "y = x"."""
+Id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+"#,
+        );
+
+        let TopLevelItem::Theorem(theorem) = &document.items[0] else {
+            panic!("expected Theorem item, got {:?}", document.items[0]);
+        };
+        assert_eq!(
+            theorem.proof.as_ref().expect("expected proof").argument.0,
+            r#"Because "x = y" and "y = x"."#
+        );
+    }
+
+    #[test]
+    fn parses_text_section_with_triple_quotes() {
+        let document = parse_ok(
+            r#"
+Text: """
+Here is an overview with "double quotes" that do not need escaping.
+"""
+Id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"
+"#,
+        );
+
+        let TopLevelItem::Text(text) = &document.items[0] else {
+            panic!("expected Text item, got {:?}", document.items[0]);
+        };
+        assert!(text.text.argument.0.contains(r#"Here is an overview with "double quotes" that do not need escaping."#));
     }
 
     #[test]

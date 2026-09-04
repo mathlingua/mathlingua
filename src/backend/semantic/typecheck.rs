@@ -2457,6 +2457,12 @@ fn collect_proto_group_text_values(group: &ProtoGroup, values: &mut Vec<(String,
 
 fn unquote_proto_text(text: &str) -> Option<String> {
     let text = text.trim();
+    if text.starts_with("\"\"\"") {
+        if text.len() >= 6 && text[3..].ends_with("\"\"\"") {
+            return Some(text[3..text.len() - 3].to_string());
+        }
+        return None;
+    }
     (text.len() >= 2 && text.starts_with('"') && text.ends_with('"'))
         .then(|| unescape_quoted_text(&text[1..text.len() - 1]))
 }

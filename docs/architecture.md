@@ -11,6 +11,8 @@ For language syntax details, use these companion documents:
   exercises every language feature and checks cleanly; a test keeps it that
   way.
 - [language.md](language.md) is the human-facing language guide.
+- [type_and_operator_resolution.md](type_and_operator_resolution.md) gives
+  pseudocode for symbol typing and the four binary operator resolution modes.
 - [structural_syntax.md](structural_syntax.md) is the parser-level structural
   syntax reference.
 - [formulation_syntax.md](formulation_syntax.md) is the parser-level

@@ -2110,6 +2110,10 @@ an overloaded operator or a `Disambiguates:` branch.
 
 ## Operators as Application
 
+For implementation-oriented pseudocode covering type facts and every binary
+operator spelling, see
+[Type and Operator Resolution](type_and_operator_resolution.md).
+
 A named operator and a symbolic operator both desugar to application when they
 name something callable:
 

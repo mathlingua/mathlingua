@@ -13,3 +13,10 @@ npm run build
 
 Node.js and npm are required only for this contributor workflow. Users running
 an installed `mlg` executable do not need either tool.
+
+The outline header shows the directory currently being browsed. Use **Up** or
+an entry's right arrow to browse directories without changing the open page or
+browser history. Click a file or directory name (including the header) to open
+its page. Opening a page, using Previous/Next, or using browser Back/Forward
+brings the outline to that page's directory. On narrow screens, browsing keeps
+the outline open; selecting a page closes it.

@@ -106,11 +106,12 @@ export function ViewerShell({
       readerNodes,
     ),
   );
+  const [browsedDirectory, setBrowsedDirectory] = useState<string | null>(null);
   const [theme, setTheme] = useState<ViewerTheme>(DEFAULT_VIEWER_THEME);
   const [showTypes, setShowTypes] = useState(false);
 
   const selectedNode = readerNodes[selectedNodeIndex] ?? readerNodes[0];
-  const currentDirectory = selectedNode?.directory ?? "";
+  const currentDirectory = browsedDirectory ?? selectedNode?.directory ?? "";
   const selectedFileIndex =
     selectedNode?.kind === "file" ? selectedNode.fileIndex : -1;
 
@@ -280,6 +281,7 @@ export function ViewerShell({
 
   useEffect(() => {
     const syncSelectedNodeFromPath = () => {
+      setBrowsedDirectory(null);
       setSelectedNodeIndex(
         resolveReaderNodeIndex(
           stripRouteBasePath(window.location.pathname, routeBasePath),
@@ -302,6 +304,7 @@ export function ViewerShell({
       return;
     }
 
+    setBrowsedDirectory(null);
     setSelectedNodeIndex(nodeIndex);
     window.history.pushState(
       null,
@@ -429,6 +432,7 @@ export function ViewerShell({
           loadError={selectedFileLoadError}
           isSelectedFileLoading={isSelectedFileLoading}
           loadedDefinitions={loadedDefinitions}
+          onBrowseDirectory={setBrowsedDirectory}
           onCloseOutline={() => setOutlineState("closed")}
           onLoadDefinition={handleLoadDefinition}
           onNavigateDirectory={handleNavigateDirectory}

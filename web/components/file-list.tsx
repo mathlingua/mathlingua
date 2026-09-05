@@ -39,11 +39,13 @@ interface FileListProps {
   loadError?: string;
   /** Definition cards loaded lazily by reference key. */
   loadedDefinitions?: Record<string, GroupView>;
+  /** Browse the outline without changing the selected page or browser history. */
+  onBrowseDirectory: (directory: string) => void;
   /** Called when the outline drawer should be closed. */
   onCloseOutline: () => void;
   /** Called when a reference key should be loaded lazily. */
   onLoadDefinition?: (referenceKey: string) => void;
-  /** Called when the user drills into or backs out of an outline directory. */
+  /** Open a directory divider page. */
   onNavigateDirectory: (directory: string) => void;
   /** Called when the user selects a file from the outline. */
   onSelectFile: (fileIndex: number) => void;
@@ -72,6 +74,7 @@ export function FileList({
   isSelectedFileLoading = false,
   loadError,
   loadedDefinitions,
+  onBrowseDirectory,
   onCloseOutline,
   onLoadDefinition,
   onNavigateDirectory,
@@ -119,8 +122,6 @@ export function FileList({
   // The section-title header is active when its own divider page is showing.
   const isSectionDividerActive =
     isDivider && selectedNode.directory === currentDirectory;
-  // The cover link is active when the collection's own title page is showing.
-  const isCoverActive = isDivider && selectedNode.directory === "";
   // A section's optional _preface_.mlg, rendered beneath its title. The root
   // divider (the cover) uses the collection-level preface; other dividers use
   // their own directory's preface.
@@ -227,72 +228,81 @@ export function FileList({
       }
     >
       <aside className={styles.outlinePanel}>
-        <button
-          className={
-            isCoverActive
-              ? `${styles.outlineCover} ${styles.outlineCoverActive}`
-              : styles.outlineCover
-          }
-          onClick={() => {
-            onNavigateDirectory("");
-            closeOutlineOnNarrowViewport();
-          }}
-          type="button"
-        >
-          <span className={styles.outlineCoverText}>{rootLabel}</span>
-        </button>
-        {currentDirectory ? (
-          <div className={styles.outlineHeader}>
+        <div className={styles.outlineHeader}>
+          <button
+            aria-current={isSectionDividerActive ? "page" : undefined}
+            className={
+              isSectionDividerActive
+                ? `${styles.outlineSectionTitle} ${styles.outlineSectionTitleActive}`
+                : styles.outlineSectionTitle
+            }
+            onClick={() => {
+              onNavigateDirectory(currentDirectory);
+              closeOutlineOnNarrowViewport();
+            }}
+            title={`Open ${sectionLabel}`}
+            type="button"
+          >
+            {sectionLabel}
+          </button>
+          {currentDirectory ? (
             <button
-              className={
-                isSectionDividerActive
-                  ? `${styles.outlineSectionTitle} ${styles.outlineSectionTitleActive}`
-                  : styles.outlineSectionTitle
-              }
-              onClick={() => {
-                onNavigateDirectory(currentDirectory);
-                closeOutlineOnNarrowViewport();
-              }}
+              aria-label={`Up to ${upLabel}`}
+              className={styles.outlineUp}
+              onClick={() => onBrowseDirectory(parentPath)}
+              title={`Browse ${upLabel} without changing the page`}
               type="button"
             >
-              {sectionLabel}
+              <span aria-hidden="true" className={styles.outlineUpChevron} />
             </button>
-            {parentPath ? (
-              <button
-                className={styles.outlineUp}
-                onClick={() => onNavigateDirectory(parentPath)}
-                type="button"
-              >
-                <span aria-hidden="true" className={styles.outlineUpChevron} />
-                <span className={styles.outlineUpText}>{upLabel}</span>
-              </button>
-            ) : null}
-          </div>
-        ) : null}
-        <nav>
+          ) : null}
+        </div>
+        <nav aria-label="Table of contents">
           <ul className={styles.outlineList}>
             {entries.map((entry) => (
               <li key={`${entry.kind}-${entry.path}`}>
                 {entry.kind === "directory" ? (
-                  <button
-                    className={`${styles.outlineLink} ${styles.outlineLinkDirectory}`}
-                    onClick={() => {
-                      onNavigateDirectory(entry.path);
-                      closeOutlineOnNarrowViewport();
-                    }}
-                    type="button"
-                  >
-                    <ChapterMark />
-                    <span className={styles.outlineLinkLabel}>
-                      {entry.label}
-                    </span>
-                    <span
-                      aria-hidden="true"
-                      className={styles.outlineLinkChevron}
-                    />
-                  </button>
+                  <div className={styles.outlineDirectoryRow}>
+                    <button
+                      aria-current={
+                        isDivider && selectedNode.directory === entry.path
+                          ? "page"
+                          : undefined
+                      }
+                      className={
+                        isDivider && selectedNode.directory === entry.path
+                          ? `${styles.outlineLink} ${styles.outlineLinkDirectory} ${styles.outlineLinkActive}`
+                          : `${styles.outlineLink} ${styles.outlineLinkDirectory}`
+                      }
+                      onClick={() => {
+                        onNavigateDirectory(entry.path);
+                        closeOutlineOnNarrowViewport();
+                      }}
+                      type="button"
+                    >
+                      <ChapterMark />
+                      <span className={styles.outlineLinkLabel}>
+                        {entry.label}
+                      </span>
+                    </button>
+                    <button
+                      aria-label={`Browse ${entry.label}`}
+                      className={styles.outlineBrowse}
+                      onClick={() => onBrowseDirectory(entry.path)}
+                      title={`Browse ${entry.label} without changing the page`}
+                      type="button"
+                    >
+                      <span
+                        aria-hidden="true"
+                        className={styles.outlineLinkChevron}
+                      />
+                    </button>
+                  </div>
                 ) : (
                   <button
+                    aria-current={
+                      entry.fileIndex === activeFileIndex ? "page" : undefined
+                    }
                     className={
                       entry.fileIndex === activeFileIndex
                         ? `${styles.outlineLink} ${styles.outlineLinkFile} ${styles.outlineLinkActive}`

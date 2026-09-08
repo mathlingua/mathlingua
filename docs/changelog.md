@@ -5,6 +5,33 @@ and CLI behavior implemented in this repository. It is intentionally rule-focuse
 each section captures not only the feature, but also the conditions under which
 the feature is valid.
 
+## Outline Browsing And Formatting
+
+The outline's Up and directory-arrow controls now browse directories without
+changing the open page or browser history. Names open pages; opening a page,
+Previous/Next, and browser Back/Forward synchronize the outline directory.
+On narrow screens, browsing keeps the outline open and opening a page closes it.
+
+`mlg format` keeps `{. ... .}` and `{{. ... .}}` pairs intact, just like LaTeX
+math. Multiline or over-wide fragments leave the containing text unchanged.
+Fenced code and Markdown list structure are preserved while surrounding prose
+is reflowed.
+
+## Current Syntax And Resolution Clarifications
+
+The current parser accepts `is?` and negation with `\\not{x is? \set}`;
+`is_not?` is no longer accepted. Refined type assertions produce usable facts,
+including their base type and component refinements.
+
+Plain symbolic operators resolve a bound callable first, then a
+`Disambiguates:` entry. An entry with no matching branch or `else:` fails;
+common-owner capability fallback is available only when no entry exists.
+Colon-qualified operators use capability lookup directly. A common owner is
+the first matching registered capability owner satisfied by both operands,
+not a computed least common ancestor. See
+[type and operator resolution](type_and_operator_resolution.md) for the current
+algorithms; older entries below record earlier behavior and terminology.
+
 ## Subtype Views In `specifies:`
 
 A `Declares:` group may now use several `is ... via ...` items in `specifies:`
@@ -1753,7 +1780,8 @@ Type-directed operator forms are supported.
 
 - `x :- y` resolves `-` from the type of `x`.
 - `x -: y` resolves `-` from the type of `y`.
-- `x :-: y` resolves `-` from the least common ancestor type of `x` and `y`.
+- `x :-: y` resolves `-` from a capability owner type satisfied by both `x`
+  and `y`, selecting the first matching registered rule.
 - If both operands have the same type, `x :-: y` resolves from that type.
 - The same rule applies to named operators, for example `x :|op| y`,
   `x |op|: y`, and `x :|op|: y`.
@@ -1874,7 +1902,8 @@ The checker supports the built-in type predicate `\\type`.
 
 - `\foo is? \\type` succeeds when `\foo` is a top-level `Defines:` entry.
 - `\foo is? \\type` fails when `\foo` is a `Declares:` entry.
-- `\foo is_not? \\type` succeeds when `\foo` is not a described type.
+- Negate a type predicate with `\\not{\foo is? \\type}`. The old
+  `is_not?` spelling is not supported by the current parser.
 - Ordinary built-in type facts share the same fact-checking path as
   `\\statement`, `\\expression`, and `\\specification`.
 

@@ -239,9 +239,11 @@ Quoted text sections are converted to typed wrappers:
 
 All of them use the same surface syntax:
 
-- the source must be quoted with `"..."`
-- the structural parser strips the outer quotes
-- no escape processing is performed
+- the source uses ordinary double quotes (`"..."`) or triple quotes (`"""..."""`)
+- the structural parser strips the enclosing delimiter
+- ordinary quoted text decodes only `\"` to `"`; other backslashes stay literal
+- triple-quoted text preserves the contents literally, including double quotes
+- both forms may span source lines
 
 ### Clause values
 
@@ -1346,13 +1348,16 @@ Examples of affected sections:
 - `overview:`
 - all singular resource item sections
 
-### Text parsing is very literal
+### Quoted text and escapes
 
-- only fully quoted text is accepted for text sections
-- the outermost quotes are simply stripped
-- no escape sequences are interpreted
+Text sections require matching ordinary (`"`) or triple (`"""`) delimiters.
+Both forms support multiline contents. Ordinary quoted text decodes `\"` to a
+literal double quote, but does not interpret other escapes such as `\n` or
+collapse `\\`. Triple-quoted text is stored literally after removing its
+three-quote delimiters, so embedded double quotes need no escaping.
 
-So the stored `OpenText` for `"abc"` is `abc`, but `\"` is not specially handled.
+For example, `"a \"quote\""` stores `a "quote"`, and `"""a "quote""""` stores
+the same text.
 
 ### Section-shaped colons start nested groups
 

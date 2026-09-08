@@ -595,6 +595,26 @@ After changing frontend code, contributors run `npm install` and `npm run build`
 inside `web/`, then commit the updated `web/dist/` files. This keeps Cargo
 builds, packaged crates, and downloaded binaries self-contained.
 
+The outline's browsed directory is separate from the selected page. Up and
+right-arrow controls change only that directory; clicking a name opens a page.
+Opening a page, Previous/Next, and browser Back/Forward synchronize the outline
+to the selected page's directory. Narrow-screen browsing keeps the outline
+open, while selecting a page closes it. This behavior is shared by the live
+viewer and exported sites.
+
+## Formatting
+
+`src/mlg/format.rs` normalizes spacing between top-level items and reflows quoted
+prose to the configured margin. Markdown fences retain their internal code
+spacing and line breaks; list items retain their markers and nesting with
+hanging continuation indents. Both ordinary and triple-quoted prose are handled.
+
+LaTeX delimiters (`$...$`, `$$...$$`, `\(...\)`, `\[...\]`) and MathLingua
+fragment delimiters (`{. ... .}`, `{{. ... .}}`) form indivisible tokens. If one
+contains a newline or exceeds the available line width, the whole text value
+is left unchanged. Formatting runs before `mlg check` unless `formatOnCheck`
+is false.
+
 ## Check Command Data Flow
 
 `mlg check` is implemented by `src/mlg/check.rs`.
@@ -749,6 +769,12 @@ Examples:
 - `src/backend/view/render/tests.rs` covers rendering behavior.
 - `src/backend/semantic/` behavior is covered through semantic and command
   tests.
+- `tests/mlg_check_e2e.rs` runs the real `mlg check` binary against isolated
+  collections from `tests/mlg_check_cases/`, comparing exit status and exact
+  diagnostics for individual success/error cases. Run it with
+  `cargo test --test mlg_check_e2e`.
+- `check_accepts_the_golden_examples_collection` checks the collection under
+  `goldens/examples/` against the current implementation.
 
 Golden parser outputs are stored in:
 

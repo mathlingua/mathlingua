@@ -928,12 +928,15 @@ record Resolution:
     checking_context: TypeContext
     source: BoundCall | DisambiguationBranch | ProvidedSymbolRule | Builtin
 
+# The checking functions can stop without selecting a target. This is a
+# cycle/shape guard, not a new diagnostic or an inferred result type.
+type ResolutionOutcome = Resolution | Skipped
+
 enum ResolutionError:
     UnrecognizedSymbol(Key)
     NoDisambiguation(DisambiguationKey)
     NoMatchingBranch(DisambiguationKey, List<Key>)
     NoProvidedCapability(DisambiguationKey, Ownership, List<Key>)
-    RecursiveResolution(DisambiguationKey)
     InvalidTarget(List<Diagnostic>)
 ```
 
@@ -1016,7 +1019,7 @@ function RESOLVE_PLAIN_OPERATOR(
     right: Expression,
     context: TypeContext,
     registry: SignatureRegistry,
-) -> Result<Resolution, ResolutionError>:
+) -> Result<ResolutionOutcome, ResolutionError>:
     if context contains a bound symbol named symbol:
         call: Expression := DESUGAR_AS_CALL(symbol, [left, right])
         return RESOLVE_AND_CHECK_CALL(call, context, registry)
@@ -1029,9 +1032,9 @@ function RESOLVE_PLAIN_OPERATOR(
 
     if entry is Some(rule):
         if LENGTH(rule.parameters) != 2:
-            return Err(NoMatchingBranch(key, prepared.actual_keys))
+            return Ok(Skipped)
         if key matches an entry in prepared.context.active_disambiguations:
-            return Err(RecursiveResolution(key))
+            return Ok(Skipped)
 
         parameter_bindings: Map<Key, Key> := ZIP_MAP(
             rule.parameters,
@@ -1066,6 +1069,8 @@ function RESOLVE_PLAIN_OPERATOR(
         return Err(NoMatchingBranch(key, prepared.actual_keys))
 
     # This fallback is available only when no Disambiguates entry owns `key`.
+    if key matches an entry in prepared.context.active_disambiguations:
+        return Ok(Skipped)
     reduced_context := MATERIALIZE_SPEC_AND_MEMBERSHIP_FACTS(
         prepared.context, registry,
     )
@@ -1090,10 +1095,10 @@ function CHECK_DISAMBIGUATION_TARGET(
     branch_substitutions: List<(Key, Key)>,
     context: TypeContext,
     registry: SignatureRegistry,
-) -> Result<Resolution, ResolutionError>:
+) -> Result<ResolutionOutcome, ResolutionError>:
     child: Option<TypeContext> := ACTIVATE_DISAMBIGUATION(context, rule.key)
     if child is None:
-        return Err(RecursiveResolution(rule.key))
+        return Ok(Skipped)
 
     for parameter in rule.parameters:
         DECLARE_NAME(child.value, parameter)
@@ -1120,8 +1125,11 @@ function CHECK_DISAMBIGUATION_TARGET(
 ```
 
 Activating the key prevents a target such as `else: x_ + y_` from recursively
-selecting the same disambiguation forever. A target can still use a different
-operator or function disambiguation.
+selecting the same disambiguation forever. The checking pass returns without
+emitting a new diagnostic on this guarded re-entry; it does not report a
+standalone recursive-resolution error. That early return does not establish a
+result type: a later requirement may still fail if no fact is available. A
+target can still use a different operator or function disambiguation.
 
 For a concrete branch example:
 
@@ -1162,7 +1170,7 @@ function RESOLVE_LEFT_OWNED(
     right: Expression,
     context: TypeContext,
     registry: SignatureRegistry,
-) -> Result<Resolution, ResolutionError>:
+) -> Result<ResolutionOutcome, ResolutionError>:
     prepared := PREPARE_OPERANDS([left, right], context, registry)
     return RESOLVE_PROVIDED_OPERATOR(
         BinaryOperator(symbol), Left, prepared.actual_keys,
@@ -1185,7 +1193,7 @@ function RESOLVE_RIGHT_OWNED(
     right: Expression,
     context: TypeContext,
     registry: SignatureRegistry,
-) -> Result<Resolution, ResolutionError>:
+) -> Result<ResolutionOutcome, ResolutionError>:
     prepared := PREPARE_OPERANDS([left, right], context, registry)
     return RESOLVE_PROVIDED_OPERATOR(
         BinaryOperator(symbol), Right, prepared.actual_keys,
@@ -1206,7 +1214,7 @@ function RESOLVE_COMMON_OWNED(
     right: Expression,
     context: TypeContext,
     registry: SignatureRegistry,
-) -> Result<Resolution, ResolutionError>:
+) -> Result<ResolutionOutcome, ResolutionError>:
     prepared := PREPARE_OPERANDS([left, right], context, registry)
     return RESOLVE_PROVIDED_OPERATOR(
         BinaryOperator(symbol), Both, prepared.actual_keys,
@@ -1235,7 +1243,7 @@ function RESOLVE_PROVIDED_OPERATOR(
     actuals: List<Key>,
     context: TypeContext,
     registry: SignatureRegistry,
-) -> Result<Resolution, ResolutionError>:
+) -> Result<ResolutionOutcome, ResolutionError>:
     for rule in registry.provided_symbols in registration order:
         if not DISAMBIGUATION_KEYS_MATCH(key, rule.key):
             continue
@@ -1460,7 +1468,6 @@ Resolution fails in the following cases:
 | A `Disambiguates:` entry has no matching branch and no `else:`. | Only real-plus-integer is declared, but the call is `real + complex`. |
 | A selected target's own requirements fail. | A left-owned set capability is selected by `A :- n`, but its target requires both arguments to be sets. |
 | A literal-source capability receives a non-literal owner. | A `from: Y ::= {...}` capability is attempted with an opaque set variable. |
-| Resolution cycles without reaching an independently known target or fact. | A `+` disambiguation targets the same unresolved `+` with the same arguments. |
 
 Diagnostics distinguish “no matching `Disambiguates` entry,” “could not
 disambiguate these arguments,” “could not resolve from the selected operand

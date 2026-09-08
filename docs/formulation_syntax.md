@@ -248,6 +248,10 @@ The lexer has dedicated tokens for:
 
 Because these are tokenized before ordinary names, exact spellings like `is` and `via` are effectively reserved in lexer-driven formulation parsing.
 
+`is_not?` is not a predicate token or accepted expression syntax. Negate an
+`is?` predicate with the builtin statement command, as in
+`\\not{x is? \set}`.
+
 ### Build expressions
 
 A build applies a command type to a value:

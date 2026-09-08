@@ -86,7 +86,11 @@ Text arguments must be quoted:
 Title: "Algebra"
 ```
 
-The parser strips the outer quotes and does not interpret escape sequences.
+Text may also use triple quotes (`"""..."""`), including multiline prose and
+unescaped double quotes inside. For ordinary double-quoted text, the parser
+removes the delimiters and turns `\"` into a literal `"`. Other backslashes stay
+literal, preserving LaTeX and double-backslash builtins. Triple-quoted text
+preserves its contents without unescaping.
 
 A non-text argument line starts a nested structural group when it is a heading
 or when its first colon follows a section-label-shaped prefix. Formulation
@@ -141,8 +145,9 @@ Placeholders are used in forms and declarations. Magnetic placeholders are used
 for function-like forms that bind one placeholder with special rendering
 behavior, such as `f(x__)`.
 
-The exact spellings `is`, `is?`, and `via` are reserved by the
-lexer-driven formulation parser.
+The exact spellings `is`, `is?`, `via`, `member_of`, and `satisfies` are
+reserved by the lexer-driven formulation parser. The former `is_not?` predicate
+is not supported; write `\\not{x is? \set}` for a negated type predicate.
 
 ## Forms and Declarations
 
@@ -1596,11 +1601,12 @@ expansion.
 A spec fact `x "op" T` is valid only when `T`'s type provides that operator
 (`Could not validate spec fact \`{fact}\`: no provided spec operator \`"{op}"\`
 is available for \`{target}\``); infix spec signatures must be defined by
-`Declares`. Operators resolve in order: an in-scope value applied as a call; a
-colon-qualified provided-symbol capability owned by a single operand type; a
-`Disambiguates` entry; then a provided-symbol capability owned by the operands'
-common type (with spec-known operands reduced to their `is`-facts). If none
-apply, `Could not resolve {label}: no matching \`Disambiguates\` entry was found`
+`Declares`. Plain symbolic operators try an in-scope callable value, then a
+`Disambiguates` entry. Only when no such entry exists do they fall back to a
+capability whose owner type both operands satisfy, after reducing specification
+and membership facts. Colon-qualified operators go directly to capability
+lookup for their selected owner or owners. See [Operators as
+Application](#operators-as-application) for the distinct paths. If none apply, `Could not resolve {label}: no matching \`Disambiguates\` entry was found`
 (or `Could not resolve operator \`{symbol}\` from {source}`). Member access
 reports `Could not resolve member \`{name}\` for \`{owner}\``.
 
@@ -1802,11 +1808,11 @@ When command arguments are substituted into requirements, local definitions are
 normalized. If `A ::= B := B` is in scope, facts about `A` can satisfy
 requirements about `B`, and vice versa.
 
-Refined command type expressions are accepted in refined-capable statement
-positions and are reference-checked, but the current proof context records type
-facts only for ordinary command type expressions. A fact such as
-`f is \(continuous)::function:on{A}:to{B}` does not currently become a usable
-type fact for proving later requirements.
+Refined command type expressions produce usable refined type facts. For
+example, `f is \(continuous)::function:on{A}:to{B}` can establish both the
+refined requirement and its underlying function type. A composite refinement
+also implies its individual refinements. The checker follows registered
+refinement extension rules when establishing later requirements.
 
 Refined command fallback shapes are also used for reference validation. If a
 composed refined command is not defined directly, the checker can validate the
@@ -2125,23 +2131,69 @@ name something callable:
   value** in scope (for example the operation component of a destructured
   magma). Otherwise `*`, `+`, … keep their built-in arithmetic resolution.
 
-A binary operator resolves in order: (1) the application desugar above, when the
-symbol is bound; (2) a provided-symbol capability whose operator is
-colon-qualified so a single operand type owns it (`:op`, `op:`, `:op:`), matched
-against the owning operand's type; (3) a `Disambiguates` entry; and (4) a
-provided-symbol capability owned by the operands' *common* type, where a value
-known only through a spec (`y "in" M`) is first reduced to its `is`-facts to make
-the match. So if `y "in" M` makes `y` a `\magma.element` and `\magma.element`
-`Enables:` `capability: x_ * y_ :=> ...`, then `y * y` resolves through that
-capability (step 4). If none apply, the operator is reported unresolved. Prefix
-and postfix operators, and member access, follow the analogous provided-symbol
-and disambiguation paths.
+For a plain symbolic operator, the checker first uses a bound callable symbol.
+Otherwise a `Disambiguates:` entry owns resolution: its first matching branch
+wins, or its `else:` is used. An entry with no matching branch and no `else:`
+is an error, even if an operand type provides a capability.
+
+Only when no `Disambiguates:` entry exists does a plain operator fall back to
+a provided capability whose owner type both operands satisfy. This path first
+materializes specification and membership reductions. For example, if
+`y "in" M` implies `y is \magma.element` and that type enables multiplication,
+`y * y` can use the element-owned capability.
+
+Colon-qualified spellings instead go directly to provided capability lookup:
+
+| Spelling | Required ownership |
+| --- | --- |
+| `x :* y` | The left operand satisfies the capability's owner type. |
+| `x *: y` | The right operand satisfies the capability's owner type. |
+| `x :*: y` | Both operands satisfy the same capability's owner type. |
+
+Extensions can establish ownership. Lookup selects the first matching registered
+capability; it does not compute a least common ancestor or rank specificity.
+These explicit paths neither fall back to `Disambiguates:` nor first
+materialize specification/membership reductions. After selection, the target is
+checked with actual operands substituted, including its requirements. Views do
+not select these capabilities or disambiguation branches.
+
+Plain named operators remain function-call sugar; colon-qualified named
+operators use the ownership modes above. Plain `=` and `!=` first try a
+common-owner capability and otherwise are accepted as builtin statements for
+declared operands without requiring a type-specific equality capability.
 
 A capability may also declare a **bracketed placeholder operator**
 `x_ [*] y_`, where `[*]` names a symbol drawn from the definition's
 inputs/`Declares:` (here the `*` component of `M ::= (X, *)`) rather than a
 fixed character. The provided operator's name is then the operand's concrete
 operation symbol.
+
+## MathLingua In Prose
+
+Quoted prose, including `Text:`, descriptions, and theorem `Proof:`, may contain
+inline `{. expression .}` or display `{{. expression .}}` MathLingua fragments.
+They are parsed, semantically checked, and rendered as mathematics. For example:
+
+```text
+Text: "Let {. A is \\anything .}. Then {{. A = A .}}."
+```
+
+A declaration fragment using `is`, a quoted specification operator, or `:=`
+introduces names for later fragments in the same text value. The initial scope
+inherits the enclosing item's available symbols. Theorem proof prose can use
+heading, `given:`, and `where:` names, but not names local to the conclusion.
+
+Use balanced, properly nested `<<name>>` and `<</name>>` markers to delimit a
+local prose scope. Its bindings disappear when it closes; the markers themselves
+do not render. Without an explicit marker, the scope lasts for one text value.
+Malformed fragments, unmatched markers, and out-of-scope names are errors.
+
+Fragment and scope-marker scanning also runs inside Markdown backticks and code
+fences. To discuss literal delimiters without activating them, use HTML character
+references in ordinary prose, such as `&#123;.` for an opening brace and dot.
+This is separate from the structural checking of full `mlg` fences; tagging a
+fence `mlg-fragment` skips that structural check but does not disable embedded
+prose-fragment scanning.
 
 ## Rendering Metadata
 
@@ -2296,7 +2348,8 @@ them.
 - Group kind is chosen by the first section label, not by the heading.
 - Some singular sections keep only the first valid parsed value and ignore extra
   valid values.
-- Text parsing strips only the outer quotes and does not process escapes.
+- Ordinary quoted text decodes only `\"`; triple-quoted text is literal. Other
+  backslashes are preserved in both forms.
 - Section-shaped colons in non-text argument lines start nested groups.
 - Clause formulation arguments are parsed in fallback order: declaration
   statement, then expression.

@@ -719,6 +719,60 @@ mod tests {
     }
 
     #[test]
+    fn check_places_generated_id_after_multiline_text_containing_blank_lines() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("intro.mlg");
+
+        fs::write(&file, "Text: \"First paragraph\n\n-- Second paragraph\"\n").unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("intro.mlg")],
+            &mut event_log,
+        );
+        let updated = fs::read_to_string(&file).expect("expected updated source");
+
+        assert_eq!(result.files_checked, 1);
+        assert!(updated.starts_with("Text: \"First paragraph\n\n-- Second paragraph\"\nId: \""));
+        assert_eq!(updated.matches("Id: \"").count(), 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_places_generated_id_after_triple_quoted_text_containing_blank_lines() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("intro.mlg");
+
+        fs::write(
+            &file,
+            "Text: \"\"\"First paragraph\n\n-- Second paragraph\"\"\"\n",
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("intro.mlg")],
+            &mut event_log,
+        );
+        let updated = fs::read_to_string(&file).expect("expected updated source");
+
+        assert_eq!(result.files_checked, 1);
+        assert!(
+            updated.starts_with("Text: \"\"\"First paragraph\n\n-- Second paragraph\"\"\"\nId: \"")
+        );
+        assert_eq!(updated.matches("Id: \"").count(), 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_reports_duplicate_top_level_ids() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("intro.mlg");

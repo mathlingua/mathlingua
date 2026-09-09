@@ -6,8 +6,8 @@ use crate::backend::semantic::{
 use crate::backend::view::{CollectionView, build_collection_view_with_cached_proto_groups};
 use crate::events::{Event, EventLocation, EventLog};
 use crate::frontend::{
-    ParsedSourceFile, ProtoGroup, ProtoParser, SourceFileViewMetadata, parse_source_file,
-    parse_source_file_from_proto, top_level_group_id,
+    ParsedSourceFile, ProtoArgument, ProtoGroup, ProtoParser, ProtoSection, SourceFileViewMetadata,
+    parse_source_file, parse_source_file_from_proto, top_level_group_id,
 };
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
@@ -424,8 +424,14 @@ fn source_with_generated_ids(
             continue;
         }
 
+        // Do not let the backward scan cross source that the proto parser consumed
+        // as part of this group. In particular, a multiline text value can contain
+        // blank lines and can end with a Markdown line beginning `--`; treating
+        // those source lines as an inter-item gap would put the generated Id inside
+        // the quoted value.
+        let group_end = group_last_row(group).saturating_add(1).min(next_start);
         let mut insertion = next_start;
-        while insertion > start && is_trailing_id_gap(lines[insertion - 1]) {
+        while insertion > group_end && is_trailing_id_gap(lines[insertion - 1]) {
             insertion -= 1;
         }
 
@@ -456,6 +462,43 @@ fn source_with_generated_ids(
 fn is_trailing_id_gap(line: &str) -> bool {
     let trimmed = line.trim_start();
     trimmed.is_empty() || trimmed.starts_with("--")
+}
+
+/// The final source row consumed by a proto group, including multiline quoted
+/// text and formulation arguments.
+fn group_last_row(group: &ProtoGroup) -> usize {
+    group
+        .sections
+        .iter()
+        .map(section_last_row)
+        .max()
+        .unwrap_or(group.metadata.row)
+}
+
+fn section_last_row(section: &ProtoSection) -> usize {
+    let own = section.metadata.row
+        + section
+            .inline_argument
+            .as_deref()
+            .map(|argument| argument.matches('\n').count())
+            .unwrap_or(0);
+    section
+        .arguments
+        .iter()
+        .map(argument_last_row)
+        .max()
+        .unwrap_or(own)
+        .max(own)
+}
+
+fn argument_last_row(argument: &ProtoArgument) -> usize {
+    match argument {
+        ProtoArgument::Formulation(formulation) => {
+            formulation.metadata.row + formulation.text.matches('\n').count()
+        }
+        ProtoArgument::Text(text) => text.metadata.row + text.text.matches('\n').count(),
+        ProtoArgument::Group(group) => group_last_row(group),
+    }
 }
 
 fn is_top_level_item_group(group: &ProtoGroup) -> bool {

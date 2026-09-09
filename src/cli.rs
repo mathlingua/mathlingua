@@ -116,6 +116,12 @@ pub enum Command {
     #[command(hide = true)]
     Report(ReportArgs),
 
+    /// Search items and definitions in the collection
+    Search(SearchArgs),
+
+    /// Inspect the collection layout, table of contents, and items
+    Structure(StructureArgs),
+
     /// Print the Mathlingua version
     Version,
 
@@ -199,6 +205,24 @@ pub struct ViewArgs {
     /// Keep running through source errors and refresh when files change.
     #[arg(long, default_value_t = false)]
     pub watch: bool,
+}
+
+#[derive(Clone, Debug, Args, PartialEq, Eq)]
+pub struct SearchArgs {
+    /// The search term or query string to find across items and definitions.
+    #[arg(value_name = "QUERY")]
+    pub query: String,
+
+    /// Output results in JSON format.
+    #[arg(long, default_value_t = false)]
+    pub json: bool,
+}
+
+#[derive(Clone, Debug, Args, PartialEq, Eq)]
+pub struct StructureArgs {
+    /// Output collection structure in JSON format.
+    #[arg(long, default_value_t = false)]
+    pub json: bool,
 }
 
 // ===============================[ tests ]=====================================

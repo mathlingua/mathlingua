@@ -10,6 +10,10 @@ pub use init::{InitResult, init};
 pub use lsp::{LspResult, lsp};
 pub use release::{ReleaseResult, release};
 pub use report::{ReportResult, report};
+pub use search::{SearchMatch, SearchReport, SearchResult, search};
+pub use structure::{
+    DirectoryStructure, FileStructure, ItemStructure, StructureReport, StructureResult, structure,
+};
 pub use version::{VersionResult, version};
 pub use view::{ViewResult, view, watch_view};
 pub use whte_rbt_obj::{WhteRbtObjResult, whte_rbt_obj};
@@ -25,6 +29,8 @@ mod init;
 mod lsp;
 mod release;
 mod report;
+mod search;
+mod structure;
 mod util;
 mod version;
 mod view;

@@ -3,7 +3,8 @@ use mlg::cli::{Cli, Command};
 use mlg::events::{ColorMode, EventConsoleWriter, EventFilter, EventLogListener};
 use mlg::{
     check, check_diagnostics_report, check_diagnostics_schema, clean, debug, export, extract,
-    format, init, lsp, release, report, version, view, watch_check, watch_view, whte_rbt_obj,
+    format, init, lsp, release, report, search, structure, version, view, watch_check, watch_view,
+    whte_rbt_obj,
 };
 use serde::Serialize;
 use std::io::{self, Write};
@@ -63,6 +64,35 @@ fn main() {
         }
         Command::Report(args) => {
             report(&cwd, &args.ids, Some(console_listener(filter, &cwd))).successful
+        }
+        Command::Search(args) => {
+            let result = search(
+                &cwd,
+                &args.query,
+                args.json,
+                Some(console_listener(filter, &cwd)),
+            );
+            if args.json {
+                if let Some(ref report) = result.search_report {
+                    write_json_stdout(report) && result.successful
+                } else {
+                    result.successful
+                }
+            } else {
+                result.successful
+            }
+        }
+        Command::Structure(args) => {
+            let result = structure(&cwd, args.json, Some(console_listener(filter, &cwd)));
+            if args.json {
+                if let Some(ref report) = result.structure_report {
+                    write_json_stdout(report) && result.successful
+                } else {
+                    result.successful
+                }
+            } else {
+                result.successful
+            }
         }
         Command::Version => version(Some(console_listener(filter, &cwd))).successful,
         Command::View(args) => {

@@ -767,6 +767,15 @@ Let {.x is \natural.}[is="be a"] number.
 Choose {.x "in" X.}["in"="from"].
 ```
 
+To reference an axiom, conjecture, or theorem, use `{: ... :}`. The content
+between `{: ... :}` must be a bare command `\name` referencing a defined
+`Axiom:`, `Conjecture:`, or `Theorem:`. Axioms, conjectures, and theorems
+cannot be referenced or used inside `{. ... .}` or `{{. ... .}}`.
+
+```text
+By {: \pythagorean.theorem :}, it follows that {{. a^2 + b^2 = c^2 .}}.
+```
+
 Named `<<name>>` and `<</name>>` markers create lexical scopes. The markers must
 be balanced and properly nested, and are omitted from the rendered Markdown.
 Scopes may nest; variables introduced on the left of `is`, a quoted operator,
@@ -2171,12 +2180,18 @@ operation symbol.
 ## MathLingua In Prose
 
 Quoted prose, including `Text:`, descriptions, and theorem `Proof:`, may contain
-inline `{. expression .}` or display `{{. expression .}}` MathLingua fragments.
+inline `{. expression .}` or display `{{. expression .}}` MathLingua fragments,
+as well as theorem-like references `{: \name :}`.
 They are parsed, semantically checked, and rendered as mathematics. For example:
 
 ```text
-Text: "Let {. A is \\anything .}. Then {{. A = A .}}."
+Text: "Let {. A is \\anything .}. By {: \\identity.thm :}, {{. A = A .}}."
 ```
+
+The `{: ... :}` syntax is reserved exclusively for referencing axioms, conjectures,
+or theorems. The enclosed content must be a bare command `\name` that resolves to
+an `Axiom:`, `Conjecture:`, or `Theorem:`. Axioms, conjectures, and theorems are
+not permitted inside `{. ... .}` or `{{. ... .}}`.
 
 A declaration fragment using `is`, a quoted specification operator, or `:=`
 introduces names for later fragments in the same text value. The initial scope

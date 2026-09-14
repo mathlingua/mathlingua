@@ -2532,6 +2532,27 @@ fn check_scoped_text_value(
             continue;
         }
 
+        let theorem_ref_opens = scoped_theorem_reference_opens(rest);
+        let theorem_ref = if theorem_ref_opens {
+            parse_scoped_theorem_reference(rest)
+        } else {
+            None
+        };
+        if let Some((source, consumed)) = theorem_ref {
+            let row = source_row + text[..index].matches('\n').count();
+            check_scoped_theorem_reference(source, row, path, registry, event_log);
+            index += consumed;
+            continue;
+        }
+        if theorem_ref_opens {
+            scoped_text_error(
+                path,
+                source_row + text[..index].matches('\n').count(),
+                event_log,
+                "Unclosed MathLingua theorem reference",
+            );
+        }
+
         let display_fragment = scoped_text_fragment_opens(rest, true);
         let inline_fragment = scoped_text_fragment_opens(rest, false);
         let fragment = if display_fragment {
@@ -2599,6 +2620,143 @@ fn parse_scoped_text_marker(input: &str) -> Option<(bool, &str, usize)> {
     Some((closing, name, prefix.len() + end + 2))
 }
 
+fn parse_scoped_theorem_reference(input: &str) -> Option<(&str, usize)> {
+    let open = "{:";
+    let close = ":}";
+    let tail = input.strip_prefix(open)?;
+    let end = tail.find(close)?;
+    Some((&tail[..end], open.len() + end + close.len()))
+}
+
+fn scoped_theorem_reference_opens(input: &str) -> bool {
+    input.starts_with("{:")
+}
+
+fn check_scoped_theorem_reference(
+    source: &str,
+    row: usize,
+    path: &Path,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    let source = source.trim();
+    if source.is_empty() {
+        scoped_text_error(
+            path,
+            row,
+            event_log,
+            "MathLingua theorem reference cannot be empty",
+        );
+        return;
+    }
+
+    if !source.starts_with('\\') {
+        scoped_text_error(
+            path,
+            row,
+            event_log,
+            format!("Expected `\\name` in `{{: ... :}}` but found `{source}`"),
+        );
+        return;
+    }
+
+    let Ok(expression) = parse_expression(source) else {
+        scoped_text_error(
+            path,
+            row,
+            event_log,
+            format!("Invalid MathLingua theorem reference `{source}`"),
+        );
+        return;
+    };
+
+    let ExpressionKind::Command(command) = expression.kind else {
+        scoped_text_error(
+            path,
+            row,
+            event_log,
+            format!("Expected `\\name` in `{{: ... :}}` but found `{source}`"),
+        );
+        return;
+    };
+
+    if !command.head_args.is_empty()
+        || !command.tail.is_empty()
+        || !command.paren_args.is_empty()
+        || command.context.is_some()
+    {
+        scoped_text_error(
+            path,
+            row,
+            event_log,
+            format!("`{{: ... :}}` must contain a bare `\\name` with no arguments, but found `{source}`"),
+        );
+        return;
+    }
+
+    let signature = format!("\\{}", format_chain(&command.chain));
+    match registry.definitions.get(&signature) {
+        None => {
+            scoped_text_error(
+                path,
+                row,
+                event_log,
+                format!("Undefined command signature `{signature}`"),
+            );
+        }
+        Some(entry) => {
+            if !matches!(
+                entry.kind,
+                DefinitionKind::Axiom | DefinitionKind::Theorem | DefinitionKind::Conjecture
+            ) {
+                scoped_text_error(
+                    path,
+                    row,
+                    event_log,
+                    format!(
+                        "`{{: ... :}}` must reference an Axiom, Conjecture, or Theorem, but `{signature}` is a {}",
+                        entry.kind.label()
+                    ),
+                );
+            }
+        }
+    }
+}
+
+fn check_disallowed_theorem_like_in_math_fragment(
+    shape: &SignatureShape,
+    row: usize,
+    path: &Path,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    let resolved = resolve_definition_signature(shape, registry).ok().flatten();
+    let Some(signature) = resolved else {
+        return;
+    };
+    let Some(entry) = registry.definitions.get(signature) else {
+        return;
+    };
+    if matches!(
+        entry.kind,
+        DefinitionKind::Axiom | DefinitionKind::Theorem | DefinitionKind::Conjecture
+    ) {
+        let article = match entry.kind {
+            DefinitionKind::Axiom => "an",
+            _ => "a",
+        };
+        scoped_text_error(
+            path,
+            row,
+            event_log,
+            format!(
+                "`{signature}` is {article} {} and cannot be used in `{{. ... .}}`; use `{{: {signature} :}}` instead",
+                entry.kind.label()
+            ),
+        );
+    }
+}
+
 fn parse_scoped_text_fragment(input: &str, display: bool) -> Option<(&str, usize)> {
     let (open, close) = if display {
         ("{{.", ".}}")
@@ -2638,6 +2796,9 @@ fn check_scoped_text_fragment(
             || statement.definition.is_some()
             || statement.expansion.is_some())
     {
+        walk_declaration_statement(&statement, &mut |shape| {
+            check_disallowed_theorem_like_in_math_fragment(shape, row, path, registry, event_log);
+        });
         let mut locator = SourceLocator::for_text_fragment(source, row);
         introduce_declaration_statement_symbols(
             &statement,
@@ -2659,6 +2820,9 @@ fn check_scoped_text_fragment(
 
     match parse_expression(source) {
         Ok(expression) => {
+            walk_expression(&expression, &mut |shape| {
+                check_disallowed_theorem_like_in_math_fragment(shape, row, path, registry, event_log);
+            });
             let mut locator = SourceLocator::for_text_fragment(source, row);
             check_expression(
                 &expression,
@@ -23346,6 +23510,240 @@ mod scoped_text_tests {
             messages(&log)
                 .iter()
                 .any(|message| message.contains("Mismatched prose scope closing marker")),
+            "{:?}",
+            messages(&log)
+        );
+    }
+
+    fn make_registry_with_items(items: &[(&str, DefinitionKind)]) -> SignatureRegistry {
+        let mut registry = SignatureRegistry::default();
+        for (sig, kind) in items {
+            registry.definitions.insert(
+                sig.to_string(),
+                DefinitionEntry {
+                    kind: *kind,
+                    shape: SignatureShape {
+                        signature: sig.to_string(),
+                        arg_groups: Vec::new(),
+                        fallback_shapes: Vec::new(),
+                    },
+                    path: PathBuf::from("test.mlg"),
+                    position: None,
+                    placeholder_pattern: None,
+                },
+            );
+        }
+        registry
+    }
+
+    #[test]
+    fn accepts_valid_theorem_axiom_and_conjecture_references() {
+        let registry = make_registry_with_items(&[
+            (r"\membership.axiom", DefinitionKind::Axiom),
+            (r"\pythagorean.thm", DefinitionKind::Theorem),
+            (r"\riemann.hypothesis", DefinitionKind::Conjecture),
+        ]);
+        let mut log = EventLog::new();
+        check_scoped_text_value(
+            "By {: \\membership.axiom :}, and then {: \\pythagorean.thm :} or {: \\riemann.hypothesis :}.",
+            0,
+            &TypeContext::default(),
+            Path::new("test.mlg"),
+            &registry,
+            &mut log,
+        );
+        assert!(!log.has_errors(), "{:?}", messages(&log));
+    }
+
+    #[test]
+    fn rejects_non_theorem_like_command_in_theorem_reference() {
+        let registry = make_registry_with_items(&[
+            (r"\set", DefinitionKind::Declares),
+            (r"\element", DefinitionKind::Defines),
+        ]);
+        let mut log = EventLog::new();
+        check_scoped_text_value(
+            "See {: \\set :}.",
+            0,
+            &TypeContext::default(),
+            Path::new("test.mlg"),
+            &registry,
+            &mut log,
+        );
+        assert!(
+            messages(&log)
+                .iter()
+                .any(|msg| msg.contains("must reference an Axiom, Conjecture, or Theorem, but `\\set` is a Declares")),
+            "{:?}",
+            messages(&log)
+        );
+    }
+
+    #[test]
+    fn rejects_undefined_command_in_theorem_reference() {
+        let registry = SignatureRegistry::default();
+        let mut log = EventLog::new();
+        check_scoped_text_value(
+            "See {: \\unknown.thm :}.",
+            0,
+            &TypeContext::default(),
+            Path::new("test.mlg"),
+            &registry,
+            &mut log,
+        );
+        assert!(
+            messages(&log)
+                .iter()
+                .any(|msg| msg.contains("Undefined command signature `\\unknown.thm`")),
+            "{:?}",
+            messages(&log)
+        );
+    }
+
+    #[test]
+    fn rejects_invalid_theorem_reference_syntax() {
+        let registry = SignatureRegistry::default();
+
+        let mut log = EventLog::new();
+        check_scoped_text_value(
+            "See {: :}.",
+            0,
+            &TypeContext::default(),
+            Path::new("test.mlg"),
+            &registry,
+            &mut log,
+        );
+        assert!(
+            messages(&log)
+                .iter()
+                .any(|msg| msg.contains("MathLingua theorem reference cannot be empty")),
+            "{:?}",
+            messages(&log)
+        );
+
+        let mut log = EventLog::new();
+        check_scoped_text_value(
+            "See {: 1 + 1 :}.",
+            0,
+            &TypeContext::default(),
+            Path::new("test.mlg"),
+            &registry,
+            &mut log,
+        );
+        assert!(
+            messages(&log)
+                .iter()
+                .any(|msg| msg.contains("Expected `\\name` in `{: ... :}`")),
+            "{:?}",
+            messages(&log)
+        );
+
+        let mut log = EventLog::new();
+        check_scoped_text_value(
+            "See {: thm :}.",
+            0,
+            &TypeContext::default(),
+            Path::new("test.mlg"),
+            &registry,
+            &mut log,
+        );
+        assert!(
+            messages(&log)
+                .iter()
+                .any(|msg| msg.contains("Expected `\\name` in `{: ... :}`")),
+            "{:?}",
+            messages(&log)
+        );
+
+        let mut log = EventLog::new();
+        check_scoped_text_value(
+            "See {: \\thm{x} :}.",
+            0,
+            &TypeContext::default(),
+            Path::new("test.mlg"),
+            &registry,
+            &mut log,
+        );
+        assert!(
+            messages(&log)
+                .iter()
+                .any(|msg| msg.contains("`{: ... :}` must contain a bare `\\name` with no arguments")),
+            "{:?}",
+            messages(&log)
+        );
+
+        let mut log = EventLog::new();
+        check_scoped_text_value(
+            "See {: \\thm",
+            0,
+            &TypeContext::default(),
+            Path::new("test.mlg"),
+            &registry,
+            &mut log,
+        );
+        assert!(
+            messages(&log)
+                .iter()
+                .any(|msg| msg.contains("Unclosed MathLingua theorem reference")),
+            "{:?}",
+            messages(&log)
+        );
+    }
+
+    #[test]
+    fn rejects_theorem_like_items_in_math_fragments() {
+        let registry = make_registry_with_items(&[
+            (r"\my.thm", DefinitionKind::Theorem),
+            (r"\my.axiom", DefinitionKind::Axiom),
+        ]);
+
+        let mut log = EventLog::new();
+        check_scoped_text_value(
+            "Consider {. \\my.thm .}.",
+            0,
+            &TypeContext::default(),
+            Path::new("test.mlg"),
+            &registry,
+            &mut log,
+        );
+        assert!(
+            messages(&log)
+                .iter()
+                .any(|msg| msg.contains("`\\my.thm` is a Theorem and cannot be used in `{. ... .}`; use `{: \\my.thm :}` instead")),
+            "{:?}",
+            messages(&log)
+        );
+
+        let mut log = EventLog::new();
+        check_scoped_text_value(
+            "Consider {{. \\my.axiom .}}.",
+            0,
+            &TypeContext::default(),
+            Path::new("test.mlg"),
+            &registry,
+            &mut log,
+        );
+        assert!(
+            messages(&log)
+                .iter()
+                .any(|msg| msg.contains("`\\my.axiom` is an Axiom and cannot be used in `{. ... .}`; use `{: \\my.axiom :}` instead")),
+            "{:?}",
+            messages(&log)
+        );
+
+        let mut log = EventLog::new();
+        check_scoped_text_value(
+            "Consider {. x is \\my.thm .}.",
+            0,
+            &TypeContext::default(),
+            Path::new("test.mlg"),
+            &registry,
+            &mut log,
+        );
+        assert!(
+            messages(&log)
+                .iter()
+                .any(|msg| msg.contains("`\\my.thm` is a Theorem and cannot be used in `{. ... .}`; use `{: \\my.thm :}` instead")),
             "{:?}",
             messages(&log)
         );

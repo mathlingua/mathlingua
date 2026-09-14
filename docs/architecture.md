@@ -610,10 +610,10 @@ spacing and line breaks; list items retain their markers and nesting with
 hanging continuation indents. Both ordinary and triple-quoted prose are handled.
 
 LaTeX delimiters (`$...$`, `$$...$$`, `\(...\)`, `\[...\]`) and MathLingua
-fragment delimiters (`{. ... .}`, `{{. ... .}}`) form indivisible tokens. If one
-contains a newline or exceeds the available line width, the whole text value
-is left unchanged. Formatting runs before `mlg check` unless `formatOnCheck`
-is false.
+fragment delimiters (`{. ... .}`, `{{. ... .}}`, `{: ... :}`) form indivisible
+tokens. If one contains a newline or exceeds the available line width, the whole
+text value is left unchanged. Formatting runs before `mlg check` unless
+`formatOnCheck` is false.
 
 ## Check Command Data Flow
 

@@ -232,7 +232,7 @@ The structural AST uses:
 
 Quoted text sections are converted to typed wrappers:
 
-- `OpenText`
+- `OpenText`: General prose text. May embed inline formulations (`{. ... .}`), display formulations (`{{. ... .}}`), and theorem-like references (`{: \name :}`) exclusively for axioms, conjectures, or theorems.
 - `WrittenText`
 - `CalledText`
 - `WritingText`

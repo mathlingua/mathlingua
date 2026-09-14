@@ -5,6 +5,18 @@ and CLI behavior implemented in this repository. It is intentionally rule-focuse
 each section captures not only the feature, but also the conditions under which
 the feature is valid.
 
+## Theorem References In Prose (`{: ... :}`)
+
+Quoted prose (`OpenText`) now supports `{: \name :}` exclusively for referencing
+defined `Axiom:`, `Conjecture:`, or `Theorem:` items. The enclosed content must be
+a bare command `\name` resolving to one of these three theorem-like definition kinds;
+empty contents, expressions with arguments or operators, non-command names, and
+commands resolving to other definition kinds are rejected.
+
+Correspondingly, axioms, conjectures, and theorems can no longer be used inside
+`{. ... .}` or `{{. ... .}}`. Formatter and renderer tools preserve `{: ... :}`
+as indivisible tokens and render them as hyperlinks to the referenced item.
+
 ## Outline Browsing And Formatting
 
 The outline's Up and directory-arrow controls now browse directories without

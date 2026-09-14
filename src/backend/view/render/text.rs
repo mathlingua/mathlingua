@@ -50,6 +50,13 @@ impl ScopedTextRenderer<'_> {
                 index += consumed;
                 continue;
             }
+            if let Some((source, consumed)) = theorem_reference_fragment(rest) {
+                output.push('$');
+                output.push_str(&self.render_theorem_reference(source));
+                output.push('$');
+                index += consumed;
+                continue;
+            }
             if let Some((source, consumed)) = math_fragment(rest, true) {
                 let (modifier, modifier_len) = relation_modifier(&rest[consumed..]);
                 output.push_str("$$\n");
@@ -86,6 +93,12 @@ impl ScopedTextRenderer<'_> {
             latex = latex.replacen(&relation, &replacement, 1);
         }
         latex
+    }
+
+    fn render_theorem_reference(&mut self, source: &str) -> String {
+        let trimmed = source.trim();
+        render_formulation_latex(trimmed, self.registry)
+            .unwrap_or_else(|| trimmed.to_string())
     }
 
     fn record_introductions(&mut self, source: &str) {
@@ -125,6 +138,13 @@ fn scope_marker(input: &str, closing: bool) -> Option<(&str, usize)> {
         return None;
     }
     Some((name, prefix.len() + end + 2))
+}
+
+fn theorem_reference_fragment(input: &str) -> Option<(&str, usize)> {
+    let (open, close) = ("{:", ":}");
+    let tail = input.strip_prefix(open)?;
+    let end = tail.find(close)?;
+    Some((&tail[..end], open.len() + end + close.len()))
 }
 
 fn math_fragment(input: &str, display: bool) -> Option<(&str, usize)> {
@@ -250,6 +270,17 @@ mod tests {
         assert_eq!(
             render_scoped_text_markdown(text, &RenderRegistry::default()),
             text
+        );
+    }
+
+    #[test]
+    fn renders_theorem_references() {
+        assert_eq!(
+            render_scoped_text_markdown(
+                "By {: \\some.thm :}, it holds.",
+                &RenderRegistry::default(),
+            ),
+            "By $\\backslashsome.thm$, it holds."
         );
     }
 }

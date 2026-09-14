@@ -595,7 +595,7 @@ fn tokenize_prose_words(content: &str, pieces: &mut Vec<Piece>) {
 
 /// If a math blob opens at `start`, returns the char index just past its close
 /// (an unclosed blob runs to the end). Handles `$…$`, `$$…$$`, `\(…\)`, `\[…\]`,
-/// `{. … .}`, and `{{. … .}}`.
+/// `{. … .}`, `{{. … .}}`, and `{: … :}`.
 fn math_blob_end(chars: &[char], start: usize) -> Option<usize> {
     let count = chars.len();
     if chars[start] == '$' {
@@ -675,6 +675,18 @@ fn math_blob_end(chars: &[char], start: usize) -> Option<usize> {
             }
             return Some(count);
         }
+
+        // Theorem reference: `{: ... :}`
+        if chars.get(start + 1) == Some(&':') {
+            let mut index = start + 2;
+            while index + 1 < count {
+                if chars[index] == ':' && chars[index + 1] == '}' {
+                    return Some(index + 2);
+                }
+                index += 1;
+            }
+            return Some(count);
+        }
     }
 
     None
@@ -726,6 +738,8 @@ fn word_contains_mathlingua_fragment(word: &str) -> bool {
                 if chars.get(i + 2) != Some(&'.') {
                     return true;
                 }
+            } else if chars.get(i + 1) == Some(&':') {
+                return true;
             }
         }
     }
@@ -1185,6 +1199,22 @@ mod tests {
         for line in formatted.split('\n') {
             if line.contains("{{.") {
                 assert!(line.contains(".}}"), "unclosed display fragment on a line: {line:?}");
+            }
+        }
+    }
+
+    #[test]
+    fn keeps_theorem_reference_fragments_whole() {
+        // `{: \some.thm :}` has internal spaces and must never be split across lines.
+        let source = "Documented:\n. description: \"aaaa bbbb cccc dddd eeee {: \\some.thm :} ffff gggg\"\nId: \"x\"\n";
+        let formatted = format_source(source, 40).expect("expected wrapping at margin 40");
+        assert!(
+            formatted.contains("{: \\some.thm :}"),
+            "theorem reference fragment was split: {formatted}"
+        );
+        for line in formatted.split('\n') {
+            if line.contains("{:") {
+                assert!(line.contains(":}"), "unclosed theorem reference on a line: {line:?}");
             }
         }
     }

@@ -827,6 +827,8 @@ fn position_from(line: Option<usize>, column: Option<usize>) -> Position {
     Position { line, character }
 }
 
+// ===============================[ tests ]=====================================
+
 #[cfg(test)]
 mod tests {
     use super::{CHECK_PROGRESS_TITLE, render_line_types, work_done_progress_support};

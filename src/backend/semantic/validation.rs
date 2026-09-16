@@ -229,6 +229,8 @@ pub(super) fn argument_groups_match(expected: &[ArgGroupShape], actual: &[ArgGro
         .all(|group| group.delimiter == ArgDelimiter::Paren)
 }
 
+// ===============================[ tests ]=====================================
+
 #[cfg(test)]
 mod tests {
     use super::*;

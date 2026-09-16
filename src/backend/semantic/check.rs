@@ -17,11 +17,7 @@ pub fn check_documents_collecting_type_info(
 ) -> DocumentTypeInfo {
     let mut all = check_documents_collecting_type_infos(files, event_log, type_info_for, false);
     type_info_for
-        .and_then(|target| {
-            all.keys()
-                .find(|path| is_same_file(target, path))
-                .cloned()
-        })
+        .and_then(|target| all.keys().find(|path| is_same_file(target, path)).cloned())
         .and_then(|path| all.remove(&path))
         .unwrap_or_default()
 }
@@ -57,8 +53,8 @@ fn check_documents_collecting_type_infos(
 
     let mut type_info = CollectionTypeInfo::new();
     for file in files {
-        let recording = collect_all
-            || type_info_for.is_some_and(|target| is_same_file(target, &file.path));
+        let recording =
+            collect_all || type_info_for.is_some_and(|target| is_same_file(target, &file.path));
         if recording {
             *registry.recorder.borrow_mut() = Some(TypeRecorder::new(&file.source));
         }
@@ -541,6 +537,8 @@ pub(super) fn definition_item(item: &TopLevelItem) -> Option<DefinitionItem<'_>>
     }
 }
 
+// ===============================[ tests ]=====================================
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -749,9 +747,7 @@ Id: "33333333-3333-4333-8333-333333333333"
         assert!(
             invalid_alias_log.events().iter().any(|event| event
                 .as_message()
-                .is_some_and(|message| message
-                    .message
-                    .contains("Unrecognized symbol `missing`"))),
+                .is_some_and(|message| message.message.contains("Unrecognized symbol `missing`"))),
             "{:#?}",
             invalid_alias_log.events()
         );

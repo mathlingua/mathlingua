@@ -93,6 +93,8 @@ pub fn check_collecting_type_info(
     }
 }
 
+// ===============================[ tests ]=====================================
+
 #[cfg(test)]
 pub(super) fn check_in(cwd: &Path, paths: &[PathBuf], event_log: &mut EventLog) -> CheckSummary {
     check_in_collecting_type_info(cwd, paths, event_log, None).0
@@ -13052,7 +13054,9 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
     #[test]
     fn check_rejects_nested_duplicate_definition_assignment_symbols() {
         let temp_dir = TestDir::new();
-        let file = temp_dir.path().join("nested-duplicate-definition-assignment.mlg");
+        let file = temp_dir
+            .path()
+            .join("nested-duplicate-definition-assignment.mlg");
 
         write_mlg_fixture(
             &file,

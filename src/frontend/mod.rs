@@ -199,6 +199,8 @@ pub(crate) fn unescape_quoted_text(input: &str) -> String {
     result
 }
 
+// ===============================[ tests ]=====================================
+
 #[cfg(test)]
 mod tests {
     use super::unescape_quoted_text;

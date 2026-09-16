@@ -2083,7 +2083,14 @@ fn validate_equivalent_item(
 
     // Establish the `using:`/`when:` scope (this also validates their references).
     let mut context = TypeContext::default();
-    declare_header_symbols_checked(&group.heading, &mut context, path, locator, registry, event_log);
+    declare_header_symbols_checked(
+        &group.heading,
+        &mut context,
+        path,
+        locator,
+        registry,
+        event_log,
+    );
     assume_optional_using(
         &group.using,
         &mut context,
@@ -2678,11 +2685,8 @@ fn parse_scoped_prose_source(input: &str) -> Option<(&str, Vec<String>, usize)> 
     if labels.is_empty() {
         return None;
     }
-    let consumed = (input.len() - after_quote.len())
-        + (after_quote.len() - trimmed.len())
-        + 2
-        + ref_end
-        + 2;
+    let consumed =
+        (input.len() - after_quote.len()) + (after_quote.len() - trimmed.len()) + 2 + ref_end + 2;
     Some((prose, labels, consumed))
 }
 
@@ -2755,7 +2759,9 @@ fn check_scoped_theorem_reference(
             path,
             row,
             event_log,
-            format!("`{{: ... :}}` must contain a bare `\\name` with no arguments, but found `{source}`"),
+            format!(
+                "`{{: ... :}}` must contain a bare `\\name` with no arguments, but found `{source}`"
+            ),
         );
         return;
     }
@@ -2853,7 +2859,12 @@ fn check_scoped_text_fragment(
 ) {
     let source = source.trim();
     if source.is_empty() {
-        scoped_text_error(path, row, event_log, "MathLingua prose fragments cannot be empty");
+        scoped_text_error(
+            path,
+            row,
+            event_log,
+            "MathLingua prose fragments cannot be empty",
+        );
         return;
     }
 
@@ -2866,28 +2877,17 @@ fn check_scoped_text_fragment(
             check_disallowed_theorem_like_in_math_fragment(shape, row, path, registry, event_log);
         });
         let mut locator = SourceLocator::for_text_fragment(source, row);
-        introduce_declaration_statement_symbols(
-            &statement,
-            context,
-            path,
-            &mut locator,
-            event_log,
-        );
-        assume_declaration_statement(
-            &statement,
-            context,
-            path,
-            &mut locator,
-            registry,
-            event_log,
-        );
+        introduce_declaration_statement_symbols(&statement, context, path, &mut locator, event_log);
+        assume_declaration_statement(&statement, context, path, &mut locator, registry, event_log);
         return;
     }
 
     match parse_expression(source) {
         Ok(expression) => {
             walk_expression(&expression, &mut |shape| {
-                check_disallowed_theorem_like_in_math_fragment(shape, row, path, registry, event_log);
+                check_disallowed_theorem_like_in_math_fragment(
+                    shape, row, path, registry, event_log,
+                );
             });
             let mut locator = SourceLocator::for_text_fragment(source, row);
             check_expression(
@@ -3988,9 +3988,7 @@ fn validate_nested_is_or_via_scopes(
     event_log: &mut EventLog,
 ) {
     match item {
-        IsOrViaItem::Have(group) => {
-            validate_have_group_scopes(group, path, locator, event_log)
-        }
+        IsOrViaItem::Have(group) => validate_have_group_scopes(group, path, locator, event_log),
         IsOrViaItem::Labeled { item, .. } => {
             validate_nested_is_or_via_scopes(item, path, locator, event_log)
         }
@@ -18165,12 +18163,7 @@ fn spec_rule_applies_to_target(
     registry: &SignatureRegistry,
 ) -> bool {
     if !rule.owner_is_defined_value {
-        return has_type_signature_with_views(
-            target,
-            &rule.owner_signature,
-            context,
-            registry,
-        );
+        return has_type_signature_with_views(target, &rule.owner_signature, context, registry);
     }
 
     let target = context.normalize_key(target);
@@ -18531,8 +18524,7 @@ fn direct_component_facts_for_key(
         let substituted_right = substitute_key(right, &substitutions);
         if unstropped_name(left) == component_name {
             for fact in defined_output_facts_for_key(&substituted_right, context, registry) {
-                let sub_map =
-                    HashMap::from([(fact_subject(&fact).to_string(), key.to_string())]);
+                let sub_map = HashMap::from([(fact_subject(&fact).to_string(), key.to_string())]);
                 result.push(context.normalize_fact(&substitute_fact(&fact, &sub_map)));
             }
         }
@@ -18900,15 +18892,7 @@ fn fact_has_type_signature(
             && viewable_facts_from_fact(&fact, context, registry)
                 .iter()
                 .any(|fact| {
-                    fact_has_type_signature(
-                        fact,
-                        subject,
-                        signature,
-                        context,
-                        registry,
-                        seen,
-                        true,
-                    )
+                    fact_has_type_signature(fact, subject, signature, context, registry, seen, true)
                 })
 }
 
@@ -23630,6 +23614,8 @@ fn format_function_type_spec(spec: &FunctionTypeFactSpec) -> String {
     }
 }
 
+// ===============================[ tests ]=====================================
+
 #[cfg(test)]
 mod scoped_text_tests {
     use super::*;
@@ -23766,9 +23752,9 @@ mod scoped_text_tests {
             &mut log,
         );
         assert!(
-            messages(&log)
-                .iter()
-                .any(|msg| msg.contains("must reference an Axiom, Conjecture, or Theorem, but `\\set` is a Declares")),
+            messages(&log).iter().any(|msg| msg.contains(
+                "must reference an Axiom, Conjecture, or Theorem, but `\\set` is a Declares"
+            )),
             "{:?}",
             messages(&log)
         );
@@ -23862,7 +23848,8 @@ mod scoped_text_tests {
         assert!(
             messages(&log)
                 .iter()
-                .any(|msg| msg.contains("`{: ... :}` must contain a bare `\\name` with no arguments")),
+                .any(|msg| msg
+                    .contains("`{: ... :}` must contain a bare `\\name` with no arguments")),
             "{:?}",
             messages(&log)
         );

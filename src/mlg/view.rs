@@ -204,6 +204,8 @@ fn bind_view_listener(port: u16, event_log: &mut EventLog) -> io::Result<TcpList
     }
 }
 
+// ===============================[ tests ]=====================================
+
 #[cfg(test)]
 fn check_port_is_available(port: u16, event_log: &mut EventLog) -> io::Result<()> {
     bind_view_listener(port, event_log).map(drop)

@@ -141,8 +141,7 @@ impl ScopedTextRenderer<'_> {
 
     fn render_theorem_reference(&mut self, source: &str) -> String {
         let trimmed = source.trim();
-        render_formulation_latex(trimmed, self.registry)
-            .unwrap_or_else(|| trimmed.to_string())
+        render_formulation_latex(trimmed, self.registry).unwrap_or_else(|| trimmed.to_string())
     }
 
     fn record_introductions(&mut self, source: &str) {
@@ -286,6 +285,8 @@ fn latex_command_name(text: &str) -> String {
         .filter(|character| character.is_ascii_alphabetic())
         .collect()
 }
+
+// ===============================[ tests ]=====================================
 
 #[cfg(test)]
 mod tests {

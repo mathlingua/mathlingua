@@ -83,6 +83,8 @@ fn signature_at_offset(
     best.map(|(_, signature)| signature.to_string())
 }
 
+// ===============================[ tests ]=====================================
+
 #[cfg(test)]
 mod tests {
     use super::*;

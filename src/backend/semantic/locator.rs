@@ -673,6 +673,8 @@ pub(super) fn emit_error(
     event_log.user_event(Some(ORIGIN), Level::Error, Some(location), message);
 }
 
+// ===============================[ tests ]=====================================
+
 #[cfg(test)]
 mod tests {
     use super::*;

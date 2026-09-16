@@ -92,6 +92,8 @@ fn escape_html_attribute(value: &str) -> String {
         .replace('>', "&gt;")
 }
 
+// ===============================[ tests ]=====================================
+
 #[cfg(test)]
 mod tests {
     use super::{

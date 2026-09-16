@@ -628,6 +628,8 @@ fn byte_index_for_col(text: &str, col: usize) -> usize {
         .unwrap_or(text.len())
 }
 
+// ===============================[ tests ]=====================================
+
 #[cfg(test)]
 mod tests {
     use super::{DebugMode, parse_text};

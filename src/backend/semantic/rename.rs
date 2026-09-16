@@ -338,6 +338,8 @@ fn span_from_offsets(source: &str, start: usize, end: usize) -> RenameSpan {
     }
 }
 
+// ===============================[ tests ]=====================================
+
 #[cfg(test)]
 mod tests {
     use super::*;

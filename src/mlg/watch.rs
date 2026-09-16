@@ -190,6 +190,8 @@ fn file_fingerprint_from_metadata(path: &Path, metadata: &fs::Metadata) -> FileF
     }
 }
 
+// ===============================[ tests ]=====================================
+
 #[cfg(test)]
 mod tests {
     use super::SourceWatcher;

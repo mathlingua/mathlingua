@@ -84,6 +84,8 @@ pub(crate) fn command_occurrences(
     occurrences
 }
 
+// ===============================[ tests ]=====================================
+
 #[cfg(test)]
 mod tests {
     use super::*;

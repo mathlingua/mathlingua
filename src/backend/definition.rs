@@ -112,6 +112,8 @@ fn is_mlg(path: &Path) -> bool {
         .is_some_and(|extension| extension.eq_ignore_ascii_case("mlg"))
 }
 
+// ===============================[ tests ]=====================================
+
 #[cfg(test)]
 mod tests {
     use super::*;

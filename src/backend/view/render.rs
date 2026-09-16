@@ -32,7 +32,7 @@ pub(super) use registry::{
 use signatures::*;
 use statements::*;
 use templates::*;
-pub(super) use text::render_scoped_text_markdown;
+pub(super) use text::{render_scoped_text_markdown, render_scoped_text_markdown_with_labels};
 
 #[cfg(test)]
 mod tests;

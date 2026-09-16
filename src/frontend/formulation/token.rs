@@ -75,8 +75,16 @@ pub enum Token {
         postfix_named_operator
     )]
     PostfixNamedOperator(String),
-    #[regex(r"\[:[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?(?:\.[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?)*:\]", parse_label)]
-    Label(Vec<String>),
+    #[regex(
+        r"\[:[ \t]*[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?(?:\.[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?)*(?:[ \t]*,[ \t]*[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?(?:\.[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?)*)*[ \t]*:\]",
+        parse_labels
+    )]
+    Label(Vec<Vec<String>>),
+    #[regex(
+        r"\(:[ \t]*[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?(?:\.[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?)*(?:[ \t]*,[ \t]*[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?(?:\.[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?)*)*[ \t]*:\)",
+        parse_labels
+    )]
+    ReferenceLabel(Vec<Vec<String>>),
     #[token(":=>")]
     ExpressionAlias,
     #[token(":->")]
@@ -260,11 +268,16 @@ fn postfix_named_operator(lex: &mut logos::Lexer<'_, Token>) -> String {
     slice[1..].to_owned()
 }
 
-fn parse_label(lex: &mut logos::Lexer<'_, Token>) -> Vec<String> {
+fn parse_labels(lex: &mut logos::Lexer<'_, Token>) -> Vec<Vec<String>> {
     let slice = lex.slice();
-    slice[2..slice.len() - 2]
-        .split('.')
-        .map(ToOwned::to_owned)
+    let body = &slice[2..slice.len() - 2];
+    body.split(',')
+        .map(|item| {
+            item.trim()
+                .split('.')
+                .map(|p| p.trim().to_owned())
+                .collect()
+        })
         .collect()
 }
 

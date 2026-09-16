@@ -92,6 +92,10 @@ pub enum ArgumentView {
         /// ordinary formulation.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         label: Option<String>,
+        /// The `(:label:)` citation of a referenced specification, rendered
+        /// beside the formulation. `None` for an unreferenced formulation.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        reference_label: Option<String>,
     },
     Text {
         text: String,
@@ -106,6 +110,8 @@ pub enum ArgumentView {
         text: String,
         /// Resource URL, adjusted to the requested physical PDF page when possible.
         href: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        label: Option<String>,
     },
     Group {
         heading: Option<String>,

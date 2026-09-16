@@ -141,6 +141,11 @@ export type ArgumentView =
        * right-justified tag. Absent for an ordinary formulation.
        */
       label?: string | null;
+      /**
+       * The `(:label:)` citation of a referenced specification, shown as a
+       * right-justified tag. Absent for an unreferenced formulation.
+       */
+      reference_label?: string | null;
     }
   | {
       /** Plain text arguments render as prose. */
@@ -163,6 +168,10 @@ export type ArgumentView =
       text: string;
       /** Direct or page-adjusted resource URL, when one was declared. */
       href: string | null;
+      /**
+       * Optional label for labeled reference (e.g. `[label]: $resource`).
+       */
+      label?: string | null;
     }
   | {
       /** Nested group arguments recursively contain rendered sections. */

@@ -1,7 +1,7 @@
 use super::{RenderRegistry, render_formulation_latex};
 use std::collections::HashMap;
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 struct Scope {
     name: String,
     variables: HashMap<String, String>,
@@ -13,8 +13,17 @@ pub(in crate::backend::view) fn render_scoped_text_markdown(
     text: &str,
     registry: &RenderRegistry,
 ) -> String {
+    render_scoped_text_markdown_with_labels(text, registry, &HashMap::new())
+}
+
+pub(in crate::backend::view) fn render_scoped_text_markdown_with_labels(
+    text: &str,
+    registry: &RenderRegistry,
+    label_links: &HashMap<String, String>,
+) -> String {
     ScopedTextRenderer {
         registry,
+        label_links,
         scopes: vec![Scope::default()],
     }
     .render(text)
@@ -22,12 +31,22 @@ pub(in crate::backend::view) fn render_scoped_text_markdown(
 
 struct ScopedTextRenderer<'a> {
     registry: &'a RenderRegistry,
+    label_links: &'a HashMap<String, String>,
     // The root scope lasts for one text value. Named scopes are pushed and
     // popped as their markers are encountered from left to right.
     scopes: Vec<Scope>,
 }
 
 impl ScopedTextRenderer<'_> {
+    fn render_subtext(&self, text: &str) -> String {
+        ScopedTextRenderer {
+            registry: self.registry,
+            label_links: self.label_links,
+            scopes: self.scopes.clone(),
+        }
+        .render(text)
+    }
+
     fn render(mut self, text: &str) -> String {
         let mut output = String::with_capacity(text.len());
         let mut index = 0;
@@ -47,6 +66,31 @@ impl ScopedTextRenderer<'_> {
                 {
                     self.scopes.pop();
                 }
+                index += consumed;
+                continue;
+            }
+            if let Some((inner, labels_str, consumed)) = prose_source_fragment(rest) {
+                let rendered_inner = self.render_subtext(inner);
+                output.push('*');
+                output.push_str(&rendered_inner);
+                output.push('*');
+                output.push(' ');
+                output.push('[');
+                let formatted_labels = labels_str
+                    .split(',')
+                    .map(str::trim)
+                    .filter(|s| !s.is_empty())
+                    .map(|label| {
+                        if let Some(href) = self.label_links.get(label) {
+                            format!("[{label}]({href})")
+                        } else {
+                            label.to_string()
+                        }
+                    })
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                output.push_str(&formatted_labels);
+                output.push(']');
                 index += consumed;
                 continue;
             }
@@ -138,6 +182,19 @@ fn scope_marker(input: &str, closing: bool) -> Option<(&str, usize)> {
         return None;
     }
     Some((name, prefix.len() + end + 2))
+}
+
+fn prose_source_fragment(input: &str) -> Option<(&str, &str, usize)> {
+    let tail = input.strip_prefix("''")?;
+    let end_quote = tail.find("''")?;
+    let inner = &tail[..end_quote];
+    let after = &tail[end_quote + 2..];
+    let trimmed = after.trim_start();
+    let ref_tail = trimmed.strip_prefix("(:")?;
+    let ref_end = ref_tail.find(":)")?;
+    let ref_body = &ref_tail[..ref_end];
+    let consumed = (input.len() - after.len()) + (after.len() - trimmed.len()) + 2 + ref_end + 2;
+    Some((inner, ref_body, consumed))
 }
 
 fn theorem_reference_fragment(input: &str) -> Option<(&str, usize)> {
@@ -281,6 +338,28 @@ mod tests {
                 &RenderRegistry::default(),
             ),
             "By $\\backslashsome.thm$, it holds."
+        );
+    }
+
+    #[test]
+    fn renders_prose_sources_with_and_without_links() {
+        let text = r#"Proof: "This is ''some text with a source''(:2:)""#;
+        assert_eq!(
+            render_scoped_text_markdown(text, &RenderRegistry::default()),
+            r#"Proof: "This is *some text with a source* [2]""#
+        );
+
+        let mut links = HashMap::new();
+        links.insert("2".to_string(), "https://example.com/book.pdf".to_string());
+        assert_eq!(
+            render_scoped_text_markdown_with_labels(text, &RenderRegistry::default(), &links),
+            r#"Proof: "This is *some text with a source* [[2](https://example.com/book.pdf)]""#
+        );
+
+        let multi = r#"See ''first quote''(:l1, l2:) and ''second quote'' (:3:)."#;
+        assert_eq!(
+            render_scoped_text_markdown(multi, &RenderRegistry::default()),
+            r#"See *first quote* [l1, l2] and *second quote* [3]."#
         );
     }
 }

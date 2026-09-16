@@ -1,0 +1,24 @@
+== begin:description ==
+Accepts a labeled formulation and prose source backed by matching References.
+== end:description ==
+== begin:input ==
+[$some.book]
+Resource:
+. title: "Some Book"
+. author: "Author"
+
+Theorem:
+given: x
+then:
+. (x = x)(:2:)
+. (x = x)[:1:](:2:)
+Proof: "This is ''some text with a source''(:2:)"
+Justification:
+. [1]
+  have: x = x
+  asserting: x = x
+References:
+. [2]: $some.book
+== end:input ==
+== begin:output ==
+== end:output ==

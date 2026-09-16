@@ -2532,6 +2532,46 @@ fn check_scoped_text_value(
             continue;
         }
 
+        let prose_source_opens = rest.starts_with("''");
+        let prose_source = if prose_source_opens {
+            parse_scoped_prose_source(rest)
+        } else {
+            None
+        };
+        if let Some((prose, labels, consumed)) = prose_source {
+            let row = source_row + text[..index].matches('\n').count();
+            let current_context = frames.last().map(|f| &f.context).unwrap_or(inherited);
+            for label in &labels {
+                if !current_context.has_reference_label(label) {
+                    scoped_text_error(
+                        path,
+                        row,
+                        event_log,
+                        format!("Unknown reference label `{label}`"),
+                    );
+                }
+            }
+            let prose_context = current_context.clone();
+            check_scoped_text_value(prose, row, &prose_context, path, registry, event_log);
+            index += consumed;
+            continue;
+        }
+        if prose_source_opens
+            && let Some(tail) = rest.strip_prefix("''")
+            && let Some(quote_end) = tail.find("''")
+        {
+            let after_quote = &tail[quote_end + 2..];
+            let trimmed = after_quote.trim_start();
+            if trimmed.starts_with("(:") && !trimmed.contains(":)") {
+                scoped_text_error(
+                    path,
+                    source_row + text[..index].matches('\n').count(),
+                    event_log,
+                    "Unclosed reference label in prose; expected `(:...:)`",
+                );
+            }
+        }
+
         let theorem_ref_opens = scoped_theorem_reference_opens(rest);
         let theorem_ref = if theorem_ref_opens {
             parse_scoped_theorem_reference(rest)
@@ -2618,6 +2658,32 @@ fn parse_scoped_text_marker(input: &str) -> Option<(bool, &str, usize)> {
         return None;
     }
     Some((closing, name, prefix.len() + end + 2))
+}
+
+fn parse_scoped_prose_source(input: &str) -> Option<(&str, Vec<String>, usize)> {
+    let tail = input.strip_prefix("''")?;
+    let quote_end = tail.find("''")?;
+    let prose = &tail[..quote_end];
+    let after_quote = &tail[quote_end + 2..];
+    let trimmed = after_quote.trim_start();
+    let ref_tail = trimmed.strip_prefix("(:")?;
+    let ref_end = ref_tail.find(":)")?;
+    let ref_body = &ref_tail[..ref_end];
+    let labels: Vec<String> = ref_body
+        .split(',')
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_string)
+        .collect();
+    if labels.is_empty() {
+        return None;
+    }
+    let consumed = (input.len() - after_quote.len())
+        + (after_quote.len() - trimmed.len())
+        + 2
+        + ref_end
+        + 2;
+    Some((prose, labels, consumed))
 }
 
 fn parse_scoped_theorem_reference(input: &str) -> Option<(&str, usize)> {
@@ -2851,6 +2917,49 @@ fn scoped_text_error(
     event_log.user_error_at_file_row(Some(ORIGIN), path.to_path_buf(), row, message);
 }
 
+fn top_level_item_references(item: &TopLevelItem) -> Option<&ReferencesSection> {
+    match item {
+        TopLevelItem::Disambiguates(group) => group.references.as_ref(),
+        TopLevelItem::Declares(group) => group.references.as_ref(),
+        TopLevelItem::Defines(group) => group.references.as_ref(),
+        TopLevelItem::Realizes(group) => group.references.as_ref(),
+        TopLevelItem::Refines(group) => group.references.as_ref(),
+        TopLevelItem::States(group) => group.references.as_ref(),
+        TopLevelItem::Axiom(group) => group.references.as_ref(),
+        TopLevelItem::Theorem(group) => group.references.as_ref(),
+        TopLevelItem::Conjecture(group) => group.references.as_ref(),
+        TopLevelItem::Relation(group) => group.references.as_ref(),
+        TopLevelItem::Equivalent(group) => group.references.as_ref(),
+        TopLevelItem::Example(group) => group.references.as_ref(),
+        _ => None,
+    }
+}
+
+fn build_reference_label_set(
+    references: Option<&ReferencesSection>,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) -> HashSet<String> {
+    let mut labels = HashSet::new();
+    let Some(references) = references else {
+        return labels;
+    };
+    for ref_header in &references.arguments {
+        if let Some(label) = &ref_header.label {
+            if !labels.insert(label.clone()) {
+                emit_error(
+                    event_log,
+                    path,
+                    locator.locate_symbol(label),
+                    format!("Duplicate reference label `{label}` in `References:`"),
+                );
+            }
+        }
+    }
+    labels
+}
+
 fn validate_top_level_item_types(
     item: &TopLevelItem,
     proto_group: Option<&ProtoGroup>,
@@ -2863,19 +2972,24 @@ fn validate_top_level_item_types(
     anchor_top_level_item(item, locator);
     validate_local_specification_scopes(item, path, locator, event_log);
 
+    let reference_labels =
+        build_reference_label_set(top_level_item_references(item), path, locator, event_log);
+    let mut base_context = TypeContext::default();
+    base_context.set_reference_labels(reference_labels);
+
     match item {
         TopLevelItem::Disambiguates(group) => {
             validate_disambiguates(group, path, locator, registry, event_log);
             check_proto_group_scoped_text(
                 proto_group,
-                &TypeContext::default(),
+                &base_context,
                 path,
                 registry,
                 event_log,
             );
         }
         TopLevelItem::Declares(group) => {
-            let mut context = TypeContext::default();
+            let mut context = base_context.clone();
             context.set_justifications(build_justification_map(&group.justification));
             validate_spec_infix_declares_header(
                 &group.heading,
@@ -2995,7 +3109,7 @@ fn validate_top_level_item_types(
             check_proto_group_scoped_text(proto_group, &context, path, registry, event_log);
         }
         TopLevelItem::Defines(group) => {
-            let mut context = TypeContext::default();
+            let mut context = base_context.clone();
             declare_header_symbols_checked(
                 &group.heading,
                 &mut context,
@@ -3090,7 +3204,7 @@ fn validate_top_level_item_types(
             check_proto_group_scoped_text(proto_group, &context, path, registry, event_log);
         }
         TopLevelItem::Realizes(group) => {
-            let mut context = TypeContext::default();
+            let mut context = base_context.clone();
             declare_header_symbols_checked(
                 &group.heading,
                 &mut context,
@@ -3180,7 +3294,7 @@ fn validate_top_level_item_types(
             check_proto_group_scoped_text(proto_group, &context, path, registry, event_log);
         }
         TopLevelItem::Refines(group) => {
-            let mut context = TypeContext::default();
+            let mut context = base_context.clone();
             declare_header_symbols_checked(
                 &group.heading,
                 &mut context,
@@ -3275,7 +3389,7 @@ fn validate_top_level_item_types(
             check_proto_group_scoped_text(proto_group, &context, path, registry, event_log);
         }
         TopLevelItem::States(group) => {
-            let mut context = TypeContext::default();
+            let mut context = base_context.clone();
             declare_header_symbols_checked(
                 &group.heading,
                 &mut context,
@@ -3343,6 +3457,7 @@ fn validate_top_level_item_types(
                 group.aliases.as_ref(),
                 proto_group,
             ),
+            &base_context,
             path,
             locator,
             registry,
@@ -3358,6 +3473,7 @@ fn validate_top_level_item_types(
                 group.aliases.as_ref(),
                 proto_group,
             ),
+            &base_context,
             path,
             locator,
             registry,
@@ -3373,13 +3489,14 @@ fn validate_top_level_item_types(
                 group.aliases.as_ref(),
                 proto_group,
             ),
+            &base_context,
             path,
             locator,
             registry,
             event_log,
         ),
         TopLevelItem::Example(group) => {
-            let mut context = TypeContext::default();
+            let mut context = base_context.clone();
             context.set_justifications(build_justification_map(&group.justification));
             if let Some(heading) = &group.heading {
                 declare_header_symbols_checked(
@@ -3402,7 +3519,7 @@ fn validate_top_level_item_types(
             validate_equivalent_item(group, path, locator, registry, event_log);
             check_proto_group_scoped_text(
                 proto_group,
-                &TypeContext::default(),
+                &base_context,
                 path,
                 registry,
                 event_log,
@@ -3414,7 +3531,7 @@ fn validate_top_level_item_types(
             // specs, then check the `specifies:` statement against that scope.
             // Like a theorem, the statement is checked for valid symbols and
             // references, not proven.
-            let mut context = TypeContext::default();
+            let mut context = base_context.clone();
             assume_optional_using(
                 &group.using,
                 &mut context,
@@ -3456,7 +3573,7 @@ fn validate_top_level_item_types(
         // `Text*` placeholders are opaque prose; the checker never inspects them.
         | TopLevelItem::TextItem(_) => check_proto_group_scoped_text(
             proto_group,
-            &TypeContext::default(),
+            &base_context,
             path,
             registry,
             event_log,
@@ -5119,12 +5236,13 @@ impl<'a> TheoremLikeSections<'a> {
 
 fn validate_theorem_like(
     sections: TheoremLikeSections<'_>,
+    base_context: &TypeContext,
     path: &Path,
     locator: &mut SourceLocator<'_>,
     registry: &SignatureRegistry,
     event_log: &mut EventLog,
 ) {
-    let mut context = TypeContext::default();
+    let mut context = base_context.clone();
     if let Some(heading) = sections.heading {
         declare_header_symbols_checked(heading, &mut context, path, locator, registry, event_log);
     }
@@ -5301,10 +5419,31 @@ fn assume_is_or_via_item(
         // A labeled specification whose `[:label:]` matches a `Justification:`
         // entry is established via that entry's `have:`/`asserting:`; then its
         // facts are contributed. An unmatched label is checked inline as normal.
-        IsOrViaItem::Labeled { label, item } => {
-            if establish_labeled_specification(
-                label, item, context, path, locator, registry, event_log,
-            ) {
+        IsOrViaItem::Labeled {
+            labels,
+            reference_labels,
+            item,
+        } => {
+            for ref_label in reference_labels {
+                let key = ref_label.to_string();
+                if !context.has_reference_label(&key) {
+                    emit_error(
+                        event_log,
+                        path,
+                        locator.locate_symbol(&key),
+                        format!("Unknown reference label `{key}`"),
+                    );
+                }
+            }
+            let mut established = false;
+            for label in labels {
+                if establish_labeled_specification(
+                    label, item, context, path, locator, registry, event_log,
+                ) {
+                    established = true;
+                }
+            }
+            if established {
                 assume_is_or_via_item_facts(item, context, registry);
             } else {
                 assume_is_or_via_item(item, context, path, locator, registry, event_log);
@@ -5511,7 +5650,7 @@ fn assume_is_or_via_item_facts(
 /// returns `true`; a label with no matching entry returns `false` so the caller
 /// checks the item inline.
 fn establish_labeled_specification(
-    label: &[String],
+    label: &Label,
     item: &IsOrViaItem,
     context: &TypeContext,
     path: &Path,
@@ -5519,7 +5658,7 @@ fn establish_labeled_specification(
     registry: &SignatureRegistry,
     event_log: &mut EventLog,
 ) -> bool {
-    let key = label.join(".");
+    let key = label.to_string();
     let Some(group) = context.justification(&key).cloned() else {
         return false;
     };
@@ -5544,8 +5683,14 @@ fn establish_labeled_specification(
 /// `IsOrViaItem` (the `[:label:]` of any `Labeled` wrapper).
 fn collect_is_or_via_referenced_labels(item: &IsOrViaItem, labels: &mut BTreeSet<String>) {
     match item {
-        IsOrViaItem::Labeled { label, item } => {
-            labels.insert(label.join("."));
+        IsOrViaItem::Labeled {
+            labels: just_labels,
+            item,
+            ..
+        } => {
+            for label in just_labels {
+                labels.insert(label.to_string());
+            }
             collect_is_or_via_referenced_labels(item, labels);
         }
         IsOrViaItem::Declaration(statement) => {
@@ -5622,9 +5767,12 @@ fn collect_expression_referenced_labels(expression: &Expression, labels: &mut BT
         } => collect_expression_referenced_labels(owner, labels),
         ExpressionKind::Labeled {
             expression: inner,
-            label,
+            labels: just_labels,
+            ..
         } => {
-            labels.insert(label.parts.join("."));
+            for label in just_labels {
+                labels.insert(label.to_string());
+            }
             collect_expression_referenced_labels(inner, labels);
         }
         ExpressionKind::Tuple(elements) => {
@@ -9480,6 +9628,17 @@ fn check_declaration_statement(
     registry: &SignatureRegistry,
     event_log: &mut EventLog,
 ) {
+    for ref_label in &statement.reference_labels {
+        let key = ref_label.to_string();
+        if !context.has_reference_label(&key) {
+            emit_error(
+                event_log,
+                path,
+                locator.locate_symbol(&key),
+                format!("Unknown reference label `{key}`"),
+            );
+        }
+    }
     record_declaration_line_types(statement, context, registry);
     if establish_labeled_declaration_statement(
         statement, context, path, locator, registry, event_log,
@@ -10763,10 +10922,31 @@ fn check_expression(
         ExpressionKind::Grouped { expression, .. } => {
             check_expression(expression, context, path, locator, registry, event_log);
         }
-        ExpressionKind::Labeled { expression, label } => {
-            if !establish_labeled_expression(
-                label, expression, context, path, locator, registry, event_log,
-            ) {
+        ExpressionKind::Labeled {
+            expression,
+            labels,
+            reference_labels,
+        } => {
+            for ref_label in reference_labels {
+                let key = ref_label.to_string();
+                if !context.has_reference_label(&key) {
+                    emit_error(
+                        event_log,
+                        path,
+                        locator.locate_symbol(&key),
+                        format!("Unknown reference label `{key}`"),
+                    );
+                }
+            }
+            let mut established = false;
+            for label in labels {
+                if establish_labeled_expression(
+                    label, expression, context, path, locator, registry, event_log,
+                ) {
+                    established = true;
+                }
+            }
+            if !established {
                 check_expression(expression, context, path, locator, registry, event_log);
             }
         }
@@ -19039,6 +19219,8 @@ struct TypeContext {
     /// its `have:`/`asserting:` group. A labeled specification `(.x.)[:label:]`
     /// whose label is present here is established via the referenced group.
     justifications: Rc<HashMap<String, HaveGroup>>,
+    /// Labels declared in the enclosing group's `References:` section.
+    reference_labels: Rc<HashSet<String>>,
     /// Item-local expression aliases available while checking prose. The
     /// theorem stores `Aliases:` after `Proof:`, but both belong to the same
     /// structural item, so source order must not hide these aliases from proof
@@ -19048,6 +19230,14 @@ struct TypeContext {
 }
 
 impl TypeContext {
+    fn set_reference_labels(&mut self, labels: HashSet<String>) {
+        self.reference_labels = Rc::new(labels);
+    }
+
+    fn has_reference_label(&self, label: &str) -> bool {
+        self.reference_labels.contains(label)
+    }
+
     fn add_fact(&mut self, fact: TypeFact) {
         self.facts.push(fact);
     }
@@ -20191,9 +20381,14 @@ fn substitute_expression(
             expression: boxed(expression),
             dot_delimited: *dot_delimited,
         },
-        ExpressionKind::Labeled { expression, label } => ExpressionKind::Labeled {
+        ExpressionKind::Labeled {
+            expression,
+            labels,
+            reference_labels,
+        } => ExpressionKind::Labeled {
             expression: boxed(expression),
-            label: label.clone(),
+            labels: labels.clone(),
+            reference_labels: reference_labels.clone(),
         },
         ExpressionKind::Command(command) => {
             ExpressionKind::Command(substitute_command_expression(command, substitutions))

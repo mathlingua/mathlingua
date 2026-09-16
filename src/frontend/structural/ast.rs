@@ -1,6 +1,6 @@
 use crate::frontend::formulation::ast::{
     AuthorHeader, CommandExpression, CommandHeader, DeclarationStatement, Expression,
-    ExpressionAlias, ExpressionBinding, FormOrDeclaration, IsViaStatement, LabelHeader,
+    ExpressionAlias, ExpressionBinding, FormOrDeclaration, IsViaStatement, Label, LabelHeader,
     ResourceHeader, SpecOperatorAlias, TopicHeader, TypeExpression, WritingAlias,
 };
 
@@ -464,7 +464,8 @@ pub enum IsOrViaItem {
     /// entry's `have:` group is used to establish the inner `item`;
     /// otherwise the inner `item` is checked inline as normal.
     Labeled {
-        label: Vec<String>,
+        labels: Vec<Label>,
+        reference_labels: Vec<Label>,
         item: Box<IsOrViaItem>,
     },
 }

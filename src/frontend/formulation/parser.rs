@@ -147,7 +147,14 @@ fn token_description(token: &Token) -> String {
         Token::BothSpecialOperator(operator)
         | Token::LeftSpecialOperator(operator)
         | Token::RightSpecialOperator(operator) => format!("operator `{operator}`"),
-        Token::Label(parts) => format!("label `[:{}:]`", parts.join(".")),
+        Token::Label(parts) => format!(
+            "label `[:{}:]`",
+            parts.iter().map(|p| p.join(".")).collect::<Vec<_>>().join(", ")
+        ),
+        Token::ReferenceLabel(parts) => format!(
+            "reference label `(:{}:)`",
+            parts.iter().map(|p| p.join(".")).collect::<Vec<_>>().join(", ")
+        ),
         other => format!("`{}`", token_literal(other)),
     }
 }
@@ -228,7 +235,8 @@ fn token_literal(token: &Token) -> &'static str {
         | Token::BothSpecialOperator(_)
         | Token::LeftSpecialOperator(_)
         | Token::RightSpecialOperator(_)
-        | Token::Label(_) => "token",
+        | Token::Label(_)
+        | Token::ReferenceLabel(_) => "token",
     }
 }
 
@@ -1818,10 +1826,11 @@ pub fn parse_declaration_statement(
     allow_refined_type: bool,
 ) -> Result<DeclarationStatement, ParseError> {
     let input = input.trim();
-    if let Some((label, inner)) = split_labeled_formulation(input) {
+    if let Some((justification_labels, reference_labels, inner)) = split_labeled_formulation(input) {
         let mut statement = parse_declaration_statement(inner, allow_refined_type)?;
         statement.span = span_all(input);
-        statement.labels.push(label);
+        statement.labels.extend(justification_labels);
+        statement.reference_labels.extend(reference_labels);
         return Ok(statement);
     }
     match parse_standard_declaration_statement(input, allow_refined_type) {
@@ -1864,6 +1873,7 @@ fn parse_standard_declaration_statement(
     Ok(DeclarationStatement {
         span: span_all(input),
         labels: Vec::new(),
+        reference_labels: Vec::new(),
         subject,
         expansion,
         definition,
@@ -1928,6 +1938,7 @@ fn parse_operator_pattern_definition(
     Some(Ok(DeclarationStatement {
         span: span_all(input),
         labels: Vec::new(),
+        reference_labels: Vec::new(),
         subject: IsSubject {
             span: operator.span,
             kind: IsSubjectKind::Operator(operator),
@@ -1939,40 +1950,87 @@ fn parse_operator_pattern_definition(
 }
 
 /// Splits a grouped declaration carrying a trailing label. Expressions handle
-/// this shape in the generated grammar, but declarations are parsed by the
-/// hand-written statement parser and therefore need the same wrapper handling
-/// before their inner `:=`, `is`, or specification relation is recognized.
-fn split_labeled_formulation(input: &str) -> Option<(Label, &str)> {
-    let body = input.trim().strip_suffix(":]")?;
-    let label_start = body.rfind("[:")?;
-    let label_body = &body[label_start + 2..];
-    if label_body.is_empty()
-        || !label_body.split('.').all(|part| {
-            !part.is_empty()
-                && part
+fn parse_label_list(raw: &str, base_offset: usize) -> Option<Vec<Label>> {
+    let raw_trimmed = raw.trim();
+    if raw_trimmed.is_empty() {
+        return None;
+    }
+    let mut labels = Vec::new();
+    for item in raw.split(',') {
+        let trimmed = item.trim();
+        if trimmed.is_empty() {
+            return None;
+        }
+        let parts: Vec<String> = trimmed.split('.').map(str::to_owned).collect();
+        if parts.iter().any(|part| {
+            part.is_empty()
+                || !part
                     .chars()
                     .all(|ch| ch.is_ascii_alphanumeric() || ch == '_')
-        })
-    {
+        }) {
+            return None;
+        }
+        labels.push(Label {
+            span: Span::new(base_offset, base_offset + raw.len()),
+            parts,
+        });
+    }
+    if labels.is_empty() {
+        return None;
+    }
+    Some(labels)
+}
+
+/// Splits a grouped declaration carrying trailing labels (`[:...:]` and/or `(:...:)`).
+/// Expressions handle this shape in the generated grammar, but declarations are parsed
+/// by the hand-written statement parser and therefore need the same wrapper handling
+/// before their inner `:=`, `is`, or specification relation is recognized.
+fn split_labeled_formulation(input: &str) -> Option<(Vec<Label>, Vec<Label>, &str)> {
+    let mut current = input.trim();
+    let mut reference_labels = Vec::new();
+    let mut justification_labels = Vec::new();
+
+    // 1. Check for trailing reference label `(:...:)`
+    if let Some(body) = current.strip_suffix(":)") {
+        let label_start = body.rfind("(:")?;
+        let label_content = &body[label_start + 2..];
+        let labels = parse_label_list(label_content, label_start + 2)?;
+        reference_labels = labels;
+        current = body[..label_start].trim();
+    }
+
+    // 2. Check for trailing justification label `[:...:]`
+    if let Some(body) = current.strip_suffix(":]") {
+        let label_start = body.rfind("[:")?;
+        let label_content = &body[label_start + 2..];
+        let labels = parse_label_list(label_content, label_start + 2)?;
+        justification_labels = labels;
+        current = body[..label_start].trim();
+    }
+
+    // 3. Strict ordering constraint: `[:...:]` must precede `(:...:)`.
+    // If current still ends with `:)`, that means a reference label appeared BEFORE a justification label
+    // (e.g. `(xxx)(:2:)[:1:]`), which is invalid.
+    if current.ends_with(":)") {
         return None;
     }
 
-    let grouped = body[..label_start].trim();
-    let inner = grouped
+    // Must have at least one label (justification or reference).
+    if justification_labels.is_empty() && reference_labels.is_empty() {
+        return None;
+    }
+
+    // 4. Strip grouping wrapper `(. ... .)` or `( ... )`
+    let inner = current
         .strip_prefix("(.")
         .and_then(|rest| rest.strip_suffix(".)"))
         .or_else(|| {
-            grouped
+            current
                 .strip_prefix('(')
                 .and_then(|rest| rest.strip_suffix(')'))
         })?;
-    Some((
-        Label {
-            span: Span::new(label_start, input.len()),
-            parts: label_body.split('.').map(str::to_owned).collect(),
-        },
-        inner.trim(),
-    ))
+
+    Some((justification_labels, reference_labels, inner.trim()))
 }
 
 fn is_operator_definition_pattern(expression: &Expression) -> bool {
@@ -4106,6 +4164,7 @@ pub fn parse_resource_header(input: &str) -> Result<ResourceHeader, ParseError> 
         span: span_all(input),
         parts,
         page,
+        label: None,
     })
 }
 
@@ -6318,11 +6377,53 @@ mod tests {
             parse_expression("(x + 1)[:some.label:]").expect("expected labeled expression");
 
         match expression.kind {
-            ExpressionKind::Labeled { label, .. } => {
-                assert_eq!(label.parts, vec!["some".to_string(), "label".to_string()]);
+            ExpressionKind::Labeled { labels, reference_labels, .. } => {
+                assert_eq!(labels.len(), 1);
+                assert_eq!(labels[0].parts, vec!["some".to_string(), "label".to_string()]);
+                assert!(reference_labels.is_empty());
             }
             other => panic!("expected labeled expression, got {other:?}"),
         }
+
+        // Reference label (:2:)
+        let ref_expr = parse_expression("(x + 1)(:2:)").expect("expected reference labeled expression");
+        match ref_expr.kind {
+            ExpressionKind::Labeled { labels, reference_labels, .. } => {
+                assert!(labels.is_empty());
+                assert_eq!(reference_labels.len(), 1);
+                assert_eq!(reference_labels[0].parts, vec!["2".to_string()]);
+            }
+            other => panic!("expected reference labeled expression, got {other:?}"),
+        }
+
+        // Combined justification and reference (:1:)(:2:)
+        let combined = parse_expression("(x + 1)[:1:](:2:)").expect("expected combined labeled expression");
+        match combined.kind {
+            ExpressionKind::Labeled { labels, reference_labels, .. } => {
+                assert_eq!(labels.len(), 1);
+                assert_eq!(labels[0].parts, vec!["1".to_string()]);
+                assert_eq!(reference_labels.len(), 1);
+                assert_eq!(reference_labels[0].parts, vec!["2".to_string()]);
+            }
+            other => panic!("expected combined labeled expression, got {other:?}"),
+        }
+
+        // Multiple comma-separated labels
+        let multi = parse_expression("(x + 1)[:l1, l2:](:r1, r2:)").expect("expected multi-label expression");
+        match multi.kind {
+            ExpressionKind::Labeled { labels, reference_labels, .. } => {
+                assert_eq!(labels.len(), 2);
+                assert_eq!(labels[0].parts, vec!["l1".to_string()]);
+                assert_eq!(labels[1].parts, vec!["l2".to_string()]);
+                assert_eq!(reference_labels.len(), 2);
+                assert_eq!(reference_labels[0].parts, vec!["r1".to_string()]);
+                assert_eq!(reference_labels[1].parts, vec!["r2".to_string()]);
+            }
+            other => panic!("expected multi-label expression, got {other:?}"),
+        }
+
+        // Invalid ordering: reference before justification must fail
+        assert!(parse_expression("(x + 1)(:2:)[:1:]").is_err());
 
         // A label remains an ordinary primary expression when nested inside a
         // larger expression.
@@ -6337,6 +6438,16 @@ mod tests {
             .expect("expected labeled operator definition");
         assert_eq!(statement.labels.len(), 1);
         assert_eq!(statement.labels[0].parts, vec!["1".to_string()]);
+
+        let combined = parse_ordinary_declaration_statement("(.x := 1.)[:1:](:2:)")
+            .expect("expected combined declaration");
+        assert_eq!(combined.labels.len(), 1);
+        assert_eq!(combined.labels[0].parts, vec!["1".to_string()]);
+        assert_eq!(combined.reference_labels.len(), 1);
+        assert_eq!(combined.reference_labels[0].parts, vec!["2".to_string()]);
+
+        // Invalid ordering for declaration
+        assert!(parse_ordinary_declaration_statement("(.x := 1.)(:2:)[:1:]").is_err());
 
         let nested = parse_ordinary_declaration_statement("((.x is \\set.)[:inner:])[:outer:]")
             .expect("expected nested labeled specification");

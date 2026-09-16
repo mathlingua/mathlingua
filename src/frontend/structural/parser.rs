@@ -326,10 +326,11 @@ pub(in crate::frontend::structural::parser) fn parse_alias_kind(
 pub(in crate::frontend::structural::parser) fn parse_is_or_via_item(
     input: &str,
 ) -> Result<IsOrViaItem, FormulationParseError> {
-    if let Some((label, inner)) = split_labeled_specification(input) {
+    if let Some((labels, reference_labels, inner)) = split_labeled_specification(input) {
         let item = parse_is_or_via_item(inner)?;
         return Ok(IsOrViaItem::Labeled {
-            label,
+            labels,
+            reference_labels,
             item: Box::new(item),
         });
     }
@@ -339,39 +340,78 @@ pub(in crate::frontend::structural::parser) fn parse_is_or_via_item(
     parse_refined_declaration_statement(input).map(IsOrViaItem::Declaration)
 }
 
-/// Recognizes a `[:label:]`-labeled grouped specification such as
-/// `(.*_1 is \foo.)[:1:]`. Returns the label parts and the source text of the
-/// grouped inner specification (e.g. `*_1 is \foo`) so the caller can re-parse it
-/// with the declaration parser (which, unlike the expression parser, accepts an
-/// operator subject like `*_1`). Returns `None` when `input` is not a labeled
-/// grouped specification.
-fn split_labeled_specification(input: &str) -> Option<(Vec<String>, &str)> {
-    // Strip the trailing `[:label.parts:]` token.
-    let body = input.trim().strip_suffix(":]")?;
-    let label_start = body.rfind("[:")?;
-    let label_body = &body[label_start + 2..];
-    if label_body.is_empty()
-        || !label_body.split('.').all(|part| {
-            !part.is_empty()
-                && part
-                    .chars()
-                    .all(|ch| ch.is_ascii_alphanumeric() || ch == '_')
-        })
-    {
+fn parse_spec_label_list(raw: &str, base_offset: usize) -> Option<Vec<Label>> {
+    let raw_trimmed = raw.trim();
+    if raw_trimmed.is_empty() {
         return None;
     }
-    let parts = label_body.split('.').map(str::to_owned).collect();
-    // Strip the enclosing `(. .)` (or `( )`) grouping that carries the label.
-    let grouped = body[..label_start].trim();
-    let inner = grouped
+    let mut labels = Vec::new();
+    for item in raw.split(',') {
+        let trimmed = item.trim();
+        if trimmed.is_empty() {
+            return None;
+        }
+        let parts: Vec<String> = trimmed.split('.').map(str::to_owned).collect();
+        if parts.iter().any(|part| {
+            part.is_empty()
+                || !part
+                    .chars()
+                    .all(|ch| ch.is_ascii_alphanumeric() || ch == '_')
+        }) {
+            return None;
+        }
+        labels.push(Label {
+            span: crate::frontend::formulation::ast::Span::new(base_offset, base_offset + raw.len()),
+            parts,
+        });
+    }
+    if labels.is_empty() {
+        return None;
+    }
+    Some(labels)
+}
+
+/// Recognizes trailing labels `[:...:]` and/or `(:...:)` on a grouped specification such as
+/// `(.*_1 is \foo.)[:1:]` or `(.x is \foo.)[:1:](:2:)`. Returns justification labels,
+/// reference labels, and the inner specification source text.
+fn split_labeled_specification(input: &str) -> Option<(Vec<Label>, Vec<Label>, &str)> {
+    let mut current = input.trim();
+    let mut reference_labels = Vec::new();
+    let mut justification_labels = Vec::new();
+
+    if let Some(body) = current.strip_suffix(":)") {
+        let label_start = body.rfind("(:")?;
+        let label_content = &body[label_start + 2..];
+        let labels = parse_spec_label_list(label_content, label_start + 2)?;
+        reference_labels = labels;
+        current = body[..label_start].trim();
+    }
+
+    if let Some(body) = current.strip_suffix(":]") {
+        let label_start = body.rfind("[:")?;
+        let label_content = &body[label_start + 2..];
+        let labels = parse_spec_label_list(label_content, label_start + 2)?;
+        justification_labels = labels;
+        current = body[..label_start].trim();
+    }
+
+    if current.ends_with(":)") {
+        return None;
+    }
+
+    if justification_labels.is_empty() && reference_labels.is_empty() {
+        return None;
+    }
+
+    let inner = current
         .strip_prefix("(.")
         .and_then(|rest| rest.strip_suffix(".)"))
         .or_else(|| {
-            grouped
+            current
                 .strip_prefix('(')
                 .and_then(|rest| rest.strip_suffix(')'))
         })?;
-    Some((parts, inner.trim()))
+    Some((justification_labels, reference_labels, inner.trim()))
 }
 
 /// Parses the argument of a `Declares:` section.
@@ -744,10 +784,11 @@ pub(in crate::frontend::structural::parser) fn parse_optional_clauses(
                                         span,
                                         kind: ExpressionKind::Labeled {
                                             expression: Box::new(expression),
-                                            label: Label {
+                                            labels: vec![Label {
                                                 span: header.span,
                                                 parts: header.parts,
-                                            },
+                                            }],
+                                            reference_labels: Vec::new(),
                                         },
                                     };
                                 }
@@ -852,13 +893,14 @@ fn parse_required_resource_references(
     let mut references = Vec::new();
 
     for entry in section_entries(section) {
-        let (text, row) = match entry {
-            SectionEntry::Inline { text, row }
-            | SectionEntry::Formulation { text, row, .. } => {
-                (text.to_owned(), row)
+        let (text, label, row) = match entry {
+            SectionEntry::Inline { text, row } => (text.to_owned(), None, row),
+            SectionEntry::Formulation { text, label, row } => {
+                (text.to_owned(), label, row)
             }
-            SectionEntry::Text { text, row, .. } => (
+            SectionEntry::Text { text, label, row } => (
                 strip_quoted_text(text).unwrap_or_else(|| text.to_owned()),
+                label,
                 row,
             ),
             SectionEntry::Group { row, .. } => {
@@ -873,7 +915,10 @@ fn parse_required_resource_references(
 
         let text = strip_quoted_text(&text).unwrap_or(text);
         match parse_resource_header(&text) {
-            Ok(reference) => references.push(reference),
+            Ok(mut reference) => {
+                reference.label = label.map(str::to_string);
+                references.push(reference);
+            }
             Err(error) => tracker.user_error_at_row(
                 Some(ORIGIN),
                 row,
@@ -1001,7 +1046,11 @@ fn parse_required_specify_items(
                             match parse_label_header(lbl) {
                                 Ok(header) => {
                                     item = IsOrViaItem::Labeled {
-                                        label: header.parts,
+                                        labels: vec![Label {
+                                            span: header.span,
+                                            parts: header.parts,
+                                        }],
+                                        reference_labels: Vec::new(),
                                         item: Box::new(item),
                                     };
                                 }
@@ -2747,10 +2796,11 @@ pub(in crate::frontend::structural::parser) fn parse_example(
                                             span,
                                             kind: ExpressionKind::Labeled {
                                                 expression: Box::new(expression),
-                                                label: Label {
+                                                labels: vec![Label {
                                                     span: header.span,
                                                     parts: header.parts,
-                                                },
+                                                }],
+                                                reference_labels: Vec::new(),
                                             },
                                         };
                                     }
@@ -7198,10 +7248,10 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
         let Clause::Expression(expr) = &for_all.then.arguments[0] else {
             panic!("expected expression clause");
         };
-        let ExpressionKind::Labeled { label, expression } = &expr.kind else {
+        let ExpressionKind::Labeled { labels, expression, .. } = &expr.kind else {
             panic!("expected labeled expression");
         };
-        assert_eq!(label.parts, vec!["abc".to_string()]);
+        assert_eq!(labels[0].parts, vec!["abc".to_string()]);
         assert!(matches!(
             expression.kind,
             ExpressionKind::InfixSpecStatement { .. }

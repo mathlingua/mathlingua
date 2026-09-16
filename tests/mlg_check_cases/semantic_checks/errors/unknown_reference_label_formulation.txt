@@ -1,0 +1,19 @@
+== begin:description ==
+Rejects a formulation citing an unknown reference label.
+== end:description ==
+== begin:input ==
+[$some.book]
+Resource:
+. title: "Some Book"
+. author: "Author"
+
+Theorem:
+given: x
+then:
+. (x = x)(:3:)
+References:
+. [2]: $some.book
+== end:input ==
+== begin:output ==
+error: Unknown reference label `3`
+== end:output ==

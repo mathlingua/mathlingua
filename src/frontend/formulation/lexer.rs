@@ -128,9 +128,24 @@ mod tests {
                 Token::LParen,
                 Token::Name("x".to_string()),
                 Token::RParen,
-                Token::Label(vec!["some".to_string(), "label".to_string()]),
+                Token::Label(vec![vec!["some".to_string(), "label".to_string()]]),
                 Token::QuotedName("in".to_string()),
                 Token::Name("X".to_string()),
+            ]
+        );
+
+        let tokens: Vec<_> = Lexer::new(r#"(x)[:l1, l2:](:r1, r2:)"#)
+            .map(|item| item.expect("expected valid token").1)
+            .collect();
+
+        assert_eq!(
+            tokens,
+            vec![
+                Token::LParen,
+                Token::Name("x".to_string()),
+                Token::RParen,
+                Token::Label(vec![vec!["l1".to_string()], vec!["l2".to_string()]]),
+                Token::ReferenceLabel(vec![vec!["r1".to_string()], vec!["r2".to_string()]]),
             ]
         );
     }

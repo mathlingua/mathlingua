@@ -7,8 +7,8 @@ use super::render::{
     join_title_parts, render_documented_text_latex, render_formulation_latex,
     render_group_heading_latex, render_group_parameter_destructurings,
     render_refines_section_latex, render_refines_specifies_latex, render_resource_reference,
-    render_scoped_text_markdown, render_writing_alias_latex, resolve_topic_heading_latex,
-    writing_alias_override,
+    render_scoped_text_markdown, render_scoped_text_markdown_with_labels,
+    render_writing_alias_latex, resolve_topic_heading_latex, writing_alias_override,
 };
 use crate::backend::config::load_config;
 use crate::backend::semantic::{CollectionTypeInfo, DocumentTypeInfo, TypeEntry};
@@ -18,7 +18,7 @@ use crate::frontend::{
     ParsedSourceFile, ProtoArgument, ProtoGroup, ProtoParser, ProtoSection, SourceFileViewMetadata,
     top_level_group_id, unescape_quoted_text,
 };
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 use std::path::{Path, PathBuf};
 
 /// Builds the complete serialized view model for a MathLingua collection.
@@ -393,11 +393,43 @@ fn theorem_proof_text(
         .find(|section| section.label == "Proof")
         .and_then(section_text)
         .map(|text| {
+            let label_links = collect_reference_label_links(sections, registry);
             let text =
                 render_declared_references_in_text(&unindent_text(&text), sections, registry);
-            render_scoped_text_markdown(&text, registry)
+            render_scoped_text_markdown_with_labels(&text, registry, &label_links)
         })
         .filter(|text| !text.trim().is_empty())
+}
+
+fn collect_reference_label_links(
+    sections: &[ProtoSection],
+    registry: &RenderRegistry,
+) -> HashMap<String, String> {
+    sections
+        .iter()
+        .find(|section| section.label == "References")
+        .into_iter()
+        .flat_map(|section| &section.arguments)
+        .filter_map(|argument| match argument {
+            ProtoArgument::Formulation(formulation) => {
+                let label = formulation.label.clone()?;
+                let source = strip_quoted_text(&formulation.text).unwrap_or_else(|| formulation.text.clone());
+                let reference = parse_resource_header(&source).ok()?;
+                let rendered = render_resource_reference(&reference, registry);
+                let href = rendered.href?;
+                Some((label, href.replace('(', "%28").replace(')', "%29")))
+            }
+            ProtoArgument::Text(text) => {
+                let label = text.label.clone()?;
+                let source = strip_quoted_text(&text.text).unwrap_or_else(|| text.text.clone());
+                let reference = parse_resource_header(&source).ok()?;
+                let rendered = render_resource_reference(&reference, registry);
+                let href = rendered.href?;
+                Some((label, href.replace('(', "%28").replace(')', "%29")))
+            }
+            ProtoArgument::Group(_) => None,
+        })
+        .collect()
 }
 
 fn theorem_proof_source(kind: &str, sections: &[ProtoSection]) -> Option<String> {
@@ -891,31 +923,38 @@ fn argument_view(
         ProtoArgument::Formulation(formulation) => {
             let row = formulation.metadata.row;
             if section_label == "References"
-                && let Some(reference) = reference_argument_view(&formulation.text, registry)
+                && let Some(mut reference) = reference_argument_view(&formulation.text, registry)
             {
+                if let ArgumentView::Reference { label, .. } = &mut reference {
+                    *label = formulation.label;
+                }
                 return reference;
             }
-            // A labeled specification `(.spec.)[:label:]` renders as the inner
-            // `spec` (the expression parser rejects the labeled/grouped wrapper,
-            // and an operator subject) with the label shown as a separate tag.
-            let (spec_label, latex) = match split_labeled_formulation(&formulation.text) {
-                Some((parts, inner)) => (
-                    Some(parts.join(".")),
+            // A labeled specification `(.spec.)[:label:]` or `(.spec.)(:ref_label:)` renders
+            // as the inner `spec` with the labels shown as separate tags.
+            let (spec_label, spec_ref_label, latex) = match split_labeled_formulation(&formulation.text) {
+                Some((just_label, ref_label, inner)) => (
+                    just_label,
+                    ref_label,
                     render_formulation_latex(inner, registry),
                 ),
-                None => (None, render_formulation_latex(&formulation.text, registry)),
+                None => (None, None, render_formulation_latex(&formulation.text, registry)),
             };
             ArgumentView::Formulation {
                 latex,
                 label: formulation.label.or(spec_label),
+                reference_label: spec_ref_label,
                 text: formulation.text,
                 type_info: type_entries_for_row(type_info, row),
             }
         }
         ProtoArgument::Text(text) => {
             if section_label == "References"
-                && let Some(reference) = reference_argument_view(&text.text, registry)
+                && let Some(mut reference) = reference_argument_view(&text.text, registry)
             {
+                if let ArgumentView::Reference { label, .. } = &mut reference {
+                    *label = text.label;
+                }
                 return reference;
             }
             // A collection-wide `Writing:` alias is authored as quoted text (its
@@ -980,38 +1019,50 @@ fn reference_argument_view(text: &str, registry: &RenderRegistry) -> Option<Argu
         source,
         text: rendered.text,
         href: rendered.href,
+        label: None,
     })
 }
 
-/// Splits a labeled specification `(.spec.)[:label.parts:]` into its label parts
-/// and the inner `spec` source, mirroring the structural parser's recognition so
-/// the view can render the inner and show the label separately. Returns `None`
-/// when `text` is not a labeled grouped specification.
-fn split_labeled_formulation(text: &str) -> Option<(Vec<String>, &str)> {
-    let body = text.trim().strip_suffix(":]")?;
-    let label_start = body.rfind("[:")?;
-    let label_body = &body[label_start + 2..];
-    if label_body.is_empty()
-        || !label_body.split('.').all(|part| {
-            !part.is_empty()
-                && part
-                    .chars()
-                    .all(|ch| ch.is_ascii_alphanumeric() || ch == '_')
-        })
-    {
+/// Splits a labeled specification `(.spec.)[:label:]`, `(.spec.)(:ref_label:)`, or
+/// `(.spec.)[:label:](:ref_label:)` into its justification label, reference label,
+/// and inner `spec` source. Returns `None` when `text` is not a labeled specification.
+fn split_labeled_formulation(text: &str) -> Option<(Option<String>, Option<String>, &str)> {
+    let mut trimmed = text.trim();
+    let mut ref_label = None;
+    if trimmed.ends_with(":)") {
+        let open_idx = trimmed.rfind("(:")?;
+        let inside = trimmed[open_idx + 2..trimmed.len() - 2].trim();
+        if inside.is_empty() {
+            return None;
+        }
+        ref_label = Some(inside.to_string());
+        trimmed = trimmed[..open_idx].trim();
+    }
+    let mut just_label = None;
+    if trimmed.ends_with(":]") {
+        let open_idx = trimmed.rfind("[:")?;
+        let inside = trimmed[open_idx + 2..trimmed.len() - 2].trim();
+        if inside.is_empty() {
+            return None;
+        }
+        just_label = Some(inside.to_string());
+        trimmed = trimmed[..open_idx].trim();
+    }
+    if trimmed.ends_with(":)") {
         return None;
     }
-    let parts = label_body.split('.').map(str::to_owned).collect();
-    let grouped = body[..label_start].trim();
-    let inner = grouped
+    if just_label.is_none() && ref_label.is_none() {
+        return None;
+    }
+    let inner = trimmed
         .strip_prefix("(.")
         .and_then(|rest| rest.strip_suffix(".)"))
         .or_else(|| {
-            grouped
+            trimmed
                 .strip_prefix('(')
                 .and_then(|rest| rest.strip_suffix(')'))
         })?;
-    Some((parts, inner.trim()))
+    Some((just_label, ref_label, inner.trim()))
 }
 
 // ===============================[ tests ]=====================================
@@ -2137,6 +2188,7 @@ Id: "32dd9150-8f43-46ee-aa6c-97809fc9ea8d"
                 source: "$royden.real.analysis".to_string(),
                 text: "Real Analysis (Royden)".to_string(),
                 href: Some("https://example.com/royden.pdf".to_string()),
+                label: None,
             }
         );
         assert_eq!(
@@ -2145,9 +2197,51 @@ Id: "32dd9150-8f43-46ee-aa6c-97809fc9ea8d"
                 source: "$royden.real.analysis:page{4}".to_string(),
                 text: "Real Analysis (Royden)".to_string(),
                 href: Some("https://example.com/royden.pdf#page=6".to_string()),
+                label: None,
             }
         );
         assert!(!event_log.has_errors());
+    }
+
+    #[test]
+    fn splits_labeled_formulations_with_justification_and_reference_labels() {
+        use super::split_labeled_formulation;
+
+        // Justification only
+        assert_eq!(
+            split_labeled_formulation("(.x is \\set.)[:1:]"),
+            Some((Some("1".to_string()), None, "x is \\set"))
+        );
+        assert_eq!(
+            split_labeled_formulation("(x > 0)[:l1, l2:]"),
+            Some((Some("l1, l2".to_string()), None, "x > 0"))
+        );
+
+        // Reference only
+        assert_eq!(
+            split_labeled_formulation("(.x is \\set.)(:2:)"),
+            Some((None, Some("2".to_string()), "x is \\set"))
+        );
+        assert_eq!(
+            split_labeled_formulation("(x > 0)(:r1, r2:)"),
+            Some((None, Some("r1, r2".to_string()), "x > 0"))
+        );
+
+        // Both in correct order [:...:](:...:)
+        assert_eq!(
+            split_labeled_formulation("(x > 0)[:1:](:2:)"),
+            Some((Some("1".to_string()), Some("2".to_string()), "x > 0"))
+        );
+        assert_eq!(
+            split_labeled_formulation("(.x is \\set.)[:l1, l2:](:r1, r2:)"),
+            Some((Some("l1, l2".to_string()), Some("r1, r2".to_string()), "x is \\set"))
+        );
+
+        // Invalid order (:...:)[:...:] rejected
+        assert_eq!(
+            split_labeled_formulation("(x > 0)(:2:)[:1:]"),
+            None
+        );
     }
 
     struct TestDir {

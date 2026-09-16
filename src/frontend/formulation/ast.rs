@@ -95,6 +95,8 @@ pub struct ResourceHeader {
     pub parts: Vec<String>,
     /// Optional logical page number requested from a PDF resource.
     pub page: Option<u64>,
+    /// Optional label assigned to this reference in a `References:` section.
+    pub label: Option<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -483,7 +485,8 @@ pub enum ExpressionKind {
     },
     Labeled {
         expression: Box<Expression>,
-        label: Label,
+        labels: Vec<Label>,
+        reference_labels: Vec<Label>,
     },
     SubsetCall(SubsetCall),
     IndexedCall(IndexedCall),
@@ -694,6 +697,12 @@ pub enum FunctionNamedExpressionElementLhs {
 pub struct Label {
     pub span: Span,
     pub parts: Vec<String>,
+}
+
+impl std::fmt::Display for Label {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.parts.join("."))
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -1044,6 +1053,8 @@ pub struct DeclarationStatement {
     /// makes `(. ... .)[:label:]` valid in every declaration-bearing context,
     /// rather than only in structural sections with bespoke parsing.
     pub labels: Vec<Label>,
+    /// Reference labels applied to grouped statement/specification wrappers (`(:label:)`).
+    pub reference_labels: Vec<Label>,
     pub subject: IsSubject,
     pub expansion: Option<IsSubject>,
     pub definition: Option<Expression>,

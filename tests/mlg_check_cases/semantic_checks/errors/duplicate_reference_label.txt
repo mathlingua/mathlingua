@@ -1,0 +1,25 @@
+== begin:description ==
+Rejects duplicate reference labels in References.
+== end:description ==
+== begin:input ==
+[$some.book]
+Resource:
+. title: "Some Book"
+. author: "Author"
+
+[$other.book]
+Resource:
+. title: "Other Book"
+. author: "Author"
+
+Theorem:
+given: x
+then:
+. x = x
+References:
+. [2]: $some.book
+. [2]: $other.book
+== end:input ==
+== begin:output ==
+error: Duplicate reference label `2` in `References:`
+== end:output ==

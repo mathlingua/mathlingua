@@ -35,7 +35,7 @@ export function ArgumentList({
         >
           {argument.kind === "formulation" ? (
             <div className={styles.formulationBlock}>
-              {argument.label ? (
+              {argument.label || argument.reference_label ? (
                 <div className={styles.labeledFormulation}>
                   {argument.latex ? (
                     <span
@@ -52,9 +52,16 @@ export function ArgumentList({
                       text={argument.text}
                     />
                   )}
-                  <span className={styles.formulationLabel}>
-                    [{argument.label}]
-                  </span>
+                  {argument.label && (
+                    <span className={styles.formulationLabel}>
+                      [{argument.label}]
+                    </span>
+                  )}
+                  {argument.reference_label && (
+                    <span className={styles.formulationLabel}>
+                      ({argument.reference_label})
+                    </span>
+                  )}
                 </div>
               ) : argument.latex ? (
                 <span
@@ -119,7 +126,28 @@ export function ArgumentList({
             )
           ) : null}
           {argument.kind === "reference" ? (
-            argument.href && isSafeReferenceHref(argument.href) ? (
+            argument.label ? (
+              <div className={styles.labeledFormulation}>
+                {argument.href && isSafeReferenceHref(argument.href) ? (
+                  <a
+                    className={styles.referenceLink}
+                    href={argument.href}
+                    rel="noreferrer"
+                    target="_blank"
+                    title={argument.source}
+                  >
+                    <MarkdownInline text={argument.text} />
+                  </a>
+                ) : (
+                  <span className={styles.referenceText} title={argument.source}>
+                    <MarkdownInline text={argument.text} />
+                  </span>
+                )}
+                <span className={styles.formulationLabel}>
+                  [{argument.label}]
+                </span>
+              </div>
+            ) : argument.href && isSafeReferenceHref(argument.href) ? (
               <a
                 className={styles.referenceLink}
                 href={argument.href}

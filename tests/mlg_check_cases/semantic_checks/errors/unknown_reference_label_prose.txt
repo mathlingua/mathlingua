@@ -1,0 +1,20 @@
+== begin:description ==
+Rejects a prose source citing an unknown reference label.
+== end:description ==
+== begin:input ==
+[$some.book]
+Resource:
+. title: "Some Book"
+. author: "Author"
+
+Theorem:
+given: x
+then:
+. x = x
+Proof: "This is ''some text with a source''(:99:)"
+References:
+. [2]: $some.book
+== end:input ==
+== begin:output ==
+error: Unknown reference label `99`
+== end:output ==

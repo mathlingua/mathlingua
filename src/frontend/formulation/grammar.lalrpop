@@ -25,7 +25,8 @@ extern {
         "right_named_operator" => Token::RightNamedOperator(<String>),
         "prefix_named_operator" => Token::PrefixNamedOperator(<String>),
         "postfix_named_operator" => Token::PostfixNamedOperator(<String>),
-        "label" => Token::Label(<Vec<String>>),
+        "label" => Token::Label(<Vec<Vec<String>>>),
+        "reference_label" => Token::ReferenceLabel(<Vec<Vec<String>>>),
         "::=" => Token::Introduce,
         ":=" => Token::Declare,
         ":+:" => Token::BothPlus,
@@ -123,11 +124,18 @@ MagneticPlaceholderName: String = {
     <name:"magnetic_placeholder"> => name,
 };
 
-LabelToken: ast::Label = {
-    <l:@L> <parts:"label"> <r:@R> => ast::Label {
+LabelTokens: Vec<ast::Label> = {
+    <l:@L> <labels:"label"> <r:@R> => labels.into_iter().map(|parts| ast::Label {
         span: Span::new(l, r),
         parts,
-    },
+    }).collect(),
+};
+
+ReferenceLabelTokens: Vec<ast::Label> = {
+    <l:@L> <labels:"reference_label"> <r:@R> => labels.into_iter().map(|parts| ast::Label {
+        span: Span::new(l, r),
+        parts,
+    }).collect(),
 };
 
 AnyOperator: ast::Operator = {
@@ -562,11 +570,20 @@ GroupedExpression: ast::Expression = {
 };
 
 LabeledExpression: ast::Expression = {
-    <l:@L> <expression:GroupedExpression> <label:LabelToken> <r:@R> => ast::Expression::new(
+    <l:@L> <expression:GroupedExpression> <labels:LabelTokens+> <reference_labels:ReferenceLabelTokens*> <r:@R> => ast::Expression::new(
         Span::new(l, r),
         ExpressionKind::Labeled {
             expression: Box::new(expression),
-            label,
+            labels: labels.into_iter().flatten().collect(),
+            reference_labels: reference_labels.into_iter().flatten().collect(),
+        },
+    ),
+    <l:@L> <expression:GroupedExpression> <reference_labels:ReferenceLabelTokens+> <r:@R> => ast::Expression::new(
+        Span::new(l, r),
+        ExpressionKind::Labeled {
+            expression: Box::new(expression),
+            labels: Vec::new(),
+            reference_labels: reference_labels.into_iter().flatten().collect(),
         },
     ),
 };

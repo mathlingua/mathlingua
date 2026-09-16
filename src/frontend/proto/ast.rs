@@ -35,19 +35,48 @@ impl Line {
     }
 
     pub fn is_header(&self) -> bool {
-        self.text.starts_with('[') && self.text.ends_with(']')
+        self.text.starts_with('[')
+            && self.text.ends_with(']')
+            && extract_line_label(&self.text).is_none()
     }
+}
+
+/// Extracts a leading `[label]: ` prefix from a line, returning the label text
+/// and the remaining content after the colon.
+///
+/// A labeled line has the form `[label]: xxx` where `label` is non-empty, contains
+/// no whitespace, and `]: ` is immediately followed by non-empty content `xxx`.
+pub fn extract_line_label(text: &str) -> Option<(&str, &str)> {
+    let stripped = text.strip_prefix('[')?;
+    let bracket_index = stripped.find(']')?;
+    let label = &stripped[..bracket_index];
+    if label.is_empty() || label.contains(char::is_whitespace) || label.contains('[') {
+        return None;
+    }
+    let after_bracket = &stripped[bracket_index + 1..];
+    let after_colon = after_bracket.strip_prefix(':')?;
+    let trimmed = after_colon.trim_start();
+    if trimmed.len() == after_colon.len() {
+        // There was no whitespace after the colon (e.g., `[x]:=` or `[x]:y`).
+        return None;
+    }
+    if trimmed.is_empty() {
+        return None;
+    }
+    Some((label, trimmed))
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Formulation {
     pub text: String,
+    pub label: Option<String>,
     pub metadata: Metadata,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TextLiteral {
     pub text: String,
+    pub label: Option<String>,
     pub metadata: Metadata,
 }
 
@@ -102,6 +131,9 @@ impl fmt::Display for Formulation {
     /// Formats a formulation argument in source-like form.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write_prefix(f, &self.metadata)?;
+        if let Some(label) = &self.label {
+            write!(f, "[{label}]: ")?;
+        }
         write!(f, "{}", self.text)
     }
 }
@@ -110,6 +142,9 @@ impl fmt::Display for TextLiteral {
     /// Formats a text argument in source-like form.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write_prefix(f, &self.metadata)?;
+        if let Some(label) = &self.label {
+            write!(f, "[{label}]: ")?;
+        }
         write!(f, "{}", self.text)
     }
 }
@@ -244,10 +279,12 @@ mod tests {
                     arguments: vec![
                         Argument::Formulation(Formulation {
                             text: "x in A".to_string(),
+                            label: None,
                             metadata: metadata(2, true),
                         }),
                         Argument::Text(TextLiteral {
                             text: "\"note\"".to_string(),
+                            label: None,
                             metadata: metadata(2, true),
                         }),
                         Argument::Group(Group {
@@ -271,5 +308,51 @@ mod tests {
             group.to_string(),
             "[heading]\nDefines: f(x_)\nwhen:\n. x in A\n. \"note\"\n. exists: z"
         );
+    }
+
+    #[test]
+    fn extracts_line_labels_correctly() {
+        use super::extract_line_label;
+
+        assert_eq!(extract_line_label("[label]: x > 0"), Some(("label", "x > 0")));
+        assert_eq!(
+            extract_line_label("[somelabel]:   x > 0"),
+            Some(("somelabel", "x > 0"))
+        );
+        assert_eq!(
+            extract_line_label("[abc]: \"hello\""),
+            Some(("abc", "\"hello\""))
+        );
+        assert_eq!(
+            extract_line_label("[step_1]: [a, b]"),
+            Some(("step_1", "[a, b]"))
+        );
+
+        // Not labeled lines
+        assert_eq!(extract_line_label("[heading]"), None);
+        assert_eq!(extract_line_label("[a, b]"), None);
+        assert_eq!(extract_line_label("[x]:= 1"), None);
+        assert_eq!(extract_line_label("[x]:"), None);
+        assert_eq!(extract_line_label("[x]: "), None);
+        assert_eq!(extract_line_label("[]: x"), None);
+        assert_eq!(extract_line_label("[a b]: x"), None);
+        assert_eq!(extract_line_label("forAll: [label]: x"), None);
+    }
+
+    #[test]
+    fn displays_labeled_formulation_and_text() {
+        let formulation = Formulation {
+            text: "x > 0".to_string(),
+            label: Some("somelabel".to_string()),
+            metadata: metadata(2, true),
+        };
+        assert_eq!(formulation.to_string(), ". [somelabel]: x > 0");
+
+        let text = TextLiteral {
+            text: "\"note\"".to_string(),
+            label: Some("abc".to_string()),
+            metadata: metadata(2, true),
+        };
+        assert_eq!(text.to_string(), ". [abc]: \"note\"");
     }
 }

@@ -1,4 +1,4 @@
-use super::ast::{Argument, Formulation, Group, Section, TextLiteral};
+use super::ast::{Argument, Formulation, Group, Section, TextLiteral, extract_line_label};
 use super::lexer::Lexer;
 use crate::events::EventLog;
 
@@ -202,6 +202,13 @@ impl<'a> Parser<'a> {
             return None;
         }
 
+        if extract_line_label(argument).is_some() {
+            self.lexer.error(
+                row,
+                "Inline arguments cannot have labels; write `. [label]: ...` on a new line instead",
+            );
+        }
+
         let mut text = argument.to_owned();
         if starts_multiline_text(argument) {
             text = self.consume_multiline_text(text, row);
@@ -244,6 +251,7 @@ impl<'a> Parser<'a> {
 
         Some(Formulation {
             text,
+            label: None,
             metadata: line.metadata,
         })
     }
@@ -262,11 +270,52 @@ impl<'a> Parser<'a> {
 
         Some(TextLiteral {
             text,
+            label: None,
             metadata: line.metadata,
         })
     }
 
     fn parse_argument(&mut self, indent: usize) -> Option<Argument> {
+        let peeked = self.lexer.peek()?.clone();
+        if let Some((label, rest)) = extract_line_label(&peeked.text) {
+            let line = self.lexer.next()?;
+            let label = Some(label.to_owned());
+            if rest.starts_with('"') {
+                let text = if starts_multiline_text(rest) {
+                    self.consume_multiline_text(rest.to_owned(), line.metadata.row)
+                } else {
+                    rest.to_owned()
+                };
+                return Some(Argument::Text(TextLiteral {
+                    text,
+                    label,
+                    metadata: line.metadata,
+                }));
+            } else {
+                let text = if let Some(close_delimiter) = multiline_formulation_close(rest) {
+                    self.consume_multiline_formulation(
+                        rest.to_owned(),
+                        close_delimiter,
+                        line.metadata.row,
+                        line.metadata.indent,
+                    )
+                } else {
+                    if is_single_quoted_formulation(rest) {
+                        self.lexer.error(
+                            line.metadata.row,
+                            "Single-quoted formulations are not allowed",
+                        );
+                    }
+                    rest.to_owned()
+                };
+                return Some(Argument::Formulation(Formulation {
+                    text,
+                    label,
+                    metadata: line.metadata,
+                }));
+            }
+        }
+
         if let Some(text) = self.parse_text() {
             return Some(Argument::Text(text));
         }
@@ -959,5 +1008,52 @@ when:
         assert!(!is_single_quoted_formulation("'x"));
         assert!(!is_single_quoted_formulation("x'"));
         assert!(!is_single_quoted_formulation("\"x\""));
+    }
+
+    #[test]
+    fn parses_labeled_formulations_and_text() {
+        let input = r#"forAll:
+. [somelabel]: x > 0
+then:
+. [abc]: y > 0
+. [note]: "a note"
+"#;
+        let (groups, diagnostics) = parse_input(input);
+
+        assert!(diagnostics.is_empty());
+        assert_eq!(groups.len(), 1);
+        assert_eq!(groups[0].sections.len(), 2);
+
+        let for_all = &groups[0].sections[0];
+        assert_eq!(for_all.label, "forAll");
+        assert_eq!(for_all.arguments.len(), 1);
+        assert!(matches!(
+            &for_all.arguments[0],
+            Argument::Formulation(item) if item.label.as_deref() == Some("somelabel") && item.text == "x > 0"
+        ));
+
+        let then = &groups[0].sections[1];
+        assert_eq!(then.label, "then");
+        assert_eq!(then.arguments.len(), 2);
+        assert!(matches!(
+            &then.arguments[0],
+            Argument::Formulation(item) if item.label.as_deref() == Some("abc") && item.text == "y > 0"
+        ));
+        assert!(matches!(
+            &then.arguments[1],
+            Argument::Text(item) if item.label.as_deref() == Some("note") && item.text == "\"a note\""
+        ));
+    }
+
+    #[test]
+    fn rejects_inline_labeled_arguments() {
+        let input = "forAll: [label]: x > 0\n";
+        let (_groups, diagnostics) = parse_input(input);
+
+        assert_eq!(diagnostics.len(), 1);
+        assert_eq!(
+            diagnostics[0].as_message().unwrap().message,
+            "Inline arguments cannot have labels; write `. [label]: ...` on a new line instead"
+        );
     }
 }

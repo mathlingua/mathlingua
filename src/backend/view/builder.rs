@@ -898,7 +898,7 @@ fn argument_view(
             // A labeled specification `(.spec.)[:label:]` renders as the inner
             // `spec` (the expression parser rejects the labeled/grouped wrapper,
             // and an operator subject) with the label shown as a separate tag.
-            let (label, latex) = match split_labeled_formulation(&formulation.text) {
+            let (spec_label, latex) = match split_labeled_formulation(&formulation.text) {
                 Some((parts, inner)) => (
                     Some(parts.join(".")),
                     render_formulation_latex(inner, registry),
@@ -907,7 +907,7 @@ fn argument_view(
             };
             ArgumentView::Formulation {
                 latex,
-                label,
+                label: formulation.label.or(spec_label),
                 text: formulation.text,
                 type_info: type_entries_for_row(type_info, row),
             }
@@ -929,10 +929,12 @@ fn argument_view(
                 documented_render_kind
                     .and_then(|kind| render_documented_template_argument(kind, &text.text))
             };
+            let label = text.label;
             let text = strip_quoted_text(&text.text).unwrap_or(text.text);
             ArgumentView::Text {
                 text: render_scoped_text_markdown(&text, registry),
                 latex,
+                label,
             }
         }
         ProtoArgument::Group(group) => ArgumentView::Group {
@@ -1927,7 +1929,7 @@ Id: "11111111-1111-4111-8111-111111111111"
         let writing = &view.files[0].items[0].sections[0];
         assert_eq!(writing.label, "Writing");
         match &writing.arguments[0] {
-            ArgumentView::Text { latex, text } => {
+            ArgumentView::Text { latex, text, .. } => {
                 assert_eq!(text, r#"alpha :~> \alpha"#);
                 assert_eq!(
                     latex.as_deref(),
@@ -1937,7 +1939,7 @@ Id: "11111111-1111-4111-8111-111111111111"
             other => panic!("expected text argument, got {other:?}"),
         }
         match &writing.arguments[1] {
-            ArgumentView::Text { latex, text } => {
+            ArgumentView::Text { latex, text, .. } => {
                 assert_eq!(text, r#"Gamma :~> \Gamma"#);
                 assert_eq!(
                     latex.as_deref(),
@@ -1998,6 +2000,88 @@ Id: "22222222-2222-4222-8222-222222222222"
                 assert_eq!(latex.as_deref(), Some(r#"\varpi = \varpi"#));
             }
             other => panic!("expected formulation argument, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn renders_labeled_formulation_and_text_arguments() {
+        let temp_dir = TestDir::new();
+        let root = temp_dir.path().join("repo");
+        let content = root.join("content");
+        let file = content.join("labeled.mlg");
+        let source = r#"[\test]
+Theorem:
+forAll:
+. [somelabel]: x is \real
+then:
+. [abc]: x > 0
+Documented:
+. overview:
+  . [mytext]: "A labeled prose description."
+Id: "11111111-1111-4111-8111-111111111111"
+"#;
+
+        fs::create_dir_all(&content).unwrap();
+        fs::write(&file, source).unwrap();
+
+        let mut parse_log = EventLog::new();
+        let document = parse_document(source, &mut parse_log);
+        let parsed_file = ParsedSourceFile {
+            path: file,
+            source: source.to_string(),
+            document,
+            item_ids: top_level_item_ids(source),
+            view_metadata: SourceFileViewMetadata::default(),
+        };
+        let mut event_log = EventLog::new();
+        let view = build_collection_view(&root, &[parsed_file], &[], &[], &mut event_log)
+            .expect("expected view");
+
+        let theorem = &view.files[0].items[0];
+        let for_all = theorem
+            .sections
+            .iter()
+            .find(|section| section.label == "forAll")
+            .expect("expected a forAll section");
+        match &for_all.arguments[0] {
+            ArgumentView::Formulation { label, text, .. } => {
+                assert_eq!(label.as_deref(), Some("somelabel"));
+                assert_eq!(text, r#"x is \real"#);
+            }
+            other => panic!("expected formulation argument, got {other:?}"),
+        }
+
+        let then = theorem
+            .sections
+            .iter()
+            .find(|section| section.label == "then")
+            .expect("expected a then section");
+        match &then.arguments[0] {
+            ArgumentView::Formulation { label, text, .. } => {
+                assert_eq!(label.as_deref(), Some("abc"));
+                assert_eq!(text, "x > 0");
+            }
+            other => panic!("expected formulation argument, got {other:?}"),
+        }
+
+        let documented = theorem
+            .sections
+            .iter()
+            .find(|section| section.label == "Documented")
+            .expect("expected a Documented section");
+        let ArgumentView::Group { sections, .. } = &documented.arguments[0] else {
+            panic!("expected overview group");
+        };
+        let overview = sections
+            .iter()
+            .find(|section| section.label == "overview")
+            .expect("expected overview section");
+        match &overview.arguments[0] {
+            ArgumentView::Text { label, text, .. } => {
+                assert_eq!(label.as_deref(), Some("mytext"));
+                assert_eq!(text, "A labeled prose description.");
+            }
+            other => panic!("expected text argument, got {other:?}"),
         }
     }
 

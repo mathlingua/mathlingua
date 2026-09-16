@@ -149,6 +149,10 @@ export type ArgumentView =
       text: string;
       /** Backend-rendered LaTeX for documented called/written text. */
       latex: string | null;
+      /**
+       * Optional label for labeled text (e.g. `[label]: "text"`).
+       */
+      label?: string | null;
     }
   | {
       /** A resolved bibliographic `$resource` citation. */

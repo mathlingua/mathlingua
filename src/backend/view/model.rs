@@ -96,6 +96,8 @@ pub enum ArgumentView {
     Text {
         text: String,
         latex: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        label: Option<String>,
     },
     Reference {
         /// Original `$resource[:page{n}]` source, without optional quotes.

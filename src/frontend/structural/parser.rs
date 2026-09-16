@@ -2,7 +2,8 @@ use std::collections::{HashMap, VecDeque};
 
 use crate::events::EventLog;
 use crate::frontend::formulation::ast::{
-    DeclarationRelation, ExpressionKind, FormOrDeclaration, FormOrDeclarationKind, WritingAlias,
+    DeclarationRelation, Expression, ExpressionKind, FormOrDeclaration, FormOrDeclarationKind,
+    Label, WritingAlias,
 };
 use crate::frontend::formulation::{
     ParseError as FormulationParseError, parse_author_header, parse_command_header,
@@ -171,9 +172,18 @@ pub(in crate::frontend::structural::parser) enum SectionEntry<'a> {
     /// Inline text after the section colon.
     Inline { text: &'a str, row: usize },
     /// A formulation body argument.
-    Formulation { text: &'a str, row: usize },
+    Formulation {
+        text: &'a str,
+        label: Option<&'a str>,
+        row: usize,
+    },
     /// A quoted text body argument.
-    Text { text: &'a str, row: usize },
+    Text {
+        text: &'a str,
+        #[allow(dead_code)]
+        label: Option<&'a str>,
+        row: usize,
+    },
     /// A nested proto group body argument.
     Group { group: &'a ProtoGroup, row: usize },
 }
@@ -195,15 +205,25 @@ pub(in crate::frontend::structural::parser) fn section_entries(
 
     for argument in &section.arguments {
         match argument {
-            ProtoArgument::Formulation(ProtoFormulation { text, metadata }) => {
+            ProtoArgument::Formulation(ProtoFormulation {
+                text,
+                label,
+                metadata,
+            }) => {
                 entries.push(SectionEntry::Formulation {
                     text,
+                    label: label.as_deref(),
                     row: metadata.row,
                 });
             }
-            ProtoArgument::Text(ProtoText { text, metadata }) => {
+            ProtoArgument::Text(ProtoText {
+                text,
+                label,
+                metadata,
+            }) => {
                 entries.push(SectionEntry::Text {
                     text,
+                    label: label.as_deref(),
                     row: metadata.row,
                 });
             }
@@ -443,13 +463,6 @@ fn parse_mapping_writing_target(
     ))
 }
 
-/// Parses a quantifier binding or ordinary/refined specification.
-pub(in crate::frontend::structural::parser) fn parse_binding_or_spec(
-    input: &str,
-) -> Result<BindingOrSpec, FormulationParseError> {
-    parse_refined_declaration_statement(input).map(BindingOrSpec::Declaration)
-}
-
 /// Parses a required command heading from a proto group.
 ///
 /// Missing or malformed headings are reported at the group row because headings
@@ -679,7 +692,7 @@ pub(in crate::frontend::structural::parser) fn parse_optional_clauses(
     let mut result = Vec::new();
     for entry in section_entries(section) {
         match entry {
-            SectionEntry::Inline { text, row } | SectionEntry::Formulation { text, row } => {
+            SectionEntry::Inline { text, row } => {
                 if let Ok(statement) = parse_refined_declaration_statement(text) {
                     result.push(Clause::Declaration(statement));
                     continue;
@@ -687,6 +700,68 @@ pub(in crate::frontend::structural::parser) fn parse_optional_clauses(
 
                 match parse_expression(text) {
                     Ok(expression) => result.push(Clause::Expression(expression)),
+                    Err(expression_error) => tracker.user_error_at_row(
+                        Some(ORIGIN),
+                        row,
+                        format!("Invalid clause expression in `{label}`: {expression_error}"),
+                    ),
+                }
+            }
+            SectionEntry::Formulation {
+                text,
+                label: entry_label,
+                row,
+            } => {
+                if let Ok(mut statement) = parse_refined_declaration_statement(text) {
+                    if let Some(lbl) = entry_label {
+                        match parse_label_header(lbl) {
+                            Ok(header) => {
+                                statement.labels.push(Label {
+                                    span: header.span,
+                                    parts: header.parts,
+                                });
+                            }
+                            Err(error) => {
+                                tracker.user_error_at_row(
+                                    Some(ORIGIN),
+                                    row,
+                                    format!("Invalid label `{lbl}`: {error}"),
+                                );
+                            }
+                        }
+                    }
+                    result.push(Clause::Declaration(statement));
+                    continue;
+                }
+
+                match parse_expression(text) {
+                    Ok(mut expression) => {
+                        if let Some(lbl) = entry_label {
+                            match parse_label_header(lbl) {
+                                Ok(header) => {
+                                    let span = expression.span;
+                                    expression = Expression {
+                                        span,
+                                        kind: ExpressionKind::Labeled {
+                                            expression: Box::new(expression),
+                                            label: Label {
+                                                span: header.span,
+                                                parts: header.parts,
+                                            },
+                                        },
+                                    };
+                                }
+                                Err(error) => {
+                                    tracker.user_error_at_row(
+                                        Some(ORIGIN),
+                                        row,
+                                        format!("Invalid label `{lbl}`: {error}"),
+                                    );
+                                }
+                            }
+                        }
+                        result.push(Clause::Expression(expression));
+                    }
                     Err(expression_error) => tracker.user_error_at_row(
                         Some(ORIGIN),
                         row,
@@ -778,10 +853,11 @@ fn parse_required_resource_references(
 
     for entry in section_entries(section) {
         let (text, row) = match entry {
-            SectionEntry::Inline { text, row } | SectionEntry::Formulation { text, row } => {
+            SectionEntry::Inline { text, row }
+            | SectionEntry::Formulation { text, row, .. } => {
                 (text.to_owned(), row)
             }
-            SectionEntry::Text { text, row } => (
+            SectionEntry::Text { text, row, .. } => (
                 strip_quoted_text(text).unwrap_or_else(|| text.to_owned()),
                 row,
             ),
@@ -817,6 +893,79 @@ fn parse_required_resource_references(
     })
 }
 
+/// Parses required binding-or-spec entries from a quantifier section, preserving any label.
+pub(in crate::frontend::structural::parser) fn parse_required_bindings(
+    section: &ProtoSection,
+    label: &str,
+    tracker: &mut EventLog,
+) -> Option<OneOrMore<BindingOrSpec>> {
+    let starting_issue_count = tracker.issue_count();
+    let mut result = Vec::new();
+    for entry in section_entries(section) {
+        match entry {
+            SectionEntry::Inline { text, row } => {
+                match parse_refined_declaration_statement(text) {
+                    Ok(statement) => result.push(BindingOrSpec::Declaration(statement)),
+                    Err(error) => tracker.user_error_at_row(
+                        Some(ORIGIN),
+                        row,
+                        format!("Invalid {label} formulation: {error}"),
+                    ),
+                }
+            }
+            SectionEntry::Formulation {
+                text,
+                label: entry_label,
+                row,
+            } => {
+                match parse_refined_declaration_statement(text) {
+                    Ok(mut statement) => {
+                        if let Some(lbl) = entry_label {
+                            match parse_label_header(lbl) {
+                                Ok(header) => {
+                                    statement.labels.push(Label {
+                                        span: header.span,
+                                        parts: header.parts,
+                                    });
+                                }
+                                Err(error) => {
+                                    tracker.user_error_at_row(
+                                        Some(ORIGIN),
+                                        row,
+                                        format!("Invalid label `{lbl}`: {error}"),
+                                    );
+                                }
+                            }
+                        }
+                        result.push(BindingOrSpec::Declaration(statement));
+                    }
+                    Err(error) => tracker.user_error_at_row(
+                        Some(ORIGIN),
+                        row,
+                        format!("Invalid {label} formulation: {error}"),
+                    ),
+                }
+            }
+            SectionEntry::Text { row, .. } | SectionEntry::Group { row, .. } => {
+                tracker.user_error_at_row(
+                    Some(ORIGIN),
+                    row,
+                    format!("Expected formulation in section `{label}`"),
+                );
+            }
+        }
+    }
+    one_or_more(result.into(), || {
+        if tracker.issue_count() == starting_issue_count {
+            tracker.user_error_at_row(
+                Some(ORIGIN),
+                section.metadata.row,
+                format!("Expected {label} formulations"),
+            );
+        }
+    })
+}
+
 /// Parses zero or more formulations from an optional section.
 ///
 /// Inline section arguments and formulation arguments are accepted.  Text and
@@ -831,9 +980,42 @@ fn parse_required_specify_items(
     let mut result = Vec::new();
     for entry in section_entries(section) {
         match entry {
-            SectionEntry::Inline { text, row } | SectionEntry::Formulation { text, row } => {
+            SectionEntry::Inline { text, row } => {
                 match parse_is_or_via_item(text) {
                     Ok(item) => result.push(item),
+                    Err(error) => tracker.user_error_at_row(
+                        Some(ORIGIN),
+                        row,
+                        format!("Invalid specifies formulation: {error}"),
+                    ),
+                }
+            }
+            SectionEntry::Formulation {
+                text,
+                label: entry_label,
+                row,
+            } => {
+                match parse_is_or_via_item(text) {
+                    Ok(mut item) => {
+                        if let Some(lbl) = entry_label {
+                            match parse_label_header(lbl) {
+                                Ok(header) => {
+                                    item = IsOrViaItem::Labeled {
+                                        label: header.parts,
+                                        item: Box::new(item),
+                                    };
+                                }
+                                Err(error) => {
+                                    tracker.user_error_at_row(
+                                        Some(ORIGIN),
+                                        row,
+                                        format!("Invalid label `{lbl}`: {error}"),
+                                    );
+                                }
+                            }
+                        }
+                        result.push(item);
+                    }
                     Err(error) => tracker.user_error_at_row(
                         Some(ORIGIN),
                         row,
@@ -887,7 +1069,8 @@ pub(in crate::frontend::structural::parser) fn parse_optional_formulations<T>(
     let mut result = Vec::new();
     for entry in section_entries(section) {
         match entry {
-            SectionEntry::Inline { text, row } | SectionEntry::Formulation { text, row } => {
+            SectionEntry::Inline { text, row }
+            | SectionEntry::Formulation { text, row, .. } => {
                 match parser(text) {
                     Ok(value) => result.push(value),
                     Err(error) => tracker.user_error_at_row(
@@ -1056,7 +1239,7 @@ pub(in crate::frontend::structural::parser) fn parse_optional_texts<T>(
     let mut result = Vec::new();
     for entry in section_entries(section) {
         match entry {
-            SectionEntry::Inline { text, row } | SectionEntry::Text { text, row } => {
+            SectionEntry::Inline { text, row } | SectionEntry::Text { text, row, .. } => {
                 if let Some(value) = strip_quoted_text(text) {
                     result.push(wrap(value));
                 } else {
@@ -1207,11 +1390,10 @@ pub(super) fn parse_exists_clause(
     Some(ExistsGroup {
         heading,
         exists: ExistsSection {
-            arguments: parse_required_formulations(
+            arguments: parse_required_bindings(
                 section(&sections, "exists")?,
                 "exists",
                 tracker,
-                parse_binding_or_spec,
             )?,
         },
         such_that,
@@ -1239,11 +1421,10 @@ pub(super) fn parse_exists_unique_clause(
     Some(ExistsUniqueGroup {
         heading,
         exists_unique: ExistsUniqueSection {
-            arguments: parse_required_formulations(
+            arguments: parse_required_bindings(
                 section(&sections, "existsUnique")?,
                 "existsUnique",
                 tracker,
-                parse_binding_or_spec,
             )?,
         },
         such_that,
@@ -1268,11 +1449,10 @@ pub(super) fn parse_for_all_clause(
     Some(ForAllGroup {
         heading,
         for_all: ForAllSection {
-            arguments: parse_required_formulations(
+            arguments: parse_required_bindings(
                 section(&sections, "forAll")?,
                 "forAll",
                 tracker,
-                parse_binding_or_spec,
             )?,
         },
         where_: sections.get("where").copied().and_then(|section| {
@@ -1296,11 +1476,10 @@ pub(super) fn parse_let_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Op
     Some(LetGroup {
         heading,
         let_: LetSection {
-            arguments: parse_required_formulations(
+            arguments: parse_required_bindings(
                 section(&sections, "let")?,
                 "let",
                 tracker,
-                parse_binding_or_spec,
             )?,
         },
         where_: sections.get("where").copied().and_then(|section| {
@@ -2510,7 +2689,12 @@ pub(in crate::frontend::structural::parser) fn parse_example(
     let mut arguments = Vec::new();
     for entry in section_entries(section(&sections, "Example")?) {
         match entry {
-            SectionEntry::Inline { text, row } | SectionEntry::Text { text, row } => {
+            SectionEntry::Inline { text, row }
+            | SectionEntry::Text {
+                text,
+                row,
+                ..
+            } => {
                 if let Some(text) = strip_quoted_text(text) {
                     arguments.push(ExampleItem::Text(OpenText(text)));
                 } else if let Ok(statement) = parse_refined_declaration_statement(text) {
@@ -2528,12 +2712,57 @@ pub(in crate::frontend::structural::parser) fn parse_example(
                     }
                 }
             }
-            SectionEntry::Formulation { text, row } => {
-                if let Ok(statement) = parse_refined_declaration_statement(text) {
+            SectionEntry::Formulation {
+                text,
+                label: entry_label,
+                row,
+            } => {
+                if let Ok(mut statement) = parse_refined_declaration_statement(text) {
+                    if let Some(lbl) = entry_label {
+                        match parse_label_header(lbl) {
+                            Ok(header) => {
+                                statement.labels.push(Label {
+                                    span: header.span,
+                                    parts: header.parts,
+                                });
+                            }
+                            Err(error) => {
+                                tracker.user_error_at_row(
+                                    Some(ORIGIN),
+                                    row,
+                                    format!("Invalid label `{lbl}`: {error}"),
+                                );
+                            }
+                        }
+                    }
                     arguments.push(ExampleItem::Clause(Clause::Declaration(statement)));
                 } else {
                     match parse_expression(text) {
-                        Ok(expression) => {
+                        Ok(mut expression) => {
+                            if let Some(lbl) = entry_label {
+                                match parse_label_header(lbl) {
+                                    Ok(header) => {
+                                        let span = expression.span;
+                                        expression = Expression {
+                                            span,
+                                            kind: ExpressionKind::Labeled {
+                                                expression: Box::new(expression),
+                                                label: Label {
+                                                    span: header.span,
+                                                    parts: header.parts,
+                                                },
+                                            },
+                                        };
+                                    }
+                                    Err(error) => {
+                                        tracker.user_error_at_row(
+                                            Some(ORIGIN),
+                                            row,
+                                            format!("Invalid label `{lbl}`: {error}"),
+                                        );
+                                    }
+                                }
+                            }
                             arguments.push(ExampleItem::Clause(Clause::Expression(expression)))
                         }
                         Err(error) => tracker.user_error_at_row(
@@ -2684,7 +2913,12 @@ fn parse_required_writing_aliases(
     let mut all_valid = true;
     for entry in section_entries(section) {
         match entry {
-            SectionEntry::Inline { text, row } | SectionEntry::Text { text, row } => {
+            SectionEntry::Inline { text, row }
+            | SectionEntry::Text {
+                text,
+                row,
+                ..
+            } => {
                 let Some(inner) = strip_quoted_text(text) else {
                     tracker.user_error_at_row(
                         Some(ORIGIN),
@@ -4279,12 +4513,13 @@ mod tests {
     use super::parse_document;
     use crate::events::{Event, EventLog};
     use crate::frontend::formulation::ast::{
-        DeclarationRelation, FormOrDeclaration, FormOrDeclarationKind, IsSubjectForm, IsSubjectKind,
+        DeclarationRelation, ExpressionKind, FormOrDeclaration, FormOrDeclarationKind,
+        IsSubjectForm, IsSubjectKind,
     };
     use crate::frontend::structural::ast::{
-        AliasItem, AliasKind, Clause, DeclaresTarget, Document, DocumentedItem, EnablesItem,
-        ExampleItem, MetadataItem, RelationEndpoints, RelationSpecifies, RelationSubject,
-        RequiresItem, ResourceItem, SpecifyItem, TextItemKind, TopLevelItem,
+        AliasItem, AliasKind, BindingOrSpec, Clause, DeclaresTarget, Document, DocumentedItem,
+        EnablesItem, ExampleItem, MetadataItem, RelationEndpoints, RelationSpecifies,
+        RelationSubject, RequiresItem, ResourceItem, SpecifyItem, TextItemKind, TopLevelItem,
     };
 
     fn split_test_chunks(text: &str) -> Vec<String> {
@@ -6933,5 +7168,68 @@ Writing:
         };
         assert!(group.heading.is_none());
         assert!(group.example.arguments.is_empty());
+    }
+
+    #[test]
+    fn parses_labeled_single_line_formulations_in_quantifiers_and_clauses() {
+        let document = parse_ok(
+            r#"
+[\test]
+Theorem:
+then:
+. forAll:
+  . [somelabel]: x is \real
+  then:
+  . [abc]: x > 0
+Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
+"#,
+        );
+
+        let TopLevelItem::Theorem(group) = &document.items[0] else {
+            panic!("expected theorem group");
+        };
+        let Clause::ForAll(for_all) = &group.then.arguments[0] else {
+            panic!("expected forAll clause");
+        };
+        let BindingOrSpec::Declaration(decl) = &for_all.for_all.arguments[0];
+        assert_eq!(decl.labels.len(), 1);
+        assert_eq!(decl.labels[0].parts, vec!["somelabel".to_string()]);
+
+        let Clause::Expression(expr) = &for_all.then.arguments[0] else {
+            panic!("expected expression clause");
+        };
+        let ExpressionKind::Labeled { label, expression } = &expr.kind else {
+            panic!("expected labeled expression");
+        };
+        assert_eq!(label.parts, vec!["abc".to_string()]);
+        assert!(matches!(
+            expression.kind,
+            ExpressionKind::InfixSpecStatement { .. }
+                | ExpressionKind::Binary { .. }
+                | ExpressionKind::InfixCommand { .. }
+        ));
+    }
+
+    #[test]
+    fn rejects_inline_labeled_formulation() {
+        let (_, messages) = parse_with_diagnostics(
+            r#"
+[\test]
+Theorem:
+then:
+. forAll: [label]: x > 0
+  then:
+  . y > 0
+Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
+"#,
+        );
+
+        assert!(messages.iter().any(|event| {
+            event.as_message().is_some_and(|message| {
+                message
+                    .message
+                    .contains("Inline arguments cannot have labels")
+            })
+        }));
     }
 }

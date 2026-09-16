@@ -77,7 +77,30 @@ export function ArgumentList({
             </div>
           ) : null}
           {argument.kind === "text" ? (
-            argument.latex ? (
+            argument.label ? (
+              <div className={styles.labeledFormulation}>
+                {argument.latex ? (
+                  <span
+                    className={`${styles.textLine} ${styles.formulationLineLatex}`}
+                  >
+                    <LatexRenderer
+                      latex={argument.latex}
+                      onReferenceClick={onReferenceClick}
+                    />
+                  </span>
+                ) : (
+                  <div className={styles.textLine}>
+                    <MarkdownText
+                      onReferenceClick={onReferenceClick}
+                      text={argument.text}
+                    />
+                  </div>
+                )}
+                <span className={styles.formulationLabel}>
+                  [{argument.label}]
+                </span>
+              </div>
+            ) : argument.latex ? (
               <span
                 className={`${styles.textLine} ${styles.formulationLineLatex}`}
               >

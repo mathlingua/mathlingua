@@ -1,29 +1,30 @@
-/* Sticky toolbar styling for outline controls. */
+/* Sticky toolbar and secondary slide-down settings toolbar styling. */
 
-.chrome {
+.header {
   position: sticky;
   top: 0;
   z-index: 10;
+  background: var(--chrome-bg);
+  border-bottom: 1px solid var(--line);
+  backdrop-filter: blur(18px);
+}
+
+.header::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: var(--viewer-safe-area-top);
+  background: var(--surface);
+  pointer-events: none;
+}
+
+.chrome {
   display: grid;
   grid-template-columns: 2rem minmax(0, 1fr) auto;
   align-items: center;
   height: var(--viewer-chrome-height);
   min-height: var(--viewer-chrome-height);
   padding: var(--viewer-safe-area-top) 16px 0;
-  background: var(--chrome-bg);
-  border-bottom: 1px solid var(--line);
-  backdrop-filter: blur(18px);
-}
-
-.chrome::before {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto;
-  height: var(--viewer-safe-area-top);
-  /* The toolbar itself is translucent. Keep the unsafe strip fully opaque so
-     document content cannot reappear behind the iPhone status area. */
-  background: var(--surface);
-  pointer-events: none;
 }
 
 .button {
@@ -43,48 +44,6 @@
   background: var(--surface-alt);
 }
 
-:global(html[data-theme="atomic"]) .button,
-:global(html[data-theme="atomic-dark"]) .button,
-:global(html[data-theme="atomic"]) .settingsIconButton,
-:global(html[data-theme="atomic-dark"]) .settingsIconButton {
-  border: 2px solid var(--line);
-  background: var(--accent-soft);
-  box-shadow: var(--control-shadow);
-  color: var(--accent-contrast);
-}
-
-:global(html[data-theme="atomic"]) .button:hover,
-:global(html[data-theme="atomic-dark"]) .button:hover,
-:global(html[data-theme="atomic"]) .settingsIconButton:hover,
-:global(html[data-theme="atomic-dark"]) .settingsIconButton:hover,
-:global(html[data-theme="atomic"]) .settingsIconButton[aria-expanded="true"],
-:global(html[data-theme="atomic-dark"]) .settingsIconButton[aria-expanded="true"] {
-  border-color: var(--line);
-  background: var(--accent-soft);
-  color: var(--accent-contrast);
-  transform: translate(-1px, -1px);
-}
-
-:global(html[data-theme="lcd"]) .button,
-:global(html[data-theme="lcd-dark"]) .button,
-:global(html[data-theme="lcd"]) .settingsIconButton,
-:global(html[data-theme="lcd-dark"]) .settingsIconButton {
-  border: 1px solid var(--line-strong);
-  background: var(--surface-alt);
-  box-shadow: var(--control-shadow);
-}
-
-:global(html[data-theme="lcd"]) .button:hover,
-:global(html[data-theme="lcd-dark"]) .button:hover,
-:global(html[data-theme="lcd"]) .settingsIconButton:hover,
-:global(html[data-theme="lcd-dark"]) .settingsIconButton:hover,
-:global(html[data-theme="lcd"]) .settingsIconButton[aria-expanded="true"],
-:global(html[data-theme="lcd-dark"]) .settingsIconButton[aria-expanded="true"] {
-  border-color: var(--ink);
-  background: var(--accent-soft);
-  color: var(--accent);
-}
-
 .spacer {
   min-width: 0;
 }
@@ -93,21 +52,6 @@
   display: flex;
   align-items: center;
   gap: 0.35rem;
-}
-
-.button:focus-visible,
-.settingsIconButton:focus-visible,
-.segmentedButton:focus-visible,
-.toggleRow:focus-visible,
-.select:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-
-.settingsMenu {
-  position: relative;
-  display: flex;
-  justify-content: flex-end;
 }
 
 .settingsIconButton {
@@ -122,13 +66,19 @@
   background: transparent;
   color: var(--muted-strong);
   cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
 .settingsIconButton:hover,
-.settingsIconButton[aria-expanded="true"] {
+.settingsIconButtonActive {
   border-color: var(--line);
   background: var(--surface-alt);
   color: var(--ink);
+}
+
+.settingsIconButtonActive {
+  background: var(--accent-soft);
+  color: var(--accent);
 }
 
 .settingsIcon {
@@ -136,99 +86,81 @@
   height: 1.15rem;
 }
 
-.settingsPopover {
-  position: absolute;
-  top: calc(100% + 0.55rem);
-  right: 0;
-  z-index: 20;
+/* Secondary slide-down toolbar */
+
+.subbar {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  border-top: 1px solid transparent;
+  transition:
+    max-height 220ms cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 180ms ease,
+    border-color 200ms ease;
+}
+
+.subbarOpen {
+  max-height: 48px;
+  opacity: 1;
+  overflow: visible;
+  border-top-color: var(--line);
+}
+
+.subbarContent {
   display: flex;
-  flex-direction: column;
-  gap: 0.65rem;
-  width: 260px;
-  max-width: min(260px, calc(100vw - 24px));
-  padding: 0.75rem;
-  border: var(--popover-border-width) solid var(--line);
-  border-radius: var(--radius-popover);
-  background: var(--surface);
-  box-shadow: var(--shadow);
-}
-
-.settingsSection {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.settingsSectionTitle {
-  font-family: var(--font-ui);
-  font-size: 0.68rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--muted-strong);
-  padding: 0 0.2rem;
-}
-
-.segmentedControl {
-  display: flex;
-  background: var(--surface-alt);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-option);
-  padding: 2px;
-  gap: 2px;
-}
-
-.segmentedButton {
-  flex: 1 1 0;
-  display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 1.85rem;
-  padding: 0.25rem 0.5rem;
-  border: 1px solid transparent;
-  border-radius: calc(var(--radius-option) - 2px);
-  background: transparent;
-  color: var(--muted-strong);
-  cursor: pointer;
-  font-family: var(--font-ui);
-  font-size: 0.82rem;
-  font-weight: 500;
-  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+  gap: 1.15rem;
+  width: 100%;
+  height: 42px;
+  padding: 0 16px;
 }
 
-.segmentedButton:hover {
-  color: var(--ink);
-}
-
-.segmentedButtonActive {
-  background: var(--surface);
-  border-color: var(--line);
-  color: var(--ink);
-  font-weight: 600;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-}
-
-.settingsDivider {
-  height: 1px;
-  background: var(--line);
-  margin: 0.05rem 0;
+.subbarGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
   flex-shrink: 0;
 }
 
+.controlLabel {
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--ink);
+  user-select: none;
+  line-height: 1;
+}
+
+.labelFull {
+  display: inline;
+}
+
+.labelShort {
+  display: none;
+}
+
+.subbarDivider {
+  width: 1px;
+  height: 1.15rem;
+  background: var(--line);
+  flex-shrink: 0;
+}
+
+/* Annotations toggle */
+
 .toggleRow {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  min-height: 2rem;
-  padding: 0.35rem 0.5rem;
+  gap: 0.5rem;
+  height: 1.85rem;
+  padding: 0.2rem 0.5rem;
   border: 1px solid transparent;
   border-radius: var(--radius-option);
   background: transparent;
   color: var(--ink);
   cursor: pointer;
   font-family: var(--font-ui);
-  text-align: left;
   transition: background-color 0.15s ease;
 }
 
@@ -236,17 +168,12 @@
   background: var(--surface-alt);
 }
 
-.toggleLabel {
-  font-size: 0.82rem;
-  color: var(--ink);
-}
-
 .switch {
   position: relative;
   display: inline-flex;
   align-items: center;
-  width: 2.1rem;
-  height: 1.25rem;
+  width: 1.95rem;
+  height: 1.15rem;
   border-radius: 999px;
   background: var(--line-strong);
   transition: background-color 0.2s ease;
@@ -260,67 +187,214 @@
 .switchThumb {
   position: absolute;
   left: 2px;
-  width: 1rem;
-  height: 1rem;
+  width: 0.9rem;
+  height: 0.9rem;
   border-radius: 50%;
   background: #ffffff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
   transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .switchActive .switchThumb {
-  transform: translateX(0.85rem);
+  transform: translateX(0.8rem);
 }
 
-.selectWrapper {
+/* Styled Dropdown */
+
+.dropdown {
   position: relative;
-  display: flex;
-  align-items: center;
-  width: 100%;
+  display: inline-flex;
 }
 
-.select {
-  width: 100%;
-  min-height: 2rem;
-  padding: 0.35rem 2rem 0.35rem 0.65rem;
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
+.dropdownButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.45rem;
+  min-height: 1.85rem;
+  height: 1.85rem;
+  padding: 0 0.65rem;
   border: 1px solid var(--line);
   border-radius: var(--radius-option);
   background: var(--surface-alt);
   color: var(--ink);
   font-family: var(--font-ui);
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   font-weight: 500;
   cursor: pointer;
-  outline: none;
   transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 
-.select:hover {
+.dropdownButton:hover,
+.dropdownButtonOpen {
   border-color: var(--line-strong);
   background: var(--surface);
 }
 
-.selectChevron {
-  position: absolute;
-  right: 0.65rem;
-  display: flex;
+.dropdownButtonLabel {
+  min-width: 0;
+}
+
+.dropdownChevron {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  pointer-events: none;
   color: var(--muted-strong);
+  transition: transform 0.2s ease;
 }
 
-.selectChevronIcon {
+.dropdownButtonOpen .dropdownChevron {
+  transform: rotate(180deg);
+}
+
+.dropdownChevronIcon {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+.dropdownMenu {
+  position: absolute;
+  top: calc(100% + 5px);
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 0.08rem;
+  max-height: 240px;
+  overflow-y: auto;
+  padding: 0.35rem;
+  border: var(--popover-border-width) solid var(--line);
+  border-radius: var(--radius-popover);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  overscroll-behavior: contain;
+}
+
+.dropdownMenuLeft {
+  left: 0;
+  right: auto;
+  min-width: 8rem;
+}
+
+.dropdownMenuRight {
+  right: 0;
+  left: auto;
+  min-width: 10.5rem;
+}
+
+.dropdownMenu::-webkit-scrollbar {
+  width: 4px;
+}
+
+.dropdownMenu::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dropdownMenu::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 999px;
+}
+
+.dropdownOption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+  min-height: 1.85rem;
+  padding: 0.35rem 0.5rem;
+  border: none;
+  border-radius: calc(var(--radius-option) - 1px);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  line-height: 1.1;
+  text-align: left;
+  transition: background-color 0.1s ease;
+}
+
+.dropdownOption:hover {
+  background: var(--surface-alt);
+}
+
+.dropdownOptionActive {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.dropdownOptionLabel {
+  min-width: 0;
+}
+
+.dropdownCheckIcon {
+  flex: 0 0 auto;
   width: 0.85rem;
   height: 0.85rem;
+  color: var(--accent);
 }
 
-:global(html[data-theme="atomic"]) .segmentedButtonActive,
-:global(html[data-theme="atomic-dark"]) .segmentedButtonActive {
-  border: 1px solid var(--line);
+/* Focus styles */
+
+.button:focus-visible,
+.settingsIconButton:focus-visible,
+.toggleRow:focus-visible,
+.dropdownButton:focus-visible,
+.dropdownOption:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Theme overrides: Atomic */
+
+:global(html[data-theme="atomic"]) .button,
+:global(html[data-theme="atomic-dark"]) .button,
+:global(html[data-theme="atomic"]) .settingsIconButton,
+:global(html[data-theme="atomic-dark"]) .settingsIconButton {
+  border: 2px solid var(--line);
+  background: var(--accent-soft);
+  box-shadow: var(--control-shadow);
+  color: var(--accent-contrast);
+}
+
+:global(html[data-theme="atomic"]) .button:hover,
+:global(html[data-theme="atomic-dark"]) .button:hover,
+:global(html[data-theme="atomic"]) .settingsIconButton:hover,
+:global(html[data-theme="atomic-dark"]) .settingsIconButton:hover {
+  border-color: var(--line);
+  background: var(--accent-soft);
+  color: var(--accent-contrast);
+  transform: translate(-1px, -1px);
+}
+
+:global(html[data-theme="atomic"]) .settingsIconButtonActive,
+:global(html[data-theme="atomic-dark"]) .settingsIconButtonActive {
+  border-color: var(--line);
+  background: var(--accent);
+  color: var(--accent-contrast);
+  transform: translate(-1px, -1px);
+}
+
+:global(html[data-theme="atomic"]) .header,
+:global(html[data-theme="atomic-dark"]) .header {
+  border-bottom: 2px solid var(--line);
+}
+
+:global(html[data-theme="atomic"]) .subbar,
+:global(html[data-theme="atomic-dark"]) .subbar {
+  border-top-color: var(--line);
+}
+
+:global(html[data-theme="atomic"]) .dropdownButton,
+:global(html[data-theme="atomic-dark"]) .dropdownButton {
+  border: 2px solid var(--line);
+  background: var(--surface);
+  font-weight: 700;
+}
+
+:global(html[data-theme="atomic"]) .dropdownOptionActive,
+:global(html[data-theme="atomic-dark"]) .dropdownOptionActive {
   background: var(--accent);
   color: var(--accent-contrast);
   font-weight: 800;
@@ -331,16 +405,53 @@
   background: var(--accent);
 }
 
-:global(html[data-theme="atomic"]) .select,
-:global(html[data-theme="atomic-dark"]) .select {
-  border: 2px solid var(--line);
+/* Theme overrides: LCD */
+
+:global(html[data-theme="lcd"]) .button,
+:global(html[data-theme="lcd-dark"]) .button,
+:global(html[data-theme="lcd"]) .settingsIconButton,
+:global(html[data-theme="lcd-dark"]) .settingsIconButton {
+  border: 1px solid var(--line-strong);
+  background: var(--surface-alt);
+  box-shadow: var(--control-shadow);
+}
+
+:global(html[data-theme="lcd"]) .button:hover,
+:global(html[data-theme="lcd-dark"]) .button:hover,
+:global(html[data-theme="lcd"]) .settingsIconButton:hover,
+:global(html[data-theme="lcd-dark"]) .settingsIconButton:hover {
+  border-color: var(--ink);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+:global(html[data-theme="lcd"]) .settingsIconButtonActive,
+:global(html[data-theme="lcd-dark"]) .settingsIconButtonActive {
+  border-color: var(--ink);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+:global(html[data-theme="lcd"]) .header,
+:global(html[data-theme="lcd-dark"]) .header {
+  border-bottom: 1px solid var(--line-strong);
+}
+
+:global(html[data-theme="lcd"]) .subbar,
+:global(html[data-theme="lcd-dark"]) .subbar {
+  border-top-color: var(--line-strong);
+}
+
+:global(html[data-theme="lcd"]) .dropdownButton,
+:global(html[data-theme="lcd-dark"]) .dropdownButton {
+  border: 1px solid var(--line-strong);
   background: var(--surface);
-  color: var(--accent-contrast);
+  color: var(--ink);
   font-weight: 700;
 }
 
-:global(html[data-theme="lcd"]) .segmentedButtonActive,
-:global(html[data-theme="lcd-dark"]) .segmentedButtonActive {
+:global(html[data-theme="lcd"]) .dropdownOptionActive,
+:global(html[data-theme="lcd-dark"]) .dropdownOptionActive {
   background: var(--ink);
   color: var(--surface);
   font-weight: 700;
@@ -356,21 +467,19 @@
   background: var(--surface);
 }
 
-:global(html[data-theme="lcd"]) .select,
-:global(html[data-theme="lcd-dark"]) .select {
-  border: 1px solid var(--line-strong);
-  background: var(--surface);
-  color: var(--ink);
-  font-weight: 700;
-}
+/* Theme overrides: Manuscript */
 
-:global(html[data-theme^="manuscript"]) .chrome {
+:global(html[data-theme^="manuscript"]) .header {
   border-bottom: 3px double var(--line-strong);
   background:
     linear-gradient(rgba(224, 202, 157, 0.93), rgba(214, 187, 139, 0.93)),
     var(--chrome-bg);
   box-shadow: 0 2px 8px rgba(48, 29, 13, 0.16);
   backdrop-filter: blur(9px);
+}
+
+:global(html[data-theme^="manuscript"]) .subbar {
+  border-top: 1px solid var(--line-strong);
 }
 
 :global(html[data-theme^="manuscript"]) .button,
@@ -381,14 +490,20 @@
 
 :global(html[data-theme^="manuscript"]) .button:hover,
 :global(html[data-theme^="manuscript"]) .settingsIconButton:hover,
-:global(html[data-theme^="manuscript"]) .settingsIconButton[aria-expanded="true"] {
+:global(html[data-theme^="manuscript"]) .settingsIconButtonActive {
   border-color: var(--line-strong);
   background: var(--accent-soft);
   color: var(--accent);
   box-shadow: inset 0 0 0 1px rgba(239, 224, 184, 0.72);
 }
 
-:global(html[data-theme^="manuscript"]) .settingsPopover {
+:global(html[data-theme^="manuscript"]) .dropdownButton {
+  border-color: var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+:global(html[data-theme^="manuscript"]) .dropdownMenu {
   border-style: double;
   background:
     radial-gradient(
@@ -399,24 +514,17 @@
     var(--surface);
 }
 
-:global(html[data-theme^="manuscript"]) .segmentedButtonActive {
+:global(html[data-theme^="manuscript"]) .dropdownOption {
+  letter-spacing: 0.035em;
+}
+
+:global(html[data-theme^="manuscript"]) .dropdownOptionActive {
   background: var(--accent-soft);
   color: var(--accent);
   font-weight: 600;
 }
 
-:global(html[data-theme^="manuscript"]) .settingsDivider {
-  background: var(--line-strong);
-}
-
-:global(html[data-theme^="manuscript"]) .select {
-  border-color: var(--line-strong);
-  background: var(--surface);
-  color: var(--ink);
-  letter-spacing: 0.025em;
-}
-
-:global(html[data-theme="manuscript-dark"]) .chrome {
+:global(html[data-theme="manuscript-dark"]) .header {
   background:
     linear-gradient(rgba(31, 23, 19, 0.94), rgba(23, 17, 14, 0.96)),
     var(--chrome-bg);
@@ -425,12 +533,11 @@
 
 :global(html[data-theme="manuscript-dark"]) .button:hover,
 :global(html[data-theme="manuscript-dark"]) .settingsIconButton:hover,
-:global(html[data-theme="manuscript-dark"])
-  .settingsIconButton[aria-expanded="true"] {
+:global(html[data-theme="manuscript-dark"]) .settingsIconButtonActive {
   box-shadow: inset 0 0 0 1px rgba(167, 121, 80, 0.3);
 }
 
-:global(html[data-theme="manuscript-dark"]) .settingsPopover {
+:global(html[data-theme="manuscript-dark"]) .dropdownMenu {
   background:
     radial-gradient(
       circle at 15% 10%,
@@ -440,12 +547,18 @@
     var(--surface);
 }
 
-:global(html[data-theme^="field-guide"]) .chrome {
+/* Theme overrides: Field Guide */
+
+:global(html[data-theme^="field-guide"]) .header {
   border-top: 7px solid var(--accent);
   border-bottom: 2px solid var(--line-strong);
   background: var(--chrome-bg);
   box-shadow: 0 2px 0 color-mix(in srgb, var(--ink) 12%, transparent);
   backdrop-filter: blur(12px);
+}
+
+:global(html[data-theme^="field-guide"]) .subbar {
+  border-top: 1px solid var(--line-strong);
 }
 
 :global(html[data-theme^="field-guide"]) .button,
@@ -456,39 +569,57 @@
 
 :global(html[data-theme^="field-guide"]) .button:hover,
 :global(html[data-theme^="field-guide"]) .settingsIconButton:hover,
-:global(html[data-theme^="field-guide"])
-  .settingsIconButton[aria-expanded="true"] {
+:global(html[data-theme^="field-guide"]) .settingsIconButtonActive {
   border-color: var(--line-strong);
   background: var(--accent);
   color: var(--accent-contrast);
 }
 
-:global(html[data-theme^="field-guide"]) .settingsPopover {
-  border-color: var(--line-strong);
-  background: var(--surface);
-  box-shadow: 5px 5px 0 color-mix(in srgb, var(--ink) 22%, transparent);
-}
-
-:global(html[data-theme^="field-guide"]) .segmentedButtonActive {
-  background: var(--accent);
-  color: var(--accent-contrast);
-  font-weight: 600;
-}
-
-:global(html[data-theme^="field-guide"]) .switchActive {
-  background: var(--accent);
-}
-
-:global(html[data-theme^="field-guide"]) .select {
+:global(html[data-theme^="field-guide"]) .dropdownButton {
   border-color: var(--line-strong);
   background: var(--surface);
   color: var(--ink);
   font-weight: 600;
 }
 
-@media (max-width: 860px) {
-  .chrome {
-    grid-template-columns: 2rem minmax(0, 1fr) auto;
+:global(html[data-theme^="field-guide"]) .dropdownMenu {
+  border-color: var(--line-strong);
+  background: var(--surface);
+  box-shadow: 5px 5px 0 color-mix(in srgb, var(--ink) 22%, transparent);
+}
+
+:global(html[data-theme^="field-guide"]) .dropdownOption {
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+}
+
+:global(html[data-theme^="field-guide"]) .dropdownOptionActive {
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
+
+:global(html[data-theme^="field-guide"]) .dropdownOptionActive .dropdownCheckIcon {
+  color: currentColor;
+}
+
+:global(html[data-theme^="field-guide"]) .switchActive {
+  background: var(--accent);
+}
+
+/* Responsive adjustments */
+
+@media (max-width: 640px) {
+  .subbarContent {
+    gap: 0.85rem;
+  }
+
+  .labelFull {
+    display: none;
+  }
+
+  .labelShort {
+    display: inline;
   }
 }
 
@@ -497,8 +628,8 @@
     padding: var(--viewer-safe-area-top) 12px 0;
   }
 
-  .settingsPopover {
-    width: calc(100vw - 24px);
-    max-width: calc(100vw - 24px);
+  .subbarContent {
+    padding: 0 10px;
+    gap: 0.55rem;
   }
 }

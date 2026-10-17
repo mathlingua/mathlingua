@@ -93,7 +93,11 @@ html[data-font="euler"] .katex .mathit {
 
 :root {
   --viewer-safe-area-top: env(safe-area-inset-top, 0px);
+  --viewer-subbar-height: 0px;
   --viewer-chrome-height: calc(64px + var(--viewer-safe-area-top));
+  --viewer-total-chrome-height: calc(
+    var(--viewer-chrome-height) + var(--viewer-subbar-height)
+  );
   --font-body:
     "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, Georgia,
     serif;

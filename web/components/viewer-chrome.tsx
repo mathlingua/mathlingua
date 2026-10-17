@@ -37,39 +37,31 @@ export function ViewerChrome({
   font,
   showTypes,
 }: ViewerChromeProps) {
-  const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
-  const [isFontMenuOpen, setIsFontMenuOpen] = useState(false);
-  const themeMenuRef = useRef<HTMLDivElement>(null);
-  const fontMenuRef = useRef<HTMLDivElement>(null);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const settingsMenuRef = useRef<HTMLDivElement>(null);
+
   const expanded =
     outlineState === "auto" ? undefined : outlineState === "open";
-  const activeTheme =
-    VIEWER_THEMES.find((item) => item.id === theme) ?? VIEWER_THEMES[0];
-  const activeFont =
-    VIEWER_FONTS.find((item) => item.id === font) ?? VIEWER_FONTS[0];
 
   useEffect(() => {
-    if (!isThemeMenuOpen && !isFontMenuOpen) {
+    if (!isSettingsOpen) {
       return;
     }
 
     const handlePointerDown = (event: PointerEvent) => {
       if (
         event.target instanceof Node &&
-        (themeMenuRef.current?.contains(event.target) ||
-          fontMenuRef.current?.contains(event.target))
+        settingsMenuRef.current?.contains(event.target)
       ) {
         return;
       }
 
-      setIsThemeMenuOpen(false);
-      setIsFontMenuOpen(false);
+      setIsSettingsOpen(false);
     };
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        setIsThemeMenuOpen(false);
-        setIsFontMenuOpen(false);
+        setIsSettingsOpen(false);
       }
     };
 
@@ -80,17 +72,7 @@ export function ViewerChrome({
       document.removeEventListener("pointerdown", handlePointerDown);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isThemeMenuOpen, isFontMenuOpen]);
-
-  const handleThemeChange = (nextTheme: ViewerTheme) => {
-    onThemeChange(nextTheme);
-    setIsThemeMenuOpen(false);
-  };
-
-  const handleFontChange = (nextFont: ViewerFont) => {
-    onFontChange(nextFont);
-    setIsFontMenuOpen(false);
-  };
+  }, [isSettingsOpen]);
 
   return (
     <header className={styles.chrome}>
@@ -118,101 +100,98 @@ export function ViewerChrome({
       </button>
       <div className={styles.spacer} />
       <div className={styles.tools}>
-        <button
-          aria-label={
-            showTypes ? "Hide expression types" : "Show expression types"
-          }
-          aria-pressed={showTypes}
-          className={
-            showTypes
-              ? `${styles.typesButton} ${styles.typesButtonActive}`
-              : styles.typesButton
-          }
-          onClick={onToggleTypes}
-          title={showTypes ? "Hide expression types" : "Show expression types"}
-          type="button"
-        >
-          <TypeIcon />
-        </button>
-        <div className={styles.fontMenu} ref={fontMenuRef}>
+        <div className={styles.settingsMenu} ref={settingsMenuRef}>
           <button
-            aria-expanded={isFontMenuOpen}
-            aria-haspopup="menu"
-            aria-label={`Font: ${activeFont.label}`}
-            className={styles.fontIconButton}
-            onClick={() => {
-              setIsFontMenuOpen((value) => !value);
-              setIsThemeMenuOpen(false);
-            }}
-            title="Font"
+            aria-expanded={isSettingsOpen}
+            aria-haspopup="dialog"
+            aria-label="Settings"
+            className={styles.settingsIconButton}
+            onClick={() => setIsSettingsOpen((value) => !value)}
+            title="Settings"
             type="button"
           >
-            <FontIcon />
+            <SettingsIcon />
           </button>
-          {isFontMenuOpen ? (
+          {isSettingsOpen ? (
             <div
-              aria-label="Select font"
-              className={styles.fontPopover}
-              role="menu"
+              aria-label="Viewer settings"
+              className={styles.settingsPopover}
+              role="dialog"
             >
-              {VIEWER_FONTS.map((item) => (
+              <div className={styles.settingsSection}>
+                <div className={styles.settingsSectionTitle}>Font</div>
+                <div
+                  aria-label="Font"
+                  className={styles.segmentedControl}
+                  role="radiogroup"
+                >
+                  {VIEWER_FONTS.map((item) => (
+                    <button
+                      aria-checked={font === item.id}
+                      className={
+                        font === item.id
+                          ? `${styles.segmentedButton} ${styles.segmentedButtonActive}`
+                          : styles.segmentedButton
+                      }
+                      key={item.id}
+                      onClick={() => onFontChange(item.id)}
+                      role="radio"
+                      type="button"
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className={styles.settingsDivider} />
+
+              <div className={styles.settingsSection}>
+                <div className={styles.settingsSectionTitle}>Annotations</div>
                 <button
-                  aria-checked={font === item.id}
-                  className={
-                    font === item.id
-                      ? `${styles.themeOption} ${styles.themeOptionActive}`
-                      : styles.themeOption
-                  }
-                  key={item.id}
-                  onClick={() => handleFontChange(item.id)}
-                  role="menuitemradio"
+                  aria-checked={showTypes}
+                  className={styles.toggleRow}
+                  onClick={onToggleTypes}
+                  role="switch"
                   type="button"
                 >
-                  <span className={styles.themeOptionLabel}>{item.label}</span>
-                  {font === item.id ? <CheckIcon /> : null}
+                  <span className={styles.toggleLabel}>Expression types</span>
+                  <span
+                    className={
+                      showTypes
+                        ? `${styles.switch} ${styles.switchActive}`
+                        : styles.switch
+                    }
+                  >
+                    <span className={styles.switchThumb} />
+                  </span>
                 </button>
-              ))}
-            </div>
-          ) : null}
-        </div>
-        <div className={styles.themeMenu} ref={themeMenuRef}>
-          <button
-            aria-expanded={isThemeMenuOpen}
-            aria-haspopup="menu"
-            aria-label={`Theme: ${activeTheme.label}`}
-            className={styles.themeIconButton}
-            onClick={() => {
-              setIsThemeMenuOpen((value) => !value);
-              setIsFontMenuOpen(false);
-            }}
-            title="Theme"
-            type="button"
-          >
-            <ThemeIcon />
-          </button>
-          {isThemeMenuOpen ? (
-            <div
-              aria-label="Select theme"
-              className={styles.themePopover}
-              role="menu"
-            >
-              {VIEWER_THEMES.map((item) => (
-                <button
-                  aria-checked={theme === item.id}
-                  className={
-                    theme === item.id
-                      ? `${styles.themeOption} ${styles.themeOptionActive}`
-                      : styles.themeOption
-                  }
-                  key={item.id}
-                  onClick={() => handleThemeChange(item.id)}
-                  role="menuitemradio"
-                  type="button"
-                >
-                  <span className={styles.themeOptionLabel}>{item.label}</span>
-                  {theme === item.id ? <CheckIcon /> : null}
-                </button>
-              ))}
+              </div>
+
+              <div className={styles.settingsDivider} />
+
+              <div className={styles.settingsSection}>
+                <div className={styles.settingsSectionTitle}>Theme</div>
+                <div className={styles.selectWrapper}>
+                  <select
+                    aria-label="Select theme"
+                    className={styles.select}
+                    onChange={(event) =>
+                      onThemeChange(event.target.value as ViewerTheme)
+                    }
+                    value={theme}
+                  >
+                    {VIEWER_THEMES.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.label}
+                      </option>
+                    ))}
+                  </select>
+                  <span aria-hidden="true" className={styles.selectChevron}>
+                    <ChevronDownIcon />
+                  </span>
+                </div>
+              </div>
             </div>
           ) : null}
         </div>
@@ -221,94 +200,37 @@ export function ViewerChrome({
   );
 }
 
-function TypeIcon() {
+function SettingsIcon() {
   return (
     <svg
       aria-hidden="true"
-      className={styles.typesIcon}
-      fill="none"
-      viewBox="0 0 20 20"
-    >
-      <path d="M4 5h12M10 5v10" stroke="currentColor" strokeLinecap="round" />
-      <circle cx="10" cy="15" fill="currentColor" r="1.25" />
-    </svg>
-  );
-}
-
-function FontIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      className={styles.fontIcon}
+      className={styles.settingsIcon}
       fill="none"
       viewBox="0 0 24 24"
     >
       <path
-        d="m3 17 5-11 5 11"
+        d="M3 6h3m4 0h11M3 12h11m4 0h3M3 18h5m4 0h9"
         stroke="currentColor"
         strokeLinecap="round"
-        strokeLinejoin="round"
         strokeWidth="1.7"
       />
-      <path
-        d="M4.8 13h6.4"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="1.7"
-      />
-      <circle cx="18" cy="13" r="3.5" stroke="currentColor" strokeWidth="1.7" />
-      <path
-        d="M21.5 9.5v7.5"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="1.7"
-      />
+      <circle cx="8" cy="6" r="2" stroke="currentColor" strokeWidth="1.7" />
+      <circle cx="16" cy="12" r="2" stroke="currentColor" strokeWidth="1.7" />
+      <circle cx="10" cy="18" r="2" stroke="currentColor" strokeWidth="1.7" />
     </svg>
   );
 }
 
-function ThemeIcon() {
+function ChevronDownIcon() {
   return (
     <svg
       aria-hidden="true"
-      className={styles.themeIcon}
-      fill="none"
-      viewBox="0 0 24 24"
-    >
-      <circle
-        cx="12"
-        cy="12"
-        r="8.25"
-        stroke="currentColor"
-        strokeWidth="1.7"
-      />
-      <path
-        d="M12 3.75a8.25 8.25 0 0 0 0 16.5Z"
-        fill="currentColor"
-        opacity="0.18"
-      />
-      <path
-        d="M12 3.75a8.25 8.25 0 0 1 0 16.5"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeWidth="1.7"
-      />
-    </svg>
-  );
-}
-
-function CheckIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      className={styles.themeCheckIcon}
+      className={styles.selectChevronIcon}
       fill="none"
       viewBox="0 0 16 16"
     >
       <path
-        d="M3.5 8.2 6.4 11 12.7 4.8"
+        d="m4 6 4 4 4-4"
         stroke="currentColor"
         strokeLinecap="round"
         strokeLinejoin="round"

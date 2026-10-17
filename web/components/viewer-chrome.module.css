@@ -45,10 +45,8 @@
 
 :global(html[data-theme="atomic"]) .button,
 :global(html[data-theme="atomic-dark"]) .button,
-:global(html[data-theme="atomic"]) .themeIconButton,
-:global(html[data-theme="atomic-dark"]) .themeIconButton,
-:global(html[data-theme="atomic"]) .fontIconButton,
-:global(html[data-theme="atomic-dark"]) .fontIconButton {
+:global(html[data-theme="atomic"]) .settingsIconButton,
+:global(html[data-theme="atomic-dark"]) .settingsIconButton {
   border: 2px solid var(--line);
   background: var(--accent-soft);
   box-shadow: var(--control-shadow);
@@ -57,14 +55,10 @@
 
 :global(html[data-theme="atomic"]) .button:hover,
 :global(html[data-theme="atomic-dark"]) .button:hover,
-:global(html[data-theme="atomic"]) .themeIconButton:hover,
-:global(html[data-theme="atomic-dark"]) .themeIconButton:hover,
-:global(html[data-theme="atomic"]) .themeIconButton[aria-expanded="true"],
-:global(html[data-theme="atomic-dark"]) .themeIconButton[aria-expanded="true"],
-:global(html[data-theme="atomic"]) .fontIconButton:hover,
-:global(html[data-theme="atomic-dark"]) .fontIconButton:hover,
-:global(html[data-theme="atomic"]) .fontIconButton[aria-expanded="true"],
-:global(html[data-theme="atomic-dark"]) .fontIconButton[aria-expanded="true"] {
+:global(html[data-theme="atomic"]) .settingsIconButton:hover,
+:global(html[data-theme="atomic-dark"]) .settingsIconButton:hover,
+:global(html[data-theme="atomic"]) .settingsIconButton[aria-expanded="true"],
+:global(html[data-theme="atomic-dark"]) .settingsIconButton[aria-expanded="true"] {
   border-color: var(--line);
   background: var(--accent-soft);
   color: var(--accent-contrast);
@@ -73,12 +67,8 @@
 
 :global(html[data-theme="lcd"]) .button,
 :global(html[data-theme="lcd-dark"]) .button,
-:global(html[data-theme="lcd"]) .typesButton,
-:global(html[data-theme="lcd-dark"]) .typesButton,
-:global(html[data-theme="lcd"]) .themeIconButton,
-:global(html[data-theme="lcd-dark"]) .themeIconButton,
-:global(html[data-theme="lcd"]) .fontIconButton,
-:global(html[data-theme="lcd-dark"]) .fontIconButton {
+:global(html[data-theme="lcd"]) .settingsIconButton,
+:global(html[data-theme="lcd-dark"]) .settingsIconButton {
   border: 1px solid var(--line-strong);
   background: var(--surface-alt);
   box-shadow: var(--control-shadow);
@@ -86,18 +76,10 @@
 
 :global(html[data-theme="lcd"]) .button:hover,
 :global(html[data-theme="lcd-dark"]) .button:hover,
-:global(html[data-theme="lcd"]) .typesButton:hover,
-:global(html[data-theme="lcd-dark"]) .typesButton:hover,
-:global(html[data-theme="lcd"]) .typesButtonActive,
-:global(html[data-theme="lcd-dark"]) .typesButtonActive,
-:global(html[data-theme="lcd"]) .themeIconButton:hover,
-:global(html[data-theme="lcd-dark"]) .themeIconButton:hover,
-:global(html[data-theme="lcd"]) .themeIconButton[aria-expanded="true"],
-:global(html[data-theme="lcd-dark"]) .themeIconButton[aria-expanded="true"],
-:global(html[data-theme="lcd"]) .fontIconButton:hover,
-:global(html[data-theme="lcd-dark"]) .fontIconButton:hover,
-:global(html[data-theme="lcd"]) .fontIconButton[aria-expanded="true"],
-:global(html[data-theme="lcd-dark"]) .fontIconButton[aria-expanded="true"] {
+:global(html[data-theme="lcd"]) .settingsIconButton:hover,
+:global(html[data-theme="lcd-dark"]) .settingsIconButton:hover,
+:global(html[data-theme="lcd"]) .settingsIconButton[aria-expanded="true"],
+:global(html[data-theme="lcd-dark"]) .settingsIconButton[aria-expanded="true"] {
   border-color: var(--ink);
   background: var(--accent-soft);
   color: var(--accent);
@@ -113,53 +95,22 @@
   gap: 0.35rem;
 }
 
-.typesButton {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2rem;
-  min-height: 2rem;
-  padding: 0;
-  border: 1px solid transparent;
-  border-radius: var(--radius-control);
-  background: transparent;
-  color: var(--muted-strong);
-  cursor: pointer;
-}
-
-.typesButton:hover,
-.typesButtonActive {
-  border-color: var(--line);
-  background: var(--surface-alt);
-  color: var(--ink);
-}
-
-.typesButtonActive {
-  background: var(--accent-soft);
-  color: var(--accent);
-}
-
-.typesIcon {
-  width: 0.95rem;
-  height: 0.95rem;
-}
-
 .button:focus-visible,
-.typesButton:focus-visible,
-.fontIconButton:focus-visible,
-.themeIconButton:focus-visible,
-.themeOption:focus-visible {
+.settingsIconButton:focus-visible,
+.segmentedButton:focus-visible,
+.toggleRow:focus-visible,
+.select:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
-.fontMenu {
+.settingsMenu {
   position: relative;
   display: flex;
   justify-content: flex-end;
 }
 
-.fontIconButton {
+.settingsIconButton {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -173,130 +124,244 @@
   cursor: pointer;
 }
 
-.fontIconButton:hover,
-.fontIconButton[aria-expanded="true"] {
+.settingsIconButton:hover,
+.settingsIconButton[aria-expanded="true"] {
   border-color: var(--line);
   background: var(--surface-alt);
   color: var(--ink);
 }
 
-.fontIcon {
+.settingsIcon {
   width: 1.15rem;
   height: 1.15rem;
 }
 
-.fontPopover {
+.settingsPopover {
   position: absolute;
   top: calc(100% + 0.55rem);
   right: 0;
   z-index: 20;
-  display: grid;
-  gap: 0.08rem;
-  min-width: 8rem;
-  padding: 0.35rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  width: 260px;
+  max-width: min(260px, calc(100vw - 24px));
+  padding: 0.75rem;
   border: var(--popover-border-width) solid var(--line);
   border-radius: var(--radius-popover);
   background: var(--surface);
   box-shadow: var(--shadow);
 }
 
-.themeMenu {
-  position: relative;
+.settingsSection {
   display: flex;
-  justify-content: flex-end;
+  flex-direction: column;
+  gap: 0.35rem;
 }
 
-.themeIconButton {
+.settingsSectionTitle {
+  font-family: var(--font-ui);
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted-strong);
+  padding: 0 0.2rem;
+}
+
+.segmentedControl {
+  display: flex;
+  background: var(--surface-alt);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-option);
+  padding: 2px;
+  gap: 2px;
+}
+
+.segmentedButton {
+  flex: 1 1 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2rem;
-  height: 2rem;
-  padding: 0;
+  min-height: 1.85rem;
+  padding: 0.25rem 0.5rem;
   border: 1px solid transparent;
-  border-radius: var(--radius-control);
+  border-radius: calc(var(--radius-option) - 2px);
   background: transparent;
   color: var(--muted-strong);
   cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: 0.82rem;
+  font-weight: 500;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.themeIconButton:hover,
-.themeIconButton[aria-expanded="true"] {
-  border-color: var(--line);
-  background: var(--surface-alt);
+.segmentedButton:hover {
   color: var(--ink);
 }
 
-.themeIcon {
-  width: 1.15rem;
-  height: 1.15rem;
-}
-
-.themePopover {
-  position: absolute;
-  top: calc(100% + 0.55rem);
-  right: 0;
-  z-index: 20;
-  display: grid;
-  gap: 0.08rem;
-  min-width: 9rem;
-  padding: 0.35rem;
-  border: var(--popover-border-width) solid var(--line);
-  border-radius: var(--radius-popover);
+.segmentedButtonActive {
   background: var(--surface);
-  box-shadow: var(--shadow);
+  border-color: var(--line);
+  color: var(--ink);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
-.themeOption {
+.settingsDivider {
+  height: 1px;
+  background: var(--line);
+  margin: 0.05rem 0;
+  flex-shrink: 0;
+}
+
+.toggleRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
   width: 100%;
   min-height: 2rem;
-  padding: 0.42rem 0.5rem;
-  border: none;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid transparent;
   border-radius: var(--radius-option);
   background: transparent;
   color: var(--ink);
   cursor: pointer;
   font-family: var(--font-ui);
-  font-size: 0.82rem;
-  line-height: 1.1;
   text-align: left;
+  transition: background-color 0.15s ease;
 }
 
-.themeOption:hover {
+.toggleRow:hover {
   background: var(--surface-alt);
 }
 
-.themeOptionActive {
-  background: var(--accent-soft);
+.toggleLabel {
+  font-size: 0.82rem;
   color: var(--ink);
 }
 
-:global(html[data-theme="atomic"]) .themeOptionActive,
-:global(html[data-theme="atomic-dark"]) .themeOptionActive {
+.switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 2.1rem;
+  height: 1.25rem;
+  border-radius: 999px;
+  background: var(--line-strong);
+  transition: background-color 0.2s ease;
+  flex-shrink: 0;
+}
+
+.switchActive {
+  background: var(--accent);
+}
+
+.switchThumb {
+  position: absolute;
+  left: 2px;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.switchActive .switchThumb {
+  transform: translateX(0.85rem);
+}
+
+.selectWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.select {
+  width: 100%;
+  min-height: 2rem;
+  padding: 0.35rem 2rem 0.35rem 0.65rem;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-option);
+  background: var(--surface-alt);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.select:hover {
+  border-color: var(--line-strong);
+  background: var(--surface);
+}
+
+.selectChevron {
+  position: absolute;
+  right: 0.65rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  color: var(--muted-strong);
+}
+
+.selectChevronIcon {
+  width: 0.85rem;
+  height: 0.85rem;
+}
+
+:global(html[data-theme="atomic"]) .segmentedButtonActive,
+:global(html[data-theme="atomic-dark"]) .segmentedButtonActive {
+  border: 1px solid var(--line);
+  background: var(--accent);
   color: var(--accent-contrast);
   font-weight: 800;
 }
 
-:global(html[data-theme="lcd"]) .themeOptionActive,
-:global(html[data-theme="lcd-dark"]) .themeOptionActive {
+:global(html[data-theme="atomic"]) .switchActive,
+:global(html[data-theme="atomic-dark"]) .switchActive {
+  background: var(--accent);
+}
+
+:global(html[data-theme="atomic"]) .select,
+:global(html[data-theme="atomic-dark"]) .select {
+  border: 2px solid var(--line);
+  background: var(--surface);
+  color: var(--accent-contrast);
+  font-weight: 700;
+}
+
+:global(html[data-theme="lcd"]) .segmentedButtonActive,
+:global(html[data-theme="lcd-dark"]) .segmentedButtonActive {
   background: var(--ink);
   color: var(--surface);
   font-weight: 700;
 }
 
-.themeOptionLabel {
-  min-width: 0;
+:global(html[data-theme="lcd"]) .switchActive,
+:global(html[data-theme="lcd-dark"]) .switchActive {
+  background: var(--ink);
 }
 
-.themeCheckIcon {
-  flex: 0 0 auto;
-  width: 0.85rem;
-  height: 0.85rem;
-  color: var(--accent);
+:global(html[data-theme="lcd"]) .switchThumb,
+:global(html[data-theme="lcd-dark"]) .switchThumb {
+  background: var(--surface);
+}
+
+:global(html[data-theme="lcd"]) .select,
+:global(html[data-theme="lcd-dark"]) .select {
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 700;
 }
 
 :global(html[data-theme^="manuscript"]) .chrome {
@@ -309,28 +374,21 @@
 }
 
 :global(html[data-theme^="manuscript"]) .button,
-:global(html[data-theme^="manuscript"]) .typesButton,
-:global(html[data-theme^="manuscript"]) .themeIconButton,
-:global(html[data-theme^="manuscript"]) .fontIconButton {
+:global(html[data-theme^="manuscript"]) .settingsIconButton {
   border: 1px solid transparent;
   color: var(--line-strong);
 }
 
 :global(html[data-theme^="manuscript"]) .button:hover,
-:global(html[data-theme^="manuscript"]) .typesButton:hover,
-:global(html[data-theme^="manuscript"]) .typesButtonActive,
-:global(html[data-theme^="manuscript"]) .themeIconButton:hover,
-:global(html[data-theme^="manuscript"]) .themeIconButton[aria-expanded="true"],
-:global(html[data-theme^="manuscript"]) .fontIconButton:hover,
-:global(html[data-theme^="manuscript"]) .fontIconButton[aria-expanded="true"] {
+:global(html[data-theme^="manuscript"]) .settingsIconButton:hover,
+:global(html[data-theme^="manuscript"]) .settingsIconButton[aria-expanded="true"] {
   border-color: var(--line-strong);
   background: var(--accent-soft);
   color: var(--accent);
   box-shadow: inset 0 0 0 1px rgba(239, 224, 184, 0.72);
 }
 
-:global(html[data-theme^="manuscript"]) .themePopover,
-:global(html[data-theme^="manuscript"]) .fontPopover {
+:global(html[data-theme^="manuscript"]) .settingsPopover {
   border-style: double;
   background:
     radial-gradient(
@@ -341,14 +399,21 @@
     var(--surface);
 }
 
-:global(html[data-theme^="manuscript"]) .themeOption {
-  letter-spacing: 0.035em;
-}
-
-:global(html[data-theme^="manuscript"]) .themeOptionActive {
+:global(html[data-theme^="manuscript"]) .segmentedButtonActive {
   background: var(--accent-soft);
   color: var(--accent);
   font-weight: 600;
+}
+
+:global(html[data-theme^="manuscript"]) .settingsDivider {
+  background: var(--line-strong);
+}
+
+:global(html[data-theme^="manuscript"]) .select {
+  border-color: var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  letter-spacing: 0.025em;
 }
 
 :global(html[data-theme="manuscript-dark"]) .chrome {
@@ -359,19 +424,13 @@
 }
 
 :global(html[data-theme="manuscript-dark"]) .button:hover,
-:global(html[data-theme="manuscript-dark"]) .typesButton:hover,
-:global(html[data-theme="manuscript-dark"]) .typesButtonActive,
-:global(html[data-theme="manuscript-dark"]) .themeIconButton:hover,
+:global(html[data-theme="manuscript-dark"]) .settingsIconButton:hover,
 :global(html[data-theme="manuscript-dark"])
-  .themeIconButton[aria-expanded="true"],
-:global(html[data-theme="manuscript-dark"]) .fontIconButton:hover,
-:global(html[data-theme="manuscript-dark"])
-  .fontIconButton[aria-expanded="true"] {
+  .settingsIconButton[aria-expanded="true"] {
   box-shadow: inset 0 0 0 1px rgba(167, 121, 80, 0.3);
 }
 
-:global(html[data-theme="manuscript-dark"]) .themePopover,
-:global(html[data-theme="manuscript-dark"]) .fontPopover {
+:global(html[data-theme="manuscript-dark"]) .settingsPopover {
   background:
     radial-gradient(
       circle at 15% 10%,
@@ -390,47 +449,41 @@
 }
 
 :global(html[data-theme^="field-guide"]) .button,
-:global(html[data-theme^="field-guide"]) .typesButton,
-:global(html[data-theme^="field-guide"]) .themeIconButton,
-:global(html[data-theme^="field-guide"]) .fontIconButton {
+:global(html[data-theme^="field-guide"]) .settingsIconButton {
   border: 1px solid transparent;
   color: var(--ink);
 }
 
 :global(html[data-theme^="field-guide"]) .button:hover,
-:global(html[data-theme^="field-guide"]) .typesButton:hover,
-:global(html[data-theme^="field-guide"]) .typesButtonActive,
-:global(html[data-theme^="field-guide"]) .themeIconButton:hover,
+:global(html[data-theme^="field-guide"]) .settingsIconButton:hover,
 :global(html[data-theme^="field-guide"])
-  .themeIconButton[aria-expanded="true"],
-:global(html[data-theme^="field-guide"]) .fontIconButton:hover,
-:global(html[data-theme^="field-guide"])
-  .fontIconButton[aria-expanded="true"] {
+  .settingsIconButton[aria-expanded="true"] {
   border-color: var(--line-strong);
   background: var(--accent);
   color: var(--accent-contrast);
 }
 
-:global(html[data-theme^="field-guide"]) .themePopover,
-:global(html[data-theme^="field-guide"]) .fontPopover {
+:global(html[data-theme^="field-guide"]) .settingsPopover {
   border-color: var(--line-strong);
   background: var(--surface);
   box-shadow: 5px 5px 0 color-mix(in srgb, var(--ink) 22%, transparent);
 }
 
-:global(html[data-theme^="field-guide"]) .themeOption {
-  font-size: 0.78rem;
-  font-weight: 600;
-  letter-spacing: 0.025em;
-}
-
-:global(html[data-theme^="field-guide"]) .themeOptionActive {
+:global(html[data-theme^="field-guide"]) .segmentedButtonActive {
   background: var(--accent);
   color: var(--accent-contrast);
+  font-weight: 600;
 }
 
-:global(html[data-theme^="field-guide"]) .themeOptionActive .themeCheckIcon {
-  color: currentColor;
+:global(html[data-theme^="field-guide"]) .switchActive {
+  background: var(--accent);
+}
+
+:global(html[data-theme^="field-guide"]) .select {
+  border-color: var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 600;
 }
 
 @media (max-width: 860px) {
@@ -444,7 +497,8 @@
     padding: var(--viewer-safe-area-top) 12px 0;
   }
 
-  .themePopover {
-    min-width: 8.25rem;
+  .settingsPopover {
+    width: calc(100vw - 24px);
+    max-width: calc(100vw - 24px);
   }
 }

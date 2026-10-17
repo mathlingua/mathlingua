@@ -19,11 +19,10 @@ use escaping::*;
 use expressions::*;
 use fallbacks::*;
 use names::*;
-#[cfg(test)]
-pub(super) use registry::build_render_registry;
+pub use registry::{RenderRegistry, build_render_registry};
 use registry::*;
 pub(super) use registry::{
-    RenderRegistry, build_linked_render_registry, definition_reference_keys_for_heading,
+    build_linked_render_registry, definition_reference_keys_for_heading,
     join_title_parts, render_documented_text_latex, render_formulation_latex,
     render_group_heading_latex, render_group_parameter_destructurings,
     render_refines_section_latex, render_refines_specifies_latex, render_resource_reference,

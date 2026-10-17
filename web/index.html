@@ -53,6 +53,11 @@
           document
             .querySelector('meta[name="theme-color"]')
             ?.setAttribute("content", safeAreaColor);
+
+          const font = window.localStorage.getItem("mlg-view-font");
+          if (font === "euler") {
+            document.documentElement.dataset.font = "euler";
+          }
         } catch (_) {}
       })();
       window.__MLG_VIEW_CONFIG__ = __MLG_RUNTIME_CONFIG_JSON__;

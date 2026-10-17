@@ -5,6 +5,13 @@ import { FileList } from "./file-list";
 import type { OutlineState } from "./outline-state";
 import { ViewerChrome } from "./viewer-chrome";
 import {
+  DEFAULT_VIEWER_FONT,
+  VIEWER_FONT_STORAGE_KEY,
+  applyViewerFont,
+  isViewerFont,
+  type ViewerFont,
+} from "./viewer-font";
+import {
   DEFAULT_VIEWER_THEME,
   VIEWER_THEME_STORAGE_KEY,
   applyViewerTheme,
@@ -108,6 +115,7 @@ export function ViewerShell({
   );
   const [browsedDirectory, setBrowsedDirectory] = useState<string | null>(null);
   const [theme, setTheme] = useState<ViewerTheme>(DEFAULT_VIEWER_THEME);
+  const [font, setFont] = useState<ViewerFont>(DEFAULT_VIEWER_FONT);
   const [showTypes, setShowTypes] = useState(false);
 
   const selectedNode = readerNodes[selectedNodeIndex] ?? readerNodes[0];
@@ -174,6 +182,56 @@ export function ViewerShell({
       cancelled = true;
     };
   }, [collectionDataPath, manifest]);
+
+  useEffect(() => {
+    if (!collectionDataPath) {
+      return;
+    }
+
+    let cancelled = false;
+    let lastVersion: number | null = null;
+    const versionUrl = collectionDataPath.replace(
+      /\/api\/collection\.json$/,
+      "/api/version",
+    );
+
+    const intervalId = window.setInterval(() => {
+      fetchJson<{ version: number }>(versionUrl)
+        .then((data) => {
+          if (cancelled) {
+            return;
+          }
+          if (lastVersion === null) {
+            lastVersion = data.version;
+            return;
+          }
+          if (data.version !== lastVersion) {
+            lastVersion = data.version;
+            return fetchJson<CollectionView>(collectionDataPath).then(
+              (collection) => {
+                if (cancelled) {
+                  return;
+                }
+                setManifest(manifestFromCollection(collection));
+                setLoadedFiles(
+                  Object.fromEntries(
+                    collection.files.map((file) => [file.path, file]),
+                  ),
+                );
+              },
+            );
+          }
+        })
+        .catch(() => {
+          // Ignore polling errors while rebuilding/restarting
+        });
+    }, 500);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [collectionDataPath]);
 
   useEffect(() => {
     if (!staticDataBasePath || manifest) {
@@ -274,8 +332,18 @@ export function ViewerShell({
         ? storedTheme
         : DEFAULT_VIEWER_THEME;
 
+    const documentFont = document.documentElement.dataset.font;
+    const storedFont = readStoredFont();
+    const initialFont = isViewerFont(documentFont)
+      ? documentFont
+      : isViewerFont(storedFont)
+        ? storedFont
+        : DEFAULT_VIEWER_FONT;
+
     setTheme(initialTheme);
     applyViewerTheme(initialTheme);
+    setFont(initialFont);
+    applyViewerFont(initialFont);
     setShowTypes(readStoredBoolean(SHOW_TYPES_STORAGE_KEY));
   }, []);
 
@@ -348,6 +416,12 @@ export function ViewerShell({
     writeStoredTheme(nextTheme);
   };
 
+  const handleFontChange = (nextFont: ViewerFont) => {
+    setFont(nextFont);
+    applyViewerFont(nextFont);
+    writeStoredFont(nextFont);
+  };
+
   const handleToggleTypes = () => {
     setShowTypes((current) => {
       const next = !current;
@@ -414,9 +488,11 @@ export function ViewerShell({
   return (
     <>
       <ViewerChrome
+        font={font}
+        onFontChange={handleFontChange}
+        onThemeChange={handleThemeChange}
         onToggleOutline={handleToggleOutline}
         onToggleTypes={handleToggleTypes}
-        onThemeChange={handleThemeChange}
         outlineState={outlineState}
         showTypes={showTypes}
         theme={theme}
@@ -612,6 +688,20 @@ function readStoredTheme(): string | null {
 function writeStoredTheme(theme: ViewerTheme) {
   try {
     window.localStorage.setItem(VIEWER_THEME_STORAGE_KEY, theme);
+  } catch (_) {}
+}
+
+function readStoredFont(): string | null {
+  try {
+    return window.localStorage.getItem(VIEWER_FONT_STORAGE_KEY);
+  } catch (_) {
+    return null;
+  }
+}
+
+function writeStoredFont(font: ViewerFont) {
+  try {
+    window.localStorage.setItem(VIEWER_FONT_STORAGE_KEY, font);
   } catch (_) {}
 }
 

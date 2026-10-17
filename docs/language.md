@@ -10,8 +10,9 @@ For a tour of the language by example, read
 top-level item and the different ways each can be written. It checks cleanly, and
 a test keeps it that way, so nothing in it can drift from the implementation.
 
-For exact parser-level details, keep these references nearby:
+For quick syntax lookups and exact parser-level details, keep these references nearby:
 
+- [Cheat sheet](cheatsheet.md) is a concise high-level reference of language constructs.
 - [Structural syntax](structural_syntax.md) describes line structure, groups,
   sections, and clause groups.
 - [Formulation syntax](formulation_syntax.md) describes expressions, forms,

@@ -21,7 +21,9 @@ use tiny_http::{Header, Method, Request, Response, Server, StatusCode};
 const ORIGIN: &str = "mlg_view";
 const VIEW_BIND_HOST: &str = "0.0.0.0";
 const COLLECTION_DATA_URL: &str = "/api/collection.json";
+const COLLECTION_VERSION_URL: &str = "/api/version";
 static NEXT_VIEW_SESSION_DIR_ID: AtomicUsize = AtomicUsize::new(0);
+static VIEW_DATA_VERSION: AtomicUsize = AtomicUsize::new(1);
 
 pub struct ViewResult {
     pub event_log: EventLog,
@@ -160,6 +162,7 @@ pub(super) fn view_in(
         let _ = fs::remove_dir_all(&view_session_dir);
         return Err(error);
     }
+    VIEW_DATA_VERSION.store(1, Ordering::SeqCst);
 
     let (refresh_sender, refresh_receiver) = mpsc::channel();
     let stop_refresh = Arc::new(AtomicBool::new(false));
@@ -268,6 +271,15 @@ fn serve_view_request(request: Request, view_data_path: &Path, index: &[u8]) -> 
 
     if url_path == COLLECTION_DATA_URL {
         let body = fs::read(view_data_path)?;
+        return request.respond(
+            response(body, StatusCode(200), "application/json; charset=utf-8")?
+                .with_header(header("Cache-Control", "no-store")?),
+        );
+    }
+
+    if url_path == COLLECTION_VERSION_URL {
+        let version = VIEW_DATA_VERSION.load(Ordering::SeqCst);
+        let body = format!("{{\"version\":{version}}}").into_bytes();
         return request.respond(
             response(body, StatusCode(200), "application/json; charset=utf-8")?
                 .with_header(header("Cache-Control", "no-store")?),
@@ -397,6 +409,7 @@ fn spawn_view_data_refresher(
             }
             match rebuild_collection_view_data(&cwd, &view_data_path) {
                 Ok(ViewDataRefresh::Updated) => {
+                    VIEW_DATA_VERSION.fetch_add(1, Ordering::SeqCst);
                     if watch {
                         let event = Event::user_status(
                             format!("Viewer updated — {url}"),
@@ -559,6 +572,18 @@ mod tests {
         assert!(!looks_like_asset_path("sets/groups"));
         assert!(looks_like_asset_path("assets/missing.js"));
         assert!(looks_like_asset_path("favicon.ico"));
+    }
+
+    #[test]
+    fn version_endpoint_reflects_version_updates() {
+        use super::{COLLECTION_VERSION_URL, VIEW_DATA_VERSION};
+        use std::sync::atomic::Ordering;
+
+        let initial_version = VIEW_DATA_VERSION.load(Ordering::SeqCst);
+        VIEW_DATA_VERSION.fetch_add(1, Ordering::SeqCst);
+        let updated_version = VIEW_DATA_VERSION.load(Ordering::SeqCst);
+        assert_eq!(updated_version, initial_version + 1);
+        assert_eq!(COLLECTION_VERSION_URL, "/api/version");
     }
 
     #[test]

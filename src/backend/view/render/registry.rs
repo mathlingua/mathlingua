@@ -1,7 +1,7 @@
 use super::*;
 
 #[derive(Clone, Debug, Default)]
-pub(in crate::backend::view) struct RenderRegistry {
+pub struct RenderRegistry {
     /// Map from canonical command signature to the rendering data for that command.
     pub(super) commands: HashMap<String, CommandRender>,
     /// Render templates for capabilities where the described item is callable,
@@ -152,7 +152,7 @@ pub(in crate::backend::view) fn join_title_parts(called: &str, written: &str) ->
     format!("{called}\\quad\\htmlClass{{{TITLE_WRITTEN_CLASS}}}{{{written}}}")
 }
 
-pub(in crate::backend::view) fn build_render_registry(
+pub fn build_render_registry(
     files: &[ParsedSourceFile],
 ) -> RenderRegistry {
     let mut registry = RenderRegistry::default();

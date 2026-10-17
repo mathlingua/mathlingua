@@ -1,5 +1,10 @@
 use crate::backend::rename::{RenameEdit, RenameError, RenamePreparation, RenameSpan};
 use crate::backend::semantic::{DocumentTypeInfo, TypeEntry};
+use crate::backend::view::{
+    RenderRegistry, build_single_group_view, render_group_markdown,
+};
+use crate::events::EventLog;
+use crate::frontend::ProtoParser;
 use crate::mlg::check::{CheckDiagnostic, check_collecting_type_info, check_diagnostics_report};
 use crate::mlg::completion::{
     CandidateKind, CompletionCandidate, Signature, collect_signatures, complete_with_signatures,
@@ -125,6 +130,9 @@ struct ServerState {
     /// expensive, so this is refreshed only on open and save — never on edit —
     /// and served as-is until the next save.
     type_info: HashMap<Url, DocumentTypeInfo>,
+    /// Rendering registry containing command signatures, writing aliases, and
+    /// topic titles resolved by the last check, used for rich preview rendering.
+    render_registry: RenderRegistry,
     /// Documents edited since their type information was resolved. Their line
     /// numbers may have shifted, so hovers say so rather than pretending to be
     /// current.
@@ -147,6 +155,7 @@ impl ServerState {
             last_diagnostic_files: HashSet::new(),
             documents: HashMap::new(),
             type_info: HashMap::new(),
+            render_registry: RenderRegistry::default(),
             edited_since_check: HashSet::new(),
             snippets,
             work_done_progress,
@@ -400,7 +409,8 @@ impl ServerState {
 
     fn handle_hover(&self, id: lsp_server::RequestId, params: &Value) -> Response {
         let result = self
-            .line_types_hover(params)
+            .entry_preview_hover(params)
+            .or_else(|| self.line_types_hover(params))
             .map(|hover| serde_json::to_value(hover).unwrap_or(Value::Null))
             .unwrap_or(Value::Null);
         Response {
@@ -408,6 +418,78 @@ impl ServerState {
             result: Some(result),
             error: None,
         }
+    }
+
+    /// Renders a live preview of the entry currently being added or edited,
+    /// derived from the in-memory document text.
+    fn entry_preview_hover(&self, params: &Value) -> Option<Hover> {
+        let params: HoverParams = serde_json::from_value(params.clone()).ok()?;
+        let uri = params.text_document_position_params.text_document.uri;
+        let row = params.text_document_position_params.position.line as usize;
+        let text = self.documents.get(&uri)?;
+
+        let mut event_log = EventLog::new();
+        let groups = {
+            let mut parser = ProtoParser::new(text, &mut event_log);
+            parser.parse()
+        };
+        if groups.is_empty() {
+            return None;
+        }
+
+        let lines: Vec<&str> = text.split('\n').collect();
+        let line_count = lines.len();
+
+        let mut matching_group_idx = None;
+        for (i, group) in groups.iter().enumerate() {
+            let start = group.metadata.row;
+            let next_start = groups.get(i + 1).map(|g| g.metadata.row).unwrap_or(line_count);
+            if row >= start && row < next_start {
+                matching_group_idx = Some(i);
+                break;
+            }
+        }
+
+        let group_idx = matching_group_idx?;
+        let target_group = &groups[group_idx];
+        let start_row = target_group.metadata.row;
+        let mut end_row = groups.get(group_idx + 1).map(|g| g.metadata.row).unwrap_or(line_count);
+        while end_row > start_row && end_row <= lines.len() && is_trailing_blank_or_comment(lines[end_row - 1]) {
+            end_row -= 1;
+        }
+
+        let group_source = if start_row < end_row && end_row <= lines.len() {
+            lines[start_row..end_row].join("\n")
+        } else {
+            String::new()
+        };
+
+        let group_view = build_single_group_view(
+            target_group.clone(),
+            group_source,
+            self.type_info.get(&uri),
+            &self.render_registry,
+        );
+
+        let mut markdown = render_group_markdown(&group_view);
+
+        // If the hovered row has line types, append them below the entry preview
+        if let Some(doc_type_info) = self.type_info.get(&uri) {
+            if let Some(entries) = doc_type_info.get(&row) {
+                let stale = self.edited_since_check.contains(&uri);
+                let types_content = render_line_types(row, entries, stale);
+                markdown.push_str("\n\n---\n\n");
+                markdown.push_str(&types_content);
+            }
+        }
+
+        Some(Hover {
+            contents: HoverContents::Markup(MarkupContent {
+                kind: MarkupKind::Markdown,
+                value: markdown,
+            }),
+            range: self.line_range(&uri, row),
+        })
     }
 
     /// The types of every expression, sub-expression, and statement on the
@@ -472,6 +554,7 @@ impl ServerState {
         self.edited_since_check.remove(uri);
 
         let report = check_diagnostics_report(&result, root);
+        self.render_registry = result.render_registry;
 
         let mut grouped: HashMap<Url, Vec<Diagnostic>> = HashMap::new();
         for diag in report.diagnostics {
@@ -500,6 +583,11 @@ struct PendingCheck {
     root: PathBuf,
     uri: Url,
     file: PathBuf,
+}
+
+fn is_trailing_blank_or_comment(line: &str) -> bool {
+    let trimmed = line.trim_start();
+    trimmed.is_empty() || trimmed.starts_with("--")
 }
 
 /// The widest expression column a hover will pad to. Beyond this the type moves
@@ -914,5 +1002,67 @@ mod tests {
     #[test]
     fn labels_check_progress_with_the_command() {
         assert_eq!(CHECK_PROGRESS_TITLE, "mlg check");
+    }
+
+    #[test]
+    fn live_entry_preview_hover_renders_markdown_and_updates_live() {
+        use super::ServerState;
+        use lsp_types::Url;
+
+        let mut state = ServerState::new(None, true, true);
+        let uri = Url::parse("file:///workspace/test.mlg").unwrap();
+        let initial_text = r#"Theorem:
+when:
+. x is \real
+then:
+. x^2 >= 0
+"#;
+        state.documents.insert(uri.clone(), initial_text.to_string());
+
+        let hover_params = serde_json::json!({
+            "textDocument": { "uri": uri.as_str() },
+            "position": { "line": 2, "character": 3 }
+        });
+
+        let hover = state.entry_preview_hover(&hover_params).expect("hover should be Some");
+        let lsp_types::HoverContents::Markup(markup) = hover.contents else {
+            panic!("expected markdown markup");
+        };
+
+        assert!(markup.value.contains("### Theorem"));
+        assert!(markup.value.contains("**when:**"));
+        assert!(markup.value.contains("**then:**"));
+        assert!(markup.value.contains("Open Live Page Preview"));
+
+        // Now test live editing: update the in-memory document as keystrokes arrive
+        let updated_text = r#"Theorem:
+when:
+. y is \real
+then:
+. y^3 >= 0
+"#;
+        state.documents.insert(uri.clone(), updated_text.to_string());
+
+        let hover2 = state.entry_preview_hover(&hover_params).expect("hover should be Some");
+        let lsp_types::HoverContents::Markup(markup2) = hover2.contents else {
+            panic!("expected markdown markup");
+        };
+
+        assert!(markup2.value.contains("### Theorem"));
+        assert!(markup2.value.contains("y"));
+        assert!(!markup2.value.contains("x^2"));
+
+        // Now test that line types from check are appended below the entry preview
+        let mut doc_type_info = crate::backend::semantic::DocumentTypeInfo::new();
+        doc_type_info.insert(2, vec![entry(0, "y", &[r"is \real"])]);
+        state.type_info.insert(uri.clone(), doc_type_info);
+
+        let hover3 = state.entry_preview_hover(&hover_params).expect("hover should be Some");
+        let lsp_types::HoverContents::Markup(markup3) = hover3.contents else {
+            panic!("expected markdown markup");
+        };
+        assert!(markup3.value.contains("### Theorem"));
+        assert!(markup3.value.contains("Types on line 3"));
+        assert!(markup3.value.contains("y    is \\real"));
     }
 }

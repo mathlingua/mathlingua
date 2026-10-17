@@ -7,6 +7,7 @@ use crate::mlg::util::{has_blocking_user_issues_since, no_errors_since, user_iss
 use crate::mlg::watch::SourceWatcher;
 use serde::Serialize;
 use serde_json::{Value, json};
+use crate::backend::view::RenderRegistry;
 use std::path::{Path, PathBuf};
 
 const ORIGIN: &str = "mlg_check";
@@ -19,6 +20,7 @@ pub struct CheckResult {
     /// The types resolved for each line of the file named by
     /// [`check_collecting_type_info`]'s `type_info_for`; empty otherwise.
     pub type_info: DocumentTypeInfo,
+    pub render_registry: RenderRegistry,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -80,7 +82,7 @@ pub fn check_collecting_type_info(
     }
 
     let starting_event_count = event_log.events().len();
-    let (summary, type_info) =
+    let (summary, type_info, render_registry) =
         check_in_collecting_type_info(cwd, paths, &mut event_log, type_info_for);
     let successful = no_errors_since(&event_log, starting_event_count);
 
@@ -90,6 +92,7 @@ pub fn check_collecting_type_info(
         files_checked: summary.files_checked,
         marker_range: summary.marker_range,
         type_info,
+        render_registry,
     }
 }
 
@@ -105,7 +108,7 @@ fn check_in_collecting_type_info(
     paths: &[PathBuf],
     event_log: &mut EventLog,
     type_info_for: Option<&Path>,
-) -> (CheckSummary, DocumentTypeInfo) {
+) -> (CheckSummary, DocumentTypeInfo, RenderRegistry) {
     let begin = event_log.begin_marker("check_in", Some(ORIGIN));
     let starting_event_count = event_log.events().len();
 
@@ -117,6 +120,7 @@ fn check_in_collecting_type_info(
     format_before_checking(cwd, event_log);
 
     let mut collection = SourceCollection::load(cwd, event_log, ORIGIN);
+    let render_registry = crate::backend::view::build_render_registry(collection.parsed_files());
     let diagnostic_filter = collection.diagnostic_filter(cwd, paths, event_log, ORIGIN);
     let files_checked = diagnostic_filter.selected_file_count(&collection);
 
@@ -144,6 +148,7 @@ fn check_in_collecting_type_info(
             marker_range: MarkerRange::new(begin, end),
         },
         type_info,
+        render_registry,
     )
 }
 

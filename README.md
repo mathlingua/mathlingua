@@ -4,7 +4,8 @@ Mathlingua is a language for easily creating a collection of mathematical knowle
 axioms, and conjectures, in a format designed to be easy and fun to read and write. For more information, see
 [mathlingua.org](http://www.mathlingua.org).
 
-Start with the [language guide](docs/language.md) and the
+Start with the [cheat sheet](docs/cheatsheet.md), the
+[language guide](docs/language.md), and the
 [checked example collection](goldens/examples/). The precise references cover
 [structural syntax](docs/structural_syntax.md),
 [formulations](docs/formulation_syntax.md), and

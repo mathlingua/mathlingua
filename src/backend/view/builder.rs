@@ -300,6 +300,16 @@ fn description_page_group(source_id: &str, text: String, registry: &RenderRegist
     }
 }
 
+pub fn build_single_group_view(
+    group: ProtoGroup,
+    source: String,
+    type_info: Option<&DocumentTypeInfo>,
+    registry: &RenderRegistry,
+) -> GroupView {
+    let id = top_level_group_id(&group).unwrap_or_default();
+    group_view(group, source, type_info, registry, id)
+}
+
 fn group_view(
     group: ProtoGroup,
     source: String,

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { OutlineState } from "./outline-state";
+import { VIEWER_FONTS, type ViewerFont } from "./viewer-font";
 import { VIEWER_THEMES, type ViewerTheme } from "./viewer-theme";
 import styles from "./viewer-chrome.module.css";
 
@@ -11,12 +12,16 @@ interface ViewerChromeProps {
   onToggleOutline: () => void;
   /** Changes the active viewer theme. */
   onThemeChange: (theme: ViewerTheme) => void;
+  /** Changes the active typography/font mode. */
+  onFontChange: (font: ViewerFont) => void;
   /** Toggles inline expression-type annotations. */
   onToggleTypes: () => void;
   /** Current outline visibility mode. */
   outlineState: OutlineState;
   /** Current visual theme. */
   theme: ViewerTheme;
+  /** Current typography/font mode. */
+  font: ViewerFont;
   /** Whether inline expression-type annotations are visible. */
   showTypes: boolean;
 }
@@ -25,37 +30,46 @@ interface ViewerChromeProps {
 export function ViewerChrome({
   onToggleOutline,
   onThemeChange,
+  onFontChange,
   onToggleTypes,
   outlineState,
   theme,
+  font,
   showTypes,
 }: ViewerChromeProps) {
   const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
+  const [isFontMenuOpen, setIsFontMenuOpen] = useState(false);
   const themeMenuRef = useRef<HTMLDivElement>(null);
+  const fontMenuRef = useRef<HTMLDivElement>(null);
   const expanded =
     outlineState === "auto" ? undefined : outlineState === "open";
   const activeTheme =
     VIEWER_THEMES.find((item) => item.id === theme) ?? VIEWER_THEMES[0];
+  const activeFont =
+    VIEWER_FONTS.find((item) => item.id === font) ?? VIEWER_FONTS[0];
 
   useEffect(() => {
-    if (!isThemeMenuOpen) {
+    if (!isThemeMenuOpen && !isFontMenuOpen) {
       return;
     }
 
     const handlePointerDown = (event: PointerEvent) => {
       if (
         event.target instanceof Node &&
-        themeMenuRef.current?.contains(event.target)
+        (themeMenuRef.current?.contains(event.target) ||
+          fontMenuRef.current?.contains(event.target))
       ) {
         return;
       }
 
       setIsThemeMenuOpen(false);
+      setIsFontMenuOpen(false);
     };
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setIsThemeMenuOpen(false);
+        setIsFontMenuOpen(false);
       }
     };
 
@@ -66,11 +80,16 @@ export function ViewerChrome({
       document.removeEventListener("pointerdown", handlePointerDown);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isThemeMenuOpen]);
+  }, [isThemeMenuOpen, isFontMenuOpen]);
 
   const handleThemeChange = (nextTheme: ViewerTheme) => {
     onThemeChange(nextTheme);
     setIsThemeMenuOpen(false);
+  };
+
+  const handleFontChange = (nextFont: ViewerFont) => {
+    onFontChange(nextFont);
+    setIsFontMenuOpen(false);
   };
 
   return (
@@ -115,13 +134,57 @@ export function ViewerChrome({
         >
           <TypeIcon />
         </button>
+        <div className={styles.fontMenu} ref={fontMenuRef}>
+          <button
+            aria-expanded={isFontMenuOpen}
+            aria-haspopup="menu"
+            aria-label={`Font: ${activeFont.label}`}
+            className={styles.fontIconButton}
+            onClick={() => {
+              setIsFontMenuOpen((value) => !value);
+              setIsThemeMenuOpen(false);
+            }}
+            title="Font"
+            type="button"
+          >
+            <FontIcon />
+          </button>
+          {isFontMenuOpen ? (
+            <div
+              aria-label="Select font"
+              className={styles.fontPopover}
+              role="menu"
+            >
+              {VIEWER_FONTS.map((item) => (
+                <button
+                  aria-checked={font === item.id}
+                  className={
+                    font === item.id
+                      ? `${styles.themeOption} ${styles.themeOptionActive}`
+                      : styles.themeOption
+                  }
+                  key={item.id}
+                  onClick={() => handleFontChange(item.id)}
+                  role="menuitemradio"
+                  type="button"
+                >
+                  <span className={styles.themeOptionLabel}>{item.label}</span>
+                  {font === item.id ? <CheckIcon /> : null}
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </div>
         <div className={styles.themeMenu} ref={themeMenuRef}>
           <button
             aria-expanded={isThemeMenuOpen}
             aria-haspopup="menu"
             aria-label={`Theme: ${activeTheme.label}`}
             className={styles.themeIconButton}
-            onClick={() => setIsThemeMenuOpen((value) => !value)}
+            onClick={() => {
+              setIsThemeMenuOpen((value) => !value);
+              setIsFontMenuOpen(false);
+            }}
             title="Theme"
             type="button"
           >
@@ -168,6 +231,40 @@ function TypeIcon() {
     >
       <path d="M4 5h12M10 5v10" stroke="currentColor" strokeLinecap="round" />
       <circle cx="10" cy="15" fill="currentColor" r="1.25" />
+    </svg>
+  );
+}
+
+function FontIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      className={styles.fontIcon}
+      fill="none"
+      viewBox="0 0 24 24"
+    >
+      <path
+        d="m3 17 5-11 5 11"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.7"
+      />
+      <path
+        d="M4.8 13h6.4"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.7"
+      />
+      <circle cx="18" cy="13" r="3.5" stroke="currentColor" strokeWidth="1.7" />
+      <path
+        d="M21.5 9.5v7.5"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.7"
+      />
     </svg>
   );
 }

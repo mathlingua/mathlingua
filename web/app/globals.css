@@ -1,5 +1,96 @@
 /* Global typography, color tokens, and browser resets for the viewer app. */
 
+@font-face {
+  font-family: "Euler Math";
+  src:
+    local("Euler-Math"),
+    local("Neo Euler"),
+    local("AMS Euler"),
+    url("./fonts/Euler-Math.otf") format("opentype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "CMU Concrete";
+  src:
+    local("CMU Concrete Roman"),
+    local("CMU Concrete"),
+    url("./fonts/cmunorm.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "CMU Concrete";
+  src:
+    local("CMU Concrete Bold Extended Roman"),
+    local("CMU Concrete Bold"),
+    url("./fonts/cmunobx.otf") format("opentype");
+  font-weight: 600 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "CMU Concrete";
+  src:
+    local("CMU Concrete Italic"),
+    url("./fonts/cmunoti.otf") format("opentype");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* Euler typography mode: pairs Hermann Zapf's upright Euler mathematics with
+   Donald Knuth's Concrete Roman and classical Palatino book typography. */
+html[data-font="euler"],
+html[data-font="euler"][data-theme] {
+  --font-body:
+    "CMU Concrete", "Concrete", "Palatino Linotype", "Book Antiqua", Palatino,
+    "Iowan Old Style", Georgia, serif;
+  --font-display:
+    "CMU Concrete", "Concrete", "Palatino Linotype", "Book Antiqua", Palatino,
+    "Iowan Old Style", Georgia, serif;
+  --heading-weight: 600;
+  --section-heading-weight: 600;
+  --card-heading-weight: 600;
+  --prose-heading-weight: 600;
+}
+
+html[data-font="euler"] .katex {
+  font-family: "Euler Math", "CMU Concrete", "Palatino Linotype", Palatino, KaTeX_Main, serif;
+}
+
+html[data-font="euler"] .katex .mathnormal {
+  font-family: "Euler Math", "Neo Euler", "AMS Euler", KaTeX_Math, serif;
+  font-style: normal;
+  letter-spacing: 0.015em;
+}
+
+html[data-font="euler"] .katex .mord.mathnormal {
+  font-family: "Euler Math", "Neo Euler", "AMS Euler", KaTeX_Math, serif;
+  font-style: normal;
+}
+
+html[data-font="euler"] .katex .mathrm {
+  font-family: "CMU Concrete", "Euler Math", "Palatino Linotype", Palatino, KaTeX_Main, serif;
+  font-style: normal;
+}
+
+html[data-font="euler"] .katex .mathbf {
+  font-family: "Euler Math", "CMU Concrete", KaTeX_Main, serif;
+  font-weight: bold;
+  font-style: normal;
+}
+
+html[data-font="euler"] .katex .mathit {
+  font-family: "CMU Concrete", "Euler Math", KaTeX_Main, serif;
+  font-style: italic;
+}
+
 :root {
   --viewer-safe-area-top: env(safe-area-inset-top, 0px);
   --viewer-chrome-height: calc(64px + var(--viewer-safe-area-top));

@@ -53,12 +53,17 @@
           document
             .querySelector('meta[name="theme-color"]')
             ?.setAttribute("content", safeAreaColor);
+
+          const font = window.localStorage.getItem("mlg-view-font");
+          if (font === "euler") {
+            document.documentElement.dataset.font = "euler";
+          }
         } catch (_) {}
       })();
       window.__MLG_VIEW_CONFIG__ = __MLG_RUNTIME_CONFIG_JSON__;
     </script>
-    <script type="module" crossorigin src="./assets/index-B1PR7XmZ.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-Bnz83t9C.css">
+    <script type="module" crossorigin src="./assets/index-ggVjf0Yw.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-BHObfZfj.css">
   </head>
   <body>
     <div id="root"></div>

@@ -54,6 +54,9 @@ html[data-font="euler"][data-theme] {
   --font-display:
     "CMU Concrete", "Concrete", "Palatino Linotype", "Book Antiqua", Palatino,
     "Iowan Old Style", Georgia, serif;
+  --font-mono:
+    "CMU Concrete", "Euler Math", "Concrete", "Palatino Linotype",
+    "Book Antiqua", Palatino, "Iowan Old Style", Georgia, serif;
   --heading-weight: 600;
   --section-heading-weight: 600;
   --card-heading-weight: 600;

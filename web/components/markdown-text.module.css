@@ -132,9 +132,12 @@
   max-height: min(36rem, 70vh);
   padding: 0;
   background: transparent;
+  font-family: inherit;
+  font-size: inherit;
 }
 
 .markdownMlgCode pre code {
+  font-family: inherit;
   font-size: inherit;
   line-height: inherit;
 }

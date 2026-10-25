@@ -106,7 +106,7 @@
   background: none;
   color: var(--heading-color);
   font-family: var(--font-display);
-  font-size: 1.2rem;
+  font-size: calc(1.2rem * var(--viewer-font-scale, 1));
   font-weight: var(--heading-weight);
   line-height: 1.2;
   text-align: left;
@@ -166,7 +166,7 @@
   background: none;
   color: var(--ink);
   font-family: var(--font-body);
-  font-size: 1.02rem;
+  font-size: calc(1.02rem * var(--viewer-font-scale, 1));
   line-height: 1.28;
   text-align: left;
   cursor: pointer;
@@ -296,7 +296,7 @@
   background: transparent;
   color: var(--muted-strong);
   font-family: var(--font-ui);
-  font-size: 0.82rem;
+  font-size: calc(0.82rem * var(--viewer-font-scale, 1));
   cursor: pointer;
   transition:
     color 120ms ease,
@@ -317,7 +317,7 @@
   padding: 0.12rem 0.34rem;
   color: var(--ink);
   font-family: var(--font-ui);
-  font-size: 0.82rem;
+  font-size: calc(0.82rem * var(--viewer-font-scale, 1));
   font-weight: 500;
 }
 
@@ -354,7 +354,7 @@
   margin: 0;
   color: var(--heading-color);
   font-family: var(--font-display);
-  font-size: 4rem;
+  font-size: calc(4rem * var(--viewer-font-scale, 1));
   font-weight: 700;
   line-height: 1.03;
   letter-spacing: -0.01em;
@@ -381,7 +381,7 @@
   margin: 0;
   color: var(--heading-color);
   font-family: var(--font-display);
-  font-size: 3rem;
+  font-size: calc(3rem * var(--viewer-font-scale, 1));
   font-weight: 700;
   line-height: 1.05;
   letter-spacing: -0.01em;
@@ -393,13 +393,13 @@
 
 @media (max-width: 860px) {
   .dividerTitle {
-    font-size: 3rem;
+    font-size: calc(3rem * var(--viewer-font-scale, 1));
   }
 }
 
 @media (max-width: 520px) {
   .dividerTitle {
-    font-size: 2.5rem;
+    font-size: calc(2.5rem * var(--viewer-font-scale, 1));
   }
 }
 
@@ -456,19 +456,19 @@
 }
 
 .pageTitle h1 {
-  font-size: 3.15rem;
+  font-size: calc(3.15rem * var(--viewer-font-scale, 1));
   line-height: 1.04;
 }
 
 .pageSectionTitle h2 {
   padding-bottom: 0.35rem;
   border-bottom: var(--divider-border-width) solid var(--line);
-  font-size: 2.05rem;
+  font-size: calc(2.05rem * var(--viewer-font-scale, 1));
   line-height: 1.12;
 }
 
 .pageSubsectionTitle h3 {
-  font-size: 1.55rem;
+  font-size: calc(1.55rem * var(--viewer-font-scale, 1));
   line-height: 1.18;
 }
 
@@ -499,7 +499,7 @@
   background: transparent;
   color: var(--muted-strong);
   font-family: var(--font-ui);
-  font-size: 0.84rem;
+  font-size: calc(0.84rem * var(--viewer-font-scale, 1));
   text-align: left;
   cursor: pointer;
 }
@@ -543,7 +543,7 @@
 
 .pageNavLabel {
   color: var(--muted);
-  font-size: 0.66rem;
+  font-size: calc(0.66rem * var(--viewer-font-scale, 1));
   font-weight: 600;
   letter-spacing: 0.09em;
   text-transform: uppercase;
@@ -620,7 +620,7 @@
 }
 
 .definitionTrailItem {
-  width: min(100%, 31rem);
+  width: min(100%, calc(31rem * max(1, var(--viewer-font-scale, 1))));
   min-width: 0;
 }
 
@@ -628,7 +628,7 @@
   width: min(100%, 47rem);
   color: var(--muted);
   font-family: var(--font-ui);
-  font-size: 0.88rem;
+  font-size: calc(0.88rem * var(--viewer-font-scale, 1));
   text-align: center;
 }
 
@@ -745,13 +745,13 @@
 
 .emptyState h2 {
   margin: 0;
-  font-size: 2.6rem;
+  font-size: calc(2.6rem * var(--viewer-font-scale, 1));
 }
 
 .emptyState p {
   margin: 0.8rem 0 0;
   color: var(--muted);
-  font-size: 1.1rem;
+  font-size: calc(1.1rem * var(--viewer-font-scale, 1));
 }
 
 :global(html[data-theme^="manuscript"]) .readerLayout {
@@ -981,7 +981,7 @@
 :global(html[data-theme^="field-guide"]) .breadcrumbLink,
 :global(html[data-theme^="field-guide"]) .breadcrumbCurrent {
   font-family: var(--font-ui);
-  font-size: 0.72rem;
+  font-size: calc(0.72rem * var(--viewer-font-scale, 1));
   font-weight: 700;
   letter-spacing: 0.035em;
   text-transform: uppercase;
@@ -1082,36 +1082,36 @@
   }
 
   .pageTitle h1 {
-    font-size: 2.85rem;
+    font-size: calc(2.85rem * var(--viewer-font-scale, 1));
     line-height: 1.05;
   }
 
   .pageSectionTitle h2 {
-    font-size: 2rem;
+    font-size: calc(2rem * var(--viewer-font-scale, 1));
     line-height: 1.12;
   }
 
   .pageSubsectionTitle h3 {
-    font-size: 1.55rem;
+    font-size: calc(1.55rem * var(--viewer-font-scale, 1));
     line-height: 1.16;
   }
 }
 
 @media (max-width: 520px) {
   .outlineLink {
-    font-size: 1.05rem;
+    font-size: calc(1.05rem * var(--viewer-font-scale, 1));
   }
 
   .pageTitle h1 {
-    font-size: 2.45rem;
+    font-size: calc(2.45rem * var(--viewer-font-scale, 1));
   }
 
   .pageSectionTitle h2 {
-    font-size: 1.78rem;
+    font-size: calc(1.78rem * var(--viewer-font-scale, 1));
   }
 
   .pageSubsectionTitle h3 {
-    font-size: 1.42rem;
+    font-size: calc(1.42rem * var(--viewer-font-scale, 1));
   }
 
   .pageNavigation {

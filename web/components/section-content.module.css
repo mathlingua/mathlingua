@@ -10,7 +10,7 @@
 
 .sectionLabel {
   color: var(--section-heading-color);
-  font-size: 1.05rem;
+  font-size: calc(1.05rem * var(--viewer-font-scale, 1));
   font-weight: var(--section-heading-weight);
 }
 
@@ -27,7 +27,7 @@
   color: var(--ink);
   white-space: normal;
   font-family: var(--font-body);
-  font-size: 1rem;
+  font-size: calc(1rem * var(--viewer-font-scale, 1));
   line-height: 1.35;
 }
 
@@ -40,7 +40,7 @@
 :global(html[data-theme^="field-guide"]) .sectionLabel {
   color: var(--accent);
   font-family: var(--font-body);
-  font-size: 1rem;
+  font-size: calc(1rem * var(--viewer-font-scale, 1));
   font-weight: 800;
   letter-spacing: 0.035em;
 }

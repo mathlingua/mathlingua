@@ -1,6 +1,6 @@
 .markdown {
   color: var(--ink);
-  font-size: 1.08rem;
+  font-size: calc(1.08rem * var(--viewer-font-scale, 1));
   line-height: 1.62;
 }
 
@@ -68,21 +68,21 @@
 }
 
 .markdown h1 {
-  font-size: 2rem;
+  font-size: calc(2rem * var(--viewer-font-scale, 1));
 }
 
 .markdown h2 {
-  font-size: 1.65rem;
+  font-size: calc(1.65rem * var(--viewer-font-scale, 1));
 }
 
 .markdown h3 {
-  font-size: 1.35rem;
+  font-size: calc(1.35rem * var(--viewer-font-scale, 1));
 }
 
 .markdown h4,
 .markdown h5,
 .markdown h6 {
-  font-size: 1.16rem;
+  font-size: calc(1.16rem * var(--viewer-font-scale, 1));
 }
 
 .markdown ul,
@@ -109,13 +109,13 @@
 .markdown pre code {
   padding: 0;
   background: transparent;
-  font-size: 0.9rem;
+  font-size: calc(0.9rem * var(--viewer-font-scale, 1));
   line-height: 1.5;
 }
 
 .markdownMlgCode {
   box-sizing: border-box;
-  width: min(100%, 31rem);
+  width: min(100%, calc(31rem * max(1, var(--viewer-font-scale, 1))));
   max-width: 100%;
   margin-right: auto;
   margin-left: auto;
@@ -124,7 +124,7 @@
   border: var(--card-border-width) solid var(--line);
   border-radius: var(--radius-code-block);
   background: var(--card-bg);
-  font-size: 0.78rem;
+  font-size: calc(0.78rem * var(--viewer-font-scale, 1));
   line-height: 1.55;
 }
 
@@ -141,7 +141,7 @@
 
 @media (max-width: 520px) {
   .markdownMlgCode {
-    font-size: 0.72rem;
+    font-size: calc(0.72rem * var(--viewer-font-scale, 1));
   }
 }
 
@@ -165,7 +165,7 @@
 }
 
 :global(html[data-theme^="manuscript"]) .markdown {
-  font-size: 1.06rem;
+  font-size: calc(1.06rem * var(--viewer-font-scale, 1));
   line-height: 1.68;
 }
 

@@ -61,7 +61,9 @@ html[data-font="euler"][data-theme] {
 }
 
 html[data-font="euler"] .katex {
-  font-family: "Euler Math", "CMU Concrete", "Palatino Linotype", Palatino, KaTeX_Main, serif;
+  font-family:
+    "Euler Math", "CMU Concrete", "Palatino Linotype", Palatino, KaTeX_Main,
+    serif;
 }
 
 html[data-font="euler"] .katex .mathnormal {
@@ -76,7 +78,9 @@ html[data-font="euler"] .katex .mord.mathnormal {
 }
 
 html[data-font="euler"] .katex .mathrm {
-  font-family: "CMU Concrete", "Euler Math", "Palatino Linotype", Palatino, KaTeX_Main, serif;
+  font-family:
+    "CMU Concrete", "Euler Math", "Palatino Linotype", Palatino, KaTeX_Main,
+    serif;
   font-style: normal;
 }
 
@@ -92,6 +96,7 @@ html[data-font="euler"] .katex .mathit {
 }
 
 :root {
+  --viewer-font-scale: 1;
   --viewer-safe-area-top: env(safe-area-inset-top, 0px);
   --viewer-subbar-height: 0px;
   --viewer-chrome-height: calc(64px + var(--viewer-safe-area-top));

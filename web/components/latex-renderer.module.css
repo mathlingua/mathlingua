@@ -1,7 +1,7 @@
 /* KaTeX sizing adjustments for inline MathLingua-rendered fragments. */
 
 .renderer {
-  font-size: 1.04rem;
+  font-size: calc(1.04rem * var(--viewer-font-scale, 1));
 }
 
 .renderer :global(.katex .mathnormal),

@@ -19,7 +19,7 @@
   width: max-content;
   min-width: 100%;
   padding-left: calc(var(--type-depth) * 0.72rem);
-  font-size: 0.78rem;
+  font-size: calc(0.78rem * var(--viewer-font-scale, 1));
   line-height: 1.35;
 }
 

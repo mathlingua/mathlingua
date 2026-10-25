@@ -596,7 +596,9 @@ controls:
   `Euler` typography mode (pairing Euler Math upright mathematics with CMU
   Concrete Roman body text and Palatino UI chrome), persisted under
   `mlg-view-font` in local storage and applied via the root `data-font`
-  attribute.
+  attribute, alongside a typographic `[ A− | A | A+ ]` stepper that decreases,
+  resets, or increases the reader and outline font scale (`80%`–`140%`),
+  persisted under `mlg-view-font-scale` and applied via `--viewer-font-scale`.
 - **Expression types** — an interactive switch to display resolved expression
   types inline across cards and argument lists. Type annotations are computed
   during the semantic check pass, mapped to lines and byte spans, and serialized

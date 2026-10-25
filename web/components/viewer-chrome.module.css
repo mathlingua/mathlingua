@@ -66,7 +66,10 @@
   background: transparent;
   color: var(--muted-strong);
   cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .settingsIconButton:hover,
@@ -110,7 +113,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 1.15rem;
+  gap: 0.75rem;
   width: 100%;
   height: 42px;
   padding: 0 16px;
@@ -152,9 +155,9 @@
 .toggleRow {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.45rem;
   height: 1.85rem;
-  padding: 0.2rem 0.5rem;
+  padding: 0.2rem 0.2rem;
   border: 1px solid transparent;
   border-radius: var(--radius-option);
   background: transparent;
@@ -222,7 +225,9 @@
   font-size: 0.78rem;
   font-weight: 500;
   cursor: pointer;
-  transition: border-color 0.15s ease, background-color 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
 }
 
 .dropdownButton:hover,
@@ -335,13 +340,117 @@
   color: var(--accent);
 }
 
+/* Font size typographic button trio [ A- | A | A+ ] */
+
+.fontSizeGroup {
+  display: inline-flex;
+  align-items: stretch;
+  min-height: 1.85rem;
+  height: 1.85rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-option);
+  background: var(--surface-alt);
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.fontSizeButton {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.9rem;
+  height: 100%;
+  padding: 0 0.42rem;
+  border: none;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.fontSizeButton:first-child {
+  border-top-left-radius: calc(var(--radius-option) - 1px);
+  border-bottom-left-radius: calc(var(--radius-option) - 1px);
+}
+
+.fontSizeButton:last-child {
+  border-top-right-radius: calc(var(--radius-option) - 1px);
+  border-bottom-right-radius: calc(var(--radius-option) - 1px);
+}
+
+.fontSizeButton + .fontSizeButton {
+  border-left: 1px solid var(--line);
+}
+
+.fontSizeButton:hover:not(.fontSizeButtonDisabled) {
+  background: var(--surface);
+  color: var(--accent);
+}
+
+.fontSizeResetButton {
+  min-width: 1.7rem;
+}
+
+.fontSizeResetButtonActive {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent-soft) 55%, transparent);
+}
+
+.fontSizeResetButtonActive:hover:not(.fontSizeButtonDisabled) {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.fontSizeButtonDisabled {
+  color: var(--muted);
+  opacity: 0.45;
+  cursor: default;
+}
+
+.fontSizeGlyphSmall {
+  display: inline-flex;
+  align-items: baseline;
+  font-size: 0.72rem;
+  letter-spacing: -0.02em;
+}
+
+.fontSizeGlyphReset {
+  display: inline-flex;
+  align-items: baseline;
+  font-size: 0.78rem;
+}
+
+.fontSizeGlyphLarge {
+  display: inline-flex;
+  align-items: baseline;
+  font-size: 0.84rem;
+  letter-spacing: -0.02em;
+}
+
+.fontSizeSign {
+  font-size: 0.9em;
+  font-weight: 700;
+  margin-left: 0.03em;
+}
+
 /* Focus styles */
 
 .button:focus-visible,
 .settingsIconButton:focus-visible,
 .toggleRow:focus-visible,
 .dropdownButton:focus-visible,
-.dropdownOption:focus-visible {
+.dropdownOption:focus-visible,
+.fontSizeButton:focus-visible {
+  z-index: 1;
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
@@ -387,10 +496,31 @@
 }
 
 :global(html[data-theme="atomic"]) .dropdownButton,
-:global(html[data-theme="atomic-dark"]) .dropdownButton {
+:global(html[data-theme="atomic-dark"]) .dropdownButton,
+:global(html[data-theme="atomic"]) .fontSizeGroup,
+:global(html[data-theme="atomic-dark"]) .fontSizeGroup {
   border: 2px solid var(--line);
   background: var(--surface);
   font-weight: 700;
+}
+
+:global(html[data-theme="atomic"]) .fontSizeButton + .fontSizeButton,
+:global(html[data-theme="atomic-dark"]) .fontSizeButton + .fontSizeButton {
+  border-left: 2px solid var(--line);
+}
+
+:global(html[data-theme="atomic"])
+  .fontSizeButton:hover:not(.fontSizeButtonDisabled),
+:global(html[data-theme="atomic-dark"])
+  .fontSizeButton:hover:not(.fontSizeButtonDisabled) {
+  background: var(--accent-soft);
+  color: var(--accent-contrast);
+}
+
+:global(html[data-theme="atomic"]) .fontSizeResetButtonActive,
+:global(html[data-theme="atomic-dark"]) .fontSizeResetButtonActive {
+  background: var(--accent-soft);
+  color: var(--accent-contrast);
 }
 
 :global(html[data-theme="atomic"]) .dropdownOptionActive,
@@ -443,11 +573,32 @@
 }
 
 :global(html[data-theme="lcd"]) .dropdownButton,
-:global(html[data-theme="lcd-dark"]) .dropdownButton {
+:global(html[data-theme="lcd-dark"]) .dropdownButton,
+:global(html[data-theme="lcd"]) .fontSizeGroup,
+:global(html[data-theme="lcd-dark"]) .fontSizeGroup {
   border: 1px solid var(--line-strong);
   background: var(--surface);
   color: var(--ink);
   font-weight: 700;
+}
+
+:global(html[data-theme="lcd"]) .fontSizeButton + .fontSizeButton,
+:global(html[data-theme="lcd-dark"]) .fontSizeButton + .fontSizeButton {
+  border-left: 1px solid var(--line-strong);
+}
+
+:global(html[data-theme="lcd"])
+  .fontSizeButton:hover:not(.fontSizeButtonDisabled),
+:global(html[data-theme="lcd-dark"])
+  .fontSizeButton:hover:not(.fontSizeButtonDisabled) {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+:global(html[data-theme="lcd"]) .fontSizeResetButtonActive,
+:global(html[data-theme="lcd-dark"]) .fontSizeResetButtonActive {
+  background: var(--ink);
+  color: var(--surface);
 }
 
 :global(html[data-theme="lcd"]) .dropdownOptionActive,
@@ -497,10 +648,21 @@
   box-shadow: inset 0 0 0 1px rgba(239, 224, 184, 0.72);
 }
 
-:global(html[data-theme^="manuscript"]) .dropdownButton {
+:global(html[data-theme^="manuscript"]) .dropdownButton,
+:global(html[data-theme^="manuscript"]) .fontSizeGroup {
   border-color: var(--line-strong);
   background: var(--surface);
   color: var(--ink);
+}
+
+:global(html[data-theme^="manuscript"]) .fontSizeButton + .fontSizeButton {
+  border-left-color: var(--line-strong);
+}
+
+:global(html[data-theme^="manuscript"])
+  .fontSizeButton:hover:not(.fontSizeButtonDisabled) {
+  background: var(--accent-soft);
+  color: var(--accent);
 }
 
 :global(html[data-theme^="manuscript"]) .dropdownMenu {
@@ -575,11 +737,25 @@
   color: var(--accent-contrast);
 }
 
-:global(html[data-theme^="field-guide"]) .dropdownButton {
+:global(html[data-theme^="field-guide"]) .dropdownButton,
+:global(html[data-theme^="field-guide"]) .fontSizeGroup {
   border-color: var(--line-strong);
   background: var(--surface);
   color: var(--ink);
   font-weight: 600;
+}
+
+:global(html[data-theme^="field-guide"]) .fontSizeButton + .fontSizeButton {
+  border-left-color: var(--line-strong);
+}
+
+:global(html[data-theme^="field-guide"])
+  .fontSizeButton:hover:not(.fontSizeButtonDisabled),
+:global(html[data-theme^="field-guide"]) .fontSizeResetButtonActive,
+:global(html[data-theme^="field-guide"])
+  .fontSizeResetButtonActive:hover:not(.fontSizeButtonDisabled) {
+  background: var(--accent);
+  color: var(--accent-contrast);
 }
 
 :global(html[data-theme^="field-guide"]) .dropdownMenu {
@@ -599,7 +775,9 @@
   color: var(--accent-contrast);
 }
 
-:global(html[data-theme^="field-guide"]) .dropdownOptionActive .dropdownCheckIcon {
+:global(html[data-theme^="field-guide"])
+  .dropdownOptionActive
+  .dropdownCheckIcon {
   color: currentColor;
 }
 
@@ -611,7 +789,17 @@
 
 @media (max-width: 640px) {
   .subbarContent {
-    gap: 0.85rem;
+    gap: 0.45rem;
+    padding: 0 10px;
+  }
+
+  .subbarGroup {
+    gap: 0.35rem;
+  }
+
+  .toggleRow {
+    gap: 0.35rem;
+    padding: 0.2rem 0.1rem;
   }
 
   .labelFull {
@@ -629,7 +817,30 @@
   }
 
   .subbarContent {
-    padding: 0 10px;
-    gap: 0.55rem;
+    padding: 0 6px;
+    gap: 0.28rem;
+  }
+
+  .subbarGroup {
+    gap: 0.26rem;
+  }
+
+  .toggleRow {
+    gap: 0.28rem;
+    padding: 0.15rem 0.06rem;
+  }
+
+  .dropdownButton {
+    gap: 0.3rem;
+    padding: 0 0.48rem;
+  }
+
+  .fontSizeButton {
+    min-width: 1.55rem;
+    padding: 0 0.28rem;
+  }
+
+  .fontSizeResetButton {
+    min-width: 1.4rem;
   }
 }

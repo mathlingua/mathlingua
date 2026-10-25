@@ -22,7 +22,7 @@
 .item::before {
   content: "•";
   color: var(--ink);
-  font-size: 0.8rem;
+  font-size: calc(0.8rem * var(--viewer-font-scale, 1));
   line-height: 1;
   justify-self: start;
   align-self: center;
@@ -42,7 +42,7 @@
   color: var(--ink);
   white-space: normal;
   font-family: var(--font-body);
-  font-size: 1rem;
+  font-size: calc(1rem * var(--viewer-font-scale, 1));
   line-height: 1.35;
 }
 
@@ -75,7 +75,7 @@
   margin-left: auto;
   color: var(--muted-ink, #6b7280);
   font-family: var(--font-mono);
-  font-size: 0.85rem;
+  font-size: calc(0.85rem * var(--viewer-font-scale, 1));
   white-space: nowrap;
 }
 
@@ -84,7 +84,7 @@
   max-width: 100%;
   margin: 0;
   color: var(--ink);
-  font-size: 1rem;
+  font-size: calc(1rem * var(--viewer-font-scale, 1));
   line-height: 1.35;
 }
 
@@ -92,7 +92,7 @@
 .referenceText {
   min-width: 0;
   color: var(--ink);
-  font-size: 1rem;
+  font-size: calc(1rem * var(--viewer-font-scale, 1));
   line-height: 1.35;
 }
 
@@ -110,7 +110,7 @@
 .nestedHeading {
   margin: 0 0 0.12rem;
   font-family: var(--font-mono);
-  font-size: 0.94rem;
+  font-size: calc(0.94rem * var(--viewer-font-scale, 1));
   color: var(--ink);
 }
 

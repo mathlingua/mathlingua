@@ -6,10 +6,16 @@ import type { OutlineState } from "./outline-state";
 import { ViewerChrome } from "./viewer-chrome";
 import {
   DEFAULT_VIEWER_FONT,
+  DEFAULT_VIEWER_FONT_SCALE,
+  VIEWER_FONT_SCALE_STORAGE_KEY,
   VIEWER_FONT_STORAGE_KEY,
   applyViewerFont,
+  applyViewerFontScale,
   isViewerFont,
+  parseViewerFontScale,
+  stepViewerFontScale,
   type ViewerFont,
+  type ViewerFontScale,
 } from "./viewer-font";
 import {
   DEFAULT_VIEWER_THEME,
@@ -116,6 +122,9 @@ export function ViewerShell({
   const [browsedDirectory, setBrowsedDirectory] = useState<string | null>(null);
   const [theme, setTheme] = useState<ViewerTheme>(DEFAULT_VIEWER_THEME);
   const [font, setFont] = useState<ViewerFont>(DEFAULT_VIEWER_FONT);
+  const [fontScale, setFontScale] = useState<ViewerFontScale>(
+    DEFAULT_VIEWER_FONT_SCALE,
+  );
   const [showTypes, setShowTypes] = useState(false);
 
   const selectedNode = readerNodes[selectedNodeIndex] ?? readerNodes[0];
@@ -340,10 +349,21 @@ export function ViewerShell({
         ? storedFont
         : DEFAULT_VIEWER_FONT;
 
+    const documentFontScale = document.documentElement.style.getPropertyValue(
+      "--viewer-font-scale",
+    );
+    const storedFontScale = readStoredFontScale();
+    const initialFontScale =
+      parseViewerFontScale(documentFontScale) ??
+      parseViewerFontScale(storedFontScale) ??
+      DEFAULT_VIEWER_FONT_SCALE;
+
     setTheme(initialTheme);
     applyViewerTheme(initialTheme);
     setFont(initialFont);
     applyViewerFont(initialFont);
+    setFontScale(initialFontScale);
+    applyViewerFontScale(initialFontScale);
     setShowTypes(readStoredBoolean(SHOW_TYPES_STORAGE_KEY));
   }, []);
 
@@ -422,6 +442,30 @@ export function ViewerShell({
     writeStoredFont(nextFont);
   };
 
+  const handleDecreaseFontScale = () => {
+    setFontScale((current) => {
+      const next = stepViewerFontScale(current, -1);
+      applyViewerFontScale(next);
+      writeStoredFontScale(next);
+      return next;
+    });
+  };
+
+  const handleIncreaseFontScale = () => {
+    setFontScale((current) => {
+      const next = stepViewerFontScale(current, 1);
+      applyViewerFontScale(next);
+      writeStoredFontScale(next);
+      return next;
+    });
+  };
+
+  const handleResetFontScale = () => {
+    setFontScale(DEFAULT_VIEWER_FONT_SCALE);
+    applyViewerFontScale(DEFAULT_VIEWER_FONT_SCALE);
+    writeStoredFontScale(DEFAULT_VIEWER_FONT_SCALE);
+  };
+
   const handleToggleTypes = () => {
     setShowTypes((current) => {
       const next = !current;
@@ -489,7 +533,11 @@ export function ViewerShell({
     <>
       <ViewerChrome
         font={font}
+        fontScale={fontScale}
+        onDecreaseFontScale={handleDecreaseFontScale}
         onFontChange={handleFontChange}
+        onIncreaseFontScale={handleIncreaseFontScale}
+        onResetFontScale={handleResetFontScale}
         onThemeChange={handleThemeChange}
         onToggleOutline={handleToggleOutline}
         onToggleTypes={handleToggleTypes}
@@ -702,6 +750,20 @@ function readStoredFont(): string | null {
 function writeStoredFont(font: ViewerFont) {
   try {
     window.localStorage.setItem(VIEWER_FONT_STORAGE_KEY, font);
+  } catch (_) {}
+}
+
+function readStoredFontScale(): string | null {
+  try {
+    return window.localStorage.getItem(VIEWER_FONT_SCALE_STORAGE_KEY);
+  } catch (_) {
+    return null;
+  }
+}
+
+function writeStoredFontScale(scale: ViewerFontScale) {
+  try {
+    window.localStorage.setItem(VIEWER_FONT_SCALE_STORAGE_KEY, String(scale));
   } catch (_) {}
 }
 

@@ -2,7 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { OutlineState } from "./outline-state";
-import { VIEWER_FONTS, type ViewerFont } from "./viewer-font";
+import {
+  DEFAULT_VIEWER_FONT_SCALE,
+  MAX_VIEWER_FONT_SCALE,
+  MIN_VIEWER_FONT_SCALE,
+  VIEWER_FONTS,
+  type ViewerFont,
+  type ViewerFontScale,
+} from "./viewer-font";
 import { VIEWER_THEMES, type ViewerTheme } from "./viewer-theme";
 import styles from "./viewer-chrome.module.css";
 
@@ -14,6 +21,12 @@ interface ViewerChromeProps {
   onThemeChange: (theme: ViewerTheme) => void;
   /** Changes the active typography/font mode. */
   onFontChange: (font: ViewerFont) => void;
+  /** Decreases the active reader font scale. */
+  onDecreaseFontScale: () => void;
+  /** Increases the active reader font scale. */
+  onIncreaseFontScale: () => void;
+  /** Resets the active reader font scale to default. */
+  onResetFontScale: () => void;
   /** Toggles inline expression-type annotations. */
   onToggleTypes: () => void;
   /** Current outline visibility mode. */
@@ -22,6 +35,8 @@ interface ViewerChromeProps {
   theme: ViewerTheme;
   /** Current typography/font mode. */
   font: ViewerFont;
+  /** Current reader font scale multiplier. */
+  fontScale: ViewerFontScale;
   /** Whether inline expression-type annotations are visible. */
   showTypes: boolean;
 }
@@ -31,10 +46,14 @@ export function ViewerChrome({
   onToggleOutline,
   onThemeChange,
   onFontChange,
+  onDecreaseFontScale,
+  onIncreaseFontScale,
+  onResetFontScale,
   onToggleTypes,
   outlineState,
   theme,
   font,
+  fontScale,
   showTypes,
 }: ViewerChromeProps) {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -51,6 +70,10 @@ export function ViewerChrome({
     VIEWER_FONTS.find((item) => item.id === font) ?? VIEWER_FONTS[0];
   const activeTheme =
     VIEWER_THEMES.find((item) => item.id === theme) ?? VIEWER_THEMES[0];
+  const canDecreaseFontScale = fontScale > MIN_VIEWER_FONT_SCALE;
+  const canIncreaseFontScale = fontScale < MAX_VIEWER_FONT_SCALE;
+  const isDefaultFontScale = fontScale === DEFAULT_VIEWER_FONT_SCALE;
+  const fontScalePercent = Math.round(fontScale * 100);
 
   useEffect(() => {
     document.documentElement.style.setProperty(
@@ -263,6 +286,76 @@ export function ViewerChrome({
                   })}
                 </div>
               ) : null}
+            </div>
+            <div
+              aria-label="Font size"
+              className={styles.fontSizeGroup}
+              role="group"
+            >
+              <button
+                aria-disabled={!canDecreaseFontScale}
+                aria-label="Decrease font size"
+                className={
+                  !canDecreaseFontScale
+                    ? `${styles.fontSizeButton} ${styles.fontSizeButtonDisabled}`
+                    : styles.fontSizeButton
+                }
+                onClick={() => {
+                  if (canDecreaseFontScale) {
+                    onDecreaseFontScale();
+                  }
+                }}
+                title="Decrease font size"
+                type="button"
+              >
+                <span aria-hidden="true" className={styles.fontSizeGlyphSmall}>
+                  A<span className={styles.fontSizeSign}>−</span>
+                </span>
+              </button>
+              <button
+                aria-disabled={isDefaultFontScale}
+                aria-label="Reset font size"
+                className={
+                  isDefaultFontScale
+                    ? `${styles.fontSizeButton} ${styles.fontSizeResetButton} ${styles.fontSizeButtonDisabled}`
+                    : `${styles.fontSizeButton} ${styles.fontSizeResetButton} ${styles.fontSizeResetButtonActive}`
+                }
+                onClick={() => {
+                  if (!isDefaultFontScale) {
+                    onResetFontScale();
+                  }
+                }}
+                title={
+                  isDefaultFontScale
+                    ? "Default font size (100%)"
+                    : `Reset font size (${fontScalePercent}%)`
+                }
+                type="button"
+              >
+                <span aria-hidden="true" className={styles.fontSizeGlyphReset}>
+                  A
+                </span>
+              </button>
+              <button
+                aria-disabled={!canIncreaseFontScale}
+                aria-label="Increase font size"
+                className={
+                  !canIncreaseFontScale
+                    ? `${styles.fontSizeButton} ${styles.fontSizeButtonDisabled}`
+                    : styles.fontSizeButton
+                }
+                onClick={() => {
+                  if (canIncreaseFontScale) {
+                    onIncreaseFontScale();
+                  }
+                }}
+                title="Increase font size"
+                type="button"
+              >
+                <span aria-hidden="true" className={styles.fontSizeGlyphLarge}>
+                  A<span className={styles.fontSizeSign}>+</span>
+                </span>
+              </button>
             </div>
           </div>
 

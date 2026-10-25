@@ -15,7 +15,9 @@ with centered controls and custom dropdown menus for:
   pairs upright Euler Math mathematics (`Euler-Math.woff2`) with CMU Concrete
   Roman body text (`cmunorm`/`cmunoti`/`cmunobx`/`cmunobi`) and Palatino UI
   chrome, persisted under `mlg-view-font` in local storage and applied via
-  `data-font="euler"`.
+  `data-font="euler"`. A companion `[ A− | A | A+ ]` button group decreases,
+  resets, and increases the reader and outline font scale (`80%`–`140%`),
+  persisted under `mlg-view-font-scale` and applied via `--viewer-font-scale`.
 - **Expression types** — toggles inline display of resolved per-line expression
   types across cards and argument lists.
 - **Theme** (`web/components/viewer-theme.ts`) — Classic, Mono, Flat Gray,

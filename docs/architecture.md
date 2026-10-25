@@ -11,6 +11,8 @@ For language syntax details, use these companion documents:
   exercises every language feature and checks cleanly; a test keeps it that
   way.
 - [language.md](language.md) is the human-facing language guide.
+- [cheatsheet.md](cheatsheet.md) is a concise high-level reference of language
+  constructs.
 - [type_and_operator_resolution.md](type_and_operator_resolution.md) gives
   pseudocode for symbol typing and the four binary operator resolution modes.
 - [structural_syntax.md](structural_syntax.md) is the parser-level structural
@@ -64,7 +66,7 @@ mlg export
 mlg lsp
   -> collection diagnostics and context-aware completion
   -> command definition lookup and workspace rename
-  -> per-line type information served on hover
+  -> live Markdown entry preview and per-line type information served on hover
 ```
 
 The Rust code owns parsing, validation, semantic checking, and rendering
@@ -130,9 +132,9 @@ Responsibilities:
 - `src/backend/` contains collection loading, semantic checking, and viewer
   model generation.
 - `src/mlg/` contains command orchestration — `check`, `format`, `clean`,
-  `export`, `init`, `lsp`, `release`, `version`, `view`, and the hidden
-  diagnostic commands `debug`, `extract`, `report`, and `whte_rbt.obj` — plus
-  completion and command-specific utilities (`util.rs`).
+  `export`, `init`, `lsp`, `release`, `search`, `structure`, `version`, `view`,
+  and the hidden diagnostic commands `debug`, `extract`, `report`, and
+  `whte_rbt.obj` — plus completion and command-specific utilities (`util.rs`).
 
 ## Command Layer
 
@@ -150,6 +152,8 @@ The implemented top-level commands are:
 - `mlg export [--base-path PATH] [--cname DOMAIN] [--force]`
 - `mlg init`
 - `mlg release --summary TEXT [--dry-run] [--diff]`
+- `mlg search [--json] <QUERY>`
+- `mlg structure [--json]`
 - `mlg version`
 - `mlg view [--port PORT] [--watch]`
 
@@ -185,7 +189,10 @@ Rules:
 - Sources are collected from `<root>/content/` when that directory exists,
   otherwise from the root itself.
 - `SourceCollection::load` also **writes to disk**: it generates a UUID `Id:`
-  section into any top-level item that lacks one (`ensure_source_file_ids`).
+  section into any top-level item that lacks one (`ensure_source_file_ids`),
+  computing each group's final row across multiline text and formulation
+  arguments so blank lines or `--` lines inside quoted prose do not split the
+  item.
 - Source order is a display-name sort (filename with `_` treated as a space and
   case ignored), not raw path order, and a directory's `toc` file overrides that
   order and can hide entries (a `HIDDEN` directive) or re-title them.
@@ -307,9 +314,11 @@ Main files:
 
 - `lexer.rs` normalizes source lines, indentation, `. ` argument markers, blank
   lines, and comments.
-- `parser.rs` builds proto groups and sections from normalized lines.
+- `parser.rs` builds proto groups and sections from normalized lines, including
+  extracting optional `[label]: ` prefixes on `. ` argument lines.
 - `ast.rs` defines proto `Group`, `Section`, `Argument`, `Formulation`, and
-  `TextLiteral`.
+  `TextLiteral` (with optional line-level `label` metadata on `Formulation` and
+  `TextLiteral`).
 
 The proto parser is responsible for source shape and recovery. It does not know
 whether a group is a `Theorem`, `Declares`, `Resource`, or clause group. That
@@ -508,13 +517,18 @@ Main files:
   `GroupView`, `SectionView`, and `ArgumentView`.
 - `builder.rs` receives checked `ParsedSourceFile` values, builds a render
   registry, reruns the proto parser for source layout, and creates the JSON
-  view model.
+  view model (as well as single-group views via `build_single_group_view` for
+  LSP hover previews).
+- `markdown.rs` (`render_group_markdown`) renders a `GroupView` into a compact
+  Markdown-and-LaTeX representation used by `mlg lsp` hover previews.
 - `render.rs` wires together rendering internals.
 - `render/registry.rs` builds rendering lookup tables from parsed files.
 - `render/signatures.rs` computes render signatures.
 - `render/templates.rs` applies documented/written rendering templates.
 - `render/commands.rs`, `render/expressions.rs`, `render/statements.rs`,
-  `render/names.rs`, and `render/fallbacks.rs` render AST fragments to LaTeX.
+  `render/names.rs`, `render/text.rs`, and `render/fallbacks.rs` render AST
+  fragments and scoped prose (`{. ... .}`, `{{. ... .}}`, `{: ... :}`, and
+  `''...''(:label:)` citations) to LaTeX/Markdown.
 - `render/escaping.rs` handles LaTeX escaping.
 
 Variadic template substitutions retain shape metadata alongside their rendered
@@ -574,19 +588,29 @@ Group cards divide their sections into primary content and supporting content.
 `Justification:`, and `Id:` are collapsed behind the supporting-sections toggle
 by default.
 
-The viewer chrome includes an interactive "Types" toggle to display resolved
-expression types inline across cards and argument lists. Type annotations are
-computed during the semantic check pass, mapped to lines and byte spans, and
-serialized into the view model by `src/backend/view/builder.rs`.
+The viewer chrome (`web/components/viewer-chrome.tsx`) provides a slide-down
+settings toolbar triggered from the header. It consolidates three centered
+controls:
 
-Viewer themes are declared centrally in `web/components/viewer-theme.ts`. The
-current choices are Classic, Mono, Flat Gray, Sepia, Retro, LCD, and Atomic,
-each with light and dark variants. Classic is the default; the selected theme is
-stored under `mlg-view-theme` in browser local storage and applied through the
-root `data-theme` attribute and matching `color-scheme`.
+- **Font** (`web/components/viewer-font.ts`) — switches between `Default` and
+  `Euler` typography mode (pairing Euler Math upright mathematics with CMU
+  Concrete Roman body text and Palatino UI chrome), persisted under
+  `mlg-view-font` in local storage and applied via the root `data-font`
+  attribute.
+- **Expression types** — an interactive switch to display resolved expression
+  types inline across cards and argument lists. Type annotations are computed
+  during the semantic check pass, mapped to lines and byte spans, and serialized
+  into the view model by `src/backend/view/builder.rs`.
+- **Theme** (`web/components/viewer-theme.ts`) — Classic, Mono, Flat Gray,
+  Sepia, Manuscript, Field Guide, Retro, LCD, and Atomic, each with light and
+  dark variants. Classic is the default; the selected theme is stored under
+  `mlg-view-theme` in browser local storage and applied through the root
+  `data-theme` attribute and matching `color-scheme`.
 
 `mlg view` writes a temporary `collection.json` and serves it with the embedded
-assets from a small Rust HTTP server. The web app reads only that JSON endpoint.
+assets from a small Rust HTTP server (along with an `/api/version` endpoint that
+`web/components/viewer-shell.tsx` polls to reload automatically when the
+collection is rebuilt). The web app reads only that JSON endpoint.
 It does not parse `.mlg` files and does not run semantic checks. Node.js and npm
 are frontend development dependencies, not runtime dependencies of `mlg view`
 or `mlg export`.

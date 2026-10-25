@@ -281,12 +281,22 @@ x[i[j]]
 
 The names inside subset brackets must be names, not arbitrary expressions.
 
-Expression labels are written after grouped expressions:
+Expression labels are written after grouped expressions (using `[:...:]` for
+`Justification:` labels and `(:...:)` for `References:` citations, including
+comma-separated multi-labels), or as a `[label]: ` prefix on a single-line `. `
+argument:
 
 ```text
 (x + y)[:sum:]
 (. x + y .)[:normalized:]
+(x + y)[:l1, l2:]
+(x + y)(:ref:)
+(x + y)[:sum:](:ref1, ref2:)
+. [sum]: x + y = y + x
 ```
+
+When both `[:...:]` and `(:...:)` appear on the same grouped formulation,
+justification labels `[:...:]` must precede reference labels `(:...:)`.
 
 ## Commands and Signatures
 
@@ -1232,7 +1242,9 @@ the construct supports.
 `Justification:` (placed after `Documented:`) accepts only `have:` groups, each
 with a required `[label]` heading and an optional `asserting:` section. Any
 grouped expression, statement, or specification elsewhere in the group may carry
-a `[:label:]`, including inside a nested clause or expression. For example, both a `specifies:` item
+a `[:label:]` (or comma-separated multi-labels `[:l1, l2:]`), including inside a
+nested clause or expression, and a single-line `. ` formulation argument may
+also carry a `. [label]: ...` prefix. For example, both a `specifies:` item
 `(.x is \foo.)[:1:]` and a `satisfies:` clause
 ``(.*' := \restriction:of{`*`}:on{X' \.set.cross./ X'}.)[:2:]`` may reference
 entries. A matching entry establishes the labeled formulation using any
@@ -1243,7 +1255,12 @@ be referenced by some labeled formulation.
 
 `Aliases:` accepts `alias:` groups. `Metadata:` accepts `id:` and `version:`.
 `References:` contains resource references such as `$book.chapter` (the quoted
-form `"$book.chapter"` is accepted too). A resolved reference renders as the
+form `"$book.chapter"` is accepted too), optionally prefixed with a line label
+such as `. [ref1]: $book.chapter:page{42}`. Labeled `References:` entries can be
+cited from grouped formulations using `(:ref1:)` (or `(:ref1, ref2:)`) and from
+prose using `''quoted text''(:ref1:)` (or `''quoted text''(:ref1, ref2:)`).
+Duplicate labels in `References:` and citations to unknown reference labels are
+rejected. A resolved reference renders as the
 resource title followed by its authors in parentheses. If the resource has a
 URL, the citation links to it. PDF resources also accept `:page{n}`; the link's
 physical PDF page is `n + offset - 1`, where `offset` defaults to `1`.
@@ -1407,7 +1424,9 @@ names`, `toc entry title cannot be empty`).
 Parsing has three layers, each with its own diagnostics:
 
 - **Proto (line/indentation)** — line shape, section indentation, `:` on
-  section lines, argument bullets. Single-quoted formulations are rejected
+  section lines, argument bullets, and `. [label]: ` prefixes on single-line
+  arguments (rejected on inline section arguments with `Inline section arguments
+  cannot have labels`). Single-quoted formulations are rejected
   (`Single-quoted formulations are not allowed`).
 - **Structural (groups/sections)** — each group must match its section
   pattern: a required (non-`?`) section that is missing reports
@@ -2182,8 +2201,10 @@ operation symbol.
 
 Quoted prose, including `Text:`, descriptions, and theorem `Proof:`, may contain
 inline `{. expression .}` or display `{{. expression .}}` MathLingua fragments,
-as well as theorem-like references `{: \name :}`.
-They are parsed, semantically checked, and rendered as mathematics. For example:
+theorem-like references `{: \name :}`, and reference citations
+`''quoted text''(:label:)` (or comma-separated `''quoted text''(:l1, l2:)`).
+They are parsed, semantically checked, and rendered as mathematics or linked
+citations. For example:
 
 ```text
 Text: "Let {. A is \\anything .}. By {: \\identity.thm :}, {{. A = A .}}."
@@ -2193,6 +2214,12 @@ The `{: ... :}` syntax is reserved exclusively for referencing axioms, conjectur
 or theorems. The enclosed content must be a bare command `\name` that resolves to
 an `Axiom:`, `Conjecture:`, or `Theorem:`. Axioms, conjectures, and theorems are
 not permitted inside `{. ... .}` or `{{. ... .}}`.
+
+Prose reference citations `''quoted text''(:label:)` render the text between
+double single-quotes (`''...''`) in italics followed by a bracketed citation link
+to the matching `. [label]: $resource` entry in the enclosing group's
+`References:` section. Every cited label must exist in that `References:`
+section.
 
 A declaration fragment using `is`, a quoted specification operator, or `:=`
 introduces names for later fragments in the same text value. The initial scope

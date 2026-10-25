@@ -5,6 +5,72 @@ and CLI behavior implemented in this repository. It is intentionally rule-focuse
 each section captures not only the feature, but also the conditions under which
 the feature is valid.
 
+## Viewer Settings Toolbar, Euler Typography Mode, And Live Hover Previews
+
+The web viewer (`mlg view` and `mlg export`) now consolidates header display
+controls into a slide-down settings toolbar (`web/components/viewer-chrome.tsx`)
+with centered controls and custom dropdown menus for:
+
+- **Font** (`web/components/viewer-font.ts`) — `Default` and `Euler`. Euler mode
+  pairs upright Euler Math mathematics (`Euler-Math.woff2`) with CMU Concrete
+  Roman body text (`cmunorm`/`cmunoti`/`cmunobx`/`cmunobi`) and Palatino UI
+  chrome, persisted under `mlg-view-font` in local storage and applied via
+  `data-font="euler"`.
+- **Expression types** — toggles inline display of resolved per-line expression
+  types across cards and argument lists.
+- **Theme** (`web/components/viewer-theme.ts`) — Classic, Mono, Flat Gray,
+  Sepia, Manuscript, Field Guide, Retro, LCD, and Atomic, each in light and dark
+  variants.
+
+`mlg view` also exposes a `/api/version` endpoint (`src/mlg/view.rs`) polled by
+the viewer shell so open browser tabs automatically reload whenever a background
+rebuild updates the collection view.
+
+`mlg lsp` hover (`src/mlg/lsp.rs`, `src/backend/view/markdown.rs`) now renders a
+live Markdown-and-LaTeX preview of the hovered top-level entry directly from the
+in-memory document text as you edit, followed by the per-line resolved
+expression types when available.
+
+## Reference Citations (`(:label:)`), Multi-Labels, And Line Labels (`. [label]: ...`)
+
+- **Line-level argument labels (`. [label]: ...`)**: Single-line formulation
+  arguments, text arguments, and `References:` entries can carry a leading
+  `[label]: ` prefix after the `. ` bullet (for example,
+  `. [sum]: a + b = b + a` or `. [ref1]: $book:page{10}`). Inline section
+  arguments cannot carry `[label]: ` prefixes (`Inline section arguments cannot
+  have labels`). A line with a `[label]: ` prefix is parsed as a labeled
+  argument rather than a `[heading]` line.
+- **Formulation multi-labels and reference citations**:
+  - Justification labels on grouped formulations (`(...)` or `(. ... .)`) now
+    accept comma-separated label lists (`[:l1, l2:]`) or multiple consecutive
+    label tokens (`[:l1:][:l2:]`).
+  - Reference citation labels use `(:label:)` or comma-separated `(:r1, r2:)` to
+    cite labeled entries in the enclosing item's `References:` section.
+  - When a grouped formulation carries both justification and reference labels,
+    all justification labels `[:...:]` must precede all reference labels
+    `(:...:)` (for example, `(x + y)[:sum:](:ref1:)`).
+- **Prose reference citations (`''quoted text''(:label:)`)**: Quoted prose
+  (`OpenText`) supports `''quoted text''(:label:)` and comma-separated
+  `''quoted text''(:l1, l2:)`. The checker validates that every cited label
+  resolves to a labeled `[label]: $resource` entry in the enclosing group's
+  `References:` section, and the renderer outputs italicized quoted text
+  followed by bracketed links to the referenced resources.
+- **Validation**: Duplicate reference labels within a `References:` section are
+  rejected (`Duplicate reference label ...`), and unknown reference labels in
+  formulations or prose are reported (`Unknown reference label ...`).
+
+## `mlg search` And `mlg structure` Commands
+
+- `mlg search [--json] <QUERY>` searches the collection for matching items by
+  command signature, title, called/written text, or content, outputting human
+  summaries or machine-readable JSON.
+- `mlg structure [--json]` prints the hierarchical directory, page, and
+  top-level item structure of the collection in text or JSON format.
+- `SourceCollection::load` now computes the final line of each top-level group
+  across multiline text and formulation arguments before inserting missing `Id:`
+  sections, preventing blank lines or `--` lines inside quoted prose from
+  splitting a group during automatic `Id:` insertion.
+
 ## Theorem References In Prose (`{: ... :}`)
 
 Quoted prose (`OpenText`) now supports `{: \name :}` exclusively for referencing

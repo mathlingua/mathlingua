@@ -154,24 +154,38 @@ So `x "less than" A` is rejected by `parse_expression`, but accepted by
 
 ### Labels on grouped formulations
 
-Labels use the token form:
+Grouped formulations support two label token kinds:
 
-```text
-[:part(.part)*:]
-```
+1. **Justification labels**, which reference `[label]` entries in the enclosing
+   group's `Justification:` section:
 
-Each `part` uses the same identifier-like rule as ordinary non-stropped names.
+   ```text
+   [:part(.part)*(, part(.part)*)*:]
+   ```
+
+2. **Reference citation labels**, which cite `[label]: $resource` entries in the
+   enclosing group's `References:` section:
+
+   ```text
+   (:part(.part)*(, part(.part)*)*:)
+   ```
+
+Each `part` uses the same identifier-like rule as ordinary non-stropped names,
+and comma-separated lists attach multiple labels in one token (for example,
+`[:l1, l2:]` or `(:r1, r2:)`).
 
 Important distinction:
 
-- formulation labels like `[:a.b:]` are lexer tokens and do not support stropped symbolic parts
+- formulation labels like `[:a.b:]` and `(:a.b:)` are lexer tokens and do not support stropped symbolic parts
 - structural label headers parsed by `parse_label_header` do support stropped symbolic name parts because they use the raw helper parser, not the lexer token
 
-A label may follow a parenthesized or dot-parenthesized expression, statement,
-or specification. Declaration-shaped formulations retain the wrapper in their
-statement AST, while expression-shaped formulations use `ExpressionKind::Labeled`.
-Consequently the same syntax is valid at top level and wherever that formulation
-may be nested.
+One or more justification labels and/or reference citation labels may follow a
+parenthesized or dot-parenthesized expression, statement, or specification. When
+both kinds are present on the same grouped formulation, all `[:...:]`
+justification labels must appear before all `(:...:)` reference labels.
+Declaration-shaped formulations retain the wrapper in their statement AST, while
+expression-shaped formulations use `ExpressionKind::Labeled`. Consequently the
+same syntax is valid at top level and wherever that formulation may be nested.
 
 ### Named operators
 
@@ -313,8 +327,8 @@ SpecOrPredicateExpression ::=
   | InfixCommandExpression "is?" (CommandExpression | BuiltinTypeExpression)
   | InfixCommandExpression "member_of" InfixCommandExpression
   | InfixCommandExpression "satisfies" InfixCommandExpression
-  | "?" "is" PredicateTypeExpression
-  | "?" QuotedName (Name | CommandExpression)
+  | "_" "is" PredicateTypeExpression
+  | "_" QuotedName (Name | CommandExpression)
   | InfixCommandExpression
 
 PredicateTypeExpression ::= CommandExpression | BuiltinTypeExpression | Name
@@ -408,17 +422,24 @@ The AST records whether the grouped form used the dot-delimited spelling.
 #### Labeled expressions
 
 ```text
-LabeledExpression ::= GroupedExpression Label
+LabeledExpression ::=
+    GroupedExpression Label+ ReferenceLabel*
+  | GroupedExpression ReferenceLabel+
 ```
 
-Only grouped formulations may be labeled directly. In a declaration-bearing
-context, the same wrapper may contain a declaration or specification such as
+Only grouped formulations may be labeled directly. When both justification
+labels (`[:...:]`) and reference labels (`(:...:)`) are attached, justification
+labels must come first. In a declaration-bearing context, the same wrapper may
+contain a declaration or specification such as
 ``(.*' := `*`.)[:operation:]`` or `(.x is \real.)[:typed:]`.
 
 Examples:
 
 - `(x + y)[:sum:]`
 - `(. x + y .)[:normalized:]`
+- `(x + y)[:l1, l2:]`
+- `(x + y)(:ref:)`
+- `(x + y)[:sum:](:ref1, ref2:)`
 
 #### Function expressions
 
@@ -1109,7 +1130,9 @@ Placeholder ::= IdentifierName "_"
 MagneticPlaceholder ::= IdentifierName "__"
 
 QuotedName ::= "\"" IdentifierName "\""
-Label ::= "[:" IdentifierName ("." IdentifierName)* ":]"
+LabelPath ::= IdentifierName ("." IdentifierName)*
+Label ::= "[:" LabelPath ("," LabelPath)* ":]"
+ReferenceLabel ::= "(:" LabelPath ("," LabelPath)* ":)"
 
 NamedOperatorPath ::= NamedOperatorPart ("." NamedOperatorPart)*
 NamedOperatorPart ::= IdentifierName | OperatorText
@@ -1220,8 +1243,8 @@ SpecOrPredicateExpression ::=
   | InfixCommandExpression "is?" (CommandExpression | BuiltinTypeExpression)
   | InfixCommandExpression "member_of" InfixCommandExpression
   | InfixCommandExpression "satisfies" InfixCommandExpression
-  | "?" "is" PredicateTypeExpression
-  | "?" QuotedName (Name | CommandExpression)
+  | "_" "is" PredicateTypeExpression
+  | "_" QuotedName (Name | CommandExpression)
   | InfixCommandExpression
 
 PredicateTypeExpression ::= CommandExpression | BuiltinTypeExpression | Name
@@ -1259,7 +1282,7 @@ PostfixExpression ::= PrimaryExpression PostfixNamedOperator
                     | PrimaryExpression
 
 PrimaryExpression ::=
-    GroupedExpression Label
+    LabeledExpression
   | GroupedExpression
   | FunctionExpression
   | TupleExpression

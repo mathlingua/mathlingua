@@ -91,6 +91,7 @@ A proto heading line is any non-text line whose stored text:
 
 - starts with `[`
 - ends with `]`
+- does not begin with a `[label]: ` line-label prefix
 
 The inside text is used as the raw heading string.
 
@@ -101,6 +102,22 @@ Example:
 ```
 
 The proto parser does not know what kind of heading this is. The structural parser decides later.
+
+### Line labels on arguments
+
+A `. ` argument line (for a single-line formulation or text literal, including a
+`References:` resource item) may begin with a `[label]: ` prefix:
+
+```text
+. [label]: <argument content>
+```
+
+where `label` is a non-empty label header (`extract_line_label`). The proto
+parser strips `[label]: ` before classifying the rest of the line as a text
+literal or single-line formulation and attaches `label` to the resulting
+`TextLiteral` or `Formulation` node. Inline section arguments (written on the
+same line as `section:`) cannot carry `[label]: ` prefixes (`Inline section
+arguments cannot have labels`).
 
 ### Text literals
 
@@ -188,7 +205,7 @@ HeadingLine ::= "[" RawHeadingText "]"
 
 Section ::= Label ":" InlineArgument? Argument*
 
-Argument ::= TextLiteral | Group | Formulation
+Argument ::= ("[label]:")? (TextLiteral | Formulation) | Group
 ```
 
 This is a behavioral summary, not a lexer grammar. In particular, `Argument ::= Group` is selected by the implementation rule "heading line or structural section colon".
@@ -232,7 +249,7 @@ The structural AST uses:
 
 Quoted text sections are converted to typed wrappers:
 
-- `OpenText`: General prose text. May embed inline formulations (`{. ... .}`), display formulations (`{{. ... .}}`), and theorem-like references (`{: \name :}`) exclusively for axioms, conjectures, or theorems.
+- `OpenText`: General prose text. May embed inline formulations (`{. ... .}`), display formulations (`{{. ... .}}`), theorem-like references (`{: \name :}`) exclusively for axioms, conjectures, or theorems, and prose reference citations (`''quoted text''(:label:)` or `''quoted text''(:l1, l2:)`) referencing labeled entries in `References:`.
 - `WrittenText`
 - `CalledText`
 - `WritingText`
@@ -358,7 +375,9 @@ Used inside `Justification:` (which appears after `Documented:`). Each item is a
 `HaveGroup` — a `have:`/`asserting?:`/`because?:`/`by?:` group (see the `have`
 clause group above) with a required `[label]` heading. Any grouped expression,
 statement, or specification elsewhere in the group—including a nested
-formulation or a `satisfies:` clause—may carry the matching `[:label:]`. It is
+formulation or a `satisfies:` clause—may carry the matching `[:label:]` (or
+comma-separated multi-labels `[:l1, l2:]`), and a single-line formulation
+argument may also carry a line-level `. [label]: ...` prefix. It is
 established using that entry's `have:` and any `asserting:` items; the entry's `have:` must
 restate the labeled formulation, and every entry must be referenced by some
 labeled formulation.
@@ -388,7 +407,11 @@ parsed as formulation type syntax and participates in semantic checking.
 Used inside top-level `Resource:`.
 
 `References:` entries name these resources with `$` headers. Both
-`$book.chapter` and the quoted `"$book.chapter"` form are accepted. A PDF
+`$book.chapter` and the quoted `"$book.chapter"` form are accepted, and an entry
+may optionally carry a line-level label `. [label]: $book.chapter` so that
+grouped formulations in the item can cite it with `(:label:)` (or `(:l1, l2:)`)
+and prose in the item can cite it with `''quoted text''(:label:)`. Duplicate
+reference labels within the same `References:` section are rejected. A PDF
 resource reference may append `:page{n}`. Its `offset:` is the physical PDF page
 corresponding to logical page 1, so the linked physical page is
 `n + offset - 1`. The viewer displays a resolved reference as the resource's
@@ -543,7 +566,9 @@ IsOrViaItemUnion ::=
     | HaveGroup
     | LabeledIsOrViaItem
 
-LabeledIsOrViaItem ::= Grouped(IsOrViaItemUnion) Label
+LabeledIsOrViaItem ::=
+    | Grouped(IsOrViaItemUnion) Label+ ReferenceLabel*
+    | Grouped(IsOrViaItemUnion) ReferenceLabel+
 ```
 
 ```union

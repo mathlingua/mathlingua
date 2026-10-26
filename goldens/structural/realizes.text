@@ -19,6 +19,7 @@ Documented:
 . called: "naturals"
 Justification:
 . [proof.label]
+  for: (:proof.label:)
   have:
   . x = x
   asserting:
@@ -63,6 +64,7 @@ Documented:
 . called: "von Neumann naturals"
 Justification:
 . [proof.label]
+  for: (:proof.label:)
   have:
   . x = x
   asserting:

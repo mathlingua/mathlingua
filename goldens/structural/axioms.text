@@ -25,6 +25,7 @@ Documented:
   . "axiom"
 Justification:
 . [axiom.justified]
+  for: (:logic.if:)
   have:
   . x = x
   asserting:

@@ -15,10 +15,12 @@ Resource:
 Theorem:
 given: x
 then:
-. x = x
+. (x = x)[:2:]
 References:
-. [2]: $some.book
-. [2]: $other.book
+. for: (:2:)
+  entry: $some.book
+. for: (:2:)
+  entry: $other.book
 == end:input ==
 == begin:output ==
 error: Duplicate reference label `2` in `References:`

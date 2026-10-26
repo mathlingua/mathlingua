@@ -6733,7 +6733,7 @@ Documented:
     Documented:
     . called: "thing"
     Justification:
-    . [known]
+    . for: (:known:)
       have: x is \set
       because: x is? \set
 
@@ -6896,7 +6896,7 @@ Documented:
     Documented:
     . called: "thing"
     Justification:
-    . [1]
+    . for: (:1:)
       have:
       . t is \wrap:of{P}:in{Q}
       asserting:
@@ -6944,7 +6944,7 @@ Documented:
     Documented:
     . called: "thing"
     Justification:
-    . [1]
+    . for: (:1:)
       have:
       . z is \set
       asserting:
@@ -6997,10 +6997,10 @@ Documented:
     Documented:
     . called: "thing"
     Justification:
-    . [1]
+    . for: (:1:)
       have: y := x
       asserting: x is \set
-    . [2]
+    . for: (:2:)
       have: x
       asserting: x is \set
     "#,
@@ -11992,7 +11992,7 @@ Enables:
 Documented:
 . written: "\omega"
 Justification:
-. [1]
+. for: (:1:)
   have: A is \(inductive)::set
   by: \axiom.of.infinity
 Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"

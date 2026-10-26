@@ -2,15 +2,15 @@ use std::collections::{HashMap, VecDeque};
 
 use crate::events::EventLog;
 use crate::frontend::formulation::ast::{
-    DeclarationRelation, Expression, ExpressionKind, FormOrDeclaration, FormOrDeclarationKind,
-    Label, WritingAlias,
+    DeclarationRelation, DeclarationStatement, Expression, ExpressionKind, FormOrDeclaration,
+    FormOrDeclarationKind, Label, ResourceHeader, WritingAlias,
 };
 use crate::frontend::formulation::{
     ParseError as FormulationParseError, parse_author_header, parse_command_header,
     parse_expression, parse_expression_alias, parse_expression_binding, parse_form_or_declaration,
-    parse_is_via_statement, parse_label_header, parse_refined_declaration_statement,
-    parse_resource_header, parse_spec_operator_alias, parse_topic_header, parse_type_expression,
-    parse_writing_alias, split_via_view,
+    parse_is_via_statement, parse_label_header, parse_label_references,
+    parse_refined_declaration_statement, parse_resource_header, parse_spec_operator_alias,
+    parse_topic_header, parse_type_expression, parse_writing_alias, split_via_view,
 };
 use crate::frontend::proto::Parser as ProtoParser;
 use crate::frontend::proto::ast::{
@@ -326,11 +326,10 @@ pub(in crate::frontend::structural::parser) fn parse_alias_kind(
 pub(in crate::frontend::structural::parser) fn parse_is_or_via_item(
     input: &str,
 ) -> Result<IsOrViaItem, FormulationParseError> {
-    if let Some((labels, reference_labels, inner)) = split_labeled_specification(input) {
+    if let Some((labels, inner)) = split_labeled_specification(input) {
         let item = parse_is_or_via_item(inner)?;
         return Ok(IsOrViaItem::Labeled {
             labels,
-            reference_labels,
             item: Box::new(item),
         });
     }
@@ -371,37 +370,27 @@ fn parse_spec_label_list(raw: &str, base_offset: usize) -> Option<Vec<Label>> {
     Some(labels)
 }
 
-/// Recognizes trailing labels `[:...:]` and/or `(:...:)` on a grouped specification such as
-/// `(.*_1 is \foo.)[:1:]` or `(.x is \foo.)[:1:](:2:)`. Returns justification labels,
-/// reference labels, and the inner specification source text.
-fn split_labeled_specification(input: &str) -> Option<(Vec<Label>, Vec<Label>, &str)> {
+/// Recognizes trailing labels `[:...:]` on a grouped specification such as
+/// `(.*_1 is \foo.)[:1:]` or `(.x is \foo.)[:1:][:2:]`. Returns the labels and
+/// the inner specification source text.
+fn split_labeled_specification(input: &str) -> Option<(Vec<Label>, &str)> {
     let mut current = input.trim();
-    let mut reference_labels = Vec::new();
-    let mut justification_labels = Vec::new();
+    let mut suffix_groups = Vec::new();
 
-    if let Some(body) = current.strip_suffix(":)") {
-        let label_start = body.rfind("(:")?;
-        let label_content = &body[label_start + 2..];
-        let labels = parse_spec_label_list(label_content, label_start + 2)?;
-        reference_labels = labels;
-        current = body[..label_start].trim();
-    }
-
-    if let Some(body) = current.strip_suffix(":]") {
+    while let Some(body) = current.strip_suffix(":]") {
         let label_start = body.rfind("[:")?;
         let label_content = &body[label_start + 2..];
         let labels = parse_spec_label_list(label_content, label_start + 2)?;
-        justification_labels = labels;
+        suffix_groups.push(labels);
         current = body[..label_start].trim();
     }
 
-    if current.ends_with(":)") {
+    if suffix_groups.is_empty() {
         return None;
     }
 
-    if justification_labels.is_empty() && reference_labels.is_empty() {
-        return None;
-    }
+    suffix_groups.reverse();
+    let labels: Vec<Label> = suffix_groups.into_iter().flatten().collect();
 
     let inner = current
         .strip_prefix("(.")
@@ -411,7 +400,7 @@ fn split_labeled_specification(input: &str) -> Option<(Vec<Label>, Vec<Label>, &
                 .strip_prefix('(')
                 .and_then(|rest| rest.strip_suffix(')'))
         })?;
-    Some((justification_labels, reference_labels, inner.trim()))
+    Some((labels, inner.trim()))
 }
 
 /// Parses the argument of a `Declares:` section.
@@ -788,7 +777,6 @@ pub(in crate::frontend::structural::parser) fn parse_optional_clauses(
                                                 span: header.span,
                                                 parts: header.parts,
                                             }],
-                                            reference_labels: Vec::new(),
                                         },
                                     };
                                 }
@@ -880,24 +868,79 @@ pub(in crate::frontend::structural::parser) fn parse_required_formulations<T>(
     })
 }
 
-/// Parses one or more resource citations from a `References:` section.
-///
-/// References historically used formulation entries (`. $book.name`). Quoted
-/// entries are accepted as well because citations are identifiers rather than
-/// mathematical expressions and are commonly authored as strings.
-fn parse_required_resource_references(
+/// Parses one or more label references (`(:abc:)`) from a `for:` section.
+pub(in crate::frontend::structural::parser) fn parse_required_label_references(
     section: &ProtoSection,
+    label: &str,
     tracker: &mut EventLog,
-) -> Option<OneOrMore<crate::frontend::formulation::ast::ResourceHeader>> {
+) -> Option<OneOrMore<Label>> {
     let starting_issue_count = tracker.issue_count();
     let mut references = Vec::new();
 
     for entry in section_entries(section) {
-        let (text, label, row) = match entry {
-            SectionEntry::Inline { text, row } => (text.to_owned(), None, row),
-            SectionEntry::Formulation { text, label, row } => {
-                (text.to_owned(), label, row)
+        match entry {
+            SectionEntry::Inline { text, row } => match parse_label_references(text) {
+                Ok(parsed) => references.extend(parsed),
+                Err(error) => tracker.user_error_at_row(
+                    Some(ORIGIN),
+                    row,
+                    format!("Invalid `{label}` label reference: {error}"),
+                ),
+            },
+            SectionEntry::Formulation {
+                text,
+                label: entry_label,
+                row,
+            } => {
+                if let Some(lbl) = entry_label {
+                    tracker.user_error_at_row(
+                        Some(ORIGIN),
+                        row,
+                        format!("Unexpected label `[{lbl}]` on `{label}:` entry"),
+                    );
+                }
+                match parse_label_references(text) {
+                    Ok(parsed) => references.extend(parsed),
+                    Err(error) => tracker.user_error_at_row(
+                        Some(ORIGIN),
+                        row,
+                        format!("Invalid `{label}` label reference: {error}"),
+                    ),
+                }
             }
+            SectionEntry::Text { row, .. } | SectionEntry::Group { row, .. } => {
+                tracker.user_error_at_row(
+                    Some(ORIGIN),
+                    row,
+                    format!("Expected label reference `(:...:)` in section `{label}`"),
+                );
+            }
+        }
+    }
+
+    one_or_more(references.into(), || {
+        if tracker.issue_count() == starting_issue_count {
+            tracker.user_error_at_row(
+                Some(ORIGIN),
+                section.metadata.row,
+                format!("Expected label references in `{label}`"),
+            );
+        }
+    })
+}
+
+/// Parses one or more resource headers from an `entry:` section in `References:`.
+fn parse_required_resource_entry_headers(
+    section: &ProtoSection,
+    tracker: &mut EventLog,
+) -> Option<OneOrMore<ResourceHeader>> {
+    let starting_issue_count = tracker.issue_count();
+    let mut resources = Vec::new();
+
+    for entry in section_entries(section) {
+        let (text, entry_label, row) = match entry {
+            SectionEntry::Inline { text, row } => (text.to_owned(), None, row),
+            SectionEntry::Formulation { text, label, row } => (text.to_owned(), label, row),
             SectionEntry::Text { text, label, row } => (
                 strip_quoted_text(text).unwrap_or_else(|| text.to_owned()),
                 label,
@@ -907,17 +950,123 @@ fn parse_required_resource_references(
                 tracker.user_error_at_row(
                     Some(ORIGIN),
                     row,
-                    "Expected a resource reference in section `References`",
+                    "Expected a resource reference in section `entry`",
                 );
                 continue;
             }
         };
 
+        if let Some(lbl) = entry_label {
+            tracker.user_error_at_row(
+                Some(ORIGIN),
+                row,
+                format!("Unexpected label `[{lbl}]` in `entry:`"),
+            );
+        }
+
+        let unquoted = strip_quoted_text(&text).unwrap_or_else(|| text.clone());
+        if let Ok(reference) = parse_resource_header(&unquoted) {
+            resources.push(reference);
+        } else if text.contains(',') {
+            for piece in text.split(',') {
+                let piece = piece.trim();
+                let piece_unquoted = strip_quoted_text(piece).unwrap_or_else(|| piece.to_owned());
+                match parse_resource_header(&piece_unquoted) {
+                    Ok(reference) => resources.push(reference),
+                    Err(error) => tracker.user_error_at_row(
+                        Some(ORIGIN),
+                        row,
+                        format!("Invalid `entry` resource formulation: {error}"),
+                    ),
+                }
+            }
+        } else {
+            match parse_resource_header(&unquoted) {
+                Ok(reference) => resources.push(reference),
+                Err(error) => tracker.user_error_at_row(
+                    Some(ORIGIN),
+                    row,
+                    format!("Invalid `entry` resource formulation: {error}"),
+                ),
+            }
+        }
+    }
+
+    one_or_more(resources.into(), || {
+        if tracker.issue_count() == starting_issue_count {
+            tracker.user_error_at_row(
+                Some(ORIGIN),
+                section.metadata.row,
+                "Expected resource references in `entry`",
+            );
+        }
+    })
+}
+
+/// Parses a `for:`/`entry:` group in `References:`.
+pub(super) fn parse_reference_for_group(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<ReferenceForGroup> {
+    let heading = parse_optional_label_heading(group, tracker)?;
+    let sections = identify_sections("References", &group.sections, tracker, &["for", "entry"])?;
+    Some(ReferenceForGroup {
+        heading,
+        for_: ForSection {
+            arguments: parse_required_label_references(section(&sections, "for")?, "for", tracker)?,
+        },
+        entry: ReferenceEntrySection {
+            arguments: parse_required_resource_entry_headers(
+                section(&sections, "entry")?,
+                tracker,
+            )?,
+        },
+    })
+}
+
+/// Parses one or more resource citations or `for:`/`entry:` groups from a `References:` section.
+///
+/// Item-wide references use formulation or quoted entries (`. $book.name`), while
+/// label-targeted references use a nested `for:`/`entry:` group.
+fn parse_required_resource_references(
+    section: &ProtoSection,
+    tracker: &mut EventLog,
+) -> Option<OneOrMore<ReferenceItem>> {
+    let starting_issue_count = tracker.issue_count();
+    let mut references = Vec::new();
+
+    for entry in section_entries(section) {
+        let (text, label, row) = match entry {
+            SectionEntry::Inline { text, row } => (text.to_owned(), None, row),
+            SectionEntry::Formulation { text, label, row } => (text.to_owned(), label, row),
+            SectionEntry::Text { text, label, row } => (
+                strip_quoted_text(text).unwrap_or_else(|| text.to_owned()),
+                label,
+                row,
+            ),
+            SectionEntry::Group { group, .. } => {
+                if let Some(for_group) = parse_reference_for_group(group, tracker) {
+                    references.push(ReferenceItem::ForEntry(for_group));
+                }
+                continue;
+            }
+        };
+
+        if let Some(lbl) = label {
+            tracker.user_error_at_row(
+                Some(ORIGIN),
+                row,
+                format!(
+                    "Labeled `References:` entry `[{lbl}]` is not supported; use `for: (:{lbl}:)` and `entry:`"
+                ),
+            );
+            continue;
+        }
+
         let text = strip_quoted_text(&text).unwrap_or(text);
         match parse_resource_header(&text) {
-            Ok(mut reference) => {
-                reference.label = label.map(str::to_string);
-                references.push(reference);
+            Ok(reference) => {
+                references.push(ReferenceItem::Resource(reference));
             }
             Err(error) => tracker.user_error_at_row(
                 Some(ORIGIN),
@@ -938,19 +1087,20 @@ fn parse_required_resource_references(
     })
 }
 
-/// Parses required binding-or-spec entries from a quantifier section, preserving any label.
-pub(in crate::frontend::structural::parser) fn parse_required_bindings(
+/// Parses required declaration statements from a section (such as `using:` or `given:`),
+/// preserving any line-level `[label]:` prefix on the statement.
+pub(in crate::frontend::structural::parser) fn parse_required_declarations(
     section: &ProtoSection,
     label: &str,
     tracker: &mut EventLog,
-) -> Option<OneOrMore<BindingOrSpec>> {
+) -> Option<OneOrMore<DeclarationStatement>> {
     let starting_issue_count = tracker.issue_count();
     let mut result = Vec::new();
     for entry in section_entries(section) {
         match entry {
             SectionEntry::Inline { text, row } => {
                 match parse_refined_declaration_statement(text) {
-                    Ok(statement) => result.push(BindingOrSpec::Declaration(statement)),
+                    Ok(statement) => result.push(statement),
                     Err(error) => tracker.user_error_at_row(
                         Some(ORIGIN),
                         row,
@@ -962,35 +1112,33 @@ pub(in crate::frontend::structural::parser) fn parse_required_bindings(
                 text,
                 label: entry_label,
                 row,
-            } => {
-                match parse_refined_declaration_statement(text) {
-                    Ok(mut statement) => {
-                        if let Some(lbl) = entry_label {
-                            match parse_label_header(lbl) {
-                                Ok(header) => {
-                                    statement.labels.push(Label {
-                                        span: header.span,
-                                        parts: header.parts,
-                                    });
-                                }
-                                Err(error) => {
-                                    tracker.user_error_at_row(
-                                        Some(ORIGIN),
-                                        row,
-                                        format!("Invalid label `{lbl}`: {error}"),
-                                    );
-                                }
+            } => match parse_refined_declaration_statement(text) {
+                Ok(mut statement) => {
+                    if let Some(lbl) = entry_label {
+                        match parse_label_header(lbl) {
+                            Ok(header) => {
+                                statement.labels.push(Label {
+                                    span: header.span,
+                                    parts: header.parts,
+                                });
+                            }
+                            Err(error) => {
+                                tracker.user_error_at_row(
+                                    Some(ORIGIN),
+                                    row,
+                                    format!("Invalid label `{lbl}`: {error}"),
+                                );
                             }
                         }
-                        result.push(BindingOrSpec::Declaration(statement));
                     }
-                    Err(error) => tracker.user_error_at_row(
-                        Some(ORIGIN),
-                        row,
-                        format!("Invalid {label} formulation: {error}"),
-                    ),
+                    result.push(statement);
                 }
-            }
+                Err(error) => tracker.user_error_at_row(
+                    Some(ORIGIN),
+                    row,
+                    format!("Invalid {label} formulation: {error}"),
+                ),
+            },
             SectionEntry::Text { row, .. } | SectionEntry::Group { row, .. } => {
                 tracker.user_error_at_row(
                     Some(ORIGIN),
@@ -1008,6 +1156,22 @@ pub(in crate::frontend::structural::parser) fn parse_required_bindings(
                 format!("Expected {label} formulations"),
             );
         }
+    })
+}
+
+/// Parses required binding-or-spec entries from a quantifier section, preserving any label.
+pub(in crate::frontend::structural::parser) fn parse_required_bindings(
+    section: &ProtoSection,
+    label: &str,
+    tracker: &mut EventLog,
+) -> Option<OneOrMore<BindingOrSpec>> {
+    parse_required_declarations(section, label, tracker).map(|declarations| {
+        let mut iter = declarations
+            .into_vec()
+            .into_iter()
+            .map(BindingOrSpec::Declaration);
+        let first = iter.next().expect("non-empty declarations");
+        OneOrMore::new(first, iter.collect())
     })
 }
 
@@ -1050,7 +1214,6 @@ fn parse_required_specify_items(
                                             span: header.span,
                                             parts: header.parts,
                                         }],
-                                        reference_labels: Vec::new(),
                                         item: Box::new(item),
                                     };
                                 }
@@ -1597,6 +1760,46 @@ pub(super) fn parse_have_group(group: &ProtoGroup, tracker: &mut EventLog) -> Op
     )?;
     Some(HaveGroup {
         heading,
+        for_: None,
+        have: HaveSection {
+            arguments: parse_required_clauses(section(&sections, "have")?, "have", tracker)?,
+        },
+        asserting: sections.get("asserting").copied().and_then(|section| {
+            parse_required_clauses(section, "asserting", tracker)
+                .map(|arguments| AssertingSection { arguments })
+        }),
+        because: sections.get("because").copied().and_then(|section| {
+            parse_required_clauses(section, "because", tracker)
+                .map(|arguments| BecauseSection { arguments })
+        }),
+        by: sections.get("by").copied().and_then(|section| {
+            parse_required_formulations(section, "by", tracker, parse_expression)
+                .map(|arguments| HaveBySection { arguments })
+        }),
+    })
+}
+
+/// Parses a `for:`/`have:`/`asserting?:`/`because?:`/`by?:` group inside `Justification:`.
+pub(super) fn parse_justification_have_group(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<HaveGroup> {
+    let heading = parse_optional_label_heading(group, tracker)?;
+    let sections = identify_sections(
+        "Justification",
+        &group.sections,
+        tracker,
+        &["for", "have", "asserting?", "because?", "by?"],
+    )?;
+    Some(HaveGroup {
+        heading,
+        for_: Some(ForSection {
+            arguments: parse_required_label_references(
+                section(&sections, "for")?,
+                "for",
+                tracker,
+            )?,
+        }),
         have: HaveSection {
             arguments: parse_required_clauses(section(&sections, "have")?, "have", tracker)?,
         },
@@ -2800,7 +3003,6 @@ pub(in crate::frontend::structural::parser) fn parse_example(
                                                     span: header.span,
                                                     parts: header.parts,
                                                 }],
-                                                reference_labels: Vec::new(),
                                             },
                                         };
                                     }
@@ -2837,8 +3039,13 @@ pub(in crate::frontend::structural::parser) fn parse_example(
             arguments: arguments.into(),
         },
         justification: sections.get("Justification").copied().and_then(|section| {
-            parse_required_groups(section, "Justification", tracker, parse_have_group)
-                .map(|arguments| JustificationSection { arguments })
+            parse_required_groups(
+                section,
+                "Justification",
+                tracker,
+                parse_justification_have_group,
+            )
+            .map(|arguments| JustificationSection { arguments })
         }),
         aliases: sections.get("Aliases").copied().and_then(|section| {
             parse_required_groups(section, "Aliases", tracker, parse_alias_item_group)
@@ -3164,8 +3371,13 @@ pub(in crate::frontend::structural::parser) fn parse_disambiguates(
         branches,
         else_,
         justification: trailing.get("Justification").copied().and_then(|section| {
-            parse_required_groups(section, "Justification", tracker, parse_have_group)
-                .map(|arguments| JustificationSection { arguments })
+            parse_required_groups(
+                section,
+                "Justification",
+                tracker,
+                parse_justification_have_group,
+            )
+            .map(|arguments| JustificationSection { arguments })
         }),
         documented: trailing.get("Documented").copied().and_then(|section| {
             parse_required_groups(section, "Documented", tracker, parse_documented_item_group)
@@ -3324,13 +3536,8 @@ pub(in crate::frontend::structural::parser) fn parse_declares(
         declares,
         extends,
         using: sections.get("using").copied().and_then(|section| {
-            parse_required_formulations(
-                section,
-                "using",
-                tracker,
-                parse_refined_declaration_statement,
-            )
-            .map(|arguments| UsingSection { arguments })
+            parse_required_declarations(section, "using", tracker)
+                .map(|arguments| UsingSection { arguments })
         }),
         when: sections.get("when").copied().and_then(|section| {
             parse_required_clauses(section, "when", tracker)
@@ -3353,8 +3560,13 @@ pub(in crate::frontend::structural::parser) fn parse_declares(
                 .map(|arguments| EnablesSection { arguments })
         }),
         justification: sections.get("Justification").copied().and_then(|section| {
-            parse_required_groups(section, "Justification", tracker, parse_have_group)
-                .map(|arguments| JustificationSection { arguments })
+            parse_required_groups(
+                section,
+                "Justification",
+                tracker,
+                parse_justification_have_group,
+            )
+            .map(|arguments| JustificationSection { arguments })
         }),
         documented: sections.get("Documented").copied().and_then(|section| {
             parse_required_groups(section, "Documented", tracker, parse_documented_item_group)
@@ -3421,13 +3633,8 @@ pub(in crate::frontend::structural::parser) fn parse_defines(
         },
         abstractly: parse_marker_section(&sections, "abstractly", tracker),
         using: sections.get("using").copied().and_then(|section| {
-            parse_required_formulations(
-                section,
-                "using",
-                tracker,
-                parse_refined_declaration_statement,
-            )
-            .map(|arguments| UsingSection { arguments })
+            parse_required_declarations(section, "using", tracker)
+                .map(|arguments| UsingSection { arguments })
         }),
         when: sections.get("when").copied().and_then(|section| {
             parse_required_clauses(section, "when", tracker)
@@ -3450,8 +3657,13 @@ pub(in crate::frontend::structural::parser) fn parse_defines(
                 .map(|arguments| EnablesSection { arguments })
         }),
         justification: sections.get("Justification").copied().and_then(|section| {
-            parse_required_groups(section, "Justification", tracker, parse_have_group)
-                .map(|arguments| JustificationSection { arguments })
+            parse_required_groups(
+                section,
+                "Justification",
+                tracker,
+                parse_justification_have_group,
+            )
+            .map(|arguments| JustificationSection { arguments })
         }),
         documented: sections.get("Documented").copied().and_then(|section| {
             parse_required_groups(section, "Documented", tracker, parse_documented_item_group)
@@ -3577,13 +3789,8 @@ pub(in crate::frontend::structural::parser) fn parse_realizes(
             )?,
         },
         using: sections.get("using").copied().and_then(|section| {
-            parse_required_formulations(
-                section,
-                "using",
-                tracker,
-                parse_refined_declaration_statement,
-            )
-            .map(|arguments| UsingSection { arguments })
+            parse_required_declarations(section, "using", tracker)
+                .map(|arguments| UsingSection { arguments })
         }),
         when: sections.get("when").copied().and_then(|section| {
             parse_required_clauses(section, "when", tracker)
@@ -3606,8 +3813,13 @@ pub(in crate::frontend::structural::parser) fn parse_realizes(
                 .map(|arguments| EnablesSection { arguments })
         }),
         justification: sections.get("Justification").copied().and_then(|section| {
-            parse_required_groups(section, "Justification", tracker, parse_have_group)
-                .map(|arguments| JustificationSection { arguments })
+            parse_required_groups(
+                section,
+                "Justification",
+                tracker,
+                parse_justification_have_group,
+            )
+            .map(|arguments| JustificationSection { arguments })
         }),
         documented: sections.get("Documented").copied().and_then(|section| {
             parse_required_groups(section, "Documented", tracker, parse_documented_item_group)
@@ -3677,13 +3889,8 @@ pub(in crate::frontend::structural::parser) fn parse_refines(
         },
         refinement_kind,
         using: sections.get("using").copied().and_then(|section| {
-            parse_required_formulations(
-                section,
-                "using",
-                tracker,
-                parse_refined_declaration_statement,
-            )
-            .map(|arguments| UsingSection { arguments })
+            parse_required_declarations(section, "using", tracker)
+                .map(|arguments| UsingSection { arguments })
         }),
         when: sections.get("when").copied().and_then(|section| {
             parse_required_clauses(section, "when", tracker)
@@ -3711,8 +3918,13 @@ pub(in crate::frontend::structural::parser) fn parse_refines(
                 .map(|arguments| EnablesSection { arguments })
         }),
         justification: sections.get("Justification").copied().and_then(|section| {
-            parse_required_groups(section, "Justification", tracker, parse_have_group)
-                .map(|arguments| JustificationSection { arguments })
+            parse_required_groups(
+                section,
+                "Justification",
+                tracker,
+                parse_justification_have_group,
+            )
+            .map(|arguments| JustificationSection { arguments })
         }),
         documented: sections.get("Documented").copied().and_then(|section| {
             parse_required_groups(
@@ -3774,13 +3986,8 @@ pub(in crate::frontend::structural::parser) fn parse_states(
     Some(StatesGroup {
         heading,
         using: sections.get("using").copied().and_then(|section| {
-            parse_required_formulations(
-                section,
-                "using",
-                tracker,
-                parse_refined_declaration_statement,
-            )
-            .map(|arguments| UsingSection { arguments })
+            parse_required_declarations(section, "using", tracker)
+                .map(|arguments| UsingSection { arguments })
         }),
         when: sections.get("when").copied().and_then(|section| {
             parse_required_clauses(section, "when", tracker)
@@ -3798,8 +4005,13 @@ pub(in crate::frontend::structural::parser) fn parse_states(
                 .map(|arguments| EnablesSection { arguments })
         }),
         justification: sections.get("Justification").copied().and_then(|section| {
-            parse_required_groups(section, "Justification", tracker, parse_have_group)
-                .map(|arguments| JustificationSection { arguments })
+            parse_required_groups(
+                section,
+                "Justification",
+                tracker,
+                parse_justification_have_group,
+            )
+            .map(|arguments| JustificationSection { arguments })
         }),
         documented: sections.get("Documented").copied().and_then(|section| {
             parse_required_groups(section, "Documented", tracker, parse_documented_item_group)
@@ -3854,13 +4066,8 @@ pub(in crate::frontend::structural::parser) fn parse_equivalent(
     Some(EquivalentGroup {
         heading,
         using: sections.get("using").copied().and_then(|section| {
-            parse_required_formulations(
-                section,
-                "using",
-                tracker,
-                parse_refined_declaration_statement,
-            )
-            .map(|arguments| UsingSection { arguments })
+            parse_required_declarations(section, "using", tracker)
+                .map(|arguments| UsingSection { arguments })
         }),
         when: sections.get("when").copied().and_then(|section| {
             parse_required_clauses(section, "when", tracker)
@@ -3875,8 +4082,13 @@ pub(in crate::frontend::structural::parser) fn parse_equivalent(
             )?,
         },
         justification: sections.get("Justification").copied().and_then(|section| {
-            parse_required_groups(section, "Justification", tracker, parse_have_group)
-                .map(|arguments| JustificationSection { arguments })
+            parse_required_groups(
+                section,
+                "Justification",
+                tracker,
+                parse_justification_have_group,
+            )
+            .map(|arguments| JustificationSection { arguments })
         }),
         documented: sections.get("Documented").copied().and_then(|section| {
             parse_required_groups(section, "Documented", tracker, parse_documented_item_group)
@@ -3981,13 +4193,8 @@ pub(in crate::frontend::structural::parser) fn parse_relation(
             arguments: parse_optional_open_texts(sections.get("Relation").copied(), tracker),
         },
         using: sections.get("using").copied().and_then(|section| {
-            parse_required_formulations(
-                section,
-                "using",
-                tracker,
-                parse_refined_declaration_statement,
-            )
-            .map(|arguments| UsingSection { arguments })
+            parse_required_declarations(section, "using", tracker)
+                .map(|arguments| UsingSection { arguments })
         }),
         endpoints,
         when: sections.get("when").copied().and_then(|section| {
@@ -3999,8 +4206,13 @@ pub(in crate::frontend::structural::parser) fn parse_relation(
                 .map(|argument| RelationSpecifiesSection { argument })
         }),
         justification: sections.get("Justification").copied().and_then(|section| {
-            parse_required_groups(section, "Justification", tracker, parse_have_group)
-                .map(|arguments| JustificationSection { arguments })
+            parse_required_groups(
+                section,
+                "Justification",
+                tracker,
+                parse_justification_have_group,
+            )
+            .map(|arguments| JustificationSection { arguments })
         }),
         documented: sections.get("Documented").copied().and_then(|section| {
             parse_required_groups(section, "Documented", tracker, parse_documented_item_group)
@@ -4424,13 +4636,8 @@ pub(in crate::frontend::structural::parser) fn parse_argument_theorem_like(
     Some((
         heading,
         sections.get("given").copied().and_then(|section| {
-            parse_required_formulations(
-                section,
-                "given",
-                tracker,
-                parse_refined_declaration_statement,
-            )
-            .map(|arguments| GivenSection { arguments })
+            parse_required_declarations(section, "given", tracker)
+                .map(|arguments| GivenSection { arguments })
         }),
         sections.get("where").copied().and_then(|section| {
             parse_required_clauses(section, "where", tracker)
@@ -4444,8 +4651,13 @@ pub(in crate::frontend::structural::parser) fn parse_argument_theorem_like(
                 .map(|arguments| IffSection { arguments })
         }),
         sections.get("Justification").copied().and_then(|section| {
-            parse_required_groups(section, "Justification", tracker, parse_have_group)
-                .map(|arguments| JustificationSection { arguments })
+            parse_required_groups(
+                section,
+                "Justification",
+                tracker,
+                parse_justification_have_group,
+            )
+            .map(|arguments| JustificationSection { arguments })
         }),
         sections.get("Documented").copied().and_then(|section| {
             parse_required_groups(section, "Documented", tracker, parse_documented_item_group)
@@ -4568,8 +4780,9 @@ mod tests {
     };
     use crate::frontend::structural::ast::{
         AliasItem, AliasKind, BindingOrSpec, Clause, DeclaresTarget, Document, DocumentedItem,
-        EnablesItem, ExampleItem, MetadataItem, RelationEndpoints, RelationSpecifies,
-        RelationSubject, RequiresItem, ResourceItem, SpecifyItem, TextItemKind, TopLevelItem,
+        EnablesItem, ExampleItem, MetadataItem, ReferenceItem, RelationEndpoints,
+        RelationSpecifies, RelationSubject, RequiresItem, ResourceItem, SpecifyItem, TextItemKind,
+        TopLevelItem,
     };
 
     fn split_test_chunks(text: &str) -> Vec<String> {
@@ -4782,7 +4995,7 @@ Documented:
   written:
   . "plus"
 Justification:
-. [proof.label]
+. for: (:proof.label:)
   have:
   . x = x
   asserting:
@@ -4808,7 +5021,7 @@ Documented:
   called:
   . "addition"
 Justification:
-. [proof.by]
+. for: (:proof.by:)
   have:
   . y = y
   asserting:
@@ -4953,9 +5166,10 @@ that:
                         .as_ref()
                         .expect("expected justification")
                         .arguments[0]
-                        .heading
+                        .for_
                         .as_ref()
-                        .expect("expected justification heading")
+                        .expect("expected justification for")
+                        .arguments[0]
                         .parts,
                     vec!["proof".to_owned(), "label".to_owned()]
                 );
@@ -4996,9 +5210,10 @@ that:
                         .as_ref()
                         .expect("expected justification")
                         .arguments[0]
-                        .heading
+                        .for_
                         .as_ref()
-                        .expect("expected justification heading")
+                        .expect("expected justification for")
+                        .arguments[0]
                         .parts,
                     vec!["proof".to_owned(), "by".to_owned()]
                 );
@@ -5157,7 +5372,7 @@ satisfies:
 Documented:
 . called: "thing"
 Justification:
-. [1]
+. for: (:1:)
   have: *' := `*`
   asserting: t = t
 "#,
@@ -6921,7 +7136,7 @@ Documented:
   written:
   . "axiom"
 Justification:
-. [axiom.justified]
+. for: (:axiom.justified:)
   have:
   . y = y
   asserting:
@@ -7035,10 +7250,12 @@ then:
         let document = parse_ok(
             r#"
 Theorem:
-then: x = x
+then: (x = x)[:1:]
 References:
 . "$royden.real.analysis"
 . "$royden.real.analysis:page{4}"
+. for: (:1:)
+  entry: $royden.real.analysis:page{10}
 "#,
         );
 
@@ -7046,12 +7263,24 @@ References:
             panic!("expected theorem group");
         };
         let references = group.references.as_ref().expect("expected references");
+        let ReferenceItem::Resource(r0) = &references.arguments[0] else {
+            panic!("expected resource reference");
+        };
+        let ReferenceItem::Resource(r1) = &references.arguments[1] else {
+            panic!("expected resource reference");
+        };
+        let ReferenceItem::ForEntry(r2) = &references.arguments[2] else {
+            panic!("expected for/entry reference");
+        };
+        assert_eq!(r0.parts.join("."), "royden.real.analysis");
+        assert_eq!(r0.page, None);
+        assert_eq!(r1.page, Some(4));
+        assert_eq!(r2.for_.arguments[0].parts, vec!["1".to_string()]);
         assert_eq!(
-            references.arguments[0].parts.join("."),
+            r2.entry.arguments[0].parts.join("."),
             "royden.real.analysis"
         );
-        assert_eq!(references.arguments[0].page, None);
-        assert_eq!(references.arguments[1].page, Some(4));
+        assert_eq!(r2.entry.arguments[0].page, Some(10));
     }
 
     #[test]
@@ -7075,7 +7304,7 @@ Enables:
 Documented:
 . written: "\omega"
 Justification:
-. [1]
+. for: (:1:)
   have: A is \(inductive)::set
   by: \axiom.of.infinity
 Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"

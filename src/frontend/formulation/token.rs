@@ -80,11 +80,6 @@ pub enum Token {
         parse_labels
     )]
     Label(Vec<Vec<String>>),
-    #[regex(
-        r"\(:[ \t]*[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?(?:\.[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?)*(?:[ \t]*,[ \t]*[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?(?:\.[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?)*)*[ \t]*:\)",
-        parse_labels
-    )]
-    ReferenceLabel(Vec<Vec<String>>),
     #[token(":=>")]
     ExpressionAlias,
     #[token(":->")]

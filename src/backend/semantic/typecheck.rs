@@ -2489,6 +2489,10 @@ fn check_scoped_text_value(
     let mut index = 0;
     while index < text.len() {
         let rest = &text[index..];
+        if let Some(code_len) = markdown_code_span_len(rest) {
+            index += code_len;
+            continue;
+        }
         if rest.starts_with("<<") {
             let Some((closing, name, consumed)) = parse_scoped_text_marker(rest) else {
                 scoped_text_error(
@@ -2545,19 +2549,9 @@ fn check_scoped_text_value(
         } else {
             None
         };
-        if let Some((prose, labels, consumed)) = prose_source {
+        if let Some((prose, _labels, consumed)) = prose_source {
             let row = source_row + text[..index].matches('\n').count();
             let current_context = frames.last().map(|f| &f.context).unwrap_or(inherited);
-            for label in &labels {
-                if !current_context.has_reference_label(label) {
-                    scoped_text_error(
-                        path,
-                        row,
-                        event_log,
-                        format!("Unknown reference label `{label}`"),
-                    );
-                }
-            }
             let prose_context = current_context.clone();
             check_scoped_text_value(prose, row, &prose_context, path, registry, event_log);
             index += consumed;
@@ -2569,10 +2563,41 @@ fn check_scoped_text_value(
         {
             let after_quote = &tail[quote_end + 2..];
             let trimmed = after_quote.trim_start();
-            if trimmed.starts_with("(:") && !trimmed.contains(":)") {
+            if trimmed.starts_with("[:") && !trimmed.contains(":]") {
                 scoped_text_error(
                     path,
                     source_row + text[..index].matches('\n').count(),
+                    event_log,
+                    "Unclosed label in prose; expected `[:...:]`",
+                );
+            }
+        }
+
+        if let Some(ref_tail) = rest.strip_prefix("(:") {
+            let row = source_row + text[..index].matches('\n').count();
+            if let Some(ref_end) = ref_tail.find(":)") {
+                let ref_body = &ref_tail[..ref_end];
+                let current_context = frames.last().map(|f| &f.context).unwrap_or(inherited);
+                for label in ref_body
+                    .split(',')
+                    .map(str::trim)
+                    .filter(|s| !s.is_empty())
+                {
+                    if !current_context.has_reference_label(label) {
+                        scoped_text_error(
+                            path,
+                            row,
+                            event_log,
+                            format!("Unknown reference label `{label}`"),
+                        );
+                    }
+                }
+                index += 2 + ref_end + 2;
+                continue;
+            } else {
+                scoped_text_error(
+                    path,
+                    row,
                     event_log,
                     "Unclosed reference label in prose; expected `(:...:)`",
                 );
@@ -2673,8 +2698,8 @@ fn parse_scoped_prose_source(input: &str) -> Option<(&str, Vec<String>, usize)> 
     let prose = &tail[..quote_end];
     let after_quote = &tail[quote_end + 2..];
     let trimmed = after_quote.trim_start();
-    let ref_tail = trimmed.strip_prefix("(:")?;
-    let ref_end = ref_tail.find(":)")?;
+    let ref_tail = trimmed.strip_prefix("[:")?;
+    let ref_end = ref_tail.find(":]")?;
     let ref_body = &ref_tail[..ref_end];
     let labels: Vec<String> = ref_body
         .split(',')
@@ -2935,29 +2960,156 @@ fn top_level_item_references(item: &TopLevelItem) -> Option<&ReferencesSection> 
     }
 }
 
-fn build_reference_label_set(
-    references: Option<&ReferencesSection>,
-    path: &Path,
-    locator: &mut SourceLocator<'_>,
-    event_log: &mut EventLog,
-) -> HashSet<String> {
-    let mut labels = HashSet::new();
-    let Some(references) = references else {
-        return labels;
-    };
-    for ref_header in &references.arguments {
-        if let Some(label) = &ref_header.label {
-            if !labels.insert(label.clone()) {
-                emit_error(
-                    event_log,
-                    path,
-                    locator.locate_symbol(label),
-                    format!("Duplicate reference label `{label}` in `References:`"),
-                );
+fn top_level_item_justification(item: &TopLevelItem) -> Option<&JustificationSection> {
+    match item {
+        TopLevelItem::Disambiguates(group) => group.justification.as_ref(),
+        TopLevelItem::Declares(group) => group.justification.as_ref(),
+        TopLevelItem::Defines(group) => group.justification.as_ref(),
+        TopLevelItem::Realizes(group) => group.justification.as_ref(),
+        TopLevelItem::Refines(group) => group.justification.as_ref(),
+        TopLevelItem::States(group) => group.justification.as_ref(),
+        TopLevelItem::Axiom(group) => group.justification.as_ref(),
+        TopLevelItem::Theorem(group) => group.justification.as_ref(),
+        TopLevelItem::Conjecture(group) => group.justification.as_ref(),
+        TopLevelItem::Relation(group) => group.justification.as_ref(),
+        TopLevelItem::Equivalent(group) => group.justification.as_ref(),
+        TopLevelItem::Example(group) => group.justification.as_ref(),
+        _ => None,
+    }
+}
+
+fn markdown_code_span_len(input: &str) -> Option<usize> {
+    if !input.starts_with('`') {
+        return None;
+    }
+    let tick_count = input.bytes().take_while(|&b| b == b'`').count();
+    let ticks = &input[..tick_count];
+    let mut search_from = tick_count;
+    while let Some(pos) = input[search_from..].find(ticks) {
+        let abs_pos = search_from + pos;
+        let after = abs_pos + tick_count;
+        if input.as_bytes().get(after) != Some(&b'`') {
+            return Some(after);
+        }
+        let extra = input[after..].bytes().take_while(|&b| b == b'`').count();
+        search_from = after + extra;
+    }
+    None
+}
+
+fn collect_prose_defined_labels(text: &str, labels: &mut BTreeSet<String>) {
+    let mut index = 0;
+    while index < text.len() {
+        let rest = &text[index..];
+        if let Some(code_len) = markdown_code_span_len(rest) {
+            index += code_len;
+            continue;
+        }
+        if rest.starts_with("''")
+            && let Some((prose, prose_labels, consumed)) = parse_scoped_prose_source(rest)
+        {
+            for label in prose_labels {
+                labels.insert(label);
+            }
+            collect_prose_defined_labels(prose, labels);
+            index += consumed;
+            continue;
+        }
+        let ch = rest.chars().next().expect("non-empty text remainder");
+        index += ch.len_utf8();
+    }
+}
+
+fn collect_proto_group_defined_labels(group: &ProtoGroup, labels: &mut BTreeSet<String>) {
+    for section in &group.sections {
+        if matches!(section.label.as_str(), "Justification" | "References") {
+            continue;
+        }
+        if let Some(text) = section
+            .inline_argument
+            .as_deref()
+            .and_then(unquote_proto_text)
+        {
+            collect_prose_defined_labels(&text, labels);
+        }
+        for argument in &section.arguments {
+            match argument {
+                ProtoArgument::Text(text) => {
+                    if let Some(lbl) = &text.label
+                        && let Ok(header) = crate::frontend::formulation::parse_label_header(lbl)
+                    {
+                        labels.insert(header.parts.join("."));
+                    }
+                    if let Some(value) = unquote_proto_text(&text.text) {
+                        collect_prose_defined_labels(&value, labels);
+                    }
+                }
+                ProtoArgument::Formulation(form) => {
+                    if let Some(lbl) = &form.label
+                        && let Ok(header) = crate::frontend::formulation::parse_label_header(lbl)
+                    {
+                        labels.insert(header.parts.join("."));
+                    }
+                }
+                ProtoArgument::Group(nested) => {
+                    if let Some(h) = &nested.heading
+                        && let Ok(header) = crate::frontend::formulation::parse_label_header(h)
+                    {
+                        labels.insert(header.parts.join("."));
+                    }
+                    collect_proto_group_defined_labels(nested, labels);
+                }
             }
         }
     }
-    labels
+}
+
+fn collect_defined_labels(
+    item: &TopLevelItem,
+    proto_group: Option<&ProtoGroup>,
+) -> HashSet<String> {
+    let mut labels = BTreeSet::new();
+    if let Some(group) = proto_group {
+        collect_proto_group_defined_labels(group, &mut labels);
+    }
+    collect_top_level_item_referenced_labels(item, &mut labels);
+    labels.into_iter().collect()
+}
+
+fn validate_references_section(
+    references: Option<&ReferencesSection>,
+    defined_labels: &HashSet<String>,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    let Some(references) = references else {
+        return;
+    };
+    let mut seen_labels = HashSet::new();
+    for item in &references.arguments {
+        if let ReferenceItem::ForEntry(for_group) = item {
+            for label in &for_group.for_.arguments {
+                let key = label.to_string();
+                if !defined_labels.contains(&key) {
+                    emit_error(
+                        event_log,
+                        path,
+                        locator.locate_symbol(&key),
+                        format!("Unknown reference label `{key}`"),
+                    );
+                }
+                if !seen_labels.insert(key.clone()) {
+                    emit_error(
+                        event_log,
+                        path,
+                        locator.locate_symbol(&key),
+                        format!("Duplicate reference label `{key}` in `References:`"),
+                    );
+                }
+            }
+        }
+    }
 }
 
 fn validate_top_level_item_types(
@@ -2972,10 +3124,19 @@ fn validate_top_level_item_types(
     anchor_top_level_item(item, locator);
     validate_local_specification_scopes(item, path, locator, event_log);
 
-    let reference_labels =
-        build_reference_label_set(top_level_item_references(item), path, locator, event_log);
+    let defined_labels = collect_defined_labels(item, proto_group);
+    validate_references_section(
+        top_level_item_references(item),
+        &defined_labels,
+        path,
+        locator,
+        event_log,
+    );
     let mut base_context = TypeContext::default();
-    base_context.set_reference_labels(reference_labels);
+    base_context.set_reference_labels(defined_labels);
+    base_context.set_justifications(build_justification_map(
+        &top_level_item_justification(item).cloned(),
+    ));
 
     match item {
         TopLevelItem::Disambiguates(group) => {
@@ -5417,22 +5578,7 @@ fn assume_is_or_via_item(
         // A labeled specification whose `[:label:]` matches a `Justification:`
         // entry is established via that entry's `have:`/`asserting:`; then its
         // facts are contributed. An unmatched label is checked inline as normal.
-        IsOrViaItem::Labeled {
-            labels,
-            reference_labels,
-            item,
-        } => {
-            for ref_label in reference_labels {
-                let key = ref_label.to_string();
-                if !context.has_reference_label(&key) {
-                    emit_error(
-                        event_log,
-                        path,
-                        locator.locate_symbol(&key),
-                        format!("Unknown reference label `{key}`"),
-                    );
-                }
-            }
+        IsOrViaItem::Labeled { labels, item } => {
             let mut established = false;
             for label in labels {
                 if establish_labeled_specification(
@@ -5473,14 +5619,19 @@ fn check_have_group(
     }
 }
 
-/// Builds the `[label] -> have:/asserting: group` map for a `Justification:`
-/// section. Entries without a `[label]` heading are skipped (unreferenceable).
+/// Builds the `label -> have:/asserting: group` map for a `Justification:`
+/// section from each entry's `for:` label references (and optional `[label]` heading).
 fn build_justification_map(
     justification: &Option<JustificationSection>,
 ) -> HashMap<String, HaveGroup> {
     let mut map = HashMap::new();
     if let Some(section) = justification {
         for group in &section.arguments {
+            if let Some(for_) = &group.for_ {
+                for label in &for_.arguments {
+                    map.insert(label.to_string(), group.clone());
+                }
+            }
             if let Some(heading) = &group.heading {
                 map.insert(heading.parts.join("."), group.clone());
             }
@@ -5987,7 +6138,29 @@ fn collect_set_target_referenced_labels(target: &SetTarget, labels: &mut BTreeSe
     }
 }
 
+fn clause_heading(clause: &Clause) -> Option<&LabelHeader> {
+    match clause {
+        Clause::Not(g) => g.heading.as_ref(),
+        Clause::AllOf(g) => g.heading.as_ref(),
+        Clause::AnyOf(g) => g.heading.as_ref(),
+        Clause::OneOf(g) => g.heading.as_ref(),
+        Clause::Equivalently(g) => g.heading.as_ref(),
+        Clause::Exists(g) => g.heading.as_ref(),
+        Clause::ExistsUnique(g) => g.heading.as_ref(),
+        Clause::ForAll(g) => g.heading.as_ref(),
+        Clause::Let(g) => g.heading.as_ref(),
+        Clause::If(g) => g.heading.as_ref(),
+        Clause::Iff(g) => g.heading.as_ref(),
+        Clause::Piecewise(g) => g.heading.as_ref(),
+        Clause::Have(g) => g.heading.as_ref(),
+        Clause::Declaration(_) | Clause::Expression(_) => None,
+    }
+}
+
 fn collect_clause_referenced_labels(clause: &Clause, labels: &mut BTreeSet<String>) {
+    if let Some(heading) = clause_heading(clause) {
+        labels.insert(heading.parts.join("."));
+    }
     match clause {
         Clause::Not(group) => collect_clause_referenced_labels(&group.not.argument, labels),
         Clause::AllOf(group) => {
@@ -6120,9 +6293,243 @@ fn collect_clause_referenced_labels(clause: &Clause, labels: &mut BTreeSet<Strin
     }
 }
 
+fn collect_top_level_item_referenced_labels(
+    item: &TopLevelItem,
+    labels: &mut BTreeSet<String>,
+) {
+    match item {
+        TopLevelItem::Declares(group) => {
+            if let DeclaresTarget::Declaration(statement) = &group.declares.argument {
+                collect_declaration_referenced_labels(statement, labels);
+            }
+            if let Some(extends) = &group.extends {
+                for item in &extends.arguments {
+                    collect_declaration_referenced_labels(&item.statement, labels);
+                }
+            }
+            if let Some(specifies) = &group.specifies {
+                for item in &specifies.arguments {
+                    collect_is_or_via_referenced_labels(item, labels);
+                }
+            }
+            if let Some(using) = &group.using {
+                for statement in &using.arguments {
+                    collect_declaration_referenced_labels(statement, labels);
+                }
+            }
+            if let Some(when) = &group.when {
+                for clause in &when.arguments {
+                    collect_clause_referenced_labels(clause, labels);
+                }
+            }
+            if let Some(satisfies) = &group.satisfies {
+                for clause in &satisfies.arguments {
+                    collect_clause_referenced_labels(clause, labels);
+                }
+            }
+        }
+        TopLevelItem::Defines(group) => {
+            collect_declaration_referenced_labels(&group.defines.argument, labels);
+            if let Some(using) = &group.using {
+                for statement in &using.arguments {
+                    collect_declaration_referenced_labels(statement, labels);
+                }
+            }
+            if let Some(when) = &group.when {
+                for clause in &when.arguments {
+                    collect_clause_referenced_labels(clause, labels);
+                }
+            }
+            if let Some(specifies) = &group.specifies {
+                for item in &specifies.arguments {
+                    collect_is_or_via_referenced_labels(item, labels);
+                }
+            }
+            if let Some(expresses) = &group.expresses {
+                for clause in &expresses.arguments {
+                    collect_clause_referenced_labels(clause, labels);
+                }
+            }
+        }
+        TopLevelItem::Realizes(group) => {
+            collect_declaration_referenced_labels(&group.realizes.argument, labels);
+            if let Some(using) = &group.using {
+                for statement in &using.arguments {
+                    collect_declaration_referenced_labels(statement, labels);
+                }
+            }
+            if let Some(when) = &group.when {
+                for clause in &when.arguments {
+                    collect_clause_referenced_labels(clause, labels);
+                }
+            }
+            if let Some(specifies) = &group.specifies {
+                for item in &specifies.arguments {
+                    collect_is_or_via_referenced_labels(item, labels);
+                }
+            }
+            if let Some(expresses) = &group.expresses {
+                for clause in &expresses.arguments {
+                    collect_clause_referenced_labels(clause, labels);
+                }
+            }
+        }
+        TopLevelItem::Refines(group) => {
+            collect_declaration_referenced_labels(&group.refines.argument, labels);
+            if let Some(using) = &group.using {
+                for statement in &using.arguments {
+                    collect_declaration_referenced_labels(statement, labels);
+                }
+            }
+            if let Some(when) = &group.when {
+                for clause in &when.arguments {
+                    collect_clause_referenced_labels(clause, labels);
+                }
+            }
+            if let Some(specifies) = &group.specifies {
+                collect_declaration_referenced_labels(&specifies.argument, labels);
+            }
+            if let Some(satisfies) = &group.satisfies {
+                for clause in &satisfies.arguments {
+                    collect_clause_referenced_labels(clause, labels);
+                }
+            }
+        }
+        TopLevelItem::States(group) => {
+            if let Some(using) = &group.using {
+                for statement in &using.arguments {
+                    collect_declaration_referenced_labels(statement, labels);
+                }
+            }
+            if let Some(when) = &group.when {
+                for clause in &when.arguments {
+                    collect_clause_referenced_labels(clause, labels);
+                }
+            }
+            for clause in &group.that.arguments {
+                collect_clause_referenced_labels(clause, labels);
+            }
+        }
+        TopLevelItem::Axiom(group) => {
+            if let Some(given) = &group.given {
+                for statement in &given.arguments {
+                    collect_declaration_referenced_labels(statement, labels);
+                }
+            }
+            if let Some(where_) = &group.where_ {
+                for clause in &where_.arguments {
+                    collect_clause_referenced_labels(clause, labels);
+                }
+            }
+            for clause in &group.then.arguments {
+                collect_clause_referenced_labels(clause, labels);
+            }
+            if let Some(iff) = &group.iff {
+                for clause in &iff.arguments {
+                    collect_clause_referenced_labels(clause, labels);
+                }
+            }
+        }
+        TopLevelItem::Theorem(group) => {
+            if let Some(given) = &group.given {
+                for statement in &given.arguments {
+                    collect_declaration_referenced_labels(statement, labels);
+                }
+            }
+            if let Some(where_) = &group.where_ {
+                for clause in &where_.arguments {
+                    collect_clause_referenced_labels(clause, labels);
+                }
+            }
+            for clause in &group.then.arguments {
+                collect_clause_referenced_labels(clause, labels);
+            }
+            if let Some(iff) = &group.iff {
+                for clause in &iff.arguments {
+                    collect_clause_referenced_labels(clause, labels);
+                }
+            }
+            if let Some(proof) = &group.proof {
+                collect_prose_defined_labels(&proof.argument.0, labels);
+            }
+        }
+        TopLevelItem::Conjecture(group) => {
+            if let Some(given) = &group.given {
+                for statement in &given.arguments {
+                    collect_declaration_referenced_labels(statement, labels);
+                }
+            }
+            if let Some(where_) = &group.where_ {
+                for clause in &where_.arguments {
+                    collect_clause_referenced_labels(clause, labels);
+                }
+            }
+            for clause in &group.then.arguments {
+                collect_clause_referenced_labels(clause, labels);
+            }
+            if let Some(iff) = &group.iff {
+                for clause in &iff.arguments {
+                    collect_clause_referenced_labels(clause, labels);
+                }
+            }
+        }
+        TopLevelItem::Example(group) => {
+            for item in &group.example.arguments {
+                if let ExampleItem::Clause(clause) = item {
+                    collect_clause_referenced_labels(clause, labels);
+                }
+            }
+        }
+        TopLevelItem::Disambiguates(group) => {
+            for branch in &group.branches {
+                for clause in &branch.when.arguments {
+                    collect_clause_referenced_labels(clause, labels);
+                }
+            }
+        }
+        TopLevelItem::Equivalent(group) => {
+            if let Some(using) = &group.using {
+                for statement in &using.arguments {
+                    collect_declaration_referenced_labels(statement, labels);
+                }
+            }
+            if let Some(when) = &group.when {
+                for clause in &when.arguments {
+                    collect_clause_referenced_labels(clause, labels);
+                }
+            }
+            for expr in &group.to.arguments {
+                collect_expression_referenced_labels(expr, labels);
+            }
+        }
+        TopLevelItem::Relation(group) => {
+            if let Some(using) = &group.using {
+                for statement in &using.arguments {
+                    collect_declaration_referenced_labels(statement, labels);
+                }
+            }
+            if let Some(when) = &group.when {
+                for clause in &when.arguments {
+                    collect_clause_referenced_labels(clause, labels);
+                }
+            }
+            if let Some(specifies) = &group.specifies {
+                match &specifies.argument {
+                    RelationSpecifies::Statement(clause) => {
+                        collect_clause_referenced_labels(clause, labels)
+                    }
+                    RelationSpecifies::Text(text) => {
+                        collect_prose_defined_labels(&text.0, labels)
+                    }
+                }
+            }
+        }
+        _ => {}
+    }
+}
+
 /// Reports each `Justification:` entry of a `Declares:` group that no labeled
-/// specification references, and each entry that lacks a `[label]` heading (which
-/// can never be referenced). Every entry must justify some labeled item.
+/// specification references. Every entry must justify some labeled item.
 fn validate_declares_justification_usage(
     group: &DeclaresGroup,
     path: &Path,
@@ -6162,10 +6569,24 @@ fn validate_declares_justification_usage(
         }
     }
     for entry in &justification.arguments {
-        match &entry.heading {
-            Some(heading) if referenced.contains(&heading.parts.join(".")) => {}
-            Some(heading) => {
-                let key = heading.parts.join(".");
+        if let Some(for_) = &entry.for_ {
+            for label in &for_.arguments {
+                let key = label.to_string();
+                if !referenced.contains(&key) {
+                    emit_error(
+                        event_log,
+                        path,
+                        locator.locate_symbol(label.parts.last().map(String::as_str).unwrap_or("")),
+                        format!(
+                            "`Justification:` entry `[{key}]` is not referenced by any labeled \
+                             specification; every entry must justify a labeled item"
+                        ),
+                    );
+                }
+            }
+        } else if let Some(heading) = &entry.heading {
+            let key = heading.parts.join(".");
+            if !referenced.contains(&key) {
                 emit_error(
                     event_log,
                     path,
@@ -6176,13 +6597,14 @@ fn validate_declares_justification_usage(
                     ),
                 );
             }
-            None => emit_error(
+        } else {
+            emit_error(
                 event_log,
                 path,
                 None,
-                "Each `Justification:` entry must have a `[label]` heading so a labeled \
+                "Each `Justification:` entry must have a `for:` section so a labeled \
                  specification can reference it",
-            ),
+            );
         }
     }
 }
@@ -8738,6 +9160,12 @@ fn check_clause(
     registry: &SignatureRegistry,
     event_log: &mut EventLog,
 ) {
+    if let Some(heading) = clause_heading(clause)
+        && let Some(group) = context.justification(&heading.parts.join(".")).cloned()
+    {
+        check_have_group(&group, context, path, locator, registry, event_log);
+        return;
+    }
     match clause {
         Clause::Not(group) => check_clause(
             &group.not.argument,
@@ -9626,17 +10054,6 @@ fn check_declaration_statement(
     registry: &SignatureRegistry,
     event_log: &mut EventLog,
 ) {
-    for ref_label in &statement.reference_labels {
-        let key = ref_label.to_string();
-        if !context.has_reference_label(&key) {
-            emit_error(
-                event_log,
-                path,
-                locator.locate_symbol(&key),
-                format!("Unknown reference label `{key}`"),
-            );
-        }
-    }
     record_declaration_line_types(statement, context, registry);
     if establish_labeled_declaration_statement(
         statement, context, path, locator, registry, event_log,
@@ -10920,22 +11337,7 @@ fn check_expression(
         ExpressionKind::Grouped { expression, .. } => {
             check_expression(expression, context, path, locator, registry, event_log);
         }
-        ExpressionKind::Labeled {
-            expression,
-            labels,
-            reference_labels,
-        } => {
-            for ref_label in reference_labels {
-                let key = ref_label.to_string();
-                if !context.has_reference_label(&key) {
-                    emit_error(
-                        event_log,
-                        path,
-                        locator.locate_symbol(&key),
-                        format!("Unknown reference label `{key}`"),
-                    );
-                }
-            }
+        ExpressionKind::Labeled { expression, labels } => {
             let mut established = false;
             for label in labels {
                 if establish_labeled_expression(
@@ -20365,14 +20767,9 @@ fn substitute_expression(
             expression: boxed(expression),
             dot_delimited: *dot_delimited,
         },
-        ExpressionKind::Labeled {
-            expression,
-            labels,
-            reference_labels,
-        } => ExpressionKind::Labeled {
+        ExpressionKind::Labeled { expression, labels } => ExpressionKind::Labeled {
             expression: boxed(expression),
             labels: labels.clone(),
-            reference_labels: reference_labels.clone(),
         },
         ExpressionKind::Command(command) => {
             ExpressionKind::Command(substitute_command_expression(command, substitutions))

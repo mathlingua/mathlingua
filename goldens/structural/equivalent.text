@@ -31,6 +31,7 @@ Documented:
 . called: "equal"
 Justification:
 . [equiv.just]
+  for: (:equiv.just:)
   have:
   . a = a
   asserting:

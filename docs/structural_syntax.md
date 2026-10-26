@@ -249,7 +249,7 @@ The structural AST uses:
 
 Quoted text sections are converted to typed wrappers:
 
-- `OpenText`: General prose text. May embed inline formulations (`{. ... .}`), display formulations (`{{. ... .}}`), theorem-like references (`{: \name :}`) exclusively for axioms, conjectures, or theorems, and prose reference citations (`''quoted text''(:label:)` or `''quoted text''(:l1, l2:)`) referencing labeled entries in `References:`.
+- `OpenText`: General prose text. May embed inline formulations (`{. ... .}`), display formulations (`{{. ... .}}`), theorem-like references (`{: \name :}`) exclusively for axioms, conjectures, or theorems, labeled prose quotes (`''quoted text''[:label:]` or `''quoted text''[:l1, l2:]`), and label references (`(:label:)` or `(:l1, l2:)`).
 - `WrittenText`
 - `CalledText`
 - `WritingText`
@@ -372,15 +372,13 @@ Used inside `Documented:`.
 ### Justification items
 
 Used inside `Justification:` (which appears after `Documented:`). Each item is a
-`HaveGroup` — a `have:`/`asserting?:`/`because?:`/`by?:` group (see the `have`
-clause group above) with a required `[label]` heading. Any grouped expression,
-statement, or specification elsewhere in the group—including a nested
-formulation or a `satisfies:` clause—may carry the matching `[:label:]` (or
-comma-separated multi-labels `[:l1, l2:]`), and a single-line formulation
-argument may also carry a line-level `. [label]: ...` prefix. It is
-established using that entry's `have:` and any `asserting:` items; the entry's `have:` must
-restate the labeled formulation, and every entry must be referenced by some
-labeled formulation.
+`HaveGroup` — a `for:`/`have:`/`asserting?:`/`because?:`/`by?:` group with a
+required `for:` section specifying one or more label references `(:label:)`. Any
+group (`[label]`), single-line `. ` argument (`. [label]: ...`), or grouped
+expression, statement, or specification (`(...)[:label:]` or `(. ... .)[:label:]`)
+elsewhere in the item may carry the matching label. It is established using that
+entry's `have:` and any `asserting:` items; the entry's `have:` must restate the
+labeled formulation, and every entry must reference a label defined in the item.
 
 ### Metadata items
 
@@ -406,12 +404,12 @@ parsed as formulation type syntax and participates in semantic checking.
 
 Used inside top-level `Resource:`.
 
-`References:` entries name these resources with `$` headers. Both
-`$book.chapter` and the quoted `"$book.chapter"` form are accepted, and an entry
-may optionally carry a line-level label `. [label]: $book.chapter` so that
-grouped formulations in the item can cite it with `(:label:)` (or `(:l1, l2:)`)
-and prose in the item can cite it with `''quoted text''(:label:)`. Duplicate
-reference labels within the same `References:` section are rejected. A PDF
+`References:` entries name these resources with `$` headers. Both item-wide
+`$book.chapter` (or quoted `"$book.chapter"`) entries and label-specific
+`for: (:label:) / entry: $book.chapter` groups are accepted, where `for:` takes
+one or more label references (`(:label:)`) and `entry:` takes one or more
+resource headers (`$book.chapter`). Duplicate reference labels within the same
+`References:` section and references to undefined labels are rejected. A PDF
 resource reference may append `:page{n}`. Its `offset:` is the physical PDF page
 corresponding to logical page 1, so the linked physical page is
 `n + offset - 1`. The viewer displays a resolved reference as the resource's
@@ -495,9 +493,7 @@ Optional on:
 - documented items
 - specify items
 - clause groups
-
-Required on `HaveGroup` items nested directly under `Justification:`; the same
-group uses an optional label in clause or `specifies:` positions.
+- justification and reference `for:` items
 
 These headings must parse with `parse_label_header`.
 
@@ -550,8 +546,7 @@ Conventions used below:
 - `[CommandHeader]` means the heading is required and must parse as a formulation command header.
 - `[CommandHeader]?` means the heading is optional, but if present must parse as a formulation command header.
 - `[LabelHeader]?` means an optional structural label heading. `HaveGroup`
-  headings are optional in ordinary clause/`specifies:` positions but required
-  when the group is an item of `Justification:`.
+  requires a `for:` section when the group is an item of `Justification:`.
 - `[AuthorHeader]` means a required author heading.
 - `[ResourceHeader]` means a required resource heading.
 - If no heading line is shown, the group must not have a heading.

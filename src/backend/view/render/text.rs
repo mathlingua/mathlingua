@@ -52,6 +52,11 @@ impl ScopedTextRenderer<'_> {
         let mut index = 0;
         while index < text.len() {
             let rest = &text[index..];
+            if let Some(code_len) = markdown_code_span_len(rest) {
+                output.push_str(&rest[..code_len]);
+                index += code_len;
+                continue;
+            }
             if let Some((name, consumed)) = scope_marker(rest, false) {
                 self.scopes.push(Scope {
                     name: name.to_string(),
@@ -76,20 +81,14 @@ impl ScopedTextRenderer<'_> {
                 output.push('*');
                 output.push(' ');
                 output.push('[');
-                let formatted_labels = labels_str
-                    .split(',')
-                    .map(str::trim)
-                    .filter(|s| !s.is_empty())
-                    .map(|label| {
-                        if let Some(href) = self.label_links.get(label) {
-                            format!("[{label}]({href})")
-                        } else {
-                            label.to_string()
-                        }
-                    })
-                    .collect::<Vec<_>>()
-                    .join(", ");
-                output.push_str(&formatted_labels);
+                output.push_str(&self.format_label_list(labels_str));
+                output.push(']');
+                index += consumed;
+                continue;
+            }
+            if let Some((labels_str, consumed)) = label_reference_fragment(rest) {
+                output.push('[');
+                output.push_str(&self.format_label_list(labels_str));
                 output.push(']');
                 index += consumed;
                 continue;
@@ -144,6 +143,22 @@ impl ScopedTextRenderer<'_> {
         render_formulation_latex(trimmed, self.registry).unwrap_or_else(|| trimmed.to_string())
     }
 
+    fn format_label_list(&self, labels_str: &str) -> String {
+        labels_str
+            .split(',')
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .map(|label| {
+                if let Some(href) = self.label_links.get(label) {
+                    format!("[{label}]({href})")
+                } else {
+                    label.to_string()
+                }
+            })
+            .collect::<Vec<_>>()
+            .join(", ")
+    }
+
     fn record_introductions(&mut self, source: &str) {
         let Some((subjects, relation, target)) = declaration_parts(source) else {
             return;
@@ -168,6 +183,25 @@ struct RelationModifier<'a> {
     wording: &'a str,
 }
 
+fn markdown_code_span_len(input: &str) -> Option<usize> {
+    if !input.starts_with('`') {
+        return None;
+    }
+    let tick_count = input.bytes().take_while(|&b| b == b'`').count();
+    let ticks = &input[..tick_count];
+    let mut search_from = tick_count;
+    while let Some(pos) = input[search_from..].find(ticks) {
+        let abs_pos = search_from + pos;
+        let after = abs_pos + tick_count;
+        if input.as_bytes().get(after) != Some(&b'`') {
+            return Some(after);
+        }
+        let extra = input[after..].bytes().take_while(|&b| b == b'`').count();
+        search_from = after + extra;
+    }
+    None
+}
+
 fn scope_marker(input: &str, closing: bool) -> Option<(&str, usize)> {
     let prefix = if closing { "<</" } else { "<<" };
     let tail = input.strip_prefix(prefix)?;
@@ -189,11 +223,21 @@ fn prose_source_fragment(input: &str) -> Option<(&str, &str, usize)> {
     let inner = &tail[..end_quote];
     let after = &tail[end_quote + 2..];
     let trimmed = after.trim_start();
-    let ref_tail = trimmed.strip_prefix("(:")?;
-    let ref_end = ref_tail.find(":)")?;
+    let ref_tail = trimmed.strip_prefix("[:")?;
+    let ref_end = ref_tail.find(":]")?;
     let ref_body = &ref_tail[..ref_end];
     let consumed = (input.len() - after.len()) + (after.len() - trimmed.len()) + 2 + ref_end + 2;
     Some((inner, ref_body, consumed))
+}
+
+fn label_reference_fragment(input: &str) -> Option<(&str, usize)> {
+    let tail = input.strip_prefix("(:")?;
+    let end = tail.find(":)")?;
+    let body = &tail[..end];
+    if body.trim().is_empty() {
+        return None;
+    }
+    Some((body, 2 + end + 2))
 }
 
 fn theorem_reference_fragment(input: &str) -> Option<(&str, usize)> {
@@ -344,7 +388,7 @@ mod tests {
 
     #[test]
     fn renders_prose_sources_with_and_without_links() {
-        let text = r#"Proof: "This is ''some text with a source''(:2:)""#;
+        let text = r#"Proof: "This is ''some text with a source''[:2:]""#;
         assert_eq!(
             render_scoped_text_markdown(text, &RenderRegistry::default()),
             r#"Proof: "This is *some text with a source* [2]""#
@@ -357,10 +401,10 @@ mod tests {
             r#"Proof: "This is *some text with a source* [[2](https://example.com/book.pdf)]""#
         );
 
-        let multi = r#"See ''first quote''(:l1, l2:) and ''second quote'' (:3:)."#;
+        let multi = r#"See ''first quote''[:l1, l2:] and ''second quote'' [:3:] and (:2:)."#;
         assert_eq!(
-            render_scoped_text_markdown(multi, &RenderRegistry::default()),
-            r#"See *first quote* [l1, l2] and *second quote* [3]."#
+            render_scoped_text_markdown_with_labels(multi, &RenderRegistry::default(), &links),
+            r#"See *first quote* [l1, l2] and *second quote* [3] and [[2](https://example.com/book.pdf)]."#
         );
     }
 }

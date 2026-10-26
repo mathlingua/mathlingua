@@ -109,8 +109,8 @@ A concise high-level reference for the Mathlingua language. For in-depth specifi
 | Tuple | `(a, b)` | Ordered sequence of two or more elements |
 | Variadic / Slice | `x...` / `x[1...n]` | Represents an arbitrary sequence of arguments or array slice |
 | Inferred Symbol | `x?` / `x?_` | Parameter whose value is inferred from context |
-| Justification Label | `(x + y)[:label:]` / `[:l1, l2:]` | Tags formulation to be proved in `Justification:` (supports multiple labels) |
-| Formulation Citation | `(x + y)(:res:)` | Cites a bibliographic resource directly on a formulation |
+| Inline Label | `(x + y)[:label:]` / `[:l1, l2:]` | Labels a grouped formulation (referenced via `(:label:)` in `Justification:`, `References:`, or prose) |
+| Label Reference | `(:label:)` / `(:l1, l2:)` | Refers to a defined label in `Justification: . for:`, `References: . for:`, or prose |
 | Line Label | `. [label]: x + y` | Labels a single-line formulation or text argument in a section |
 | <a id="builtin-types-and-commands"></a>**Builtin Types and Commands** | | |
 | Builtin Types | `\\type`, `\\statement`, `\\expression`, `\\specification`, `\\anything` | Language primitive types for classification and constraints |
@@ -123,7 +123,7 @@ A concise high-level reference for the Mathlingua language. For in-depth specifi
 | Inline Formulation | `{. x + y .}` | Embeds an inline math expression inside prose text |
 | Display Formulation | `{{. x + y .}}` | Embeds a centered display math expression inside prose text |
 | Theorem Reference | `{: \thm :}` | Links to a theorem, axiom, or conjecture within prose |
-| Prose Citation | `''quote''(:ref:)` | Cites a bibliographic resource with an optional quoted phrase |
+| Labeled Prose Quote | `''quote''[:ref:]` | Labels a quoted phrase in prose (can be cited via `References: . for: (:ref:)`) |
 | Scoped Context | `<<scope>> ... <</scope>>` | Constrains mathematical context and notations within prose |
 | <a id="command-line-interface-cli"></a>**Command-Line Interface (CLI)** | | |
 | Check | `mlg check` | Type-checks and validates all `.mlg` files in the collection |

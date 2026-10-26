@@ -281,22 +281,19 @@ x[i[j]]
 
 The names inside subset brackets must be names, not arbitrary expressions.
 
-Expression labels are written after grouped expressions (using `[:...:]` for
-`Justification:` labels and `(:...:)` for `References:` citations, including
-comma-separated multi-labels), or as a `[label]: ` prefix on a single-line `. `
-argument:
+Expression labels are written after grouped expressions (using `[:...:]`, including
+comma-separated multi-labels `[:l1, l2:]`), as a `[label]` heading on a group, or as
+a `[label]: ` prefix on a single-line `. ` argument:
 
 ```text
 (x + y)[:sum:]
 (. x + y .)[:normalized:]
 (x + y)[:l1, l2:]
-(x + y)(:ref:)
-(x + y)[:sum:](:ref1, ref2:)
 . [sum]: x + y = y + x
 ```
 
-When both `[:...:]` and `(:...:)` appear on the same grouped formulation,
-justification labels `[:...:]` must precede reference labels `(:...:)`.
+To refer to a label `abc` (for example in `Justification:`, `References:`, or prose),
+use `(:abc:)` (or `(:l1, l2:)`).
 
 ## Commands and Signatures
 
@@ -1239,28 +1236,40 @@ the construct supports.
 - `discoverer:`
 - `notes:`
 
-`Justification:` (placed after `Documented:`) accepts only `have:` groups, each
-with a required `[label]` heading and an optional `asserting:` section. Any
-grouped expression, statement, or specification elsewhere in the group may carry
-a `[:label:]` (or comma-separated multi-labels `[:l1, l2:]`), including inside a
-nested clause or expression, and a single-line `. ` formulation argument may
-also carry a `. [label]: ...` prefix. For example, both a `specifies:` item
+`Justification:` (placed after `Documented:`) accepts `for:`/`have:` groups, each
+with a required `for:` section specifying one or more label references `(:label:)`
+and an optional `asserting:`, `because:`, or `by:` section. Any
+group (`[label]`), single-line `. ` argument (`. [label]: ...`), or grouped
+expression, statement, or specification (`(...)[:label:]` or `(. ... .)[:label:]`)
+elsewhere in the item may define a label. For example, both a `specifies:` item
 `(.x is \foo.)[:1:]` and a `satisfies:` clause
-``(.*' := \restriction:of{`*`}:on{X' \.set.cross./ X'}.)[:2:]`` may reference
-entries. A matching entry establishes the labeled formulation using any
-`asserting:` items (exactly as an inline `have:` group would); when `asserting:`
-is absent, only the surrounding facts are used. Its `have:` must restate that
-formulation, an unmatched label is checked inline as usual, and every entry must
-be referenced by some labeled formulation.
+``(.*' := \restriction:of{`*`}:on{X' \.set.cross./ X'}.)[:2:]`` can be referenced
+by `. for: (:1:)` and `. for: (:2:)` in `Justification:`. A matching entry
+establishes the labeled formulation using any `asserting:` items (exactly as an
+inline `have:` group would); when `asserting:` is absent, only the surrounding
+facts are used. Its `have:` must restate that formulation, an unmatched label is
+checked inline as usual, and every `Justification:` entry must reference a
+defined label.
 
 `Aliases:` accepts `alias:` groups. `Metadata:` accepts `id:` and `version:`.
-`References:` contains resource references such as `$book.chapter` (the quoted
-form `"$book.chapter"` is accepted too), optionally prefixed with a line label
-such as `. [ref1]: $book.chapter:page{42}`. Labeled `References:` entries can be
-cited from grouped formulations using `(:ref1:)` (or `(:ref1, ref2:)`) and from
-prose using `''quoted text''(:ref1:)` (or `''quoted text''(:ref1, ref2:)`).
-Duplicate labels in `References:` and citations to unknown reference labels are
-rejected. A resolved reference renders as the
+`References:` contains item-wide resource references such as `$book.chapter` (the
+quoted form `"$book.chapter"` is accepted too), as well as label-specific
+`for:`/`entry:` groups:
+
+```text
+References:
+. $book.overview
+. for: (:ref1:)
+  entry: $book.chapter:page{42}
+```
+
+where `for:` takes one or more label references (`(:ref1:)`) and `entry:` takes
+one or more resource references (`$book.chapter`). Labels can be defined on
+groups (`[ref1]`), lines (`. [ref1]: ...`), grouped formulations
+(`(...)[:ref1:]` or `(. ... .)[:ref1:]`), or quoted prose (`''quoted text''[:ref1:]`),
+and referenced in `References:` (`for: (:ref1:)`), `Justification:` (`for: (:ref1:)`),
+or prose (`(:ref1:)`). Duplicate label references in `References:` and references
+to unknown labels are rejected. A resolved reference renders as the
 resource title followed by its authors in parentheses. If the resource has a
 URL, the citation links to it. PDF resources also accept `:page{n}`; the link's
 physical PDF page is `n + offset - 1`, where `offset` defaults to `1`.
@@ -2201,8 +2210,8 @@ operation symbol.
 
 Quoted prose, including `Text:`, descriptions, and theorem `Proof:`, may contain
 inline `{. expression .}` or display `{{. expression .}}` MathLingua fragments,
-theorem-like references `{: \name :}`, and reference citations
-`''quoted text''(:label:)` (or comma-separated `''quoted text''(:l1, l2:)`).
+theorem-like references `{: \name :}`, labeled quotes `''quoted text''[:label:]`
+(or `''quoted text''[:l1, l2:]`), and label references `(:label:)` (or `(:l1, l2:)`).
 They are parsed, semantically checked, and rendered as mathematics or linked
 citations. For example:
 
@@ -2215,11 +2224,11 @@ or theorems. The enclosed content must be a bare command `\name` that resolves t
 an `Axiom:`, `Conjecture:`, or `Theorem:`. Axioms, conjectures, and theorems are
 not permitted inside `{. ... .}` or `{{. ... .}}`.
 
-Prose reference citations `''quoted text''(:label:)` render the text between
+Labeled prose quotes `''quoted text''[:label:]` render the text between
 double single-quotes (`''...''`) in italics followed by a bracketed citation link
-to the matching `. [label]: $resource` entry in the enclosing group's
-`References:` section. Every cited label must exist in that `References:`
-section.
+when `References:` includes a matching `. for: (:label:) / entry: $resource` entry.
+Standalone label references `(:label:)` in prose refer to any label defined in the
+enclosing item.
 
 A declaration fragment using `is`, a quoted specification operator, or `:=`
 introduces names for later fragments in the same text value. The initial scope

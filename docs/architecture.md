@@ -527,8 +527,8 @@ Main files:
 - `render/templates.rs` applies documented/written rendering templates.
 - `render/commands.rs`, `render/expressions.rs`, `render/statements.rs`,
   `render/names.rs`, `render/text.rs`, and `render/fallbacks.rs` render AST
-  fragments and scoped prose (`{. ... .}`, `{{. ... .}}`, `{: ... :}`, and
-  `''...''(:label:)` citations) to LaTeX/Markdown.
+  fragments and scoped prose (`{. ... .}`, `{{. ... .}}`, `{: ... :}`,
+  `''...''[:label:]` labeled quotes, and `(:label:)` references) to LaTeX/Markdown.
 - `render/escaping.rs` handles LaTeX escaping.
 
 Variadic template substitutions retain shape metadata alongside their rendered

@@ -10,9 +10,10 @@ Resource:
 Theorem:
 given: x
 then:
-. (x = x)(:3:)
+. (x = x)[:2:]
 References:
-. [2]: $some.book
+. for: (:3:)
+  entry: $some.book
 == end:input ==
 == begin:output ==
 error: Unknown reference label `3`

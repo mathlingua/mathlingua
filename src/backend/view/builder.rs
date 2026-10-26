@@ -415,31 +415,96 @@ fn collect_reference_label_links(
     sections: &[ProtoSection],
     registry: &RenderRegistry,
 ) -> HashMap<String, String> {
-    sections
-        .iter()
-        .find(|section| section.label == "References")
-        .into_iter()
-        .flat_map(|section| &section.arguments)
-        .filter_map(|argument| match argument {
+    let mut links = HashMap::new();
+    let Some(references) = sections.iter().find(|section| section.label == "References") else {
+        return links;
+    };
+    for argument in &references.arguments {
+        match argument {
             ProtoArgument::Formulation(formulation) => {
-                let label = formulation.label.clone()?;
-                let source = strip_quoted_text(&formulation.text).unwrap_or_else(|| formulation.text.clone());
-                let reference = parse_resource_header(&source).ok()?;
-                let rendered = render_resource_reference(&reference, registry);
-                let href = rendered.href?;
-                Some((label, href.replace('(', "%28").replace(')', "%29")))
+                if let Some(label) = &formulation.label
+                    && let Some(href) = resolve_resource_href(&formulation.text, registry)
+                {
+                    links.insert(label.clone(), href);
+                }
             }
             ProtoArgument::Text(text) => {
-                let label = text.label.clone()?;
-                let source = strip_quoted_text(&text.text).unwrap_or_else(|| text.text.clone());
-                let reference = parse_resource_header(&source).ok()?;
-                let rendered = render_resource_reference(&reference, registry);
-                let href = rendered.href?;
-                Some((label, href.replace('(', "%28").replace(')', "%29")))
+                if let Some(label) = &text.label
+                    && let Some(href) = resolve_resource_href(&text.text, registry)
+                {
+                    links.insert(label.clone(), href);
+                }
             }
-            ProtoArgument::Group(_) => None,
-        })
-        .collect()
+            ProtoArgument::Group(group) => {
+                let labels = group
+                    .sections
+                    .iter()
+                    .find(|s| s.label == "for")
+                    .map(collect_proto_for_labels)
+                    .unwrap_or_default();
+                let href = group
+                    .sections
+                    .iter()
+                    .find(|s| s.label == "entry")
+                    .and_then(|entry| resolve_proto_entry_href(entry, registry));
+                if let Some(href) = href {
+                    for label in labels {
+                        links.insert(label, href.clone());
+                    }
+                }
+            }
+        }
+    }
+    links
+}
+
+fn collect_proto_for_labels(section: &ProtoSection) -> Vec<String> {
+    let mut labels = Vec::new();
+    if let Some(inline) = &section.inline_argument
+        && let Ok(parsed) = crate::frontend::formulation::parse_label_references(inline)
+    {
+        labels.extend(parsed.into_iter().map(|l| l.to_string()));
+    }
+    for arg in &section.arguments {
+        if let ProtoArgument::Formulation(f) = arg
+            && let Ok(parsed) = crate::frontend::formulation::parse_label_references(&f.text)
+        {
+            labels.extend(parsed.into_iter().map(|l| l.to_string()));
+        }
+    }
+    labels
+}
+
+fn resolve_proto_entry_href(section: &ProtoSection, registry: &RenderRegistry) -> Option<String> {
+    if let Some(inline) = &section.inline_argument
+        && let Some(href) = resolve_resource_href(inline, registry)
+    {
+        return Some(href);
+    }
+    for arg in &section.arguments {
+        match arg {
+            ProtoArgument::Formulation(f) => {
+                if let Some(href) = resolve_resource_href(&f.text, registry) {
+                    return Some(href);
+                }
+            }
+            ProtoArgument::Text(t) => {
+                if let Some(href) = resolve_resource_href(&t.text, registry) {
+                    return Some(href);
+                }
+            }
+            ProtoArgument::Group(_) => {}
+        }
+    }
+    None
+}
+
+fn resolve_resource_href(raw: &str, registry: &RenderRegistry) -> Option<String> {
+    let source = strip_quoted_text(raw).unwrap_or_else(|| raw.trim().to_string());
+    let reference = parse_resource_header(&source).ok()?;
+    let rendered = render_resource_reference(&reference, registry);
+    let href = rendered.href?;
+    Some(href.replace('(', "%28").replace(')', "%29"))
 }
 
 fn theorem_proof_source(kind: &str, sections: &[ProtoSection]) -> Option<String> {
@@ -462,16 +527,33 @@ fn render_declared_references_in_text(
     sections: &[ProtoSection],
     registry: &RenderRegistry,
 ) -> String {
-    let mut replacements = sections
-        .iter()
-        .find(|section| section.label == "References")
+    let mut raw_sources: Vec<&str> = Vec::new();
+    if let Some(references) = sections.iter().find(|section| section.label == "References") {
+        for argument in &references.arguments {
+            match argument {
+                ProtoArgument::Formulation(formulation) => {
+                    raw_sources.push(formulation.text.as_str());
+                }
+                ProtoArgument::Text(text) => raw_sources.push(text.text.as_str()),
+                ProtoArgument::Group(group) => {
+                    if let Some(entry) = group.sections.iter().find(|s| s.label == "entry") {
+                        if let Some(inline) = entry.inline_argument.as_deref() {
+                            raw_sources.push(inline);
+                        }
+                        for arg in &entry.arguments {
+                            match arg {
+                                ProtoArgument::Formulation(f) => raw_sources.push(f.text.as_str()),
+                                ProtoArgument::Text(t) => raw_sources.push(t.text.as_str()),
+                                ProtoArgument::Group(_) => {}
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    let mut replacements = raw_sources
         .into_iter()
-        .flat_map(|section| &section.arguments)
-        .filter_map(|argument| match argument {
-            ProtoArgument::Formulation(formulation) => Some(formulation.text.as_str()),
-            ProtoArgument::Text(text) => Some(text.text.as_str()),
-            ProtoArgument::Group(_) => None,
-        })
         .filter_map(|source| {
             let source = strip_quoted_text(source).unwrap_or_else(|| source.to_string());
             let reference = parse_resource_header(&source).ok()?;
@@ -932,7 +1014,7 @@ fn argument_view(
     match argument {
         ProtoArgument::Formulation(formulation) => {
             let row = formulation.metadata.row;
-            if section_label == "References"
+            if matches!(section_label, "References" | "entry")
                 && let Some(mut reference) = reference_argument_view(&formulation.text, registry)
             {
                 if let ArgumentView::Reference { label, .. } = &mut reference {
@@ -940,7 +1022,7 @@ fn argument_view(
                 }
                 return reference;
             }
-            // A labeled specification `(.spec.)[:label:]` or `(.spec.)(:ref_label:)` renders
+            // A labeled specification `(.spec.)[:label:]` renders
             // as the inner `spec` with the labels shown as separate tags.
             let (spec_label, spec_ref_label, latex) = match split_labeled_formulation(&formulation.text) {
                 Some((just_label, ref_label, inner)) => (
@@ -959,7 +1041,7 @@ fn argument_view(
             }
         }
         ProtoArgument::Text(text) => {
-            if section_label == "References"
+            if matches!(section_label, "References" | "entry")
                 && let Some(mut reference) = reference_argument_view(&text.text, registry)
             {
                 if let ArgumentView::Reference { label, .. } = &mut reference {
@@ -1033,37 +1115,25 @@ fn reference_argument_view(text: &str, registry: &RenderRegistry) -> Option<Argu
     })
 }
 
-/// Splits a labeled specification `(.spec.)[:label:]`, `(.spec.)(:ref_label:)`, or
-/// `(.spec.)[:label:](:ref_label:)` into its justification label, reference label,
-/// and inner `spec` source. Returns `None` when `text` is not a labeled specification.
+/// Splits a labeled specification `(.spec.)[:label:]` or `(spec)[:label:]`
+/// into its label and inner `spec` source. Returns `None` when `text` is not a labeled specification.
 fn split_labeled_formulation(text: &str) -> Option<(Option<String>, Option<String>, &str)> {
     let mut trimmed = text.trim();
-    let mut ref_label = None;
-    if trimmed.ends_with(":)") {
-        let open_idx = trimmed.rfind("(:")?;
-        let inside = trimmed[open_idx + 2..trimmed.len() - 2].trim();
-        if inside.is_empty() {
-            return None;
-        }
-        ref_label = Some(inside.to_string());
-        trimmed = trimmed[..open_idx].trim();
-    }
-    let mut just_label = None;
-    if trimmed.ends_with(":]") {
+    let mut label_groups = Vec::new();
+    while trimmed.ends_with(":]") {
         let open_idx = trimmed.rfind("[:")?;
         let inside = trimmed[open_idx + 2..trimmed.len() - 2].trim();
         if inside.is_empty() {
             return None;
         }
-        just_label = Some(inside.to_string());
+        label_groups.push(inside.to_string());
         trimmed = trimmed[..open_idx].trim();
     }
-    if trimmed.ends_with(":)") {
+    if label_groups.is_empty() || trimmed.ends_with(":)") {
         return None;
     }
-    if just_label.is_none() && ref_label.is_none() {
-        return None;
-    }
+    label_groups.reverse();
+    let just_label = Some(label_groups.join(", "));
     let inner = trimmed
         .strip_prefix("(.")
         .and_then(|rest| rest.strip_suffix(".)"))
@@ -1072,7 +1142,7 @@ fn split_labeled_formulation(text: &str) -> Option<(Option<String>, Option<Strin
                 .strip_prefix('(')
                 .and_then(|rest| rest.strip_suffix(')'))
         })?;
-    Some((just_label, ref_label, inner.trim()))
+    Some((just_label, None, inner.trim()))
 }
 
 // ===============================[ tests ]=====================================
@@ -2217,7 +2287,6 @@ Id: "32dd9150-8f43-46ee-aa6c-97809fc9ea8d"
     fn splits_labeled_formulations_with_justification_and_reference_labels() {
         use super::split_labeled_formulation;
 
-        // Justification only
         assert_eq!(
             split_labeled_formulation("(.x is \\set.)[:1:]"),
             Some((Some("1".to_string()), None, "x is \\set"))
@@ -2226,32 +2295,15 @@ Id: "32dd9150-8f43-46ee-aa6c-97809fc9ea8d"
             split_labeled_formulation("(x > 0)[:l1, l2:]"),
             Some((Some("l1, l2".to_string()), None, "x > 0"))
         );
-
-        // Reference only
         assert_eq!(
-            split_labeled_formulation("(.x is \\set.)(:2:)"),
-            Some((None, Some("2".to_string()), "x is \\set"))
-        );
-        assert_eq!(
-            split_labeled_formulation("(x > 0)(:r1, r2:)"),
-            Some((None, Some("r1, r2".to_string()), "x > 0"))
+            split_labeled_formulation("(x > 0)[:1:][:2:]"),
+            Some((Some("1, 2".to_string()), None, "x > 0"))
         );
 
-        // Both in correct order [:...:](:...:)
-        assert_eq!(
-            split_labeled_formulation("(x > 0)[:1:](:2:)"),
-            Some((Some("1".to_string()), Some("2".to_string()), "x > 0"))
-        );
-        assert_eq!(
-            split_labeled_formulation("(.x is \\set.)[:l1, l2:](:r1, r2:)"),
-            Some((Some("l1, l2".to_string()), Some("r1, r2".to_string()), "x is \\set"))
-        );
-
-        // Invalid order (:...:)[:...:] rejected
-        assert_eq!(
-            split_labeled_formulation("(x > 0)(:2:)[:1:]"),
-            None
-        );
+        // (:...:) is no longer a trailing label on formulations
+        assert_eq!(split_labeled_formulation("(.x is \\set.)(:2:)"), None);
+        assert_eq!(split_labeled_formulation("(x > 0)[:1:](:2:)"), None);
+        assert_eq!(split_labeled_formulation("(x > 0)(:2:)[:1:]"), None);
     }
 
     struct TestDir {

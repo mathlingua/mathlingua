@@ -20,6 +20,7 @@ Documented:
 . called: "A plausible result"
 Justification:
 . [conjecture.evidence]
+  for: (:logic.not:)
   have: x = x
   asserting: x = x
 Aliases:

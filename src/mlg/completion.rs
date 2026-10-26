@@ -442,7 +442,8 @@ fn item_starters(section: &str) -> Option<&'static [&'static str]> {
         ],
         "Enables" => &["capability", "from", "view"],
         "Requires" => &["capability", "definition"],
-        "Justification" => &["have"],
+        "Justification" => &["for"],
+        "References" => &["for"],
         "Metadata" => &["id", "version"],
         "Aliases" => &["alias"],
         "Specify" => &["decimal", "zeroOrPositiveInt", "positiveInt", "int"],
@@ -503,6 +504,17 @@ const NESTED_GROUPS: &[(&str, &[Section])] = &[
     ),
     ("by", &[("by", true), ("comment", false)]),
     ("zero", &[("zero", true), ("is", true)]),
+    (
+        "for",
+        &[
+            ("for", true),
+            ("have", false),
+            ("asserting", false),
+            ("because", false),
+            ("by", false),
+            ("entry", false),
+        ],
+    ),
 ];
 
 fn group_spec(head: &str) -> Option<&'static GroupSpec> {

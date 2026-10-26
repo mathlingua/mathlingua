@@ -134,7 +134,7 @@ mod tests {
             ]
         );
 
-        let tokens: Vec<_> = Lexer::new(r#"(x)[:l1, l2:](:r1, r2:)"#)
+        let tokens: Vec<_> = Lexer::new(r#"(x)[:l1, l2:]"#)
             .map(|item| item.expect("expected valid token").1)
             .collect();
 
@@ -145,7 +145,6 @@ mod tests {
                 Token::Name("x".to_string()),
                 Token::RParen,
                 Token::Label(vec![vec!["l1".to_string()], vec!["l2".to_string()]]),
-                Token::ReferenceLabel(vec![vec!["r1".to_string()], vec!["r2".to_string()]]),
             ]
         );
     }

@@ -26,6 +26,7 @@ Documented:
   . "plus"
 Justification:
 . [proof.label]
+  for: (:logic.set.ops.when:)
   have:
   . x = x
   asserting:
@@ -52,6 +53,7 @@ Documented:
   . "addition"
 Justification:
 . [proof.by]
+  for: (:proof.by:)
   have:
   . y = y
   asserting:

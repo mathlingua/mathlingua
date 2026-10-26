@@ -10,7 +10,7 @@ specifies:
 Documented:
 . called: "pair"
 Justification:
-. [second]
+. for: (:second:)
   have: B is \\anything
   asserting: B is \\anything
 == end:input ==

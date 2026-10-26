@@ -33,33 +33,36 @@ live Markdown-and-LaTeX preview of the hovered top-level entry directly from the
 in-memory document text as you edit, followed by the per-line resolved
 expression types when available.
 
-## Reference Citations (`(:label:)`), Multi-Labels, And Line Labels (`. [label]: ...`)
+## Unified Labels (`[...]`, `. [label]:`, `[:label:]`) And Label References (`(:label:)`)
 
-- **Line-level argument labels (`. [label]: ...`)**: Single-line formulation
-  arguments, text arguments, and `References:` entries can carry a leading
-  `[label]: ` prefix after the `. ` bullet (for example,
-  `. [sum]: a + b = b + a` or `. [ref1]: $book:page{10}`). Inline section
-  arguments cannot carry `[label]: ` prefixes (`Inline section arguments cannot
-  have labels`). A line with a `[label]: ` prefix is parsed as a labeled
-  argument rather than a `[heading]` line.
-- **Formulation multi-labels and reference citations**:
-  - Justification labels on grouped formulations (`(...)` or `(. ... .)`) now
-    accept comma-separated label lists (`[:l1, l2:]`) or multiple consecutive
-    label tokens (`[:l1:][:l2:]`).
-  - Reference citation labels use `(:label:)` or comma-separated `(:r1, r2:)` to
-    cite labeled entries in the enclosing item's `References:` section.
-  - When a grouped formulation carries both justification and reference labels,
-    all justification labels `[:...:]` must precede all reference labels
-    `(:...:)` (for example, `(x + y)[:sum:](:ref1:)`).
-- **Prose reference citations (`''quoted text''(:label:)`)**: Quoted prose
-  (`OpenText`) supports `''quoted text''(:label:)` and comma-separated
-  `''quoted text''(:l1, l2:)`. The checker validates that every cited label
-  resolves to a labeled `[label]: $resource` entry in the enclosing group's
-  `References:` section, and the renderer outputs italicized quoted text
-  followed by bracketed links to the referenced resources.
-- **Validation**: Duplicate reference labels within a `References:` section are
-  rejected (`Duplicate reference label ...`), and unknown reference labels in
-  formulations or prose are reported (`Unknown reference label ...`).
+- **Defining labels**:
+  - **Group headings (`[label]`)**: Nested clause and structural groups can carry
+    a `[label]` heading.
+  - **Line-level argument labels (`. [label]: ...`)**: Single-line formulation
+    and text arguments can carry a leading `[label]: ` prefix after the `. `
+    bullet (for example, `. [sum]: a + b = b + a`). Inline section arguments
+    cannot carry `[label]: ` prefixes (`Inline section arguments cannot have
+    labels`).
+  - **Inline formulation labels (`[:label:]`)**: Grouped formulations (`(...)` or
+    `(. ... .)`) accept `[:label:]`, comma-separated `[:l1, l2:]`, or multiple
+    consecutive `[:l1:][:l2:]` suffixes.
+  - **Labeled prose quotes (`''quoted text''[:label:]`)**: Quoted prose
+    (`OpenText`) supports `''quoted text''[:label:]` and comma-separated
+    `''quoted text''[:l1, l2:]`.
+- **Referencing labels (`(:label:)`)**:
+  - **`Justification:`**: Each `Justification:` item is a `for:`/`have:` group
+    starting with `for: (:label:)` (accepting one or more label references),
+    followed by `have:` and optional `asserting:`, `because:`, or `by:` sections.
+  - **`References:`**: Supports both item-wide bare resource references
+    (`. $some.book`) and label-specific `. for: (:label:) / entry: $some.book`
+    groups, where `for:` takes one or more label references and `entry:` takes
+    one or more resource references.
+  - **Prose (`(:label:)`)**: Standalone `(:label:)` (or `(:l1, l2:)`) in prose
+    refers to labels defined in the enclosing item.
+- **Validation**: Duplicate label references within a `References:` section are
+  rejected (`Duplicate reference label ...`), and references to unknown labels in
+  `References:` or prose are reported (`Unknown reference label ...`). Every
+  `Justification:` entry must reference a defined label.
 
 ## `mlg search` And `mlg structure` Commands
 

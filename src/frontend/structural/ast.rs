@@ -287,9 +287,11 @@ arguments_section!(SatisfiesSection, Clause);
 arguments_section!(RequiresSection, RequiresItem);
 arguments_section!(EnablesSection, EnablesItem);
 arguments_section!(JustificationSection, HaveGroup);
+arguments_section!(ForSection, Label);
 arguments_section!(DocumentedSection, DocumentedItem);
 arguments_section!(AliasesSection, AliasItem);
-arguments_section!(ReferencesSection, ResourceHeader);
+arguments_section!(ReferencesSection, ReferenceItem);
+arguments_section!(ReferenceEntrySection, ResourceHeader);
 arguments_section!(MetadataSection, MetadataItem);
 argument_section!(DefinesSection, DeclarationStatement);
 arguments_section!(ExpressesSection, Clause);
@@ -460,14 +462,33 @@ pub enum IsOrViaItem {
     /// specification (allowed in a `Declares:` group's `specifies:`).
     Have(Box<HaveGroup>),
     /// A specification wrapped in a `[:label:]` (e.g. `(.x is \foo.)[:1:]`) whose
-    /// `label` may match a `Justification:` entry `[label]`. When it does, that
-    /// entry's `have:` group is used to establish the inner `item`;
+    /// `label` may be referenced by a `Justification:` or `References:` `for:` entry.
+    /// When justified, that entry's `have:` group is used to establish the inner `item`;
     /// otherwise the inner `item` is checked inline as normal.
     Labeled {
         labels: Vec<Label>,
-        reference_labels: Vec<Label>,
         item: Box<IsOrViaItem>,
     },
+}
+
+/// One entry in a `References:` section: either an item-wide resource citation
+/// (`. $some.book`) or a label-targeted reference group (`for:` / `entry:`).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum ReferenceItem {
+    Resource(ResourceHeader),
+    ForEntry(ReferenceForGroup),
+}
+
+/// A label-targeted reference group in `References:`:
+/// ```text
+/// . for: (:abc:)
+///   entry: $some.book
+/// ```
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ReferenceForGroup {
+    pub heading: Option<LabelHeader>,
+    pub for_: ForSection,
+    pub entry: ReferenceEntrySection,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -973,9 +994,12 @@ pub struct IffGroup {
 /// item (`have:`), optional facts (`asserting:`) it may take as true to establish
 /// it, and optional justification (`because?:` clauses, `by?:` theorem
 /// references) that the checker only well-forms rather than proves.
+/// When used in a `Justification:` section, `for_:` specifies the label references
+/// (`(:abc:)`) that this entry justifies.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct HaveGroup {
     pub heading: Option<LabelHeader>,
+    pub for_: Option<ForSection>,
     pub have: HaveSection,
     pub asserting: Option<AssertingSection>,
     pub because: Option<BecauseSection>,

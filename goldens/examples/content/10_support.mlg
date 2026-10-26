@@ -55,7 +55,7 @@ specifies:
 Documented:
 . called: "justification showcase"
 Justification:
-. [carrier]
+. for: (:carrier:)
   have: B is \set
   asserting: B is \set
 Id: "decbcbc2-aa62-430f-aa16-d044ea928c10"

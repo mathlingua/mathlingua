@@ -1,0 +1,27 @@
+== begin:description ==
+Accepts a have:by: Justification entry with rationale clauses and text.
+== end:description ==
+== begin:input ==
+[\thm]
+Theorem:
+then: 1 = 1
+Documented:
+. called: "thm"
+
+[\pair]
+Declares: P ::= (A, B)
+specifies:
+. A is \\anything
+. (.B is \\anything.)[:second:]
+Documented:
+. called: "pair"
+Justification:
+. [second]
+  have: B is \\anything
+  rationale:
+  . B is \\anything
+  . "by construction"
+  by: \thm
+== end:input ==
+== begin:output ==
+== end:output ==

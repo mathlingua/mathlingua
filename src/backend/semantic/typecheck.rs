@@ -4170,13 +4170,17 @@ fn validate_have_group_scopes(
         locator,
         event_log,
     );
-    validate_optional_clause_scope(
-        group.because.as_ref().map(|section| &section.arguments[..]),
-        "because:",
-        path,
-        locator,
-        event_log,
-    );
+    if let Some(section) = &group.rationale {
+        let clauses: Vec<Clause> = section
+            .arguments
+            .iter()
+            .filter_map(|item| match item {
+                RationaleItem::Clause(clause) => Some(clause.clone()),
+                RationaleItem::Text(_) => None,
+            })
+            .collect();
+        validate_optional_clause_scope(Some(&clauses), "rationale:", path, locator, event_log);
+    }
 }
 
 fn validate_declaration_scope<T: std::borrow::Borrow<DeclarationStatement>>(
@@ -5587,7 +5591,7 @@ fn assume_is_or_via_item(
 }
 
 /// Checks a `have:` group. Any `asserting:` items are taken as true and used to
-/// check the `have:` items; `because:`/`by:` are justification whose command and
+/// check the `have:` items; `rationale:`/`by:` are justification whose command and
 /// theorem references are reference-validated elsewhere but which are never
 /// proven as logical consequences.
 fn check_have_group(
@@ -8362,9 +8366,11 @@ fn collect_have_group_names(group: &HaveGroup, names: &mut BTreeSet<String>) {
             collect_clause_names(clause, names);
         }
     }
-    if let Some(section) = &group.because {
-        for clause in &section.arguments {
-            collect_clause_names(clause, names);
+    if let Some(section) = &group.rationale {
+        for item in &section.arguments {
+            if let RationaleItem::Clause(clause) = item {
+                collect_clause_names(clause, names);
+            }
         }
     }
     if let Some(section) = &group.by {

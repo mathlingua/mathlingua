@@ -15,9 +15,11 @@ pub(in crate::backend::semantic) fn walk_have_group(
             walk_clause(clause, visit);
         }
     }
-    if let Some(section) = &group.because {
-        for clause in &section.arguments {
-            walk_clause(clause, visit);
+    if let Some(section) = &group.rationale {
+        for item in &section.arguments {
+            if let RationaleItem::Clause(clause) = item {
+                walk_clause(clause, visit);
+            }
         }
     }
     if let Some(section) = &group.by {

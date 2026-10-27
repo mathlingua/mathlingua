@@ -1,0 +1,12 @@
+== begin:description ==
+Accepts the optional rationale section of a have clause.
+== end:description ==
+== begin:input ==
+Theorem:
+given: P is \\statement
+then:
+. have: P
+  rationale: P
+== end:input ==
+== begin:output ==
+== end:output ==

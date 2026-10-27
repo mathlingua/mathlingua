@@ -1236,9 +1236,11 @@ the construct supports.
 - `discoverer:`
 - `notes:`
 
-`Justification:` (placed after `Documented:`) accepts `for:`/`have:` groups, each
-with a required `for:` section specifying one or more label references `(:label:)`
-and an optional `asserting:`, `because:`, or `by:` section. Any
+`Justification:` (placed after `Documented:`) accepts `for:`/`have:` or `[label]`-headed
+`have:` groups, each targeting a labeled formulation (either via a `for:` section
+specifying one or more label references `(:label:)` or a `[label]` group heading)
+and an optional `asserting:`, `rationale:`, or `by:` section. The `rationale:` section
+accepts text `"..."` or clauses. Any
 group (`[label]`), single-line `. ` argument (`. [label]: ...`), or grouped
 expression, statement, or specification (`(...)[:label:]` or `(. ... .)[:label:]`)
 elsewhere in the item may define a label. For example, both a `specifies:` item

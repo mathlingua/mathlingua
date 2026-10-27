@@ -483,7 +483,7 @@ pub enum ExpressionKind {
     },
     Labeled {
         expression: Box<Expression>,
-        labels: Vec<Label>,
+        label: Label,
     },
     SubsetCall(SubsetCall),
     IndexedCall(IndexedCall),
@@ -1045,11 +1045,11 @@ pub enum IsOrRefinedStatementSpec {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DeclarationStatement {
     pub span: Span,
-    /// Labels applied to grouped statement/specification wrappers, from the
-    /// innermost wrapper to the outermost one. Keeping them on the declaration
-    /// makes `(. ... .)[:label:]` valid in every declaration-bearing context,
+    /// Optional label applied to a grouped statement/specification wrapper
+    /// (`(. ... .)[:label:]`). Keeping it on the declaration makes
+    /// `(. ... .)[:label:]` valid in every declaration-bearing context,
     /// rather than only in structural sections with bespoke parsing.
-    pub labels: Vec<Label>,
+    pub label: Option<Label>,
     pub subject: IsSubject,
     pub expansion: Option<IsSubject>,
     pub definition: Option<Expression>,

@@ -226,8 +226,11 @@ fn prose_source_fragment(input: &str) -> Option<(&str, &str, usize)> {
     let ref_tail = trimmed.strip_prefix("[:")?;
     let ref_end = ref_tail.find(":]")?;
     let ref_body = &ref_tail[..ref_end];
+    if ref_body.contains(',') {
+        return None;
+    }
     let consumed = (input.len() - after.len()) + (after.len() - trimmed.len()) + 2 + ref_end + 2;
-    Some((inner, ref_body, consumed))
+    Some((inner, ref_body.trim(), consumed))
 }
 
 fn label_reference_fragment(input: &str) -> Option<(&str, usize)> {
@@ -401,10 +404,10 @@ mod tests {
             r#"Proof: "This is *some text with a source* [[2](https://example.com/book.pdf)]""#
         );
 
-        let multi = r#"See ''first quote''[:l1, l2:] and ''second quote'' [:3:] and (:2:)."#;
+        let text_with_refs = r#"See ''first quote''[:1:] and ''second quote'' [:3:] and (:2:)."#;
         assert_eq!(
-            render_scoped_text_markdown_with_labels(multi, &RenderRegistry::default(), &links),
-            r#"See *first quote* [l1, l2] and *second quote* [3] and [[2](https://example.com/book.pdf)]."#
+            render_scoped_text_markdown_with_labels(text_with_refs, &RenderRegistry::default(), &links),
+            r#"See *first quote* [1] and *second quote* [3] and [[2](https://example.com/book.pdf)]."#
         );
     }
 }

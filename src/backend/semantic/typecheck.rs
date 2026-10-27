@@ -2692,7 +2692,7 @@ fn parse_scoped_text_marker(input: &str) -> Option<(bool, &str, usize)> {
     Some((closing, name, prefix.len() + end + 2))
 }
 
-fn parse_scoped_prose_source(input: &str) -> Option<(&str, Vec<String>, usize)> {
+fn parse_scoped_prose_source(input: &str) -> Option<(&str, String, usize)> {
     let tail = input.strip_prefix("''")?;
     let quote_end = tail.find("''")?;
     let prose = &tail[..quote_end];
@@ -2701,18 +2701,16 @@ fn parse_scoped_prose_source(input: &str) -> Option<(&str, Vec<String>, usize)> 
     let ref_tail = trimmed.strip_prefix("[:")?;
     let ref_end = ref_tail.find(":]")?;
     let ref_body = &ref_tail[..ref_end];
-    let labels: Vec<String> = ref_body
-        .split(',')
-        .map(str::trim)
-        .filter(|s| !s.is_empty())
-        .map(str::to_string)
-        .collect();
-    if labels.is_empty() {
+    if ref_body.contains(',') {
+        return None;
+    }
+    let label = ref_body.trim().to_string();
+    if label.is_empty() {
         return None;
     }
     let consumed =
         (input.len() - after_quote.len()) + (after_quote.len() - trimmed.len()) + 2 + ref_end + 2;
-    Some((prose, labels, consumed))
+    Some((prose, label, consumed))
 }
 
 fn parse_scoped_theorem_reference(input: &str) -> Option<(&str, usize)> {
@@ -3006,11 +3004,9 @@ fn collect_prose_defined_labels(text: &str, labels: &mut BTreeSet<String>) {
             continue;
         }
         if rest.starts_with("''")
-            && let Some((prose, prose_labels, consumed)) = parse_scoped_prose_source(rest)
+            && let Some((prose, label, consumed)) = parse_scoped_prose_source(rest)
         {
-            for label in prose_labels {
-                labels.insert(label);
-            }
+            labels.insert(label);
             collect_prose_defined_labels(prose, labels);
             index += consumed;
             continue;
@@ -5578,16 +5574,10 @@ fn assume_is_or_via_item(
         // A labeled specification whose `[:label:]` matches a `Justification:`
         // entry is established via that entry's `have:`/`asserting:`; then its
         // facts are contributed. An unmatched label is checked inline as normal.
-        IsOrViaItem::Labeled { labels, item } => {
-            let mut established = false;
-            for label in labels {
-                if establish_labeled_specification(
-                    label, item, context, path, locator, registry, event_log,
-                ) {
-                    established = true;
-                }
-            }
-            if established {
+        IsOrViaItem::Labeled { label, item } => {
+            if establish_labeled_specification(
+                label, item, context, path, locator, registry, event_log,
+            ) {
                 assume_is_or_via_item_facts(item, context, registry);
             } else {
                 assume_is_or_via_item(item, context, path, locator, registry, event_log);
@@ -5692,10 +5682,10 @@ fn establish_labeled_declaration_statement(
     event_log: &mut EventLog,
 ) -> bool {
     let item_key = key_for_declaration_statement(statement);
-    for label in statement.labels.iter().rev() {
+    if let Some(label) = &statement.label {
         let key = label.parts.join(".");
         let Some(group) = context.justification(&key).cloned() else {
-            continue;
+            return false;
         };
         if !justification_have_matches_key(&group, &item_key) {
             emit_error(
@@ -5832,14 +5822,8 @@ fn establish_labeled_specification(
 /// `IsOrViaItem` (the `[:label:]` of any `Labeled` wrapper).
 fn collect_is_or_via_referenced_labels(item: &IsOrViaItem, labels: &mut BTreeSet<String>) {
     match item {
-        IsOrViaItem::Labeled {
-            labels: just_labels,
-            item,
-            ..
-        } => {
-            for label in just_labels {
-                labels.insert(label.to_string());
-            }
+        IsOrViaItem::Labeled { label, item, .. } => {
+            labels.insert(label.to_string());
             collect_is_or_via_referenced_labels(item, labels);
         }
         IsOrViaItem::Declaration(statement) => {
@@ -5853,7 +5837,9 @@ fn collect_declaration_referenced_labels(
     statement: &DeclarationStatement,
     labels: &mut BTreeSet<String>,
 ) {
-    labels.extend(statement.labels.iter().map(|label| label.parts.join(".")));
+    if let Some(label) = &statement.label {
+        labels.insert(label.parts.join("."));
+    }
     if let Some(definition) = &statement.definition {
         collect_expression_referenced_labels(definition, labels);
     }
@@ -5916,12 +5902,10 @@ fn collect_expression_referenced_labels(expression: &Expression, labels: &mut BT
         } => collect_expression_referenced_labels(owner, labels),
         ExpressionKind::Labeled {
             expression: inner,
-            labels: just_labels,
+            label,
             ..
         } => {
-            for label in just_labels {
-                labels.insert(label.to_string());
-            }
+            labels.insert(label.to_string());
             collect_expression_referenced_labels(inner, labels);
         }
         ExpressionKind::Tuple(elements) => {
@@ -11337,16 +11321,10 @@ fn check_expression(
         ExpressionKind::Grouped { expression, .. } => {
             check_expression(expression, context, path, locator, registry, event_log);
         }
-        ExpressionKind::Labeled { expression, labels } => {
-            let mut established = false;
-            for label in labels {
-                if establish_labeled_expression(
-                    label, expression, context, path, locator, registry, event_log,
-                ) {
-                    established = true;
-                }
-            }
-            if !established {
+        ExpressionKind::Labeled { expression, label } => {
+            if !establish_labeled_expression(
+                label, expression, context, path, locator, registry, event_log,
+            ) {
                 check_expression(expression, context, path, locator, registry, event_log);
             }
         }
@@ -20767,9 +20745,9 @@ fn substitute_expression(
             expression: boxed(expression),
             dot_delimited: *dot_delimited,
         },
-        ExpressionKind::Labeled { expression, labels } => ExpressionKind::Labeled {
+        ExpressionKind::Labeled { expression, label } => ExpressionKind::Labeled {
             expression: boxed(expression),
-            labels: labels.clone(),
+            label: label.clone(),
         },
         ExpressionKind::Command(command) => {
             ExpressionKind::Command(substitute_command_expression(command, substitutions))

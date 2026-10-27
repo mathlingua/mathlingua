@@ -128,25 +128,16 @@ mod tests {
                 Token::LParen,
                 Token::Name("x".to_string()),
                 Token::RParen,
-                Token::Label(vec![vec!["some".to_string(), "label".to_string()]]),
+                Token::Label(vec!["some".to_string(), "label".to_string()]),
                 Token::QuotedName("in".to_string()),
                 Token::Name("X".to_string()),
             ]
         );
 
-        let tokens: Vec<_> = Lexer::new(r#"(x)[:l1, l2:]"#)
-            .map(|item| item.expect("expected valid token").1)
-            .collect();
-
-        assert_eq!(
-            tokens,
-            vec![
-                Token::LParen,
-                Token::Name("x".to_string()),
-                Token::RParen,
-                Token::Label(vec![vec!["l1".to_string()], vec!["l2".to_string()]]),
-            ]
-        );
+        // Multi-labels with commas are not valid labels
+        let has_label = Lexer::new(r#"(x)[:l1, l2:]"#)
+            .any(|item| matches!(item, Ok((_, Token::Label(_), _))));
+        assert!(!has_label);
     }
 
     #[test]

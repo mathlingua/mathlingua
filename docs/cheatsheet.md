@@ -109,7 +109,7 @@ A concise high-level reference for the Mathlingua language. For in-depth specifi
 | Tuple | `(a, b)` | Ordered sequence of two or more elements |
 | Variadic / Slice | `x...` / `x[1...n]` | Represents an arbitrary sequence of arguments or array slice |
 | Inferred Symbol | `x?` / `x?_` | Parameter whose value is inferred from context |
-| Inline Label | `(x + y)[:label:]` / `[:l1, l2:]` | Labels a grouped formulation (referenced via `(:label:)` in `Justification:`, `References:`, or prose) |
+| Inline Label | `(x + y)[:label:]` | Labels a grouped formulation (referenced via `(:label:)` in `Justification:`, `References:`, or prose) |
 | Label Reference | `(:label:)` / `(:l1, l2:)` | Refers to a defined label in `Justification: . for:`, `References: . for:`, or prose |
 | Line Label | `. [label]: x + y` | Labels a single-line formulation or text argument in a section |
 | <a id="builtin-types-and-commands"></a>**Builtin Types and Commands** | | |

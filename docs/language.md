@@ -281,14 +281,14 @@ x[i[j]]
 
 The names inside subset brackets must be names, not arbitrary expressions.
 
-Expression labels are written after grouped expressions (using `[:...:]`, including
-comma-separated multi-labels `[:l1, l2:]`), as a `[label]` heading on a group, or as
-a `[label]: ` prefix on a single-line `. ` argument:
+Expression labels are written after grouped expressions (using `[:...:]`), as
+a `[label]` heading on a group, or as a `[label]: ` prefix on a single-line `. ` argument.
+Each section of code can have at most one label (chained labels `[:a:][:b:]` and multi-labels
+`[:a, b:]` are not supported):
 
 ```text
 (x + y)[:sum:]
 (. x + y .)[:normalized:]
-(x + y)[:l1, l2:]
 . [sum]: x + y = y + x
 ```
 
@@ -2210,8 +2210,8 @@ operation symbol.
 
 Quoted prose, including `Text:`, descriptions, and theorem `Proof:`, may contain
 inline `{. expression .}` or display `{{. expression .}}` MathLingua fragments,
-theorem-like references `{: \name :}`, labeled quotes `''quoted text''[:label:]`
-(or `''quoted text''[:l1, l2:]`), and label references `(:label:)` (or `(:l1, l2:)`).
+theorem-like references `{: \name :}`, labeled quotes `''quoted text''[:label:]`,
+and label references `(:label:)` (or `(:l1, l2:)`).
 They are parsed, semantically checked, and rendered as mathematics or linked
 citations. For example:
 

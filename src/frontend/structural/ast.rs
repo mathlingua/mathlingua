@@ -466,7 +466,7 @@ pub enum IsOrViaItem {
     /// When justified, that entry's `have:` group is used to establish the inner `item`;
     /// otherwise the inner `item` is checked inline as normal.
     Labeled {
-        labels: Vec<Label>,
+        label: Label,
         item: Box<IsOrViaItem>,
     },
 }

@@ -1118,31 +1118,25 @@ fn reference_argument_view(text: &str, registry: &RenderRegistry) -> Option<Argu
 /// Splits a labeled specification `(.spec.)[:label:]` or `(spec)[:label:]`
 /// into its label and inner `spec` source. Returns `None` when `text` is not a labeled specification.
 fn split_labeled_formulation(text: &str) -> Option<(Option<String>, Option<String>, &str)> {
-    let mut trimmed = text.trim();
-    let mut label_groups = Vec::new();
-    while trimmed.ends_with(":]") {
-        let open_idx = trimmed.rfind("[:")?;
-        let inside = trimmed[open_idx + 2..trimmed.len() - 2].trim();
-        if inside.is_empty() {
-            return None;
-        }
-        label_groups.push(inside.to_string());
-        trimmed = trimmed[..open_idx].trim();
-    }
-    if label_groups.is_empty() || trimmed.ends_with(":)") {
+    let trimmed = text.trim();
+    let body = trimmed.strip_suffix(":]")?;
+    let open_idx = body.rfind("[:")?;
+    let label = body[open_idx + 2..].trim();
+    if label.is_empty() || label.contains(',') {
         return None;
     }
-    label_groups.reverse();
-    let just_label = Some(label_groups.join(", "));
-    let inner = trimmed
+    let rest = body[..open_idx].trim();
+    if rest.ends_with(":]") || rest.ends_with(":)") {
+        return None;
+    }
+    let inner = rest
         .strip_prefix("(.")
-        .and_then(|rest| rest.strip_suffix(".)"))
+        .and_then(|r| r.strip_suffix(".)"))
         .or_else(|| {
-            trimmed
-                .strip_prefix('(')
-                .and_then(|rest| rest.strip_suffix(')'))
+            rest.strip_prefix('(')
+                .and_then(|r| r.strip_suffix(')'))
         })?;
-    Some((just_label, None, inner.trim()))
+    Some((Some(label.to_string()), None, inner.trim()))
 }
 
 // ===============================[ tests ]=====================================
@@ -2291,14 +2285,9 @@ Id: "32dd9150-8f43-46ee-aa6c-97809fc9ea8d"
             split_labeled_formulation("(.x is \\set.)[:1:]"),
             Some((Some("1".to_string()), None, "x is \\set"))
         );
-        assert_eq!(
-            split_labeled_formulation("(x > 0)[:l1, l2:]"),
-            Some((Some("l1, l2".to_string()), None, "x > 0"))
-        );
-        assert_eq!(
-            split_labeled_formulation("(x > 0)[:1:][:2:]"),
-            Some((Some("1, 2".to_string()), None, "x > 0"))
-        );
+        // Multi-labels with commas and chained labels are rejected
+        assert_eq!(split_labeled_formulation("(x > 0)[:l1, l2:]"), None);
+        assert_eq!(split_labeled_formulation("(x > 0)[:1:][:2:]"), None);
 
         // (:...:) is no longer a trailing label on formulations
         assert_eq!(split_labeled_formulation("(.x is \\set.)(:2:)"), None);

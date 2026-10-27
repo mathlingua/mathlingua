@@ -11,7 +11,7 @@ Theorem:
 given: x
 then:
 . (x = x)[:2:]
-. (x = x)[:1, 2:]
+. (x = x)[:1:]
 Proof: "This is ''some text with a source''[:2:]"
 Justification:
 . for: (:1:)

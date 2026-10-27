@@ -326,10 +326,15 @@ pub(in crate::frontend::structural::parser) fn parse_alias_kind(
 pub(in crate::frontend::structural::parser) fn parse_is_or_via_item(
     input: &str,
 ) -> Result<IsOrViaItem, FormulationParseError> {
-    if let Some((labels, inner)) = split_labeled_specification(input) {
+    if let Some((label, inner)) = split_labeled_specification(input)? {
         let item = parse_is_or_via_item(inner)?;
+        if matches!(&item, IsOrViaItem::Labeled { .. }) {
+            return Err(FormulationParseError::custom(
+                "specification cannot have more than one label",
+            ));
+        }
         return Ok(IsOrViaItem::Labeled {
-            labels,
+            label,
             item: Box::new(item),
         });
     }
@@ -339,68 +344,58 @@ pub(in crate::frontend::structural::parser) fn parse_is_or_via_item(
     parse_refined_declaration_statement(input).map(IsOrViaItem::Declaration)
 }
 
-fn parse_spec_label_list(raw: &str, base_offset: usize) -> Option<Vec<Label>> {
-    let raw_trimmed = raw.trim();
-    if raw_trimmed.is_empty() {
-        return None;
+/// Recognizes a trailing label `[:...:]` on a grouped specification such as
+/// `(.*_1 is \foo.)[:1:]`. Returns the label and the inner specification source text.
+fn split_labeled_specification(input: &str) -> Result<Option<(Label, &str)>, FormulationParseError> {
+    let current = input.trim();
+    let Some(body) = current.strip_suffix(":]") else {
+        return Ok(None);
+    };
+    let Some(label_start) = body.rfind("[:") else {
+        return Ok(None);
+    };
+    let label_content = body[label_start + 2..].trim();
+    if label_content.is_empty() {
+        return Ok(None);
     }
-    let mut labels = Vec::new();
-    for item in raw.split(',') {
-        let trimmed = item.trim();
-        if trimmed.is_empty() {
-            return None;
-        }
-        let parts: Vec<String> = trimmed.split('.').map(str::to_owned).collect();
-        if parts.iter().any(|part| {
-            part.is_empty()
-                || !part
-                    .chars()
-                    .all(|ch| ch.is_ascii_alphanumeric() || ch == '_')
-        }) {
-            return None;
-        }
-        labels.push(Label {
-            span: crate::frontend::formulation::ast::Span::new(base_offset, base_offset + raw.len()),
-            parts,
-        });
+    if label_content.contains(',') {
+        return Err(FormulationParseError::custom(
+            "multi-labels are not permitted; a specification cannot have more than one label",
+        ));
     }
-    if labels.is_empty() {
-        return None;
+    let rest = body[..label_start].trim();
+    if rest.ends_with(":]") || rest.ends_with(":)") {
+        return Err(FormulationParseError::custom(
+            "chained labels are not permitted; a specification cannot have more than one label",
+        ));
     }
-    Some(labels)
-}
-
-/// Recognizes trailing labels `[:...:]` on a grouped specification such as
-/// `(.*_1 is \foo.)[:1:]` or `(.x is \foo.)[:1:][:2:]`. Returns the labels and
-/// the inner specification source text.
-fn split_labeled_specification(input: &str) -> Option<(Vec<Label>, &str)> {
-    let mut current = input.trim();
-    let mut suffix_groups = Vec::new();
-
-    while let Some(body) = current.strip_suffix(":]") {
-        let label_start = body.rfind("[:")?;
-        let label_content = &body[label_start + 2..];
-        let labels = parse_spec_label_list(label_content, label_start + 2)?;
-        suffix_groups.push(labels);
-        current = body[..label_start].trim();
+    let parts: Vec<String> = label_content.split('.').map(str::to_owned).collect();
+    if parts.iter().any(|part| {
+        part.is_empty()
+            || !part
+                .chars()
+                .all(|ch| ch.is_ascii_alphanumeric() || ch == '_')
+    }) {
+        return Ok(None);
     }
-
-    if suffix_groups.is_empty() {
-        return None;
-    }
-
-    suffix_groups.reverse();
-    let labels: Vec<Label> = suffix_groups.into_iter().flatten().collect();
-
-    let inner = current
+    let label = Label {
+        span: crate::frontend::formulation::ast::Span::new(
+            label_start + 2,
+            label_start + 2 + label_content.len(),
+        ),
+        parts,
+    };
+    let inner = rest
         .strip_prefix("(.")
-        .and_then(|rest| rest.strip_suffix(".)"))
+        .and_then(|r| r.strip_suffix(".)"))
         .or_else(|| {
-            current
-                .strip_prefix('(')
-                .and_then(|rest| rest.strip_suffix(')'))
-        })?;
-    Some((labels, inner.trim()))
+            rest.strip_prefix('(')
+                .and_then(|r| r.strip_suffix(')'))
+        });
+    let Some(inner) = inner else {
+        return Ok(None);
+    };
+    Ok(Some((label, inner.trim())))
 }
 
 /// Parses the argument of a `Declares:` section.
@@ -743,19 +738,27 @@ pub(in crate::frontend::structural::parser) fn parse_optional_clauses(
             } => {
                 if let Ok(mut statement) = parse_refined_declaration_statement(text) {
                     if let Some(lbl) = entry_label {
-                        match parse_label_header(lbl) {
-                            Ok(header) => {
-                                statement.labels.push(Label {
-                                    span: header.span,
-                                    parts: header.parts,
-                                });
-                            }
-                            Err(error) => {
-                                tracker.user_error_at_row(
-                                    Some(ORIGIN),
-                                    row,
-                                    format!("Invalid label `{lbl}`: {error}"),
-                                );
+                        if statement.label.is_some() {
+                            tracker.user_error_at_row(
+                                Some(ORIGIN),
+                                row,
+                                format!("Declaration already has a label; multiple labels are not permitted"),
+                            );
+                        } else {
+                            match parse_label_header(lbl) {
+                                Ok(header) => {
+                                    statement.label = Some(Label {
+                                        span: header.span,
+                                        parts: header.parts,
+                                    });
+                                }
+                                Err(error) => {
+                                    tracker.user_error_at_row(
+                                        Some(ORIGIN),
+                                        row,
+                                        format!("Invalid label `{lbl}`: {error}"),
+                                    );
+                                }
                             }
                         }
                     }
@@ -766,26 +769,34 @@ pub(in crate::frontend::structural::parser) fn parse_optional_clauses(
                 match parse_expression(text) {
                     Ok(mut expression) => {
                         if let Some(lbl) = entry_label {
-                            match parse_label_header(lbl) {
-                                Ok(header) => {
-                                    let span = expression.span;
-                                    expression = Expression {
-                                        span,
-                                        kind: ExpressionKind::Labeled {
-                                            expression: Box::new(expression),
-                                            labels: vec![Label {
-                                                span: header.span,
-                                                parts: header.parts,
-                                            }],
-                                        },
-                                    };
-                                }
-                                Err(error) => {
-                                    tracker.user_error_at_row(
-                                        Some(ORIGIN),
-                                        row,
-                                        format!("Invalid label `{lbl}`: {error}"),
-                                    );
+                            if matches!(&expression.kind, ExpressionKind::Labeled { .. }) {
+                                tracker.user_error_at_row(
+                                    Some(ORIGIN),
+                                    row,
+                                    format!("Expression already has a label; multiple labels are not permitted"),
+                                );
+                            } else {
+                                match parse_label_header(lbl) {
+                                    Ok(header) => {
+                                        let span = expression.span;
+                                        expression = Expression {
+                                            span,
+                                            kind: ExpressionKind::Labeled {
+                                                expression: Box::new(expression),
+                                                label: Label {
+                                                    span: header.span,
+                                                    parts: header.parts,
+                                                },
+                                            },
+                                        };
+                                    }
+                                    Err(error) => {
+                                        tracker.user_error_at_row(
+                                            Some(ORIGIN),
+                                            row,
+                                            format!("Invalid label `{lbl}`: {error}"),
+                                        );
+                                    }
                                 }
                             }
                         }
@@ -1115,19 +1126,27 @@ pub(in crate::frontend::structural::parser) fn parse_required_declarations(
             } => match parse_refined_declaration_statement(text) {
                 Ok(mut statement) => {
                     if let Some(lbl) = entry_label {
-                        match parse_label_header(lbl) {
-                            Ok(header) => {
-                                statement.labels.push(Label {
-                                    span: header.span,
-                                    parts: header.parts,
-                                });
-                            }
-                            Err(error) => {
-                                tracker.user_error_at_row(
-                                    Some(ORIGIN),
-                                    row,
-                                    format!("Invalid label `{lbl}`: {error}"),
-                                );
+                        if statement.label.is_some() {
+                            tracker.user_error_at_row(
+                                Some(ORIGIN),
+                                row,
+                                format!("Declaration already has a label; multiple labels are not permitted"),
+                            );
+                        } else {
+                            match parse_label_header(lbl) {
+                                Ok(header) => {
+                                    statement.label = Some(Label {
+                                        span: header.span,
+                                        parts: header.parts,
+                                    });
+                                }
+                                Err(error) => {
+                                    tracker.user_error_at_row(
+                                        Some(ORIGIN),
+                                        row,
+                                        format!("Invalid label `{lbl}`: {error}"),
+                                    );
+                                }
                             }
                         }
                     }
@@ -1207,22 +1226,30 @@ fn parse_required_specify_items(
                 match parse_is_or_via_item(text) {
                     Ok(mut item) => {
                         if let Some(lbl) = entry_label {
-                            match parse_label_header(lbl) {
-                                Ok(header) => {
-                                    item = IsOrViaItem::Labeled {
-                                        labels: vec![Label {
-                                            span: header.span,
-                                            parts: header.parts,
-                                        }],
-                                        item: Box::new(item),
-                                    };
-                                }
-                                Err(error) => {
-                                    tracker.user_error_at_row(
-                                        Some(ORIGIN),
-                                        row,
-                                        format!("Invalid label `{lbl}`: {error}"),
-                                    );
+                            if matches!(&item, IsOrViaItem::Labeled { .. }) {
+                                tracker.user_error_at_row(
+                                    Some(ORIGIN),
+                                    row,
+                                    format!("Specification already has a label; multiple labels are not permitted"),
+                                );
+                            } else {
+                                match parse_label_header(lbl) {
+                                    Ok(header) => {
+                                        item = IsOrViaItem::Labeled {
+                                            label: Label {
+                                                span: header.span,
+                                                parts: header.parts,
+                                            },
+                                            item: Box::new(item),
+                                        };
+                                    }
+                                    Err(error) => {
+                                        tracker.user_error_at_row(
+                                            Some(ORIGIN),
+                                            row,
+                                            format!("Invalid label `{lbl}`: {error}"),
+                                        );
+                                    }
                                 }
                             }
                         }
@@ -2971,19 +2998,27 @@ pub(in crate::frontend::structural::parser) fn parse_example(
             } => {
                 if let Ok(mut statement) = parse_refined_declaration_statement(text) {
                     if let Some(lbl) = entry_label {
-                        match parse_label_header(lbl) {
-                            Ok(header) => {
-                                statement.labels.push(Label {
-                                    span: header.span,
-                                    parts: header.parts,
-                                });
-                            }
-                            Err(error) => {
-                                tracker.user_error_at_row(
-                                    Some(ORIGIN),
-                                    row,
-                                    format!("Invalid label `{lbl}`: {error}"),
-                                );
+                        if statement.label.is_some() {
+                            tracker.user_error_at_row(
+                                Some(ORIGIN),
+                                row,
+                                format!("Declaration already has a label; multiple labels are not permitted"),
+                            );
+                        } else {
+                            match parse_label_header(lbl) {
+                                Ok(header) => {
+                                    statement.label = Some(Label {
+                                        span: header.span,
+                                        parts: header.parts,
+                                    });
+                                }
+                                Err(error) => {
+                                    tracker.user_error_at_row(
+                                        Some(ORIGIN),
+                                        row,
+                                        format!("Invalid label `{lbl}`: {error}"),
+                                    );
+                                }
                             }
                         }
                     }
@@ -2992,26 +3027,34 @@ pub(in crate::frontend::structural::parser) fn parse_example(
                     match parse_expression(text) {
                         Ok(mut expression) => {
                             if let Some(lbl) = entry_label {
-                                match parse_label_header(lbl) {
-                                    Ok(header) => {
-                                        let span = expression.span;
-                                        expression = Expression {
-                                            span,
-                                            kind: ExpressionKind::Labeled {
-                                                expression: Box::new(expression),
-                                                labels: vec![Label {
-                                                    span: header.span,
-                                                    parts: header.parts,
-                                                }],
-                                            },
-                                        };
-                                    }
-                                    Err(error) => {
-                                        tracker.user_error_at_row(
-                                            Some(ORIGIN),
-                                            row,
-                                            format!("Invalid label `{lbl}`: {error}"),
-                                        );
+                                if matches!(&expression.kind, ExpressionKind::Labeled { .. }) {
+                                    tracker.user_error_at_row(
+                                        Some(ORIGIN),
+                                        row,
+                                        format!("Expression already has a label; multiple labels are not permitted"),
+                                    );
+                                } else {
+                                    match parse_label_header(lbl) {
+                                        Ok(header) => {
+                                            let span = expression.span;
+                                            expression = Expression {
+                                                span,
+                                                kind: ExpressionKind::Labeled {
+                                                    expression: Box::new(expression),
+                                                    label: Label {
+                                                        span: header.span,
+                                                        parts: header.parts,
+                                                    },
+                                                },
+                                            };
+                                        }
+                                        Err(error) => {
+                                            tracker.user_error_at_row(
+                                                Some(ORIGIN),
+                                                row,
+                                                format!("Invalid label `{lbl}`: {error}"),
+                                            );
+                                        }
                                     }
                                 }
                             }
@@ -5385,8 +5428,7 @@ Justification:
         let Clause::Declaration(statement) = &satisfies.arguments[0] else {
             panic!("expected labeled declaration clause");
         };
-        assert_eq!(statement.labels.len(), 1);
-        assert_eq!(statement.labels[0].parts, vec!["1".to_string()]);
+        assert_eq!(statement.label.as_ref().unwrap().parts, vec!["1".to_string()]);
     }
 
     #[test]
@@ -7471,16 +7513,15 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
             panic!("expected forAll clause");
         };
         let BindingOrSpec::Declaration(decl) = &for_all.for_all.arguments[0];
-        assert_eq!(decl.labels.len(), 1);
-        assert_eq!(decl.labels[0].parts, vec!["somelabel".to_string()]);
+        assert_eq!(decl.label.as_ref().unwrap().parts, vec!["somelabel".to_string()]);
 
         let Clause::Expression(expr) = &for_all.then.arguments[0] else {
             panic!("expected expression clause");
         };
-        let ExpressionKind::Labeled { labels, expression, .. } = &expr.kind else {
+        let ExpressionKind::Labeled { label, expression, .. } = &expr.kind else {
             panic!("expected labeled expression");
         };
-        assert_eq!(labels[0].parts, vec!["abc".to_string()]);
+        assert_eq!(label.parts, vec!["abc".to_string()]);
         assert!(matches!(
             expression.kind,
             ExpressionKind::InfixSpecStatement { .. }

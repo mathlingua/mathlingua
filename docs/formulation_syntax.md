@@ -166,17 +166,18 @@ and `Justification:`, `References:`, and prose refer to defined labels using `(:
 (:part(.part)*(, part(.part)*)*:)
 ```
 
-Each `part` uses the same identifier-like rule as ordinary non-stropped names,
-and comma-separated lists attach or reference multiple labels in one token (for example,
-`[:l1, l2:]` or `(:l1, l2:)`).
+Each `part` uses the same identifier-like rule as ordinary non-stropped names.
+Label definitions attach a single label (`[:label:]`), while label references in `Justification:`,
+`References:`, or prose may cite one or more labels (`(:label:)` or `(:l1, l2:)`).
 
 Important distinction:
 
 - formulation labels like `[:a.b:]` and label references `(:a.b:)` do not support stropped symbolic parts
 - structural label headers parsed by `parse_label_header` do support stropped symbolic name parts because they use the raw helper parser, not the lexer token
 
-One or more `[:...:]` labels may follow a parenthesized or dot-parenthesized
-expression, statement, or specification.
+At most one `[:...:]` label may follow a parenthesized or dot-parenthesized
+expression, statement, or specification. Chained labels (`[:a:][:b:]`) and multi-labels
+(`[:a, b:]`) are not permitted because a section of code can have at most one label.
 Declaration-shaped formulations retain the wrapper in their statement AST, while
 expression-shaped formulations use `ExpressionKind::Labeled`. Consequently the
 same syntax is valid at top level and wherever that formulation may be nested.
@@ -428,7 +429,6 @@ Examples:
 
 - `(x + y)[:sum:]`
 - `(. x + y .)[:normalized:]`
-- `(x + y)[:l1, l2:]`
 
 #### Function expressions
 
@@ -1120,7 +1120,7 @@ MagneticPlaceholder ::= IdentifierName "__"
 
 QuotedName ::= "\"" IdentifierName "\""
 LabelPath ::= IdentifierName ("." IdentifierName)*
-Label ::= "[:" LabelPath ("," LabelPath)* ":]"
+Label ::= "[:" LabelPath ":]"
 LabelReference ::= "(:" LabelPath ("," LabelPath)* ":)"
 
 NamedOperatorPath ::= NamedOperatorPart ("." NamedOperatorPart)*

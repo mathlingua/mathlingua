@@ -147,10 +147,7 @@ fn token_description(token: &Token) -> String {
         Token::BothSpecialOperator(operator)
         | Token::LeftSpecialOperator(operator)
         | Token::RightSpecialOperator(operator) => format!("operator `{operator}`"),
-        Token::Label(parts) => format!(
-            "label `[:{}:]`",
-            parts.iter().map(|p| p.join(".")).collect::<Vec<_>>().join(", ")
-        ),
+        Token::Label(parts) => format!("label `[:{}:]`", parts.join(".")),
         other => format!("`{}`", token_literal(other)),
     }
 }
@@ -1821,10 +1818,15 @@ pub fn parse_declaration_statement(
     allow_refined_type: bool,
 ) -> Result<DeclarationStatement, ParseError> {
     let input = input.trim();
-    if let Some((labels, inner)) = split_labeled_formulation(input) {
+    if let Some((label, inner)) = split_labeled_formulation(input)? {
         let mut statement = parse_declaration_statement(inner, allow_refined_type)?;
+        if statement.label.is_some() {
+            return Err(ParseError::custom(
+                "a declaration cannot have more than one label",
+            ));
+        }
         statement.span = span_all(input);
-        statement.labels.extend(labels);
+        statement.label = Some(label);
         return Ok(statement);
     }
     match parse_standard_declaration_statement(input, allow_refined_type) {
@@ -1866,7 +1868,7 @@ fn parse_standard_declaration_statement(
 
     Ok(DeclarationStatement {
         span: span_all(input),
-        labels: Vec::new(),
+        label: None,
         subject,
         expansion,
         definition,
@@ -1930,7 +1932,7 @@ fn parse_operator_pattern_definition(
 
     Some(Ok(DeclarationStatement {
         span: span_all(input),
-        labels: Vec::new(),
+        label: None,
         subject: IsSubject {
             span: operator.span,
             kind: IsSubjectKind::Operator(operator),
@@ -1941,70 +1943,51 @@ fn parse_operator_pattern_definition(
     }))
 }
 
-/// Splits a grouped declaration carrying a trailing label. Expressions handle
-fn parse_label_list(raw: &str, base_offset: usize) -> Option<Vec<Label>> {
-    let raw_trimmed = raw.trim();
-    if raw_trimmed.is_empty() {
-        return None;
-    }
-    let mut labels = Vec::new();
-    for item in raw.split(',') {
-        let trimmed = item.trim();
-        if trimmed.is_empty() {
-            return None;
-        }
-        let parts: Vec<String> = trimmed.split('.').map(str::to_owned).collect();
-        if parts.iter().any(|part| {
-            part.is_empty()
-                || !part
-                    .chars()
-                    .all(|ch| ch.is_ascii_alphanumeric() || ch == '_')
-        }) {
-            return None;
-        }
-        labels.push(Label {
-            span: Span::new(base_offset, base_offset + raw.len()),
-            parts,
-        });
-    }
-    if labels.is_empty() {
-        return None;
-    }
-    Some(labels)
-}
-
-/// Splits a grouped declaration carrying trailing labels (`[:...:]`).
+/// Splits a grouped declaration carrying a trailing label (`[:...:]`).
 /// Expressions handle this shape in the generated grammar, but declarations are parsed
 /// by the hand-written statement parser and therefore need the same wrapper handling
 /// before their inner `:=`, `is`, or specification relation is recognized.
-fn split_labeled_formulation(input: &str) -> Option<(Vec<Label>, &str)> {
-    let mut current = input.trim();
-    let mut label_groups = Vec::new();
-
-    while let Some(body) = current.strip_suffix(":]") {
-        let label_start = body.rfind("[:")?;
-        let label_content = &body[label_start + 2..];
-        let labels = parse_label_list(label_content, label_start + 2)?;
-        label_groups.push(labels);
-        current = body[..label_start].trim();
+fn split_labeled_formulation(input: &str) -> Result<Option<(Label, &str)>, ParseError> {
+    let current = input.trim();
+    let Some(body) = current.strip_suffix(":]") else {
+        return Ok(None);
+    };
+    let Some(label_start) = body.rfind("[:") else {
+        return Ok(None);
+    };
+    let label_content = body[label_start + 2..].trim();
+    if label_content.is_empty() {
+        return Ok(None);
     }
-
-    if label_groups.is_empty() {
-        return None;
+    if label_content.contains(',') {
+        return Err(ParseError::custom(
+            "multi-labels are not permitted; a declaration cannot have more than one label",
+        ));
     }
-    label_groups.reverse();
-    let labels: Vec<Label> = label_groups.into_iter().flatten().collect();
+    let rest = body[..label_start].trim();
+    if rest.ends_with(":]") || rest.ends_with(":)") {
+        return Err(ParseError::custom(
+            "chained labels are not permitted; a declaration cannot have more than one label",
+        ));
+    }
+    let parts = parse_dotted_parts(label_content)?;
+    let label = Label {
+        span: Span::new(label_start + 2, label_start + 2 + label_content.len()),
+        parts,
+    };
 
-    let inner = current
+    let inner = rest
         .strip_prefix("(.")
-        .and_then(|rest| rest.strip_suffix(".)"))
+        .and_then(|r| r.strip_suffix(".)"))
         .or_else(|| {
-            current
-                .strip_prefix('(')
-                .and_then(|rest| rest.strip_suffix(')'))
-        })?;
+            rest.strip_prefix('(')
+                .and_then(|r| r.strip_suffix(')'))
+        });
+    let Some(inner) = inner else {
+        return Ok(None);
+    };
 
-    Some((labels, inner.trim()))
+    Ok(Some((label, inner.trim())))
 }
 
 fn is_operator_definition_pattern(expression: &Expression) -> bool {
@@ -6397,23 +6380,15 @@ mod tests {
             parse_expression("(x + 1)[:some.label:]").expect("expected labeled expression");
 
         match expression.kind {
-            ExpressionKind::Labeled { labels, .. } => {
-                assert_eq!(labels.len(), 1);
-                assert_eq!(labels[0].parts, vec!["some".to_string(), "label".to_string()]);
+            ExpressionKind::Labeled { label, .. } => {
+                assert_eq!(label.parts, vec!["some".to_string(), "label".to_string()]);
             }
             other => panic!("expected labeled expression, got {other:?}"),
         }
 
-        // Multiple comma-separated labels
-        let multi = parse_expression("(x + 1)[:l1, l2:]").expect("expected multi-label expression");
-        match multi.kind {
-            ExpressionKind::Labeled { labels, .. } => {
-                assert_eq!(labels.len(), 2);
-                assert_eq!(labels[0].parts, vec!["l1".to_string()]);
-                assert_eq!(labels[1].parts, vec!["l2".to_string()]);
-            }
-            other => panic!("expected multi-label expression, got {other:?}"),
-        }
+        // Chained labels and multi-labels are rejected
+        assert!(parse_expression("(x + 1)[:l1, l2:]").is_err());
+        assert!(parse_expression("(x + 1)[:l1:][:l2:]").is_err());
 
         // Reference syntax `(:...:)` is not valid as a trailing expression label
         assert!(parse_expression("(x + 1)(:2:)").is_err());
@@ -6429,23 +6404,19 @@ mod tests {
     fn parses_labeled_declarations_and_specifications() {
         let statement = parse_ordinary_declaration_statement("(.*' := `*`.)[:1:]")
             .expect("expected labeled operator definition");
-        assert_eq!(statement.labels.len(), 1);
-        assert_eq!(statement.labels[0].parts, vec!["1".to_string()]);
+        assert_eq!(statement.label.as_ref().unwrap().parts, vec!["1".to_string()]);
 
-        let multi = parse_ordinary_declaration_statement("(.x := 1.)[:1, 2:]")
-            .expect("expected multi-label declaration");
-        assert_eq!(multi.labels.len(), 2);
-        assert_eq!(multi.labels[0].parts, vec!["1".to_string()]);
-        assert_eq!(multi.labels[1].parts, vec!["2".to_string()]);
+        // Multi-labels with commas are rejected
+        assert!(parse_ordinary_declaration_statement("(.x := 1.)[:1, 2:]").is_err());
+
+        // Chained labels are rejected
+        assert!(parse_ordinary_declaration_statement("(.x := 1.)[:1:][:2:]").is_err());
 
         // Reference syntax `(:...:)` is not valid on a declaration
         assert!(parse_ordinary_declaration_statement("(.x := 1.)(:2:)").is_err());
 
-        let nested = parse_ordinary_declaration_statement("((.x is \\set.)[:inner:])[:outer:]")
-            .expect("expected nested labeled specification");
-        assert_eq!(nested.labels.len(), 2);
-        assert_eq!(nested.labels[0].parts, vec!["inner".to_string()]);
-        assert_eq!(nested.labels[1].parts, vec!["outer".to_string()]);
+        // Nested labeled declarations are rejected because code cannot have more than one label
+        assert!(parse_ordinary_declaration_statement("((.x is \\set.)[:inner:])[:outer:]").is_err());
     }
 
     #[test]

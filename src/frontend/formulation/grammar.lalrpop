@@ -25,7 +25,7 @@ extern {
         "right_named_operator" => Token::RightNamedOperator(<String>),
         "prefix_named_operator" => Token::PrefixNamedOperator(<String>),
         "postfix_named_operator" => Token::PostfixNamedOperator(<String>),
-        "label" => Token::Label(<Vec<Vec<String>>>),
+        "label" => Token::Label(<Vec<String>>),
         "::=" => Token::Introduce,
         ":=" => Token::Declare,
         ":+:" => Token::BothPlus,
@@ -123,11 +123,11 @@ MagneticPlaceholderName: String = {
     <name:"magnetic_placeholder"> => name,
 };
 
-LabelTokens: Vec<ast::Label> = {
-    <l:@L> <labels:"label"> <r:@R> => labels.into_iter().map(|parts| ast::Label {
+LabelToken: ast::Label = {
+    <l:@L> <parts:"label"> <r:@R> => ast::Label {
         span: Span::new(l, r),
         parts,
-    }).collect(),
+    },
 };
 
 AnyOperator: ast::Operator = {
@@ -562,11 +562,11 @@ GroupedExpression: ast::Expression = {
 };
 
 LabeledExpression: ast::Expression = {
-    <l:@L> <expression:GroupedExpression> <labels:LabelTokens+> <r:@R> => ast::Expression::new(
+    <l:@L> <expression:GroupedExpression> <label:LabelToken> <r:@R> => ast::Expression::new(
         Span::new(l, r),
         ExpressionKind::Labeled {
             expression: Box::new(expression),
-            labels: labels.into_iter().flatten().collect(),
+            label,
         },
     ),
 };

@@ -249,7 +249,7 @@ The structural AST uses:
 
 Quoted text sections are converted to typed wrappers:
 
-- `OpenText`: General prose text. May embed inline formulations (`{. ... .}`), display formulations (`{{. ... .}}`), theorem-like references (`{: \name :}`) exclusively for axioms, conjectures, or theorems, labeled prose quotes (`''quoted text''[:label:]` or `''quoted text''[:l1, l2:]`), and label references (`(:label:)` or `(:l1, l2:)`).
+- `OpenText`: General prose text. May embed inline formulations (`{. ... .}`), display formulations (`{{. ... .}}`), theorem-like references (`{: \name :}`) exclusively for axioms, conjectures, or theorems, labeled prose quotes (`''quoted text''[:label:]`), and label references (`(:label:)` or `(:l1, l2:)`).
 - `WrittenText`
 - `CalledText`
 - `WritingText`
@@ -562,8 +562,7 @@ IsOrViaItemUnion ::=
     | LabeledIsOrViaItem
 
 LabeledIsOrViaItem ::=
-    | Grouped(IsOrViaItemUnion) Label+ ReferenceLabel*
-    | Grouped(IsOrViaItemUnion) ReferenceLabel+
+    | Grouped(IsOrViaItemUnion) Label
 ```
 
 ```union

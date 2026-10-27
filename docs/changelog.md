@@ -44,11 +44,11 @@ expression types when available.
     cannot carry `[label]: ` prefixes (`Inline section arguments cannot have
     labels`).
   - **Inline formulation labels (`[:label:]`)**: Grouped formulations (`(...)` or
-    `(. ... .)`) accept `[:label:]`, comma-separated `[:l1, l2:]`, or multiple
-    consecutive `[:l1:][:l2:]` suffixes.
+    `(. ... .)`) accept a single `[:label:]` suffix. A section of code cannot have
+    more than one label, so chained labels (`[:a:][:b:]`) and multi-labels
+    (`[:a, b:]`) are not permitted.
   - **Labeled prose quotes (`''quoted text''[:label:]`)**: Quoted prose
-    (`OpenText`) supports `''quoted text''[:label:]` and comma-separated
-    `''quoted text''[:l1, l2:]`.
+    (`OpenText`) supports a single label `''quoted text''[:label:]`.
 - **Referencing labels (`(:label:)`)**:
   - **`Justification:`**: Each `Justification:` item is a `for:`/`have:` group
     starting with `for: (:label:)` (accepting one or more label references),

@@ -1,0 +1,18 @@
+== begin:description ==
+Accepts because section mixing clause groups and quoted text.
+== end:description ==
+== begin:input ==
+Theorem:
+given: x is \\statement
+then:
+. have: x
+  because:
+  . forAll: y is \\statement
+    then: y
+  . "some text"
+  . exists: z is \\statement
+    suchThat: z
+  . "some more text"
+== end:input ==
+== begin:output ==
+== end:output ==

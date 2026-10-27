@@ -307,8 +307,8 @@ arguments_section!(ThenSection, Clause);
 arguments_section!(IffSection, Clause);
 arguments_section!(HaveSection, Clause);
 arguments_section!(AssertingSection, Clause);
-arguments_section!(RationaleSection, RationaleItem);
 arguments_section!(HaveBySection, Expression);
+arguments_section!(BecauseSection, BecauseItem);
 argument_section!(AliasSection, AliasKind);
 arguments_section!(WrittenSection, WrittenText);
 argument_section!(CapabilitySection, AliasKind);
@@ -435,9 +435,9 @@ pub enum ExampleItem {
     Text(OpenText),
 }
 
-/// One entry in a `rationale:` section.
+/// One entry in a `because:` section.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum RationaleItem {
+pub enum BecauseItem {
     Clause(Clause),
     Text(OpenText),
 }
@@ -997,10 +997,10 @@ pub struct IffGroup {
     pub then: ThenSection,
 }
 
-/// A `have:`/`asserting:`/`rationale?:`/`by?:` group: an escape hatch that states an
+/// A `have:`/`asserting:`/`by?:`/`because?:` group: an escape hatch that states an
 /// item (`have:`), optional facts (`asserting:`) it may take as true to establish
-/// it, and optional justification (`rationale?:` clauses or text, `by?:` theorem
-/// references) that the checker only well-forms rather than proves.
+/// it, and optional justification (`by?:` theorem references, `because?:` clauses
+/// or text) that the checker only well-forms rather than proves.
 /// When used in a `Justification:` section, `for_:` specifies the label references
 /// (`(:abc:)`) that this entry justifies.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -1009,8 +1009,8 @@ pub struct HaveGroup {
     pub for_: Option<ForSection>,
     pub have: HaveSection,
     pub asserting: Option<AssertingSection>,
-    pub rationale: Option<RationaleSection>,
     pub by: Option<HaveBySection>,
+    pub because: Option<BecauseSection>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

@@ -94,15 +94,15 @@ Id: "85a7e92b-f346-4d3c-b618-b64c9b683d71"
 
 
 -- A `have:`/`asserting:` group is the escape hatch: it asserts the `have:`
--- items hold given the `asserting:` items. `rationale:` and `by:` record
+-- items hold given the `asserting:` items. `by:` and `because:` record
 -- justification the checker only reference-checks.
 Theorem:
 given: n is \natural
 then:
 . have: n = n
   asserting: n = n
-  rationale: n = n
   by: \membership.axiom
+  because: n = n
 Documented:
 . called: "an asserted step"
 Id: "9539b3b1-6b22-4a24-8fd2-84f87f9f8f5d"

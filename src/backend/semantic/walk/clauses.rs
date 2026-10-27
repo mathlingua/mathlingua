@@ -1,7 +1,7 @@
 use super::*;
 
 /// Walks every clause and reference inside a `have:` group so that command
-/// references in `have:`, optional `asserting:`, `because:`, and `by:` sections
+/// references in `have:`, optional `asserting:`, `by:`, and `because:` sections
 /// are reference-validated.
 pub(in crate::backend::semantic) fn walk_have_group(
     group: &HaveGroup,
@@ -15,16 +15,16 @@ pub(in crate::backend::semantic) fn walk_have_group(
             walk_clause(clause, visit);
         }
     }
-    if let Some(section) = &group.rationale {
-        for item in &section.arguments {
-            if let RationaleItem::Clause(clause) = item {
-                walk_clause(clause, visit);
-            }
-        }
-    }
     if let Some(section) = &group.by {
         for expression in &section.arguments {
             walk_expression(expression, visit);
+        }
+    }
+    if let Some(section) = &group.because {
+        for item in &section.arguments {
+            if let BecauseItem::Clause(clause) = item {
+                walk_clause(clause, visit);
+            }
         }
     }
 }

@@ -6689,8 +6689,8 @@ Documented:
     specifies:
     . have: t is \wrap:of{P}:in{Q}
       asserting: P \:subset?:/ Q
-      rationale: P is? \set
       by: \pair.thm#given{P := P; Q := Q}
+      because: P is? \set
     Documented:
     . called: "thing"
     "#,
@@ -6735,13 +6735,13 @@ Documented:
     Justification:
     . for: (:known:)
       have: x is \set
-      rationale: x is? \set
+      because: x is? \set
 
     Theorem:
     given: x is \set
     then:
     . have: x is? \set
-      rationale: x is? \set
+      because: x is? \set
     "#,
         )
         .unwrap();

@@ -827,29 +827,29 @@ pub(in crate::frontend::structural::parser) fn parse_optional_clauses(
     result.into()
 }
 
-/// Parses one or more required rationale items (clauses or quoted text) from a section.
-pub(in crate::frontend::structural::parser) fn parse_required_rationale_items(
+/// Parses one or more required because items (clauses or quoted text) from a section.
+pub(in crate::frontend::structural::parser) fn parse_required_because_items(
     section: &ProtoSection,
     tracker: &mut EventLog,
-) -> Option<OneOrMore<RationaleItem>> {
+) -> Option<OneOrMore<BecauseItem>> {
     let starting_issue_count = tracker.issue_count();
-    let items = parse_optional_rationale_items(Some(section), tracker);
+    let items = parse_optional_because_items(Some(section), tracker);
     one_or_more(items, || {
         if tracker.issue_count() == starting_issue_count {
             tracker.user_error_at_row(
                 Some(ORIGIN),
                 section.metadata.row,
-                "Expected clauses or text in `rationale`",
+                "Expected clauses or text in `because`",
             );
         }
     })
 }
 
-/// Parses zero or more rationale items from an optional section.
-pub(in crate::frontend::structural::parser) fn parse_optional_rationale_items(
+/// Parses zero or more because items from an optional section.
+pub(in crate::frontend::structural::parser) fn parse_optional_because_items(
     section: Option<&ProtoSection>,
     tracker: &mut EventLog,
-) -> ZeroOrMore<RationaleItem> {
+) -> ZeroOrMore<BecauseItem> {
     let Some(section) = section else {
         return ZeroOrMore::default();
     };
@@ -859,25 +859,25 @@ pub(in crate::frontend::structural::parser) fn parse_optional_rationale_items(
         match entry {
             SectionEntry::Inline { text, row } => {
                 if let Some(value) = strip_quoted_text(text) {
-                    result.push(RationaleItem::Text(OpenText(value)));
+                    result.push(BecauseItem::Text(OpenText(value)));
                 } else if let Ok(statement) = parse_refined_declaration_statement(text) {
-                    result.push(RationaleItem::Clause(Clause::Declaration(statement)));
+                    result.push(BecauseItem::Clause(Clause::Declaration(statement)));
                 } else {
                     match parse_expression(text) {
                         Ok(expression) => {
-                            result.push(RationaleItem::Clause(Clause::Expression(expression)))
+                            result.push(BecauseItem::Clause(Clause::Expression(expression)))
                         }
                         Err(expression_error) => tracker.user_error_at_row(
                             Some(ORIGIN),
                             row,
-                            format!("Invalid rationale item in `rationale`: {expression_error}"),
+                            format!("Invalid because item in `because`: {expression_error}"),
                         ),
                     }
                 }
             }
             SectionEntry::Text { text, .. } => {
                 let value = strip_quoted_text(text).unwrap_or_else(|| text.to_owned());
-                result.push(RationaleItem::Text(OpenText(value)));
+                result.push(BecauseItem::Text(OpenText(value)));
             }
             SectionEntry::Formulation {
                 text,
@@ -910,7 +910,7 @@ pub(in crate::frontend::structural::parser) fn parse_optional_rationale_items(
                             }
                         }
                     }
-                    result.push(RationaleItem::Clause(Clause::Declaration(statement)));
+                    result.push(BecauseItem::Clause(Clause::Declaration(statement)));
                     continue;
                 }
 
@@ -948,18 +948,18 @@ pub(in crate::frontend::structural::parser) fn parse_optional_rationale_items(
                                 }
                             }
                         }
-                        result.push(RationaleItem::Clause(Clause::Expression(expression)));
+                        result.push(BecauseItem::Clause(Clause::Expression(expression)));
                     }
                     Err(expression_error) => tracker.user_error_at_row(
                         Some(ORIGIN),
                         row,
-                        format!("Invalid rationale item in `rationale`: {expression_error}"),
+                        format!("Invalid because item in `because`: {expression_error}"),
                     ),
                 }
             }
             SectionEntry::Group { group, .. } => {
                 if let Some(clause) = parse_clause_group(group, tracker) {
-                    result.push(RationaleItem::Clause(clause));
+                    result.push(BecauseItem::Clause(clause));
                 }
             }
         }
@@ -1908,7 +1908,7 @@ fn parse_have_or_assertion(group: &ProtoGroup, tracker: &mut EventLog) -> Option
     let has_assertion_section = group
         .sections
         .iter()
-        .any(|section| matches!(section.label.as_str(), "asserting" | "rationale" | "by"));
+        .any(|section| matches!(section.label.as_str(), "asserting" | "by" | "because"));
     let has_iff = group.sections.iter().any(|section| section.label == "iff");
     if has_assertion_section || !has_iff {
         parse_have_group(group, tracker).map(|group| Clause::Have(Box::new(group)))
@@ -1917,14 +1917,14 @@ fn parse_have_or_assertion(group: &ProtoGroup, tracker: &mut EventLog) -> Option
     }
 }
 
-/// Parses a `have:`/`asserting:`/`rationale?:`/`by?:` group.
+/// Parses a `have:`/`asserting:`/`by?:`/`because?:` group.
 pub(super) fn parse_have_group(group: &ProtoGroup, tracker: &mut EventLog) -> Option<HaveGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections(
         "have",
         &group.sections,
         tracker,
-        &["have", "asserting?", "rationale?", "by?"],
+        &["have", "asserting?", "by?", "because?"],
     )?;
     Some(HaveGroup {
         heading,
@@ -1936,18 +1936,18 @@ pub(super) fn parse_have_group(group: &ProtoGroup, tracker: &mut EventLog) -> Op
             parse_required_clauses(section, "asserting", tracker)
                 .map(|arguments| AssertingSection { arguments })
         }),
-        rationale: sections.get("rationale").copied().and_then(|section| {
-            parse_required_rationale_items(section, tracker)
-                .map(|arguments| RationaleSection { arguments })
-        }),
         by: sections.get("by").copied().and_then(|section| {
             parse_required_formulations(section, "by", tracker, parse_expression)
                 .map(|arguments| HaveBySection { arguments })
         }),
+        because: sections.get("because").copied().and_then(|section| {
+            parse_required_because_items(section, tracker)
+                .map(|arguments| BecauseSection { arguments })
+        }),
     })
 }
 
-/// Parses a `for:`/`have:`/`asserting?:`/`rationale?:`/`by?:` group inside `Justification:`.
+/// Parses a `for:`/`have:`/`asserting?:`/`by?:`/`because?:` group inside `Justification:`.
 pub(super) fn parse_justification_have_group(
     group: &ProtoGroup,
     tracker: &mut EventLog,
@@ -1957,7 +1957,7 @@ pub(super) fn parse_justification_have_group(
         "Justification",
         &group.sections,
         tracker,
-        &["for?", "have", "asserting?", "rationale?", "by?"],
+        &["for?", "have", "asserting?", "by?", "because?"],
     )?;
     Some(HaveGroup {
         heading,
@@ -1976,13 +1976,13 @@ pub(super) fn parse_justification_have_group(
             parse_required_clauses(section, "asserting", tracker)
                 .map(|arguments| AssertingSection { arguments })
         }),
-        rationale: sections.get("rationale").copied().and_then(|section| {
-            parse_required_rationale_items(section, tracker)
-                .map(|arguments| RationaleSection { arguments })
-        }),
         by: sections.get("by").copied().and_then(|section| {
             parse_required_formulations(section, "by", tracker, parse_expression)
                 .map(|arguments| HaveBySection { arguments })
+        }),
+        because: sections.get("because").copied().and_then(|section| {
+            parse_required_because_items(section, tracker)
+                .map(|arguments| BecauseSection { arguments })
         }),
     })
 }
@@ -4965,9 +4965,9 @@ mod tests {
     };
     use crate::frontend::structural::ast::{
         AliasItem, AliasKind, BindingOrSpec, Clause, DeclaresTarget, Document, DocumentedItem,
-        EnablesItem, ExampleItem, MetadataItem, RationaleItem, ReferenceItem, RelationEndpoints,
+        EnablesItem, ExampleItem, MetadataItem, ReferenceItem, RelationEndpoints,
         RelationSpecifies, RelationSubject, RequiresItem, ResourceItem, SpecifyItem, TextItemKind,
-        TopLevelItem,
+        TopLevelItem, BecauseItem,
     };
 
     fn split_test_chunks(text: &str) -> Vec<String> {
@@ -7696,7 +7696,7 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
     }
 
     #[test]
-    fn parses_justification_with_rationale_text_and_clauses() {
+    fn parses_justification_with_because_text_and_clauses() {
         let document = parse_ok(
             r#"
 [\pair]
@@ -7706,10 +7706,10 @@ Documented:
 Justification:
 . for: (:step:)
   have: x = x
-  rationale:
+  by: \some.thm
+  because:
   . "by reflexivity"
   . x = x
-  by: \some.thm
 "#,
         );
 
@@ -7719,11 +7719,11 @@ Justification:
         let just = group.justification.as_ref().expect("expected justification");
         let entry = &just.arguments[0];
         assert!(entry.for_.is_some());
-        let rationale = entry.rationale.as_ref().expect("expected rationale");
-        assert_eq!(rationale.arguments.len(), 2);
-        assert!(matches!(&rationale.arguments[0], RationaleItem::Text(text) if text.0 == "by reflexivity"));
-        assert!(matches!(&rationale.arguments[1], RationaleItem::Clause(_)));
         assert!(entry.by.is_some());
+        let because = entry.because.as_ref().expect("expected because");
+        assert_eq!(because.arguments.len(), 2);
+        assert!(matches!(&because.arguments[0], BecauseItem::Text(text) if text.0 == "by reflexivity"));
+        assert!(matches!(&because.arguments[1], BecauseItem::Clause(_)));
     }
 
     #[test]
@@ -7737,8 +7737,8 @@ Documented:
 Justification:
 . [step]
   have: x = x
-  rationale: "by assumption"
   by: \some.thm
+  because: "by assumption"
 "#,
         );
 
@@ -7749,9 +7749,43 @@ Justification:
         let entry = &just.arguments[0];
         assert!(entry.for_.is_none());
         assert_eq!(entry.heading.as_ref().unwrap().parts, vec!["step".to_string()]);
-        let rationale = entry.rationale.as_ref().expect("expected rationale");
-        assert_eq!(rationale.arguments.len(), 1);
-        assert!(matches!(&rationale.arguments[0], RationaleItem::Text(text) if text.0 == "by assumption"));
         assert!(entry.by.is_some());
+        let because = entry.because.as_ref().expect("expected because");
+        assert_eq!(because.arguments.len(), 1);
+        assert!(matches!(&because.arguments[0], BecauseItem::Text(text) if text.0 == "by assumption"));
+    }
+
+    #[test]
+    fn parses_because_with_mixed_clause_groups_and_text() {
+        let document = parse_ok(
+            r#"
+Theorem:
+given: x is \natural
+then:
+. have: x = x
+  by: \some.thm
+  because:
+  . forAll: y is \natural
+    then: y = y
+  . "some text"
+  . exists: z is \natural
+    suchThat: z = z
+  . "some more text"
+"#,
+        );
+
+        let TopLevelItem::Theorem(group) = &document.items[0] else {
+            panic!("expected theorem group");
+        };
+        let Clause::Have(have_group) = &group.then.arguments[0] else {
+            panic!("expected have clause");
+        };
+        assert!(have_group.by.is_some());
+        let because = have_group.because.as_ref().expect("expected because");
+        assert_eq!(because.arguments.len(), 4);
+        assert!(matches!(&because.arguments[0], BecauseItem::Clause(Clause::ForAll(_))));
+        assert!(matches!(&because.arguments[1], BecauseItem::Text(text) if text.0 == "some text"));
+        assert!(matches!(&because.arguments[2], BecauseItem::Clause(Clause::Exists(_))));
+        assert!(matches!(&because.arguments[3], BecauseItem::Text(text) if text.0 == "some more text"));
     }
 }

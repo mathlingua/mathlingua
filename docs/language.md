@@ -1239,7 +1239,7 @@ the construct supports.
 `Justification:` (placed after `Documented:`) accepts `for:`/`have:` or `[label]`-headed
 `have:` groups, each targeting a labeled formulation (either via a `for:` section
 specifying one or more label references `(:label:)` or a `[label]` group heading)
-and an optional `asserting:`, `rationale:`, or `by:` section. The `rationale:` section
+and an optional `asserting:`, `by:`, or `because:` section. The `because:` section
 accepts text `"..."` or clauses. Any
 group (`[label]`), single-line `. ` argument (`. [label]: ...`), or grouped
 expression, statement, or specification (`(...)[:label:]` or `(. ... .)[:label:]`)

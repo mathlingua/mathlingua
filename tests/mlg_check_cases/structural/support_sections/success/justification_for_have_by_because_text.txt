@@ -1,5 +1,5 @@
 == begin:description ==
-Accepts a for:have:by: Justification entry with rationale text.
+Accepts a for:have:by: Justification entry with because text.
 == end:description ==
 == begin:input ==
 [\thm]
@@ -18,8 +18,8 @@ Documented:
 Justification:
 . for: (:second:)
   have: B is \\anything
-  rationale: "by construction"
   by: \thm
+  because: "by construction"
 == end:input ==
 == begin:output ==
 == end:output ==

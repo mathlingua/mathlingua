@@ -372,14 +372,14 @@ Used inside `Documented:`.
 ### Justification items
 
 Used inside `Justification:` (which appears after `Documented:`). Each item is a
-`HaveGroup` — a `for?:`/`have:`/`asserting?:`/`rationale?:`/`by?:` group targeting
+`HaveGroup` — a `for?:`/`have:`/`asserting?:`/`by?:`/`because?:` group targeting
 one or more label references via `for: (:label:)` or a `[label]` group heading. Any
 group (`[label]`), single-line `. ` argument (`. [label]: ...`), or grouped
 expression, statement, or specification (`(...)[:label:]` or `(. ... .)[:label:]`)
 elsewhere in the item may carry the matching label. It is established using that
 entry's `have:` and any `asserting:` items; the entry's `have:` must restate the
 labeled formulation, and every entry must reference a label defined in the item.
-The `rationale:` section accepts text (`"..."`) or clauses.
+The `because:` section accepts text (`"..."`) or clauses.
 
 ### Metadata items
 
@@ -455,7 +455,7 @@ If a clause section contains:
 - **`forAll`** — `ForAllGroup`, heading: label?. Sections: `forAll: BindingOrSpec`, `where?: Clause+`, `then: Clause+`
 - **`let`** — `LetGroup`, heading: label?. Sections: `let: BindingOrSpec`, `where?: Clause+`, `then: Clause+`
 - **`if`** — `IfGroup`, heading: label?. Sections: `if: Clause+`, `then: Clause+`
-- **`have`** — `IffGroup`, heading: label?. Sections: `have: Clause+`, `iff: Clause+`. A `have:` group without `iff:` is instead a `HaveGroup` (`Clause::Have`): `have: Clause+`, `asserting?: Clause+`, `rationale?: RationaleItem+`, `by?: Expression+` — an escape hatch that checks the `have:` item using the surrounding facts plus any `asserting:` items (also accepted as a `specifies:` item). `rationale:` (accepting text or clauses) and `by:` are justification the checker only reference-validates, never proves.
+- **`have`** — `IffGroup`, heading: label?. Sections: `have: Clause+`, `iff: Clause+`. A `have:` group without `iff:` is instead a `HaveGroup` (`Clause::Have`): `have: Clause+`, `asserting?: Clause+`, `by?: Expression+`, `because?: BecauseItem+` — an escape hatch that checks the `have:` item using the surrounding facts plus any `asserting:` items (also accepted as a `specifies:` item). `by:` and `because:` (accepting text or clauses) are justification the checker only reference-validates, never proves.
 - **`piecewise`** — `PiecewiseGroup`, heading: label?. Sections: `piecewise:`, `if: Clause+`, `then: Clause+`, `(elseIf: Clause+ then: Clause+)*`, `else?: Clause+`
 - **`equivalently`** — `EquivalentlyGroup`, heading: label?. Sections: `equivalently: Clause+`
 
@@ -1149,8 +1149,8 @@ notes: <OpenText>+
 [LabelHeader]?
 have: <ClauseUnion>+
 asserting?: <ClauseUnion>+
-rationale?: <RationaleItemUnion>+
 by?: <Expression>+
+because?: <BecauseItemUnion>+
 ```
 
 ```group
@@ -1307,8 +1307,8 @@ iff: <ClauseUnion>+
 [LabelHeader]?
 have: <ClauseUnion>+
 asserting?: <ClauseUnion>+
-rationale?: <RationaleItemUnion>+
 by?: <Expression>+
+because?: <BecauseItemUnion>+
 ```
 
 ```group

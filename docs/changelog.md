@@ -5,17 +5,17 @@ and CLI behavior implemented in this repository. It is intentionally rule-focuse
 each section captures not only the feature, but also the conditions under which
 the feature is valid.
 
-## Rename `because:` to `rationale:` Supporting Prose Text And Clauses
+## Support Prose Text And Clauses In `because:` And Order `by:` Before `because:`
 
-- **Renamed to `rationale:`**: The optional `because:` section of `HaveGroup`
-  (used in `have:` escape hatches, clause groups, and `Justification:` entries) has
-  been renamed to `rationale:`.
-- **Text `"..."` and Clause Support**: `rationale:` now accepts quoted prose
-  strings (`OpenText`), clauses (statements, expressions, and nested clause
+- **Text `"..."` and Clause Support in `because:`**: The optional `because:` section of `HaveGroup`
+  (used in `have:` escape hatches, clause groups, and `Justification:` entries) now accepts
+  quoted prose strings (`OpenText`), clauses (statements, expressions, and nested clause
   groups), or a mixture of both.
+- **Section Ordering**: `by:` precedes `because:` in `HaveGroup` (`have: asserting?: by?: because?:`),
+  reflecting `by: \thm` followed by `because: ...` justification.
 - **`Justification:` Shapes**: `Justification:` entries support both `for:have:by:`
   (with `for: (:label:)`) and `have:by:` (with a `[label]` group heading), each with
-  an optional `rationale:` section.
+  optional `asserting:`, `by:`, and `because:` sections.
 
 ## Viewer Settings Toolbar, Euler Typography Mode, And Live Hover Previews
 

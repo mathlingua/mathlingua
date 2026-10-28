@@ -11,7 +11,7 @@
 .item {
   display: grid;
   grid-template-columns: 0.5rem minmax(0, 1fr);
-  align-items: center;
+  align-items: start;
   gap: 0.26rem;
 }
 
@@ -25,12 +25,15 @@
   font-size: calc(0.8rem * var(--viewer-font-scale, 1));
   line-height: 1;
   justify-self: start;
-  align-self: center;
+  align-self: start;
+  display: flex;
+  align-items: center;
+  height: calc(1.42rem * var(--viewer-font-scale, 1));
+  width: 0.5rem;
 }
 
 .itemGroup::before {
   align-self: start;
-  transform: translateY(0.28rem);
 }
 
 .formulationLine {

@@ -2,6 +2,7 @@
 
 .inline {
   white-space: pre-wrap;
+  font-size: calc(1.04rem * var(--viewer-font-scale, 1));
 }
 
 .placeholder {
@@ -63,6 +64,6 @@
 .command {
   color: var(--muted-strong);
   font-family: var(--font-mono);
-  font-size: 0.86em;
+  font-size: 1em;
   line-height: 1.35;
 }

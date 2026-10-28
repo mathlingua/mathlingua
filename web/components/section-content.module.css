@@ -27,7 +27,7 @@
   color: var(--ink);
   white-space: normal;
   font-family: var(--font-body);
-  font-size: calc(1rem * var(--viewer-font-scale, 1));
+  font-size: calc(1.04rem * var(--viewer-font-scale, 1));
   line-height: 1.35;
 }
 

@@ -109,8 +109,8 @@
 .markdown pre code {
   padding: 0;
   background: transparent;
-  font-size: calc(0.9rem * var(--viewer-font-scale, 1));
-  line-height: 1.5;
+  font-size: calc(1rem * var(--viewer-font-scale, 1));
+  line-height: 1.55;
 }
 
 .markdownMlgCode {
@@ -124,7 +124,7 @@
   border: var(--card-border-width) solid var(--line);
   border-radius: var(--radius-code-block);
   background: var(--card-bg);
-  font-size: calc(0.78rem * var(--viewer-font-scale, 1));
+  font-size: calc(1rem * var(--viewer-font-scale, 1));
   line-height: 1.55;
 }
 
@@ -144,7 +144,7 @@
 
 @media (max-width: 520px) {
   .markdownMlgCode {
-    font-size: calc(0.72rem * var(--viewer-font-scale, 1));
+    font-size: calc(0.95rem * var(--viewer-font-scale, 1));
   }
 }
 

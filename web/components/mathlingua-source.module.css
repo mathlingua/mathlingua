@@ -13,7 +13,7 @@
   background: transparent;
   color: var(--ink);
   font-family: var(--font-mono);
-  font-size: calc(0.9rem * var(--viewer-font-scale, 1));
+  font-size: calc(1rem * var(--viewer-font-scale, 1));
   line-height: 1.55;
   tab-size: 2;
   white-space: pre;
@@ -91,6 +91,6 @@
   .source {
     max-height: min(30rem, 64vh);
     padding-right: 2rem;
-    font-size: calc(0.72rem * var(--viewer-font-scale, 1));
+    font-size: calc(0.95rem * var(--viewer-font-scale, 1));
   }
 }

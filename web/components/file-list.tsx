@@ -33,6 +33,8 @@ interface FileListProps {
   directories: DirectoryView[];
   /** Renderable files in the collection. */
   files: FileView[];
+  /** True while the overall collection manifest or view data is being loaded. */
+  isCollectionLoading?: boolean;
   /** True while the selected static-export page payload is being loaded. */
   isSelectedFileLoading?: boolean;
   /** Static-export page load error for the selected file, if one occurred. */
@@ -71,6 +73,7 @@ export function FileList({
   definitionItemIds,
   directories,
   files,
+  isCollectionLoading = false,
   isSelectedFileLoading = false,
   loadError,
   loadedDefinitions,
@@ -92,6 +95,67 @@ export function FileList({
   const definitionIndex = useMemo(() => buildDefinitionIndex(files), [files]);
 
   if (files.length === 0) {
+    if (loadError) {
+      return (
+        <section className={styles.emptyState}>
+          <h2>Failed to load collection</h2>
+          <p>{loadError}</p>
+        </section>
+      );
+    }
+
+    if (isCollectionLoading) {
+      return (
+        <div
+          className={
+            outlineState === "closed"
+              ? `${styles.readerLayout} ${styles.outlineClosed}`
+              : outlineState === "open"
+                ? `${styles.readerLayout} ${styles.outlineOpen}`
+                : styles.readerLayout
+          }
+        >
+          <aside
+            aria-hidden="true"
+            aria-label="Table of contents"
+            className={styles.outlinePanel}
+            id="outline"
+          >
+            <div className={styles.outlineHeader}>
+              <span
+                className={`${styles.skeletonLine} ${styles.skeletonLineTitle}`}
+                style={{ width: "55%" }}
+              />
+            </div>
+            <div className={styles.outlineSkeletonList}>
+              <span
+                className={`${styles.skeletonLine} ${styles.skeletonLineLong}`}
+              />
+              <span
+                className={`${styles.skeletonLine} ${styles.skeletonLineMedium}`}
+              />
+              <span
+                className={`${styles.skeletonLine} ${styles.skeletonLineLong}`}
+              />
+              <span
+                className={`${styles.skeletonLine} ${styles.skeletonLineShort}`}
+              />
+              <span
+                className={`${styles.skeletonLine} ${styles.skeletonLineMedium}`}
+              />
+            </div>
+          </aside>
+          <section className={styles.documentStream}>
+            <article className={styles.fileSection}>
+              <div className={styles.groupStream}>
+                <PageLoadingState />
+              </div>
+            </article>
+          </section>
+        </div>
+      );
+    }
+
     return (
       <section className={styles.emptyState}>
         <h2>No renderable files found</h2>

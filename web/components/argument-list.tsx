@@ -139,7 +139,10 @@ export function ArgumentList({
                     <MarkdownInline text={argument.text} />
                   </a>
                 ) : (
-                  <span className={styles.referenceText} title={argument.source}>
+                  <span
+                    className={styles.referenceText}
+                    title={argument.source}
+                  >
                     <MarkdownInline text={argument.text} />
                   </span>
                 )}

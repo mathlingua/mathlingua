@@ -91,6 +91,9 @@ export function ViewerShell({
   const [fileLoadErrors, setFileLoadErrors] = useState<Record<string, string>>(
     {},
   );
+  const [collectionLoadError, setCollectionLoadError] = useState<string | null>(
+    null,
+  );
   const [loadedDefinitions, setLoadedDefinitions] = useState<
     Record<string, GroupView>
   >({});
@@ -185,6 +188,9 @@ export function ViewerShell({
       })
       .catch((error) => {
         console.error("Failed to load MathLingua collection", error);
+        if (!cancelled) {
+          setCollectionLoadError(readableErrorMessage(error));
+        }
       });
 
     return () => {
@@ -258,6 +264,9 @@ export function ViewerShell({
       })
       .catch((error) => {
         console.error("Failed to load MathLingua export manifest", error);
+        if (!cancelled) {
+          setCollectionLoadError(readableErrorMessage(error));
+        }
       });
 
     return () => {
@@ -522,6 +531,11 @@ export function ViewerShell({
   const selectedFileLoadError = selectedFilePath
     ? fileLoadErrors[selectedFilePath]
     : undefined;
+  const isCollectionLoading = Boolean(
+    (collectionDataPath || staticDataBasePath) &&
+    !manifest &&
+    !collectionLoadError,
+  );
   const isSelectedFileLoading = Boolean(
     staticDataBasePath &&
     selectedFilePath &&
@@ -553,7 +567,8 @@ export function ViewerShell({
           definitionItemIds={manifest?.definitions}
           directories={directories}
           files={files}
-          loadError={selectedFileLoadError}
+          isCollectionLoading={isCollectionLoading}
+          loadError={collectionLoadError ?? selectedFileLoadError}
           isSelectedFileLoading={isSelectedFileLoading}
           loadedDefinitions={loadedDefinitions}
           onBrowseDirectory={setBrowsedDirectory}

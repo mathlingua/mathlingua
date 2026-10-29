@@ -649,6 +649,12 @@
   min-width: 0;
 }
 
+.outlineSkeletonList {
+  display: grid;
+  gap: 0.9rem;
+  padding: 0.6rem 0.6rem;
+}
+
 .skeletonTextBlock {
   display: grid;
   gap: 0.72rem;

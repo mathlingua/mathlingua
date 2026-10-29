@@ -11,7 +11,8 @@
 }
 
 :global(html[data-font="euler"]) .placeholder {
-  font-family: "Euler Math", "Neo Euler", "AMS Euler", "CMU Concrete", KaTeX_Math, serif;
+  font-family:
+    "Euler Math", "Neo Euler", "AMS Euler", "CMU Concrete", KaTeX_Math, serif;
   font-style: normal;
 }
 
@@ -30,7 +31,8 @@
 }
 
 :global(html[data-font="euler"]) .memberOf {
-  font-family: "Euler Math", "Neo Euler", "AMS Euler", "CMU Concrete", KaTeX_Math, serif;
+  font-family:
+    "Euler Math", "Neo Euler", "AMS Euler", "CMU Concrete", KaTeX_Math, serif;
   font-style: normal;
 }
 

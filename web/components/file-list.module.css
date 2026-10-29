@@ -18,6 +18,10 @@
   grid-template-columns: 0 minmax(0, 1fr);
 }
 
+.outlineBackdrop {
+  display: none;
+}
+
 .outlinePanel {
   position: sticky;
   top: var(--viewer-total-chrome-height, var(--viewer-chrome-height));
@@ -1057,11 +1061,33 @@
     grid-template-columns: 1fr;
   }
 
+  .outlineBackdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 8;
+    background: rgba(0, 0, 0, 0.38);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 180ms ease;
+  }
+
+  .outlineOpen .outlineBackdrop {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
   .outlinePanel {
     position: fixed;
     left: 0;
+    top: var(--viewer-total-chrome-height, var(--viewer-chrome-height));
+    height: calc(
+      100dvh - var(--viewer-total-chrome-height, var(--viewer-chrome-height))
+    );
     width: min(18rem, 80vw);
-    z-index: 9;
+    z-index: 10;
     box-shadow: var(--shadow);
   }
 
@@ -1079,7 +1105,11 @@
   }
 
   .documentStream {
-    padding: 2.25rem 0.9rem 4rem;
+    padding: 1.75rem 0.9rem 3.5rem;
+  }
+
+  .groupStream {
+    gap: 2rem;
   }
 
   .definitionTrail {
@@ -1088,50 +1118,120 @@
   }
 
   .pageTitle h1 {
-    font-size: calc(2.85rem * var(--viewer-font-scale, 1));
-    line-height: 1.05;
+    font-size: calc(2.5rem * var(--viewer-font-scale, 1));
+    line-height: 1.08;
   }
 
   .pageSectionTitle h2 {
-    font-size: calc(2rem * var(--viewer-font-scale, 1));
-    line-height: 1.12;
+    font-size: calc(1.75rem * var(--viewer-font-scale, 1));
+    line-height: 1.14;
   }
 
   .pageSubsectionTitle h3 {
-    font-size: calc(1.55rem * var(--viewer-font-scale, 1));
-    line-height: 1.16;
+    font-size: calc(1.4rem * var(--viewer-font-scale, 1));
+    line-height: 1.18;
   }
 }
 
 @media (max-width: 520px) {
+  .documentStream {
+    padding: 1.25rem 0.75rem 3rem;
+  }
+
+  .groupStream {
+    gap: 1.35rem;
+  }
+
+  .breadcrumb {
+    margin: 0 auto -0.35rem;
+    padding: 0 0.15rem;
+  }
+
+  .outlinePanel {
+    width: min(19rem, 84vw);
+  }
+
   .outlineLink {
-    font-size: calc(1.05rem * var(--viewer-font-scale, 1));
+    font-size: calc(1rem * var(--viewer-font-scale, 1));
+    padding: 0.42rem 0.55rem;
   }
 
   .pageTitle h1 {
-    font-size: calc(2.45rem * var(--viewer-font-scale, 1));
+    font-size: calc(1.9rem * var(--viewer-font-scale, 1));
+    line-height: 1.14;
+    letter-spacing: -0.015em;
   }
 
   .pageSectionTitle h2 {
-    font-size: calc(1.78rem * var(--viewer-font-scale, 1));
+    font-size: calc(1.42rem * var(--viewer-font-scale, 1));
+    line-height: 1.18;
+    padding-bottom: 0.3rem;
   }
 
   .pageSubsectionTitle h3 {
-    font-size: calc(1.42rem * var(--viewer-font-scale, 1));
+    font-size: calc(1.2rem * var(--viewer-font-scale, 1));
+    line-height: 1.22;
+  }
+
+  .dividerTitle {
+    font-size: calc(2.1rem * var(--viewer-font-scale, 1));
+    line-height: 1.1;
+  }
+
+  .dividerHeadTitle {
+    font-size: calc(1.9rem * var(--viewer-font-scale, 1));
+    line-height: 1.12;
   }
 
   .pageNavigation {
-    gap: 0.45rem;
+    gap: 0.65rem;
+    margin-top: 1.75rem;
+    padding-top: 0.75rem;
   }
 
   .pageNavButton {
-    flex: 0 1 calc(50% - 0.225rem);
-    max-width: calc(50% - 0.225rem);
-    padding: 0.35rem 0.4rem;
+    flex: 1 1 0;
+    max-width: none;
+    padding: 0.55rem 0.65rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-card);
+    background: var(--card-bg);
+    box-shadow: var(--shadow);
   }
 
   .pageNavButtonNext {
     justify-content: flex-end;
     margin-left: auto;
+  }
+
+  .pageNavLabel {
+    font-size: calc(0.64rem * var(--viewer-font-scale, 1));
+  }
+
+  .pageNavTitle {
+    font-size: calc(0.86rem * var(--viewer-font-scale, 1));
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .definitionTrail {
+    padding: 2.1rem 0.65rem 0.95rem;
+    gap: 0.95rem;
+  }
+
+  .definitionTrailClose {
+    width: 2.1rem;
+    height: 2.1rem;
+    top: 0.5rem;
+    left: 0.5rem;
+  }
+
+  .skeletonCard {
+    padding: 0.95rem 0.95rem 1.05rem;
+  }
+
+  .pageSkeleton {
+    gap: 1.35rem;
   }
 }

@@ -115,6 +115,11 @@ export function FileList({
                 : styles.readerLayout
           }
         >
+          <div
+            aria-hidden="true"
+            className={styles.outlineBackdrop}
+            onClick={onCloseOutline}
+          />
           <aside
             aria-hidden="true"
             aria-label="Table of contents"
@@ -291,6 +296,11 @@ export function FileList({
             : `${styles.readerLayout} ${styles.outlineClosed}`
       }
     >
+      <div
+        aria-hidden="true"
+        className={styles.outlineBackdrop}
+        onClick={onCloseOutline}
+      />
       <aside className={styles.outlinePanel}>
         <div className={styles.outlineHeader}>
           <button

@@ -46,3 +46,20 @@
   font-weight: 800;
   letter-spacing: 0.035em;
 }
+
+@media (max-width: 520px) {
+  .sectionLabel {
+    font-size: calc(0.98rem * var(--viewer-font-scale, 1));
+  }
+
+  .inlineArgument {
+    font-size: calc(1rem * var(--viewer-font-scale, 1));
+    line-height: 1.38;
+  }
+
+  .inlineArgumentLatex {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    padding-bottom: 0.15rem;
+  }
+}

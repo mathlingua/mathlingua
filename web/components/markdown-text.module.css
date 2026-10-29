@@ -143,8 +143,35 @@
 }
 
 @media (max-width: 520px) {
+  .markdown {
+    font-size: calc(1.02rem * var(--viewer-font-scale, 1));
+    line-height: 1.58;
+  }
+
+  .markdown h1 {
+    font-size: calc(1.6rem * var(--viewer-font-scale, 1));
+  }
+
+  .markdown h2 {
+    font-size: calc(1.36rem * var(--viewer-font-scale, 1));
+  }
+
+  .markdown h3 {
+    font-size: calc(1.18rem * var(--viewer-font-scale, 1));
+  }
+
+  .markdown pre {
+    padding: 0.65rem 0.75rem;
+  }
+
   .markdownMlgCode {
-    font-size: calc(0.95rem * var(--viewer-font-scale, 1));
+    padding: 0.85rem 0.95rem;
+    font-size: calc(0.92rem * var(--viewer-font-scale, 1));
+  }
+
+  .markdownBlockMath {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
   }
 }
 

@@ -121,3 +121,32 @@
   min-width: 0;
   padding-top: 0;
 }
+
+@media (max-width: 520px) {
+  .formulationLine {
+    font-size: calc(1rem * var(--viewer-font-scale, 1));
+    line-height: 1.38;
+  }
+
+  .formulationLineLatex {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    padding-bottom: 0.15rem;
+  }
+
+  .labeledFormulation {
+    gap: 0.45rem;
+    flex-wrap: wrap;
+  }
+
+  .formulationLabel {
+    font-size: calc(0.78rem * var(--viewer-font-scale, 1));
+  }
+
+  .textLine,
+  .referenceLink,
+  .referenceText {
+    font-size: calc(0.96rem * var(--viewer-font-scale, 1));
+    line-height: 1.4;
+  }
+}

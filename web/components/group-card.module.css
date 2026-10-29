@@ -96,7 +96,10 @@
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  padding: 1.35rem 1.6rem 1.45rem;
+  padding-top: var(--viewer-spacing-card-padding-y, 1.45rem);
+  padding-bottom: var(--viewer-spacing-card-padding-bottom, 1.55rem);
+  padding-left: var(--viewer-spacing-card-padding-x, 1.75rem);
+  padding-right: var(--viewer-spacing-card-padding-x, 1.75rem);
   border: var(--card-border-width) solid var(--line);
   border-radius: var(--radius-card);
   background: var(--card-bg);
@@ -106,7 +109,7 @@
 }
 
 .cardFaceClosable {
-  padding-top: 3rem;
+  padding-top: var(--viewer-spacing-card-closable-top, 3.1rem);
 }
 
 .cardFaceInactive {
@@ -189,7 +192,7 @@
 
 .bodyText {
   min-width: 0;
-  margin-top: 0.75rem;
+  margin-top: var(--viewer-spacing-heading-to-text-gap, 0.75rem);
   padding-right: 2.35rem;
 }
 
@@ -197,7 +200,7 @@
   display: grid;
   gap: 0.85rem;
   min-width: 0;
-  margin-top: 0.75rem;
+  margin-top: var(--viewer-spacing-heading-to-text-gap, 0.75rem);
   padding-right: 2.35rem;
 }
 
@@ -256,9 +259,9 @@
 
 .sectionStack {
   display: grid;
-  gap: 0.45rem;
+  gap: var(--viewer-spacing-section-gap, 0.45rem);
   min-width: 0;
-  margin-top: 0.6rem;
+  margin-top: var(--viewer-spacing-section-margin-top, 0.6rem);
   padding-right: 0;
 }
 
@@ -419,14 +422,16 @@
 }
 
 :global(html[data-theme^="field-guide"]) .header {
-  margin: -1.35rem -1.6rem 0.85rem;
-  padding: 0.82rem 4rem 0.68rem 1.6rem;
+  margin: calc(-1 * var(--viewer-spacing-card-padding-y, 1.45rem))
+    calc(-1 * var(--viewer-spacing-card-padding-x, 1.75rem))
+    var(--viewer-spacing-heading-to-text-gap, 0.75rem);
+  padding: 0.82rem 4rem 0.68rem var(--viewer-spacing-card-padding-x, 1.75rem);
   border-bottom: 2px solid var(--line-strong);
   background: var(--accent-soft);
 }
 
 :global(html[data-theme^="field-guide"]) .cardFaceClosable .header {
-  margin-top: -3rem;
+  margin-top: calc(-1 * var(--viewer-spacing-card-closable-top, 3.1rem));
   padding-top: 0.9rem;
 }
 
@@ -467,21 +472,26 @@
 
 @media (max-width: 520px) {
   .cardFace {
-    padding: 0.95rem 0.95rem 1.05rem;
+    padding-top: var(--viewer-spacing-card-padding-y, 1.05rem);
+    padding-bottom: var(--viewer-spacing-card-padding-bottom, 1.15rem);
+    padding-left: var(--viewer-spacing-card-padding-x, 1.15rem);
+    padding-right: var(--viewer-spacing-card-padding-x, 1.15rem);
   }
 
   .cardFaceClosable {
-    padding-top: 2.6rem;
+    padding-top: var(--viewer-spacing-card-closable-top, 2.6rem);
   }
 
   :global(html[data-theme^="field-guide"]) .header {
-    margin: -0.95rem -0.95rem 0.75rem;
-    padding-left: 0.95rem;
+    margin: calc(-1 * var(--viewer-spacing-card-padding-y, 1.05rem))
+      calc(-1 * var(--viewer-spacing-card-padding-x, 1.15rem))
+      var(--viewer-spacing-heading-to-text-gap, 0.7rem);
+    padding-left: var(--viewer-spacing-card-padding-x, 1.15rem);
     padding-right: 3rem;
   }
 
   :global(html[data-theme^="field-guide"]) .cardFaceClosable .header {
-    margin-top: -2.6rem;
+    margin-top: calc(-1 * var(--viewer-spacing-card-closable-top, 2.6rem));
   }
 
   .header,
@@ -492,7 +502,7 @@
   }
 
   .sectionStack {
-    gap: 0.45rem;
+    gap: var(--viewer-spacing-section-gap, 0.45rem);
     padding-right: 0;
   }
 

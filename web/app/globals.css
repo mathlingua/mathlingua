@@ -106,6 +106,24 @@ html[data-font="euler"] .katex .mathit {
   --viewer-total-chrome-height: calc(
     var(--viewer-chrome-height) + var(--viewer-subbar-height)
   );
+  --viewer-spacing-stream-gap: 2.85rem;
+  --viewer-spacing-stream-padding-top: 3.1rem;
+  --viewer-spacing-stream-padding-bottom: 5rem;
+  --viewer-spacing-stream-padding-x: 2rem;
+  --viewer-spacing-card-padding-y: 1.45rem;
+  --viewer-spacing-card-padding-x: 1.75rem;
+  --viewer-spacing-card-padding-bottom: 1.55rem;
+  --viewer-spacing-card-closable-top: 3.1rem;
+  --viewer-spacing-heading-to-text-gap: 0.75rem;
+  --viewer-spacing-prose-to-card-gap: 2.35rem;
+  --viewer-spacing-heading-top-gap: 2.5rem;
+  --viewer-spacing-section-gap: 0.45rem;
+  --viewer-spacing-section-margin-top: 0.6rem;
+  --viewer-spacing-item-gap: 0.08rem;
+  --viewer-spacing-formulation-line-height: 1.36;
+  --viewer-spacing-prose-line-height: 1.62;
+  --viewer-spacing-prose-paragraph-gap: 1rem;
+  --viewer-spacing-section-break-gap: 4rem;
   --font-body:
     "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, Georgia,
     serif;
@@ -171,6 +189,228 @@ html[data-font="euler"] .katex .mathit {
   --card-heading-weight: 500;
   --prose-heading-color: var(--ink);
   --prose-heading-weight: 500;
+}
+
+html[data-spacing="compact"] {
+  --viewer-spacing-stream-gap: 1.25rem;
+  --viewer-spacing-stream-padding-top: 1.75rem;
+  --viewer-spacing-stream-padding-bottom: 3.5rem;
+  --viewer-spacing-stream-padding-x: 1rem;
+  --viewer-spacing-card-padding-y: 0.85rem;
+  --viewer-spacing-card-padding-x: 1.15rem;
+  --viewer-spacing-card-padding-bottom: 0.95rem;
+  --viewer-spacing-card-closable-top: 2.45rem;
+  --viewer-spacing-heading-to-text-gap: 0.55rem;
+  --viewer-spacing-prose-to-card-gap: 1.15rem;
+  --viewer-spacing-heading-top-gap: 1.2rem;
+  --viewer-spacing-section-gap: 0.2rem;
+  --viewer-spacing-section-margin-top: 0.35rem;
+  --viewer-spacing-item-gap: 0.02rem;
+  --viewer-spacing-formulation-line-height: 1.25;
+  --viewer-spacing-prose-line-height: 1.44;
+  --viewer-spacing-prose-paragraph-gap: 0.65rem;
+  --viewer-spacing-section-break-gap: 2.25rem;
+}
+
+html[data-spacing="comfortable"] {
+  --viewer-spacing-stream-gap: 2.85rem;
+  --viewer-spacing-stream-padding-top: 3.1rem;
+  --viewer-spacing-stream-padding-bottom: 5rem;
+  --viewer-spacing-stream-padding-x: 2rem;
+  --viewer-spacing-card-padding-y: 1.45rem;
+  --viewer-spacing-card-padding-x: 1.75rem;
+  --viewer-spacing-card-padding-bottom: 1.55rem;
+  --viewer-spacing-card-closable-top: 3.1rem;
+  --viewer-spacing-heading-to-text-gap: 0.75rem;
+  --viewer-spacing-prose-to-card-gap: 2.35rem;
+  --viewer-spacing-heading-top-gap: 2.5rem;
+  --viewer-spacing-section-gap: 0.45rem;
+  --viewer-spacing-section-margin-top: 0.6rem;
+  --viewer-spacing-item-gap: 0.08rem;
+  --viewer-spacing-formulation-line-height: 1.36;
+  --viewer-spacing-prose-line-height: 1.62;
+  --viewer-spacing-prose-paragraph-gap: 1rem;
+  --viewer-spacing-section-break-gap: 4rem;
+}
+
+html[data-spacing="spacious"] {
+  --viewer-spacing-stream-gap: 5rem;
+  --viewer-spacing-stream-padding-top: 4.5rem;
+  --viewer-spacing-stream-padding-bottom: 9rem;
+  --viewer-spacing-stream-padding-x: 3.5rem;
+  --viewer-spacing-card-padding-y: 2.35rem;
+  --viewer-spacing-card-padding-x: 2.75rem;
+  --viewer-spacing-card-padding-bottom: 2.45rem;
+  --viewer-spacing-card-closable-top: 3.85rem;
+  --viewer-spacing-heading-to-text-gap: 1.15rem;
+  --viewer-spacing-prose-to-card-gap: 3.25rem;
+  --viewer-spacing-heading-top-gap: 3.5rem;
+  --viewer-spacing-section-gap: 0.9rem;
+  --viewer-spacing-section-margin-top: 0.95rem;
+  --viewer-spacing-item-gap: 0.22rem;
+  --viewer-spacing-formulation-line-height: 1.56;
+  --viewer-spacing-prose-line-height: 1.82;
+  --viewer-spacing-prose-paragraph-gap: 1.5rem;
+  --viewer-spacing-section-break-gap: 6.5rem;
+}
+
+@media (max-width: 860px) {
+  :root {
+    --viewer-spacing-stream-gap: 2.25rem;
+    --viewer-spacing-stream-padding-top: 2rem;
+    --viewer-spacing-stream-padding-bottom: 4rem;
+    --viewer-spacing-stream-padding-x: 1.35rem;
+    --viewer-spacing-card-padding-y: 1.35rem;
+    --viewer-spacing-card-padding-x: 1.45rem;
+    --viewer-spacing-card-padding-bottom: 1.45rem;
+    --viewer-spacing-card-closable-top: 2.9rem;
+    --viewer-spacing-heading-to-text-gap: 0.75rem;
+    --viewer-spacing-prose-to-card-gap: 1.95rem;
+    --viewer-spacing-heading-top-gap: 2.1rem;
+    --viewer-spacing-section-gap: 0.45rem;
+    --viewer-spacing-section-break-gap: 3.5rem;
+  }
+
+  html[data-spacing="compact"] {
+    --viewer-spacing-stream-gap: 0.95rem;
+    --viewer-spacing-stream-padding-top: 1.15rem;
+    --viewer-spacing-stream-padding-bottom: 2.75rem;
+    --viewer-spacing-stream-padding-x: 0.65rem;
+    --viewer-spacing-card-padding-y: 0.75rem;
+    --viewer-spacing-card-padding-x: 0.85rem;
+    --viewer-spacing-card-padding-bottom: 0.85rem;
+    --viewer-spacing-card-closable-top: 2.35rem;
+    --viewer-spacing-heading-to-text-gap: 0.5rem;
+    --viewer-spacing-prose-to-card-gap: 0.85rem;
+    --viewer-spacing-heading-top-gap: 0.9rem;
+    --viewer-spacing-section-gap: 0.18rem;
+    --viewer-spacing-section-margin-top: 0.3rem;
+    --viewer-spacing-item-gap: 0.02rem;
+    --viewer-spacing-formulation-line-height: 1.25;
+    --viewer-spacing-section-break-gap: 1.75rem;
+  }
+
+  html[data-spacing="comfortable"] {
+    --viewer-spacing-stream-gap: 2.25rem;
+    --viewer-spacing-stream-padding-top: 2rem;
+    --viewer-spacing-stream-padding-bottom: 4rem;
+    --viewer-spacing-stream-padding-x: 1.35rem;
+    --viewer-spacing-card-padding-y: 1.35rem;
+    --viewer-spacing-card-padding-x: 1.45rem;
+    --viewer-spacing-card-padding-bottom: 1.45rem;
+    --viewer-spacing-card-closable-top: 2.9rem;
+    --viewer-spacing-heading-to-text-gap: 0.75rem;
+    --viewer-spacing-prose-to-card-gap: 1.95rem;
+    --viewer-spacing-heading-top-gap: 2.1rem;
+    --viewer-spacing-section-gap: 0.45rem;
+    --viewer-spacing-section-margin-top: 0.6rem;
+    --viewer-spacing-item-gap: 0.08rem;
+    --viewer-spacing-formulation-line-height: 1.36;
+    --viewer-spacing-section-break-gap: 3.5rem;
+  }
+
+  html[data-spacing="spacious"] {
+    --viewer-spacing-stream-gap: 4.25rem;
+    --viewer-spacing-stream-padding-top: 3.5rem;
+    --viewer-spacing-stream-padding-bottom: 7rem;
+    --viewer-spacing-stream-padding-x: 2.5rem;
+    --viewer-spacing-card-padding-y: 2.15rem;
+    --viewer-spacing-card-padding-x: 2.25rem;
+    --viewer-spacing-card-padding-bottom: 2.25rem;
+    --viewer-spacing-card-closable-top: 3.5rem;
+    --viewer-spacing-heading-to-text-gap: 1.05rem;
+    --viewer-spacing-prose-to-card-gap: 2.65rem;
+    --viewer-spacing-heading-top-gap: 2.85rem;
+    --viewer-spacing-section-gap: 0.85rem;
+    --viewer-spacing-section-margin-top: 0.9rem;
+    --viewer-spacing-item-gap: 0.2rem;
+    --viewer-spacing-formulation-line-height: 1.54;
+    --viewer-spacing-section-break-gap: 5.5rem;
+  }
+}
+
+@media (max-width: 520px) {
+  :root {
+    --viewer-spacing-stream-gap: 1.65rem;
+    --viewer-spacing-stream-padding-top: 1.25rem;
+    --viewer-spacing-stream-padding-bottom: 3.25rem;
+    --viewer-spacing-stream-padding-x: 0.95rem;
+    --viewer-spacing-card-padding-y: 1.05rem;
+    --viewer-spacing-card-padding-x: 1.15rem;
+    --viewer-spacing-card-padding-bottom: 1.15rem;
+    --viewer-spacing-card-closable-top: 2.6rem;
+    --viewer-spacing-heading-to-text-gap: 0.7rem;
+    --viewer-spacing-prose-to-card-gap: 1.35rem;
+    --viewer-spacing-heading-top-gap: 1.45rem;
+    --viewer-spacing-section-gap: 0.45rem;
+    --viewer-spacing-section-margin-top: 0.55rem;
+    --viewer-spacing-item-gap: 0.08rem;
+    --viewer-spacing-formulation-line-height: 1.38;
+    --viewer-spacing-section-break-gap: 2.75rem;
+  }
+
+  html[data-spacing="compact"] {
+    --viewer-spacing-stream-gap: 0.65rem;
+    --viewer-spacing-stream-padding-top: 0.65rem;
+    --viewer-spacing-stream-padding-bottom: 1.75rem;
+    --viewer-spacing-stream-padding-x: 0.35rem;
+    --viewer-spacing-card-padding-y: 0.55rem;
+    --viewer-spacing-card-padding-x: 0.65rem;
+    --viewer-spacing-card-padding-bottom: 0.65rem;
+    --viewer-spacing-card-closable-top: 2.15rem;
+    --viewer-spacing-heading-to-text-gap: 0.45rem;
+    --viewer-spacing-prose-to-card-gap: 0.55rem;
+    --viewer-spacing-heading-top-gap: 0.6rem;
+    --viewer-spacing-section-gap: 0.15rem;
+    --viewer-spacing-section-margin-top: 0.25rem;
+    --viewer-spacing-item-gap: 0.02rem;
+    --viewer-spacing-formulation-line-height: 1.24;
+    --viewer-spacing-prose-line-height: 1.42;
+    --viewer-spacing-prose-paragraph-gap: 0.55rem;
+    --viewer-spacing-section-break-gap: 1.25rem;
+  }
+
+  html[data-spacing="comfortable"] {
+    --viewer-spacing-stream-gap: 1.65rem;
+    --viewer-spacing-stream-padding-top: 1.25rem;
+    --viewer-spacing-stream-padding-bottom: 3.25rem;
+    --viewer-spacing-stream-padding-x: 0.95rem;
+    --viewer-spacing-card-padding-y: 1.05rem;
+    --viewer-spacing-card-padding-x: 1.15rem;
+    --viewer-spacing-card-padding-bottom: 1.15rem;
+    --viewer-spacing-card-closable-top: 2.6rem;
+    --viewer-spacing-heading-to-text-gap: 0.7rem;
+    --viewer-spacing-prose-to-card-gap: 1.35rem;
+    --viewer-spacing-heading-top-gap: 1.45rem;
+    --viewer-spacing-section-gap: 0.45rem;
+    --viewer-spacing-section-margin-top: 0.55rem;
+    --viewer-spacing-item-gap: 0.08rem;
+    --viewer-spacing-formulation-line-height: 1.38;
+    --viewer-spacing-prose-line-height: 1.58;
+    --viewer-spacing-prose-paragraph-gap: 0.9rem;
+    --viewer-spacing-section-break-gap: 2.75rem;
+  }
+
+  html[data-spacing="spacious"] {
+    --viewer-spacing-stream-gap: 2.95rem;
+    --viewer-spacing-stream-padding-top: 2.25rem;
+    --viewer-spacing-stream-padding-bottom: 5.5rem;
+    --viewer-spacing-stream-padding-x: 1.75rem;
+    --viewer-spacing-card-padding-y: 1.85rem;
+    --viewer-spacing-card-padding-x: 1.65rem;
+    --viewer-spacing-card-padding-bottom: 1.95rem;
+    --viewer-spacing-card-closable-top: 3.25rem;
+    --viewer-spacing-heading-to-text-gap: 0.95rem;
+    --viewer-spacing-prose-to-card-gap: 1.85rem;
+    --viewer-spacing-heading-top-gap: 1.95rem;
+    --viewer-spacing-section-gap: 0.85rem;
+    --viewer-spacing-section-margin-top: 0.9rem;
+    --viewer-spacing-item-gap: 0.22rem;
+    --viewer-spacing-formulation-line-height: 1.58;
+    --viewer-spacing-prose-line-height: 1.78;
+    --viewer-spacing-prose-paragraph-gap: 1.4rem;
+    --viewer-spacing-section-break-gap: 4.5rem;
+  }
 }
 
 html[data-theme="mono"] {

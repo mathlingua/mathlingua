@@ -24,6 +24,13 @@ import {
   isViewerTheme,
   type ViewerTheme,
 } from "./viewer-theme";
+import {
+  DEFAULT_VIEWER_SPACING,
+  VIEWER_SPACING_STORAGE_KEY,
+  applyViewerSpacing,
+  isViewerSpacing,
+  type ViewerSpacing,
+} from "./viewer-spacing";
 import styles from "./viewer-shell.module.css";
 import {
   CollectionManifest,
@@ -125,6 +132,7 @@ export function ViewerShell({
   const [browsedDirectory, setBrowsedDirectory] = useState<string | null>(null);
   const [theme, setTheme] = useState<ViewerTheme>(DEFAULT_VIEWER_THEME);
   const [font, setFont] = useState<ViewerFont>(DEFAULT_VIEWER_FONT);
+  const [spacing, setSpacing] = useState<ViewerSpacing>(DEFAULT_VIEWER_SPACING);
   const [fontScale, setFontScale] = useState<ViewerFontScale>(
     DEFAULT_VIEWER_FONT_SCALE,
   );
@@ -367,10 +375,17 @@ export function ViewerShell({
       parseViewerFontScale(storedFontScale) ??
       DEFAULT_VIEWER_FONT_SCALE;
 
+    const storedSpacing = readStoredSpacing();
+    const initialSpacing = isViewerSpacing(storedSpacing)
+      ? storedSpacing
+      : DEFAULT_VIEWER_SPACING;
+
     setTheme(initialTheme);
     applyViewerTheme(initialTheme);
     setFont(initialFont);
     applyViewerFont(initialFont);
+    setSpacing(initialSpacing);
+    applyViewerSpacing(initialSpacing);
     setFontScale(initialFontScale);
     applyViewerFontScale(initialFontScale);
     setShowTypes(readStoredBoolean(SHOW_TYPES_STORAGE_KEY));
@@ -449,6 +464,12 @@ export function ViewerShell({
     setFont(nextFont);
     applyViewerFont(nextFont);
     writeStoredFont(nextFont);
+  };
+
+  const handleSpacingChange = (nextSpacing: ViewerSpacing) => {
+    setSpacing(nextSpacing);
+    applyViewerSpacing(nextSpacing);
+    writeStoredSpacing(nextSpacing);
   };
 
   const handleDecreaseFontScale = () => {
@@ -552,11 +573,13 @@ export function ViewerShell({
         onFontChange={handleFontChange}
         onIncreaseFontScale={handleIncreaseFontScale}
         onResetFontScale={handleResetFontScale}
+        onSpacingChange={handleSpacingChange}
         onThemeChange={handleThemeChange}
         onToggleOutline={handleToggleOutline}
         onToggleTypes={handleToggleTypes}
         outlineState={outlineState}
         showTypes={showTypes}
+        spacing={spacing}
         theme={theme}
       />
       <main className={styles.pageShell}>
@@ -765,6 +788,20 @@ function readStoredFont(): string | null {
 function writeStoredFont(font: ViewerFont) {
   try {
     window.localStorage.setItem(VIEWER_FONT_STORAGE_KEY, font);
+  } catch (_) {}
+}
+
+function readStoredSpacing(): string | null {
+  try {
+    return window.localStorage.getItem(VIEWER_SPACING_STORAGE_KEY);
+  } catch (_) {
+    return null;
+  }
+}
+
+function writeStoredSpacing(spacing: ViewerSpacing) {
+  try {
+    window.localStorage.setItem(VIEWER_SPACING_STORAGE_KEY, spacing);
   } catch (_) {}
 }
 

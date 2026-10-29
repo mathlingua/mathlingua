@@ -276,7 +276,14 @@
 
 .breadcrumb {
   width: min(100%, 47rem);
-  margin: 0 auto -1.75rem;
+  margin: 0 auto;
+}
+
+.breadcrumb + * {
+  margin-top: calc(
+    var(--viewer-spacing-heading-to-text-gap, 0.75rem) -
+      var(--viewer-spacing-stream-gap, 2.85rem)
+  );
 }
 
 .breadcrumbList {
@@ -409,7 +416,10 @@
 
 .documentStream {
   min-width: 0;
-  padding: 3.1rem 0 5rem;
+  padding-top: var(--viewer-spacing-stream-padding-top, 3.1rem);
+  padding-bottom: var(--viewer-spacing-stream-padding-bottom, 5rem);
+  padding-left: var(--viewer-spacing-stream-padding-x, 2rem);
+  padding-right: var(--viewer-spacing-stream-padding-x, 2rem);
   overflow-x: clip;
 }
 
@@ -419,12 +429,12 @@
 }
 
 .fileSection + .fileSection {
-  margin-top: 4rem;
+  margin-top: var(--viewer-spacing-section-break-gap, 4rem);
 }
 
 .groupStream {
   display: grid;
-  gap: 3rem;
+  gap: var(--viewer-spacing-stream-gap, 3rem);
   justify-items: center;
   width: 100%;
   min-width: 0;
@@ -477,7 +487,47 @@
 }
 
 .pageText {
-  margin-top: -0.65rem;
+  margin-top: 0;
+}
+
+.dividerHead + .pageText,
+.pageTitle + .pageText,
+.pageSectionTitle + .pageText,
+.pageSubsectionTitle + .pageText {
+  margin-top: calc(
+    var(--viewer-spacing-heading-to-text-gap, 0.75rem) -
+      var(--viewer-spacing-stream-gap, 2.85rem)
+  );
+}
+
+.pageText + .definitionStack,
+.definitionStack + .pageText,
+.dividerHead + .definitionStack,
+.pageTitle + .definitionStack,
+.pageSectionTitle + .definitionStack,
+.pageSubsectionTitle + .definitionStack {
+  margin-top: calc(
+    var(
+        --viewer-spacing-prose-to-card-gap,
+        var(--viewer-spacing-stream-gap, 2.85rem)
+      ) -
+      var(--viewer-spacing-stream-gap, 2.85rem)
+  );
+}
+
+.pageItem + .pageSectionTitle,
+.definitionStack + .pageSectionTitle,
+.pageItem + .pageSubsectionTitle,
+.definitionStack + .pageSubsectionTitle,
+.pageItem + .pageTitle,
+.definitionStack + .pageTitle {
+  margin-top: calc(
+    var(
+        --viewer-spacing-heading-top-gap,
+        var(--viewer-spacing-stream-gap, 2.85rem)
+      ) -
+      var(--viewer-spacing-stream-gap, 2.85rem)
+  );
 }
 
 .pageNavigation {
@@ -643,7 +693,7 @@
 .pageSkeleton {
   display: grid;
   justify-items: center;
-  gap: 3rem;
+  gap: var(--viewer-spacing-stream-gap, 3rem);
   width: 100%;
   min-width: 0;
 }
@@ -1105,11 +1155,14 @@
   }
 
   .documentStream {
-    padding: 1.75rem 0.9rem 3.5rem;
+    padding-top: var(--viewer-spacing-stream-padding-top, 2rem);
+    padding-bottom: var(--viewer-spacing-stream-padding-bottom, 4rem);
+    padding-left: var(--viewer-spacing-stream-padding-x, 1.35rem);
+    padding-right: var(--viewer-spacing-stream-padding-x, 1.35rem);
   }
 
   .groupStream {
-    gap: 2rem;
+    gap: var(--viewer-spacing-stream-gap, 2.25rem);
   }
 
   .definitionTrail {
@@ -1135,15 +1188,18 @@
 
 @media (max-width: 520px) {
   .documentStream {
-    padding: 1.25rem 0.75rem 3rem;
+    padding-top: var(--viewer-spacing-stream-padding-top, 1.25rem);
+    padding-bottom: var(--viewer-spacing-stream-padding-bottom, 3.25rem);
+    padding-left: var(--viewer-spacing-stream-padding-x, 0.95rem);
+    padding-right: var(--viewer-spacing-stream-padding-x, 0.95rem);
   }
 
   .groupStream {
-    gap: 1.35rem;
+    gap: var(--viewer-spacing-stream-gap, 1.65rem);
   }
 
   .breadcrumb {
-    margin: 0 auto -0.35rem;
+    margin: 0 auto;
     padding: 0 0.15rem;
   }
 

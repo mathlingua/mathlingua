@@ -11,6 +11,7 @@ import {
   type ViewerFontScale,
 } from "./viewer-font";
 import { VIEWER_THEMES, type ViewerTheme } from "./viewer-theme";
+import { VIEWER_SPACINGS, type ViewerSpacing } from "./viewer-spacing";
 import styles from "./viewer-chrome.module.css";
 
 /** Props for the sticky viewer toolbar. */
@@ -21,6 +22,8 @@ interface ViewerChromeProps {
   onThemeChange: (theme: ViewerTheme) => void;
   /** Changes the active typography/font mode. */
   onFontChange: (font: ViewerFont) => void;
+  /** Changes the active reader spacing density. */
+  onSpacingChange: (spacing: ViewerSpacing) => void;
   /** Decreases the active reader font scale. */
   onDecreaseFontScale: () => void;
   /** Increases the active reader font scale. */
@@ -35,6 +38,8 @@ interface ViewerChromeProps {
   theme: ViewerTheme;
   /** Current typography/font mode. */
   font: ViewerFont;
+  /** Current reader spacing density. */
+  spacing: ViewerSpacing;
   /** Current reader font scale multiplier. */
   fontScale: ViewerFontScale;
   /** Whether inline expression-type annotations are visible. */
@@ -46,6 +51,7 @@ export function ViewerChrome({
   onToggleOutline,
   onThemeChange,
   onFontChange,
+  onSpacingChange,
   onDecreaseFontScale,
   onIncreaseFontScale,
   onResetFontScale,
@@ -53,21 +59,28 @@ export function ViewerChrome({
   outlineState,
   theme,
   font,
+  spacing,
   fontScale,
   showTypes,
 }: ViewerChromeProps) {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isFontDropdownOpen, setIsFontDropdownOpen] = useState(false);
+  const [isSpacingDropdownOpen, setIsSpacingDropdownOpen] = useState(false);
   const [isThemeDropdownOpen, setIsThemeDropdownOpen] = useState(false);
   const fontDropdownRef = useRef<HTMLDivElement>(null);
+  const spacingDropdownRef = useRef<HTMLDivElement>(null);
   const themeDropdownRef = useRef<HTMLDivElement>(null);
   const activeFontOptionRef = useRef<HTMLButtonElement>(null);
+  const activeSpacingOptionRef = useRef<HTMLButtonElement>(null);
   const activeThemeOptionRef = useRef<HTMLButtonElement>(null);
+  const subbarRef = useRef<HTMLDivElement>(null);
 
   const expanded =
     outlineState === "auto" ? undefined : outlineState === "open";
   const activeFont =
     VIEWER_FONTS.find((item) => item.id === font) ?? VIEWER_FONTS[0];
+  const activeSpacing =
+    VIEWER_SPACINGS.find((item) => item.id === spacing) ?? VIEWER_SPACINGS[0];
   const activeTheme =
     VIEWER_THEMES.find((item) => item.id === theme) ?? VIEWER_THEMES[0];
   const canDecreaseFontScale = fontScale > MIN_VIEWER_FONT_SCALE;
@@ -76,11 +89,36 @@ export function ViewerChrome({
   const fontScalePercent = Math.round(fontScale * 100);
 
   useEffect(() => {
-    document.documentElement.style.setProperty(
-      "--viewer-subbar-height",
-      isSettingsOpen ? "42px" : "0px",
-    );
+    if (!isSettingsOpen) {
+      document.documentElement.style.setProperty(
+        "--viewer-subbar-height",
+        "0px",
+      );
+      return;
+    }
+
+    const updateHeight = () => {
+      if (subbarRef.current) {
+        const height = subbarRef.current.offsetHeight;
+        document.documentElement.style.setProperty(
+          "--viewer-subbar-height",
+          `${height}px`,
+        );
+      }
+    };
+
+    updateHeight();
+
+    const observer = new ResizeObserver(() => {
+      updateHeight();
+    });
+
+    if (subbarRef.current) {
+      observer.observe(subbarRef.current);
+    }
+
     return () => {
+      observer.disconnect();
       document.documentElement.style.setProperty(
         "--viewer-subbar-height",
         "0px",
@@ -95,8 +133,13 @@ export function ViewerChrome({
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        if (isFontDropdownOpen || isThemeDropdownOpen) {
+        if (
+          isFontDropdownOpen ||
+          isSpacingDropdownOpen ||
+          isThemeDropdownOpen
+        ) {
           setIsFontDropdownOpen(false);
+          setIsSpacingDropdownOpen(false);
           setIsThemeDropdownOpen(false);
         } else {
           setIsSettingsOpen(false);
@@ -108,10 +151,15 @@ export function ViewerChrome({
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isSettingsOpen, isFontDropdownOpen, isThemeDropdownOpen]);
+  }, [
+    isSettingsOpen,
+    isFontDropdownOpen,
+    isSpacingDropdownOpen,
+    isThemeDropdownOpen,
+  ]);
 
   useEffect(() => {
-    if (!isFontDropdownOpen && !isThemeDropdownOpen) {
+    if (!isFontDropdownOpen && !isSpacingDropdownOpen && !isThemeDropdownOpen) {
       return;
     }
 
@@ -128,6 +176,13 @@ export function ViewerChrome({
       }
 
       if (
+        isSpacingDropdownOpen &&
+        !spacingDropdownRef.current?.contains(event.target)
+      ) {
+        setIsSpacingDropdownOpen(false);
+      }
+
+      if (
         isThemeDropdownOpen &&
         !themeDropdownRef.current?.contains(event.target)
       ) {
@@ -139,13 +194,19 @@ export function ViewerChrome({
     return () => {
       document.removeEventListener("pointerdown", handlePointerDown);
     };
-  }, [isFontDropdownOpen, isThemeDropdownOpen]);
+  }, [isFontDropdownOpen, isSpacingDropdownOpen, isThemeDropdownOpen]);
 
   useEffect(() => {
     if (isFontDropdownOpen && activeFontOptionRef.current) {
       activeFontOptionRef.current.scrollIntoView({ block: "nearest" });
     }
   }, [isFontDropdownOpen]);
+
+  useEffect(() => {
+    if (isSpacingDropdownOpen && activeSpacingOptionRef.current) {
+      activeSpacingOptionRef.current.scrollIntoView({ block: "nearest" });
+    }
+  }, [isSpacingDropdownOpen]);
 
   useEffect(() => {
     if (isThemeDropdownOpen && activeThemeOptionRef.current) {
@@ -196,6 +257,7 @@ export function ViewerChrome({
                 const next = !val;
                 if (!next) {
                   setIsFontDropdownOpen(false);
+                  setIsSpacingDropdownOpen(false);
                   setIsThemeDropdownOpen(false);
                 }
                 return next;
@@ -218,13 +280,21 @@ export function ViewerChrome({
             : styles.subbar
         }
         id="viewer-settings-subbar"
+        ref={subbarRef}
         role="region"
       >
         <div className={styles.subbarContent}>
           {/* Font custom styled dropdown */}
           <div className={styles.subbarGroup}>
             <span className={styles.controlLabel}>Font</span>
-            <div className={styles.dropdown} ref={fontDropdownRef}>
+            <div
+              className={
+                isFontDropdownOpen
+                  ? `${styles.dropdown} ${styles.dropdownOpen}`
+                  : styles.dropdown
+              }
+              ref={fontDropdownRef}
+            >
               <button
                 aria-expanded={isFontDropdownOpen}
                 aria-haspopup="listbox"
@@ -238,6 +308,7 @@ export function ViewerChrome({
                   setIsFontDropdownOpen((val) => {
                     const next = !val;
                     if (next) {
+                      setIsSpacingDropdownOpen(false);
                       setIsThemeDropdownOpen(false);
                     }
                     return next;
@@ -361,6 +432,85 @@ export function ViewerChrome({
 
           <div className={styles.subbarDivider} />
 
+          {/* Spacing custom styled dropdown */}
+          <div className={styles.subbarGroup}>
+            <span className={styles.controlLabel}>Spacing</span>
+            <div
+              className={
+                isSpacingDropdownOpen
+                  ? `${styles.dropdown} ${styles.dropdownOpen}`
+                  : styles.dropdown
+              }
+              ref={spacingDropdownRef}
+            >
+              <button
+                aria-expanded={isSpacingDropdownOpen}
+                aria-haspopup="listbox"
+                aria-label={`Spacing: ${activeSpacing.label}`}
+                className={
+                  isSpacingDropdownOpen
+                    ? `${styles.dropdownButton} ${styles.dropdownButtonOpen}`
+                    : styles.dropdownButton
+                }
+                onClick={() => {
+                  setIsSpacingDropdownOpen((val) => {
+                    const next = !val;
+                    if (next) {
+                      setIsFontDropdownOpen(false);
+                      setIsThemeDropdownOpen(false);
+                    }
+                    return next;
+                  });
+                }}
+                type="button"
+              >
+                <span className={styles.dropdownButtonLabel}>
+                  {activeSpacing.label}
+                </span>
+                <span aria-hidden="true" className={styles.dropdownChevron}>
+                  <ChevronDownIcon />
+                </span>
+              </button>
+              {isSpacingDropdownOpen ? (
+                <div
+                  aria-label="Select spacing"
+                  className={`${styles.dropdownMenu} ${styles.dropdownMenuLeft}`}
+                  role="listbox"
+                >
+                  {VIEWER_SPACINGS.map((item) => {
+                    const isSelected = spacing === item.id;
+                    return (
+                      <button
+                        aria-selected={isSelected}
+                        className={
+                          isSelected
+                            ? `${styles.dropdownOption} ${styles.dropdownOptionActive}`
+                            : styles.dropdownOption
+                        }
+                        key={item.id}
+                        onClick={() => {
+                          onSpacingChange(item.id);
+                          setIsSpacingDropdownOpen(false);
+                        }}
+                        ref={isSelected ? activeSpacingOptionRef : undefined}
+                        role="option"
+                        type="button"
+                      >
+                        <span className={styles.dropdownOptionLabel}>
+                          {item.label}
+                        </span>
+                        {isSelected ? <CheckIcon /> : null}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : null}
+            </div>
+          </div>
+
+          {/* Break to second line */}
+          <div className={styles.subbarBreak} />
+
           {/* Expression types toggle */}
           <div className={styles.subbarGroup}>
             <button
@@ -393,7 +543,14 @@ export function ViewerChrome({
           {/* Theme custom styled dropdown */}
           <div className={styles.subbarGroup}>
             <span className={styles.controlLabel}>Theme</span>
-            <div className={styles.dropdown} ref={themeDropdownRef}>
+            <div
+              className={
+                isThemeDropdownOpen
+                  ? `${styles.dropdown} ${styles.dropdownOpen}`
+                  : styles.dropdown
+              }
+              ref={themeDropdownRef}
+            >
               <button
                 aria-expanded={isThemeDropdownOpen}
                 aria-haspopup="listbox"
@@ -408,6 +565,7 @@ export function ViewerChrome({
                     const next = !val;
                     if (next) {
                       setIsFontDropdownOpen(false);
+                      setIsSpacingDropdownOpen(false);
                     }
                     return next;
                   });

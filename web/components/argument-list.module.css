@@ -5,7 +5,7 @@
   margin: 0.05rem 0 0;
   padding: 0;
   display: grid;
-  gap: 0.08rem;
+  gap: var(--viewer-spacing-item-gap, 0.08rem);
 }
 
 .item {
@@ -46,7 +46,7 @@
   white-space: normal;
   font-family: var(--font-body);
   font-size: calc(1.04rem * var(--viewer-font-scale, 1));
-  line-height: 1.35;
+  line-height: var(--viewer-spacing-formulation-line-height, 1.35);
 }
 
 .formulationBlock {
@@ -88,7 +88,7 @@
   margin: 0;
   color: var(--ink);
   font-size: calc(1rem * var(--viewer-font-scale, 1));
-  line-height: 1.35;
+  line-height: var(--viewer-spacing-formulation-line-height, 1.35);
 }
 
 .referenceLink,
@@ -96,7 +96,7 @@
   min-width: 0;
   color: var(--ink);
   font-size: calc(1rem * var(--viewer-font-scale, 1));
-  line-height: 1.35;
+  line-height: var(--viewer-spacing-formulation-line-height, 1.35);
 }
 
 .referenceLink {
@@ -125,7 +125,7 @@
 @media (max-width: 520px) {
   .formulationLine {
     font-size: calc(1rem * var(--viewer-font-scale, 1));
-    line-height: 1.38;
+    line-height: var(--viewer-spacing-formulation-line-height, 1.38);
   }
 
   .formulationLineLatex {
@@ -147,6 +147,6 @@
   .referenceLink,
   .referenceText {
     font-size: calc(0.96rem * var(--viewer-font-scale, 1));
-    line-height: 1.4;
+    line-height: var(--viewer-spacing-formulation-line-height, 1.4);
   }
 }

@@ -94,6 +94,17 @@ export function FileList({
     Record<string, string[]>
   >({});
   const definitionIndex = useMemo(() => buildDefinitionIndex(files), [files]);
+  const [showPageSource, setShowPageSource] = useState(false);
+
+  const selectedNode = readerNodes[selectedNodeIndex] ?? readerNodes[0];
+  const isDivider = selectedNode?.kind === "divider";
+  const activeFileIndex =
+    selectedNode?.kind === "file" ? selectedNode.fileIndex : -1;
+  const selectedFile = isDivider ? undefined : files[selectedFileIndex];
+
+  useEffect(() => {
+    setShowPageSource(false);
+  }, [selectedFile?.path]);
 
   if (files.length === 0) {
     if (loadError) {
@@ -113,7 +124,7 @@ export function FileList({
               ? `${styles.readerLayout} ${styles.outlineClosed}`
               : outlineState === "open"
                 ? `${styles.readerLayout} ${styles.outlineOpen}`
-                : styles.readerLayout
+                : `${styles.readerLayout} ${styles.outlineAuto}`
           }
         >
           <div
@@ -169,17 +180,6 @@ export function FileList({
       </section>
     );
   }
-
-  const selectedNode = readerNodes[selectedNodeIndex] ?? readerNodes[0];
-  const isDivider = selectedNode?.kind === "divider";
-  const activeFileIndex =
-    selectedNode?.kind === "file" ? selectedNode.fileIndex : -1;
-  const selectedFile = isDivider ? undefined : files[selectedFileIndex];
-  const [showPageSource, setShowPageSource] = useState(false);
-
-  useEffect(() => {
-    setShowPageSource(false);
-  }, [selectedFile?.path]);
 
   const pageSource =
     selectedFile?.source ||

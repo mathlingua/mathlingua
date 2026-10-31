@@ -17,6 +17,8 @@
         try {
           const theme = window.localStorage.getItem("mlg-view-theme");
           const themeSchemes = {
+            journal: "light",
+            "journal-dark": "dark",
             classic: "light",
             "classic-dark": "dark",
             mono: "light",
@@ -41,6 +43,8 @@
             document.documentElement.dataset.theme = theme;
             document.documentElement.style.colorScheme = colorScheme;
             const initialSafeAreaColors = {
+              journal: "#24140e",
+              "journal-dark": "#140905",
               "field-guide": "#fbf8ef",
               "field-guide-dark": "#171b1c",
             };
@@ -71,8 +75,8 @@
       })();
       window.__MLG_VIEW_CONFIG__ = __MLG_RUNTIME_CONFIG_JSON__;
     </script>
-    <script type="module" crossorigin src="./assets/index-D7Bokm0N.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-BPDJFo-v.css">
+    <script type="module" crossorigin src="./assets/index-DrrTZ2dK.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-C3Q-aisR.css">
   </head>
   <body>
     <div id="root"></div>

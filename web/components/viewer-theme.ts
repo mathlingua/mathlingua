@@ -1,6 +1,8 @@
 export const VIEWER_THEME_STORAGE_KEY = "mlg-view-theme";
 
 export const VIEWER_THEMES = [
+  { id: "journal", label: "Journal", colorScheme: "light" },
+  { id: "journal-dark", label: "Journal Dark", colorScheme: "dark" },
   { id: "classic", label: "Classic", colorScheme: "light" },
   { id: "classic-dark", label: "Classic Dark", colorScheme: "dark" },
   { id: "mono", label: "Mono", colorScheme: "light" },

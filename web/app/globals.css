@@ -413,6 +413,168 @@ html[data-spacing="spacious"] {
   }
 }
 
+html[data-theme="journal"] {
+  color-scheme: light;
+  --font-body:
+    "EB Garamond", "Cinzel", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --font-display:
+    "Cinzel", "Playfair Display", Baskerville, "Iowan Old Style", Georgia, serif;
+  --font-ui:
+    "Cinzel", "Gill Sans", "Avenir Next Condensed", sans-serif;
+  --page-bg: #22120b;
+  --surface: #fcf8ee;
+  --surface-alt: #f4ebd7;
+  --ink: #221811;
+  --muted: #786350;
+  --muted-strong: #523f30;
+  --line: #c59b27;
+  --line-strong: #8a6718;
+  --accent: #8b1e28;
+  --accent-soft: #eedbb0;
+  --shadow:
+    0 1px 0 rgba(255, 230, 160, 0.4),
+    0 10px 25px rgba(25, 12, 6, 0.45);
+  --chrome-bg: rgba(36, 19, 12, 0.96);
+  --card-bg:
+    radial-gradient(circle at 12% 10%, rgba(255, 250, 230, 0.4), transparent 30%),
+    radial-gradient(circle at 88% 90%, rgba(180, 150, 110, 0.15), transparent 35%),
+    #fcf8ee;
+  --definition-bg:
+    linear-gradient(rgba(252, 248, 238, 0.95), rgba(244, 235, 215, 0.98)),
+    #f4ebd7;
+  --definition-shadow:
+    inset 0 0 0 1px rgba(197, 155, 39, 0.5),
+    inset 0 0 0 3px rgba(244, 235, 215, 0.8),
+    0 12px 28px rgba(28, 14, 7, 0.28);
+  --control-shadow: 0 2px 4px rgba(25, 12, 6, 0.35);
+  --syntax-comment: #7b705e;
+  --syntax-command: #8b1e28;
+  --syntax-keyword: #183a63;
+  --syntax-label: #6b3524;
+  --syntax-operator: #6b421a;
+  --syntax-placeholder: #2e5339;
+  --syntax-punctuation: #8a735b;
+  --syntax-string: #205335;
+  --radius-card: 0.35rem;
+  --radius-control: 0.25rem;
+  --radius-popover: 0.25rem;
+  --radius-option: 0.15rem;
+  --radius-nav: 0.2rem;
+  --radius-definition: 0.35rem;
+  --radius-code: 0.15rem;
+  --radius-code-block: 0.2rem;
+  --radius-inline-ref: 0.15rem;
+  --card-border-width: 2px;
+  --popover-border-width: 2px;
+  --definition-border-width: 1.5px;
+  --divider-border-width: 1px;
+  --heading-color: #8b1e28;
+  --heading-weight: 700;
+  --section-heading-color: #8b1e28;
+  --section-heading-weight: 700;
+  --card-heading-color: #3b2014;
+  --card-heading-weight: 700;
+  --prose-heading-color: #8b1e28;
+  --prose-heading-weight: 700;
+  --viewer-spacing-stream-gap: 1.35rem;
+  --viewer-spacing-stream-padding-top: 1.85rem;
+  --viewer-spacing-stream-padding-bottom: 3.5rem;
+  --viewer-spacing-stream-padding-x: 1.25rem;
+  --viewer-spacing-card-padding-y: 1.15rem;
+  --viewer-spacing-card-padding-x: 1.35rem;
+  --viewer-spacing-card-padding-bottom: 1.25rem;
+  --viewer-spacing-card-closable-top: 2.6rem;
+  --viewer-spacing-heading-to-text-gap: 0.55rem;
+  --viewer-spacing-prose-to-card-gap: 1.15rem;
+  --viewer-spacing-heading-top-gap: 1.35rem;
+  --viewer-spacing-section-gap: 0.35rem;
+  --viewer-spacing-section-margin-top: 0.5rem;
+  --viewer-spacing-item-gap: 0.05rem;
+  --viewer-spacing-formulation-line-height: 1.35;
+  --viewer-spacing-prose-line-height: 1.58;
+  --viewer-spacing-prose-paragraph-gap: 0.75rem;
+  --viewer-spacing-section-break-gap: 2.5rem;
+}
+
+html[data-theme="journal-dark"] {
+  color-scheme: dark;
+  --font-body:
+    "EB Garamond", "Cinzel", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --font-display:
+    "Cinzel", "Playfair Display", Baskerville, "Iowan Old Style", Georgia, serif;
+  --font-ui:
+    "Cinzel", "Gill Sans", "Avenir Next Condensed", sans-serif;
+  --page-bg: #140905;
+  --surface: #24150e;
+  --surface-alt: #1d0f09;
+  --ink: #ede0cd;
+  --muted: #a38c75;
+  --muted-strong: #c2ac96;
+  --line: #8c6e26;
+  --line-strong: #b8933b;
+  --accent: #b92d3b;
+  --accent-soft: #3d2114;
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+  --chrome-bg: rgba(22, 11, 7, 0.96);
+  --card-bg:
+    radial-gradient(circle at 14% 12%, rgba(212, 175, 55, 0.05), transparent 28%),
+    #24150e;
+  --definition-bg:
+    linear-gradient(rgba(36, 21, 14, 0.95), rgba(28, 15, 9, 0.98)),
+    #24150e;
+  --definition-shadow:
+    inset 0 0 0 1px rgba(184, 147, 59, 0.4),
+    0 14px 32px rgba(0, 0, 0, 0.6);
+  --control-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+  --syntax-comment: #8c7b68;
+  --syntax-command: #d94b59;
+  --syntax-keyword: #5b87bd;
+  --syntax-label: #c26955;
+  --syntax-operator: #d4955b;
+  --syntax-placeholder: #6a9677;
+  --syntax-punctuation: #a8947f;
+  --syntax-string: #7ea383;
+  --radius-card: 0.35rem;
+  --radius-control: 0.25rem;
+  --radius-popover: 0.25rem;
+  --radius-option: 0.15rem;
+  --radius-nav: 0.2rem;
+  --radius-definition: 0.35rem;
+  --radius-code: 0.15rem;
+  --radius-code-block: 0.2rem;
+  --radius-inline-ref: 0.15rem;
+  --card-border-width: 2px;
+  --popover-border-width: 2px;
+  --definition-border-width: 1.5px;
+  --divider-border-width: 1px;
+  --heading-color: #d94b59;
+  --heading-weight: 700;
+  --section-heading-color: #d94b59;
+  --section-heading-weight: 700;
+  --card-heading-color: #f2e2d0;
+  --card-heading-weight: 700;
+  --prose-heading-color: #d94b59;
+  --prose-heading-weight: 700;
+  --viewer-spacing-stream-gap: 1.35rem;
+  --viewer-spacing-stream-padding-top: 1.85rem;
+  --viewer-spacing-stream-padding-bottom: 3.5rem;
+  --viewer-spacing-stream-padding-x: 1.25rem;
+  --viewer-spacing-card-padding-y: 1.15rem;
+  --viewer-spacing-card-padding-x: 1.35rem;
+  --viewer-spacing-card-padding-bottom: 1.25rem;
+  --viewer-spacing-card-closable-top: 2.6rem;
+  --viewer-spacing-heading-to-text-gap: 0.55rem;
+  --viewer-spacing-prose-to-card-gap: 1.15rem;
+  --viewer-spacing-heading-top-gap: 1.35rem;
+  --viewer-spacing-section-gap: 0.35rem;
+  --viewer-spacing-section-margin-top: 0.5rem;
+  --viewer-spacing-item-gap: 0.05rem;
+  --viewer-spacing-formulation-line-height: 1.35;
+  --viewer-spacing-prose-line-height: 1.58;
+  --viewer-spacing-prose-paragraph-gap: 0.75rem;
+  --viewer-spacing-section-break-gap: 2.5rem;
+}
+
 html[data-theme="mono"] {
   color-scheme: light;
   --page-bg: #fbfbfa;
@@ -1318,6 +1480,70 @@ html[data-theme="lcd-dark"] body::after {
   );
   background-size: 4px 4px;
   opacity: 0.24;
+}
+
+html[data-theme="journal"] body {
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(85, 45, 30, 0.45) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 80%, rgba(30, 15, 10, 0.7) 0%, transparent 70%),
+    linear-gradient(135deg, #3d2318 0%, #24140e 50%, #160a06 100%),
+    var(--page-bg);
+}
+
+html[data-theme="journal"] body::after {
+  content: "";
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      circle at 20% 30%,
+      rgba(212, 175, 55, 0.05) 0 0.6px,
+      transparent 0.9px
+    ),
+    radial-gradient(
+      circle at 75% 70%,
+      rgba(40, 20, 10, 0.1) 0 0.7px,
+      transparent 1px
+    );
+  background-size:
+    19px 23px,
+    31px 37px;
+  mix-blend-mode: multiply;
+  opacity: 0.6;
+}
+
+html[data-theme="journal-dark"] body {
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(60, 30, 20, 0.4) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 80%, rgba(15, 7, 4, 0.85) 0%, transparent 70%),
+    linear-gradient(135deg, #24150e 0%, #170b07 50%, #0d0503 100%),
+    var(--page-bg);
+}
+
+html[data-theme="journal-dark"] body::after {
+  content: "";
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      circle at 25% 35%,
+      rgba(212, 175, 55, 0.04) 0 0.6px,
+      transparent 0.9px
+    ),
+    radial-gradient(
+      circle at 80% 65%,
+      rgba(0, 0, 0, 0.3) 0 0.7px,
+      transparent 1px
+    );
+  background-size:
+    21px 25px,
+    33px 39px;
+  mix-blend-mode: screen;
+  opacity: 0.25;
 }
 
 a {

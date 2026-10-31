@@ -721,6 +721,147 @@
     var(--surface);
 }
 
+/* Theme overrides: Journal */
+
+:global(html[data-theme^="journal"]) .header {
+  border-bottom: 2px solid var(--line);
+  background:
+    linear-gradient(180deg, rgba(61, 35, 24, 0.96) 0%, rgba(36, 20, 14, 0.98) 100%),
+    var(--chrome-bg);
+  box-shadow: 
+    0 4px 15px rgba(0, 0, 0, 0.45),
+    inset 0 -1px 0 rgba(212, 175, 55, 0.25);
+  backdrop-filter: blur(10px);
+}
+
+:global(html[data-theme^="journal"]) .subbar {
+  border-top: 1px dashed rgba(212, 175, 55, 0.35);
+}
+
+:global(html[data-theme^="journal"]) .controlLabel {
+  color: #eedbb0;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+:global(html[data-theme^="journal"]) .toggleRow {
+  color: #eedbb0;
+}
+
+:global(html[data-theme^="journal"]) .toggleRow:hover {
+  background: rgba(212, 175, 55, 0.15);
+  color: #fff8e7;
+}
+
+:global(html[data-theme^="journal"]) .subbarDivider {
+  background: rgba(212, 175, 55, 0.3);
+}
+
+:global(html[data-theme^="journal"]) .switch {
+  background: #523f30;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+}
+
+:global(html[data-theme^="journal"]) .switchActive {
+  background: var(--accent);
+}
+
+:global(html[data-theme^="journal"]) .button,
+:global(html[data-theme^="journal"]) .settingsIconButton {
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  color: #eedbb0;
+}
+
+:global(html[data-theme^="journal"]) .button:hover,
+:global(html[data-theme^="journal"]) .settingsIconButton:hover,
+:global(html[data-theme^="journal"]) .settingsIconButtonActive {
+  border-color: var(--line);
+  background: rgba(212, 175, 55, 0.15);
+  color: #fff8e7;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+:global(html[data-theme^="journal"]) .dropdownButton,
+:global(html[data-theme^="journal"]) .fontSizeGroup {
+  border-color: var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+:global(html[data-theme^="journal"]) .fontSizeButton + .fontSizeButton {
+  border-left-color: var(--line);
+}
+
+:global(html[data-theme^="journal"])
+  .fontSizeButton:hover:not(.fontSizeButtonDisabled) {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+:global(html[data-theme^="journal"]) .dropdownMenu {
+  border: 1.5px solid var(--line);
+  background:
+    radial-gradient(
+      circle at 15% 10%,
+      rgba(255, 248, 215, 0.3),
+      transparent 45%
+    ),
+    var(--surface);
+  box-shadow: 
+    0 10px 25px rgba(0, 0, 0, 0.5),
+    inset 0 0 0 1px rgba(212, 175, 55, 0.2);
+}
+
+:global(html[data-theme^="journal"]) .dropdownOption {
+  letter-spacing: 0.035em;
+}
+
+:global(html[data-theme^="journal"]) .dropdownOptionActive {
+  background: var(--accent);
+  color: #fff8e7;
+  font-weight: 600;
+}
+
+:global(html[data-theme="journal-dark"]) .header {
+  background:
+    linear-gradient(180deg, rgba(36, 21, 14, 0.97) 0%, rgba(20, 10, 6, 0.99) 100%),
+    var(--chrome-bg);
+  box-shadow: 
+    0 4px 18px rgba(0, 0, 0, 0.65),
+    inset 0 -1px 0 rgba(184, 147, 59, 0.2);
+}
+
+:global(html[data-theme="journal-dark"]) .controlLabel {
+  color: #ede0cd;
+}
+
+:global(html[data-theme="journal-dark"]) .toggleRow {
+  color: #ede0cd;
+}
+
+:global(html[data-theme="journal-dark"]) .toggleRow:hover {
+  background: rgba(212, 175, 55, 0.15);
+  color: #fff8e7;
+}
+
+:global(html[data-theme="journal-dark"]) .subbarDivider {
+  background: rgba(184, 147, 59, 0.25);
+}
+
+:global(html[data-theme="journal-dark"]) .dropdownMenu {
+  background:
+    radial-gradient(
+      circle at 15% 10%,
+      rgba(212, 175, 55, 0.06),
+      transparent 45%
+    ),
+    var(--surface);
+  box-shadow: 
+    0 12px 28px rgba(0, 0, 0, 0.7),
+    inset 0 0 0 1px rgba(184, 147, 59, 0.25);
+}
+
 /* Theme overrides: Field Guide */
 
 :global(html[data-theme^="field-guide"]) .header {

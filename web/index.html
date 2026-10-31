@@ -17,6 +17,8 @@
         try {
           const theme = window.localStorage.getItem("mlg-view-theme");
           const themeSchemes = {
+            journal: "light",
+            "journal-dark": "dark",
             classic: "light",
             "classic-dark": "dark",
             mono: "light",
@@ -41,6 +43,8 @@
             document.documentElement.dataset.theme = theme;
             document.documentElement.style.colorScheme = colorScheme;
             const initialSafeAreaColors = {
+              journal: "#24140e",
+              "journal-dark": "#140905",
               "field-guide": "#fbf8ef",
               "field-guide-dark": "#171b1c",
             };

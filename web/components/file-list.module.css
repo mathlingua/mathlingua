@@ -986,6 +986,175 @@
     transparent;
 }
 
+/* Theme overrides: Journal */
+
+:global(html[data-theme^="journal"]) .groupStream {
+  gap: var(--viewer-spacing-stream-gap, 1.35rem);
+}
+
+:global(html[data-theme^="journal"]) .definitionStack {
+  gap: 0.85rem;
+}
+
+:global(html[data-theme^="journal"]) .readerLayout {
+  background:
+    linear-gradient(
+      90deg,
+      rgba(36, 20, 14, 0.08) 0%,
+      transparent 1.5rem,
+      transparent calc(100% - 1.5rem),
+      rgba(36, 20, 14, 0.08) 100%
+    ),
+    var(--surface);
+}
+
+:global(html[data-theme^="journal"]) .outlinePanel {
+  background:
+    linear-gradient(180deg, rgba(244, 235, 215, 0.5) 0%, rgba(235, 224, 200, 0.5) 100%),
+    var(--surface);
+  border-right: 1.5px solid rgba(197, 155, 39, 0.4);
+  box-shadow: inset -6px 0 12px -4px rgba(45, 25, 15, 0.12);
+}
+
+:global(html[data-theme^="journal"]) .outlineLinkActive {
+  background: rgba(139, 30, 40, 0.08);
+  color: var(--accent);
+  font-weight: 700;
+}
+
+:global(html[data-theme^="journal"]) .outlineLinkActive::before {
+  content: "";
+  position: absolute;
+  top: 0.25rem;
+  bottom: 0.25rem;
+  left: 0;
+  width: 3px;
+  background: var(--accent);
+  border-radius: 2px;
+}
+
+:global(html[data-theme^="journal"]) .documentStream {
+  background:
+    radial-gradient(
+      circle at 50% 8%,
+      rgba(255, 248, 225, 0.4),
+      transparent 32rem
+    ),
+    radial-gradient(
+      circle at 94% 86%,
+      rgba(100, 60, 25, 0.05),
+      transparent 25rem
+    ),
+    transparent;
+}
+
+:global(html[data-theme^="journal"]) .breadcrumbLink,
+:global(html[data-theme^="journal"]) .breadcrumbCurrent,
+:global(html[data-theme^="journal"]) .pageNavButton {
+  font-family: var(--font-display);
+  font-style: italic;
+}
+
+:global(html[data-theme^="journal"]) .dividerTitle,
+:global(html[data-theme^="journal"]) .dividerHeadTitle,
+:global(html[data-theme^="journal"]) .pageItem h1,
+:global(html[data-theme^="journal"]) .pageItem h2,
+:global(html[data-theme^="journal"]) .pageItem h3,
+:global(html[data-theme^="journal"]) .pageItem h4 {
+  font-variant: small-caps;
+  letter-spacing: 0.04em;
+  text-wrap: balance;
+}
+
+:global(html[data-theme^="journal"]) .dividerTitle::first-letter,
+:global(html[data-theme^="journal"]) .dividerHeadTitle::first-letter,
+:global(html[data-theme^="journal"]) .pageTitle h1::first-letter {
+  color: var(--accent);
+  font-size: 1.15em;
+}
+
+:global(html[data-theme^="journal"]) .dividerRule {
+  position: relative;
+  width: 8rem;
+  height: 3px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+}
+
+:global(html[data-theme^="journal"]) .dividerRule::after {
+  content: "❧";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  padding: 0 0.4rem;
+  background: var(--surface);
+  color: var(--accent);
+  font-size: 0.95rem;
+  line-height: 1;
+  transform: translate(-50%, -50%);
+}
+
+:global(html[data-theme^="journal"]) .pageSectionTitle h2,
+:global(html[data-theme^="journal"]) .pageNavigation {
+  border-color: var(--line);
+  border-style: solid;
+}
+
+:global(html[data-theme^="journal"]) .pageSectionTitle h2 {
+  border-bottom-width: 1.5px;
+}
+
+:global(html[data-theme^="journal"]) .pageNavigation {
+  border-top-width: 1.5px;
+}
+
+:global(html[data-theme^="journal"]) .pageNavLabel {
+  color: var(--accent);
+  font-family: var(--font-ui);
+  font-style: normal;
+}
+
+:global(html[data-theme^="journal"]) .definitionTrail {
+  border: 1.5px solid var(--line);
+}
+
+:global(html[data-theme="journal-dark"]) .readerLayout {
+  background:
+    linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.35) 0%,
+      transparent 1.5rem,
+      transparent calc(100% - 1.5rem),
+      rgba(0, 0, 0, 0.35) 100%
+    ),
+    var(--surface);
+}
+
+:global(html[data-theme="journal-dark"]) .outlinePanel {
+  background:
+    linear-gradient(180deg, rgba(29, 15, 9, 0.8) 0%, rgba(20, 10, 6, 0.8) 100%),
+    var(--surface);
+  border-right: 1.5px solid rgba(140, 110, 38, 0.35);
+  box-shadow: inset -6px 0 14px -4px rgba(0, 0, 0, 0.4);
+}
+
+:global(html[data-theme="journal-dark"]) .outlineLinkActive {
+  background: rgba(185, 45, 59, 0.16);
+  color: var(--accent);
+}
+
+:global(html[data-theme="journal-dark"]) .documentStream {
+  background:
+    radial-gradient(
+      circle at 50% 8%,
+      rgba(212, 175, 55, 0.04),
+      transparent 32rem
+    ),
+    radial-gradient(circle at 94% 86%, rgba(0, 0, 0, 0.3), transparent 25rem),
+    transparent;
+}
+
 :global(html[data-theme^="field-guide"]) .readerLayout {
   background: var(--surface);
 }

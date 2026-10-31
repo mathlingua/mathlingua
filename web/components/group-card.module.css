@@ -416,6 +416,77 @@
   color: var(--accent);
 }
 
+/* Theme overrides: Journal */
+
+:global(html[data-theme^="journal"]) .cardFace {
+  border: 1.5px solid var(--line);
+  box-shadow: 
+    0 1px 0 rgba(255, 230, 160, 0.4),
+    0 8px 24px rgba(20, 10, 5, 0.25);
+}
+
+:global(html[data-theme^="journal"]) .cardFaceInactive {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+:global(html[data-theme^="journal"]) .cardFace::before,
+:global(html[data-theme^="journal"]) .cardFace::after {
+  content: "";
+  position: absolute;
+  width: 0.75rem;
+  height: 0.75rem;
+  pointer-events: none;
+}
+
+:global(html[data-theme^="journal"]) .cardFace::before {
+  top: 0.32rem;
+  left: 0.32rem;
+  border-top: 1.5px solid var(--line);
+  border-left: 1.5px solid var(--line);
+}
+
+:global(html[data-theme^="journal"]) .cardFace::after {
+  right: 0.32rem;
+  bottom: 0.32rem;
+  border-right: 1.5px solid var(--line);
+  border-bottom: 1.5px solid var(--line);
+}
+
+:global(html[data-theme^="journal"]) .header {
+  position: relative;
+  padding-bottom: 0.65rem;
+  border-bottom: 1.5px solid var(--line);
+}
+
+:global(html[data-theme^="journal"]) .heading {
+  color: var(--accent);
+  font-family: var(--font-display);
+  font-size: calc(1.06rem * var(--viewer-font-scale, 1));
+  font-variant: small-caps;
+  letter-spacing: 0.06em;
+}
+
+:global(html[data-theme^="journal"]) .resourceMetaLabel {
+  color: var(--accent);
+  font-family: var(--font-display);
+  font-variant: small-caps;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+:global(html[data-theme^="journal"]) .iconToggle:hover,
+:global(html[data-theme^="journal"]) .documentedToggle:hover {
+  border-color: var(--line);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+:global(html[data-theme="journal-dark"]) .cardFace {
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55);
+}
+
 :global(html[data-theme^="field-guide"]) .cardFace {
   border-color: var(--line-strong);
   box-shadow: var(--shadow);

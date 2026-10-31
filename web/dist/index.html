@@ -15,9 +15,9 @@
     <script>
       (() => {
         try {
-          let theme = window.localStorage.getItem("mlg-view-theme");
-          const family = window.localStorage.getItem("mlg-view-theme-family");
-          const mode = window.localStorage.getItem("mlg-view-theme-mode");
+          const storedTheme = window.localStorage.getItem("mlg-view-theme");
+          const storedFamily = window.localStorage.getItem("mlg-view-theme-family");
+          const storedMode = window.localStorage.getItem("mlg-view-theme-mode");
           const familyVariants = {
             atomic: { light: "atomic", dark: "atomic-dark" },
             classic: { light: "classic", dark: "classic-dark" },
@@ -30,6 +30,9 @@
             retro: { light: "retro", dark: "retro-dark" },
             sepia: { light: "sepia", dark: "sepia-dark" },
           };
+          const family = storedFamily || (storedTheme ? null : "journal");
+          const mode = storedMode || (storedTheme ? null : "auto");
+          let theme = storedTheme;
           if (family && familyVariants[family]) {
             const isDark =
               mode === "dark" ||
@@ -38,6 +41,10 @@
             theme = isDark
               ? familyVariants[family].dark
               : familyVariants[family].light;
+          } else if (!theme) {
+            const isDark =
+              window.matchMedia("(prefers-color-scheme: dark)").matches;
+            theme = isDark ? "journal-dark" : "journal";
           }
           const themeSchemes = {
             atomic: "light",
@@ -98,7 +105,7 @@
       })();
       window.__MLG_VIEW_CONFIG__ = __MLG_RUNTIME_CONFIG_JSON__;
     </script>
-    <script type="module" crossorigin src="./assets/index-8d7Rp8Ga.js"></script>
+    <script type="module" crossorigin src="./assets/index-DhC0_CRT.js"></script>
     <link rel="stylesheet" crossorigin href="./assets/index-BsDS5mww.css">
   </head>
   <body>

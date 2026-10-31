@@ -111,9 +111,9 @@ export const VIEWER_THEME_FAMILIES: readonly ViewerThemeFamily[] = [
   },
 ] as const;
 
-export const DEFAULT_VIEWER_THEME_FAMILY = "classic";
-export const DEFAULT_VIEWER_THEME_MODE: ViewerThemeMode = "light";
-export const DEFAULT_VIEWER_THEME: ViewerTheme = "classic";
+export const DEFAULT_VIEWER_THEME_FAMILY = "journal";
+export const DEFAULT_VIEWER_THEME_MODE: ViewerThemeMode = "auto";
+export const DEFAULT_VIEWER_THEME: ViewerTheme = "journal";
 
 export function isViewerTheme(
   value: string | null | undefined,
@@ -139,7 +139,10 @@ export function resolveViewerTheme(
 ): ViewerTheme {
   const family =
     VIEWER_THEME_FAMILIES.find((item) => item.id === familyId) ??
-    VIEWER_THEME_FAMILIES[1]; // default Classic
+    VIEWER_THEME_FAMILIES.find(
+      (item) => item.id === DEFAULT_VIEWER_THEME_FAMILY,
+    ) ??
+    VIEWER_THEME_FAMILIES[4]; // Journal
   const prefersDark =
     typeof window !== "undefined" &&
     window.matchMedia?.("(prefers-color-scheme: dark)")?.matches;
@@ -159,7 +162,11 @@ export function getFamilyForTheme(theme: ViewerTheme): {
       return { family, mode: "dark" };
     }
   }
-  return { family: VIEWER_THEME_FAMILIES[1], mode: "light" };
+  const defaultFamily =
+    VIEWER_THEME_FAMILIES.find(
+      (f) => f.id === DEFAULT_VIEWER_THEME_FAMILY,
+    ) ?? VIEWER_THEME_FAMILIES[4];
+  return { family: defaultFamily, mode: DEFAULT_VIEWER_THEME_MODE };
 }
 
 export function applyViewerTheme(theme: ViewerTheme) {

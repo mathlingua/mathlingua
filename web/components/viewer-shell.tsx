@@ -145,7 +145,9 @@ export function ViewerShell({
   const [themeMode, setThemeMode] = useState<ViewerThemeMode>(
     DEFAULT_VIEWER_THEME_MODE,
   );
-  const [theme, setTheme] = useState<ViewerTheme>(DEFAULT_VIEWER_THEME);
+  const [theme, setTheme] = useState<ViewerTheme>(() =>
+    resolveViewerTheme(DEFAULT_VIEWER_THEME_FAMILY, DEFAULT_VIEWER_THEME_MODE),
+  );
   const [font, setFont] = useState<ViewerFont>(DEFAULT_VIEWER_FONT);
   const [spacing, setSpacing] = useState<ViewerSpacing>(DEFAULT_VIEWER_SPACING);
   const [fontScale, setFontScale] = useState<ViewerFontScale>(
@@ -379,15 +381,23 @@ export function ViewerShell({
         storedMode && isViewerThemeMode(storedMode)
           ? storedMode
           : DEFAULT_VIEWER_THEME_MODE;
-    } else {
-      const candidateTheme = isViewerTheme(documentTheme)
-        ? documentTheme
-        : isViewerTheme(storedTheme)
-          ? storedTheme
-          : DEFAULT_VIEWER_THEME;
-      const parsed = getFamilyForTheme(candidateTheme);
+    } else if (storedTheme && isViewerTheme(storedTheme)) {
+      const parsed = getFamilyForTheme(storedTheme);
       initialFamily = parsed.family.id;
-      initialMode = parsed.mode;
+      initialMode =
+        storedMode && isViewerThemeMode(storedMode)
+          ? storedMode
+          : parsed.mode;
+    } else if (documentTheme && isViewerTheme(documentTheme)) {
+      const parsed = getFamilyForTheme(documentTheme);
+      initialFamily = parsed.family.id;
+      initialMode =
+        storedMode && isViewerThemeMode(storedMode)
+          ? storedMode
+          : DEFAULT_VIEWER_THEME_MODE;
+    } else {
+      initialFamily = DEFAULT_VIEWER_THEME_FAMILY;
+      initialMode = DEFAULT_VIEWER_THEME_MODE;
     }
 
     const initialTheme = resolveViewerTheme(initialFamily, initialMode);

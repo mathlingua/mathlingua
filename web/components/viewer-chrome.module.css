@@ -474,17 +474,13 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.32rem;
-  min-width: 2rem;
+  min-width: 1.85rem;
+  width: 1.85rem;
   height: 100%;
-  padding: 0 0.5rem;
+  padding: 0;
   border: none;
   background: transparent;
   color: var(--ink);
-  font-family: var(--font-ui);
-  font-size: 0.76rem;
-  font-weight: 500;
-  line-height: 1;
   cursor: pointer;
   user-select: none;
   transition:
@@ -519,13 +515,9 @@
 }
 
 .themeModeIcon {
-  width: 0.8rem;
-  height: 0.8rem;
+  width: 0.95rem;
+  height: 0.95rem;
   flex-shrink: 0;
-}
-
-.themeModeLabel {
-  line-height: 1;
 }
 
 /* Focus styles */
@@ -1122,15 +1114,7 @@
   }
 
   .themeModeButton {
-    min-width: 1.75rem;
-    padding: 0 0.42rem;
-    font-size: 0.72rem;
-    gap: 0.22rem;
-  }
-}
-
-@media (max-width: 400px) {
-  .themeModeIcon {
-    display: none;
+    min-width: 1.65rem;
+    width: 1.65rem;
   }
 }

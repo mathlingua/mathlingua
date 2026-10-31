@@ -638,6 +638,7 @@ export function ViewerChrome({
             >
               <button
                 aria-checked={themeMode === "light"}
+                aria-label="Light mode"
                 className={
                   themeMode === "light"
                     ? `${styles.themeModeButton} ${styles.themeModeButtonActive}`
@@ -649,10 +650,10 @@ export function ViewerChrome({
                 type="button"
               >
                 <SunIcon />
-                <span className={styles.themeModeLabel}>Light</span>
               </button>
               <button
                 aria-checked={themeMode === "dark"}
+                aria-label="Dark mode"
                 className={
                   themeMode === "dark"
                     ? `${styles.themeModeButton} ${styles.themeModeButtonActive}`
@@ -664,10 +665,10 @@ export function ViewerChrome({
                 type="button"
               >
                 <MoonIcon />
-                <span className={styles.themeModeLabel}>Dark</span>
               </button>
               <button
                 aria-checked={themeMode === "auto"}
+                aria-label="Automatic mode (matches device settings)"
                 className={
                   themeMode === "auto"
                     ? `${styles.themeModeButton} ${styles.themeModeButtonActive}`
@@ -679,7 +680,6 @@ export function ViewerChrome({
                 type="button"
               >
                 <AutoModeIcon />
-                <span className={styles.themeModeLabel}>Auto</span>
               </button>
             </div>
           </div>

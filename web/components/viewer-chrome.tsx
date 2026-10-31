@@ -10,7 +10,12 @@ import {
   type ViewerFont,
   type ViewerFontScale,
 } from "./viewer-font";
-import { VIEWER_THEMES, type ViewerTheme } from "./viewer-theme";
+import {
+  VIEWER_THEME_FAMILIES,
+  VIEWER_THEMES,
+  type ViewerTheme,
+  type ViewerThemeMode,
+} from "./viewer-theme";
 import { VIEWER_SPACINGS, type ViewerSpacing } from "./viewer-spacing";
 import styles from "./viewer-chrome.module.css";
 
@@ -18,8 +23,10 @@ import styles from "./viewer-chrome.module.css";
 interface ViewerChromeProps {
   /** Toggles the outline panel visibility. */
   onToggleOutline: () => void;
-  /** Changes the active viewer theme. */
-  onThemeChange: (theme: ViewerTheme) => void;
+  /** Changes the active viewer theme family (e.g. "journal", "classic", etc.). */
+  onThemeFamilyChange: (familyId: string) => void;
+  /** Changes the active viewer theme mode ("light" | "dark" | "auto"). */
+  onThemeModeChange: (mode: ViewerThemeMode) => void;
   /** Changes the active typography/font mode. */
   onFontChange: (font: ViewerFont) => void;
   /** Changes the active reader spacing density. */
@@ -34,6 +41,10 @@ interface ViewerChromeProps {
   onToggleTypes: () => void;
   /** Current outline visibility mode. */
   outlineState: OutlineState;
+  /** Current theme family id. */
+  themeFamily: string;
+  /** Current theme mode ("light" | "dark" | "auto"). */
+  themeMode: ViewerThemeMode;
   /** Current visual theme. */
   theme: ViewerTheme;
   /** Current typography/font mode. */
@@ -49,7 +60,8 @@ interface ViewerChromeProps {
 /** Renders the top toolbar and secondary slide-down settings toolbar. */
 export function ViewerChrome({
   onToggleOutline,
-  onThemeChange,
+  onThemeFamilyChange,
+  onThemeModeChange,
   onFontChange,
   onSpacingChange,
   onDecreaseFontScale,
@@ -57,6 +69,8 @@ export function ViewerChrome({
   onResetFontScale,
   onToggleTypes,
   outlineState,
+  themeFamily,
+  themeMode,
   theme,
   font,
   spacing,
@@ -81,8 +95,9 @@ export function ViewerChrome({
     VIEWER_FONTS.find((item) => item.id === font) ?? VIEWER_FONTS[0];
   const activeSpacing =
     VIEWER_SPACINGS.find((item) => item.id === spacing) ?? VIEWER_SPACINGS[0];
-  const activeTheme =
-    VIEWER_THEMES.find((item) => item.id === theme) ?? VIEWER_THEMES[0];
+  const activeFamily =
+    VIEWER_THEME_FAMILIES.find((item) => item.id === themeFamily) ??
+    VIEWER_THEME_FAMILIES[1];
   const canDecreaseFontScale = fontScale > MIN_VIEWER_FONT_SCALE;
   const canIncreaseFontScale = fontScale < MAX_VIEWER_FONT_SCALE;
   const isDefaultFontScale = fontScale === DEFAULT_VIEWER_FONT_SCALE;
@@ -554,7 +569,7 @@ export function ViewerChrome({
               <button
                 aria-expanded={isThemeDropdownOpen}
                 aria-haspopup="listbox"
-                aria-label={`Theme: ${activeTheme.label}`}
+                aria-label={`Theme: ${activeFamily.label}`}
                 className={
                   isThemeDropdownOpen
                     ? `${styles.dropdownButton} ${styles.dropdownButtonOpen}`
@@ -573,7 +588,7 @@ export function ViewerChrome({
                 type="button"
               >
                 <span className={styles.dropdownButtonLabel}>
-                  {activeTheme.label}
+                  {activeFamily.label}
                 </span>
                 <span aria-hidden="true" className={styles.dropdownChevron}>
                   <ChevronDownIcon />
@@ -585,8 +600,8 @@ export function ViewerChrome({
                   className={`${styles.dropdownMenu} ${styles.dropdownMenuRight}`}
                   role="listbox"
                 >
-                  {VIEWER_THEMES.map((item) => {
-                    const isSelected = theme === item.id;
+                  {VIEWER_THEME_FAMILIES.map((family) => {
+                    const isSelected = themeFamily === family.id;
                     return (
                       <button
                         aria-selected={isSelected}
@@ -595,9 +610,9 @@ export function ViewerChrome({
                             ? `${styles.dropdownOption} ${styles.dropdownOptionActive}`
                             : styles.dropdownOption
                         }
-                        key={item.id}
+                        key={family.id}
                         onClick={() => {
-                          onThemeChange(item.id);
+                          onThemeFamilyChange(family.id);
                           setIsThemeDropdownOpen(false);
                         }}
                         ref={isSelected ? activeThemeOptionRef : undefined}
@@ -605,7 +620,7 @@ export function ViewerChrome({
                         type="button"
                       >
                         <span className={styles.dropdownOptionLabel}>
-                          {item.label}
+                          {family.label}
                         </span>
                         {isSelected ? <CheckIcon /> : null}
                       </button>
@@ -613,6 +628,59 @@ export function ViewerChrome({
                   })}
                 </div>
               ) : null}
+            </div>
+
+            {/* Light / Dark / Auto switcher */}
+            <div
+              aria-label="Color mode"
+              className={styles.themeModeGroup}
+              role="radiogroup"
+            >
+              <button
+                aria-checked={themeMode === "light"}
+                className={
+                  themeMode === "light"
+                    ? `${styles.themeModeButton} ${styles.themeModeButtonActive}`
+                    : styles.themeModeButton
+                }
+                onClick={() => onThemeModeChange("light")}
+                role="radio"
+                title="Light mode"
+                type="button"
+              >
+                <SunIcon />
+                <span className={styles.themeModeLabel}>Light</span>
+              </button>
+              <button
+                aria-checked={themeMode === "dark"}
+                className={
+                  themeMode === "dark"
+                    ? `${styles.themeModeButton} ${styles.themeModeButtonActive}`
+                    : styles.themeModeButton
+                }
+                onClick={() => onThemeModeChange("dark")}
+                role="radio"
+                title="Dark mode"
+                type="button"
+              >
+                <MoonIcon />
+                <span className={styles.themeModeLabel}>Dark</span>
+              </button>
+              <button
+                aria-checked={themeMode === "auto"}
+                className={
+                  themeMode === "auto"
+                    ? `${styles.themeModeButton} ${styles.themeModeButtonActive}`
+                    : styles.themeModeButton
+                }
+                onClick={() => onThemeModeChange("auto")}
+                role="radio"
+                title="Automatic mode (matches device settings)"
+                type="button"
+              >
+                <AutoModeIcon />
+                <span className={styles.themeModeLabel}>Auto</span>
+              </button>
             </div>
           </div>
         </div>
@@ -689,4 +757,56 @@ function outlineButtonLabel(outlineState: OutlineState): string {
     case "auto":
       return "Toggle outline";
   }
+}
+
+function SunIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      className={styles.themeModeIcon}
+      fill="none"
+      viewBox="0 0 16 16"
+    >
+      <circle cx="8" cy="8" r="3.2" stroke="currentColor" strokeWidth="1.5" />
+      <path
+        d="M8 1.5v1.8M8 12.7v1.8M1.5 8h1.8M12.7 8h1.8M3.4 3.4l1.3 1.3M11.3 11.3l1.3 1.3M3.4 12.6l1.3-1.3M11.3 4.7l1.3-1.3"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeWidth="1.4"
+      />
+    </svg>
+  );
+}
+
+function MoonIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      className={styles.themeModeIcon}
+      fill="none"
+      viewBox="0 0 16 16"
+    >
+      <path
+        d="M13.2 9.5a5.5 5.5 0 1 1-6.7-6.7 4.5 4.5 0 0 0 6.7 6.7z"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.4"
+      />
+    </svg>
+  );
+}
+
+function AutoModeIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      className={styles.themeModeIcon}
+      fill="none"
+      viewBox="0 0 16 16"
+    >
+      <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M8 2a6 6 0 0 1 0 12V2z" fill="currentColor" />
+    </svg>
+  );
 }

@@ -15,28 +15,51 @@
     <script>
       (() => {
         try {
-          const theme = window.localStorage.getItem("mlg-view-theme");
+          let theme = window.localStorage.getItem("mlg-view-theme");
+          const family = window.localStorage.getItem("mlg-view-theme-family");
+          const mode = window.localStorage.getItem("mlg-view-theme-mode");
+          const familyVariants = {
+            atomic: { light: "atomic", dark: "atomic-dark" },
+            classic: { light: "classic", dark: "classic-dark" },
+            "field-guide": { light: "field-guide", dark: "field-guide-dark" },
+            "flat-gray": { light: "flat-gray", dark: "flat-gray-dark" },
+            journal: { light: "journal", dark: "journal-dark" },
+            lcd: { light: "lcd", dark: "lcd-dark" },
+            manuscript: { light: "manuscript", dark: "manuscript-dark" },
+            mono: { light: "mono", dark: "dark" },
+            retro: { light: "retro", dark: "retro-dark" },
+            sepia: { light: "sepia", dark: "sepia-dark" },
+          };
+          if (family && familyVariants[family]) {
+            const isDark =
+              mode === "dark" ||
+              (mode === "auto" &&
+                window.matchMedia("(prefers-color-scheme: dark)").matches);
+            theme = isDark
+              ? familyVariants[family].dark
+              : familyVariants[family].light;
+          }
           const themeSchemes = {
-            journal: "light",
-            "journal-dark": "dark",
-            classic: "light",
-            "classic-dark": "dark",
-            mono: "light",
-            dark: "dark",
-            "flat-gray": "light",
-            "flat-gray-dark": "dark",
-            sepia: "light",
-            "sepia-dark": "dark",
-            manuscript: "light",
-            "manuscript-dark": "dark",
-            "field-guide": "light",
-            "field-guide-dark": "dark",
-            retro: "light",
-            "retro-dark": "dark",
-            lcd: "light",
-            "lcd-dark": "dark",
             atomic: "light",
             "atomic-dark": "dark",
+            classic: "light",
+            "classic-dark": "dark",
+            "field-guide": "light",
+            "field-guide-dark": "dark",
+            "flat-gray": "light",
+            "flat-gray-dark": "dark",
+            journal: "light",
+            "journal-dark": "dark",
+            lcd: "light",
+            "lcd-dark": "dark",
+            manuscript: "light",
+            "manuscript-dark": "dark",
+            mono: "light",
+            dark: "dark",
+            retro: "light",
+            "retro-dark": "dark",
+            sepia: "light",
+            "sepia-dark": "dark",
           };
           const colorScheme = themeSchemes[theme];
           if (colorScheme) {
@@ -75,8 +98,8 @@
       })();
       window.__MLG_VIEW_CONFIG__ = __MLG_RUNTIME_CONFIG_JSON__;
     </script>
-    <script type="module" crossorigin src="./assets/index-CCr3LIF-.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-CXhDCOBW.css">
+    <script type="module" crossorigin src="./assets/index-U7YDMKIB.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-D5qQ1J4r.css">
   </head>
   <body>
     <div id="root"></div>

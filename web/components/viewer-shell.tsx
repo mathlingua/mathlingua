@@ -19,10 +19,19 @@ import {
 } from "./viewer-font";
 import {
   DEFAULT_VIEWER_THEME,
+  DEFAULT_VIEWER_THEME_FAMILY,
+  DEFAULT_VIEWER_THEME_MODE,
+  VIEWER_THEME_FAMILY_STORAGE_KEY,
+  VIEWER_THEME_MODE_STORAGE_KEY,
   VIEWER_THEME_STORAGE_KEY,
   applyViewerTheme,
+  getFamilyForTheme,
   isViewerTheme,
+  isViewerThemeFamily,
+  isViewerThemeMode,
+  resolveViewerTheme,
   type ViewerTheme,
+  type ViewerThemeMode,
 } from "./viewer-theme";
 import {
   DEFAULT_VIEWER_SPACING,
@@ -130,6 +139,12 @@ export function ViewerShell({
     ),
   );
   const [browsedDirectory, setBrowsedDirectory] = useState<string | null>(null);
+  const [themeFamily, setThemeFamily] = useState<string>(
+    DEFAULT_VIEWER_THEME_FAMILY,
+  );
+  const [themeMode, setThemeMode] = useState<ViewerThemeMode>(
+    DEFAULT_VIEWER_THEME_MODE,
+  );
   const [theme, setTheme] = useState<ViewerTheme>(DEFAULT_VIEWER_THEME);
   const [font, setFont] = useState<ViewerFont>(DEFAULT_VIEWER_FONT);
   const [spacing, setSpacing] = useState<ViewerSpacing>(DEFAULT_VIEWER_SPACING);
@@ -350,13 +365,39 @@ export function ViewerShell({
   ]);
 
   useEffect(() => {
+    const storedFamily = readStoredThemeFamily();
+    const storedMode = readStoredThemeMode();
     const documentTheme = document.documentElement.dataset.theme;
     const storedTheme = readStoredTheme();
-    const initialTheme = isViewerTheme(documentTheme)
-      ? documentTheme
-      : isViewerTheme(storedTheme)
-        ? storedTheme
-        : DEFAULT_VIEWER_THEME;
+
+    let initialFamily: string;
+    let initialMode: ViewerThemeMode;
+
+    if (storedFamily && isViewerThemeFamily(storedFamily)) {
+      initialFamily = storedFamily;
+      initialMode =
+        storedMode && isViewerThemeMode(storedMode)
+          ? storedMode
+          : DEFAULT_VIEWER_THEME_MODE;
+    } else {
+      const candidateTheme = isViewerTheme(documentTheme)
+        ? documentTheme
+        : isViewerTheme(storedTheme)
+          ? storedTheme
+          : DEFAULT_VIEWER_THEME;
+      const parsed = getFamilyForTheme(candidateTheme);
+      initialFamily = parsed.family.id;
+      initialMode = parsed.mode;
+    }
+
+    const initialTheme = resolveViewerTheme(initialFamily, initialMode);
+    setThemeFamily(initialFamily);
+    setThemeMode(initialMode);
+    setTheme(initialTheme);
+    applyViewerTheme(initialTheme);
+    writeStoredThemeFamily(initialFamily);
+    writeStoredThemeMode(initialMode);
+    writeStoredTheme(initialTheme);
 
     const documentFont = document.documentElement.dataset.font;
     const storedFont = readStoredFont();
@@ -380,8 +421,6 @@ export function ViewerShell({
       ? storedSpacing
       : DEFAULT_VIEWER_SPACING;
 
-    setTheme(initialTheme);
-    applyViewerTheme(initialTheme);
     setFont(initialFont);
     applyViewerFont(initialFont);
     setSpacing(initialSpacing);
@@ -390,6 +429,26 @@ export function ViewerShell({
     applyViewerFontScale(initialFontScale);
     setShowTypes(readStoredBoolean(SHOW_TYPES_STORAGE_KEY));
   }, []);
+
+  useEffect(() => {
+    if (themeMode !== "auto") {
+      return;
+    }
+    const mediaQuery = window.matchMedia?.("(prefers-color-scheme: dark)");
+    if (!mediaQuery) {
+      return;
+    }
+    const handleChange = () => {
+      const resolved = resolveViewerTheme(themeFamily, "auto");
+      setTheme(resolved);
+      applyViewerTheme(resolved);
+      writeStoredTheme(resolved);
+    };
+    mediaQuery.addEventListener?.("change", handleChange);
+    return () => {
+      mediaQuery.removeEventListener?.("change", handleChange);
+    };
+  }, [themeFamily, themeMode]);
 
   useEffect(() => {
     const syncSelectedNodeFromPath = () => {
@@ -454,10 +513,22 @@ export function ViewerShell({
     });
   };
 
-  const handleThemeChange = (nextTheme: ViewerTheme) => {
-    setTheme(nextTheme);
-    applyViewerTheme(nextTheme);
-    writeStoredTheme(nextTheme);
+  const handleThemeFamilyChange = (nextFamily: string) => {
+    setThemeFamily(nextFamily);
+    writeStoredThemeFamily(nextFamily);
+    const resolved = resolveViewerTheme(nextFamily, themeMode);
+    setTheme(resolved);
+    applyViewerTheme(resolved);
+    writeStoredTheme(resolved);
+  };
+
+  const handleThemeModeChange = (nextMode: ViewerThemeMode) => {
+    setThemeMode(nextMode);
+    writeStoredThemeMode(nextMode);
+    const resolved = resolveViewerTheme(themeFamily, nextMode);
+    setTheme(resolved);
+    applyViewerTheme(resolved);
+    writeStoredTheme(resolved);
   };
 
   const handleFontChange = (nextFont: ViewerFont) => {
@@ -574,13 +645,16 @@ export function ViewerShell({
         onIncreaseFontScale={handleIncreaseFontScale}
         onResetFontScale={handleResetFontScale}
         onSpacingChange={handleSpacingChange}
-        onThemeChange={handleThemeChange}
+        onThemeFamilyChange={handleThemeFamilyChange}
+        onThemeModeChange={handleThemeModeChange}
         onToggleOutline={handleToggleOutline}
         onToggleTypes={handleToggleTypes}
         outlineState={outlineState}
         showTypes={showTypes}
         spacing={spacing}
         theme={theme}
+        themeFamily={themeFamily}
+        themeMode={themeMode}
       />
       <main className={styles.pageShell}>
         <FileList
@@ -774,6 +848,35 @@ function readStoredTheme(): string | null {
 function writeStoredTheme(theme: ViewerTheme) {
   try {
     window.localStorage.setItem(VIEWER_THEME_STORAGE_KEY, theme);
+  } catch (_) {}
+}
+
+function readStoredThemeFamily(): string | null {
+  try {
+    return window.localStorage.getItem(VIEWER_THEME_FAMILY_STORAGE_KEY);
+  } catch (_) {
+    return null;
+  }
+}
+
+function writeStoredThemeFamily(familyId: string) {
+  try {
+    window.localStorage.setItem(VIEWER_THEME_FAMILY_STORAGE_KEY, familyId);
+  } catch (_) {}
+}
+
+function readStoredThemeMode(): ViewerThemeMode | null {
+  try {
+    const val = window.localStorage.getItem(VIEWER_THEME_MODE_STORAGE_KEY);
+    return isViewerThemeMode(val) ? val : null;
+  } catch (_) {
+    return null;
+  }
+}
+
+function writeStoredThemeMode(mode: ViewerThemeMode) {
+  try {
+    window.localStorage.setItem(VIEWER_THEME_MODE_STORAGE_KEY, mode);
   } catch (_) {}
 }
 

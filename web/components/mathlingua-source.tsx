@@ -23,17 +23,20 @@ interface MathLinguaSourceProps {
   source: string;
   /** Opens the definition card for a referenced command token. */
   onReferenceClick?: (referenceKey: string) => void;
+  /** Optional custom class name applied to the pre container. */
+  className?: string;
 }
 
 /** Renders MathLingua source with lightweight syntax coloring. */
 export function MathLinguaSource({
   source,
   onReferenceClick,
+  className,
 }: MathLinguaSourceProps) {
   const lines = source.length > 0 ? source.split("\n") : [""];
 
   return (
-    <pre className={styles.source}>
+    <pre className={className ? `${styles.source} ${className}` : styles.source}>
       <code>
         {lines.map((line, lineIndex) => {
           const lineTokens = tokenizeLine(line);

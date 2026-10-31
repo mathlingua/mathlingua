@@ -272,6 +272,7 @@ fn write_static_export_data(data_dir: &Path, collection: &CollectionView) -> io:
         let mut page = ExportPage {
             path: file.path.clone(),
             title: file.title.clone(),
+            source: file.source.clone(),
             item_ids: Vec::new(),
         };
 
@@ -525,6 +526,7 @@ struct ExportFile {
 struct ExportPage {
     path: String,
     title: Option<String>,
+    source: String,
     item_ids: Vec<String>,
 }
 
@@ -558,6 +560,7 @@ mod tests {
             files: vec![FileView {
                 path: "content/sets/intro.mlg".to_string(),
                 title: Some("Intro".to_string()),
+                source: "Title: \"Intro\"".to_string(),
                 items: vec![
                     GroupView {
                         id: "18582990-701a-40d3-8ce3-ae12bd08a561".to_string(),
@@ -642,6 +645,7 @@ mod tests {
             files: vec![FileView {
                 path: "content/algebra/groups.mlg".to_owned(),
                 title: None,
+                source: String::new(),
                 items: Vec::new(),
             }],
         };

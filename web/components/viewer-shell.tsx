@@ -755,6 +755,7 @@ async function loadStaticFile(
   return {
     path: page.path,
     title: page.title,
+    source: page.source,
     items,
   };
 }

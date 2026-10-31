@@ -188,6 +188,7 @@ fn build_file_view(
     Some(FileView {
         path: relative_path(collection_root, &file.path),
         title: file.view_metadata.title.clone(),
+        source: file.source.clone(),
         items: groups
             .into_iter()
             .zip(group_sources)

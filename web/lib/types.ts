@@ -48,6 +48,8 @@ export type PageData = {
   title: string | null;
   /** Ordered top-level item ids for the page. */
   itemIds: string[];
+  /** Original MathLingua source for the entire file. */
+  source?: string;
 };
 
 /** Serialized view model for one MathLingua source directory. */
@@ -67,6 +69,8 @@ export type FileView = {
   path: string;
   /** Optional display title supplied by a directory toc file. */
   title: string | null;
+  /** Original MathLingua source for the entire file. */
+  source?: string;
   /** Top-level groups rendered from the file. */
   items: GroupView[];
 };

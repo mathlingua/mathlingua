@@ -432,6 +432,213 @@
   margin-top: var(--viewer-spacing-section-break-gap, 4rem);
 }
 
+.pageStageContainer {
+  perspective: 2000px;
+}
+
+.pageStage {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  transform-style: preserve-3d;
+  transition: transform 280ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pageStageFlipped {
+  transform: rotateY(180deg);
+}
+
+.pageFace {
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.pageFront {
+  transform: rotateY(0deg);
+}
+
+.pageBack {
+  transform: rotateY(180deg);
+}
+
+.pageFaceInactive {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+}
+
+.pageTopBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: min(100%, 47rem);
+  min-height: 2.1rem;
+  margin: 0 auto calc(var(--viewer-spacing-stream-gap, 3rem) * 0.45);
+}
+
+.pageTopBarBreadcrumb {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.pageTopBarBreadcrumb .breadcrumb {
+  width: auto;
+  margin: 0;
+}
+
+.pageSourceFilename {
+  color: var(--muted-strong);
+  font-family: var(--font-mono);
+  font-size: calc(0.85rem * var(--viewer-font-scale, 1));
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.iconToggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.85rem;
+  height: 1.85rem;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition:
+    color 120ms ease,
+    background-color 120ms ease,
+    border-color 120ms ease;
+}
+
+.iconToggle:hover {
+  border-color: var(--line);
+  background: var(--surface-alt);
+  color: var(--accent);
+}
+
+.iconToggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.pageSourceToggle {
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
+.pageSourceToggleIcon {
+  width: 1.15rem;
+  height: 1.15rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+}
+
+.pageSourceContainer {
+  width: min(100%, 47rem);
+  margin: 0 auto;
+}
+
+.pageSourceSheet {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 1.5rem 1.75rem;
+  border: var(--card-border-width) solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--card-bg);
+  box-shadow: var(--shadow);
+  overflow-x: auto;
+}
+
+.pageSourceCode {
+  max-height: none !important;
+  overflow: visible !important;
+  padding: 0 !important;
+}
+
+:global(html[data-theme^="journal"]) .iconToggle:hover {
+  border-color: var(--line);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+:global(html[data-theme^="journal"]) .pageSourceFilename {
+  color: var(--accent);
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: calc(0.92rem * var(--viewer-font-scale, 1));
+}
+
+:global(html[data-theme^="journal"]) .pageSourceSheet {
+  border: 1.5px solid var(--line);
+  box-shadow: 
+    0 1px 0 rgba(255, 230, 160, 0.4),
+    0 8px 24px rgba(20, 10, 5, 0.25);
+  position: relative;
+}
+
+:global(html[data-theme^="journal"]) .pageSourceSheet::before,
+:global(html[data-theme^="journal"]) .pageSourceSheet::after {
+  content: "";
+  position: absolute;
+  width: 0.75rem;
+  height: 0.75rem;
+  pointer-events: none;
+}
+
+:global(html[data-theme^="journal"]) .pageSourceSheet::before {
+  top: 0.32rem;
+  left: 0.32rem;
+  border-top: 1.5px solid var(--line);
+  border-left: 1.5px solid var(--line);
+}
+
+:global(html[data-theme^="journal"]) .pageSourceSheet::after {
+  right: 0.32rem;
+  bottom: 0.32rem;
+  border-right: 1.5px solid var(--line);
+  border-bottom: 1.5px solid var(--line);
+}
+
+:global(html[data-theme^="manuscript"]) .iconToggle:hover {
+  border-color: var(--line-strong);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+:global(html[data-theme^="manuscript"]) .pageSourceFilename {
+  color: var(--accent);
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: calc(0.92rem * var(--viewer-font-scale, 1));
+}
+
+:global(html[data-theme^="manuscript"]) .pageSourceSheet {
+  border: 1px solid var(--line-strong);
+  box-shadow: var(--shadow-card);
+}
+
+:global(html[data-theme^="field-guide"]) .iconToggle:hover {
+  border-color: var(--line-strong);
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
+
 .groupStream {
   display: grid;
   gap: var(--viewer-spacing-stream-gap, 3rem);
@@ -1361,6 +1568,19 @@
 
   .groupStream {
     gap: var(--viewer-spacing-stream-gap, 1.65rem);
+  }
+
+  .pageTopBar {
+    margin-bottom: calc(var(--viewer-spacing-stream-gap, 1.65rem) * 0.45);
+  }
+
+  .iconToggle {
+    width: 2.1rem;
+    height: 2.1rem;
+  }
+
+  .pageSourceSheet {
+    padding: 1rem 1.15rem;
   }
 
   .breadcrumb {

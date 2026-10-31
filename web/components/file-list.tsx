@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { GroupCard } from "./group-card";
 import { MarkdownInline, MarkdownText } from "./markdown-text";
+import { MathLinguaSource } from "./mathlingua-source";
 import type { OutlineState } from "./outline-state";
 import styles from "./file-list.module.css";
 import type { BreadcrumbCrumb, ReaderNode } from "../lib/presenter";
@@ -174,6 +175,19 @@ export function FileList({
   const activeFileIndex =
     selectedNode?.kind === "file" ? selectedNode.fileIndex : -1;
   const selectedFile = isDivider ? undefined : files[selectedFileIndex];
+  const [showPageSource, setShowPageSource] = useState(false);
+
+  useEffect(() => {
+    setShowPageSource(false);
+  }, [selectedFile?.path]);
+
+  const pageSource =
+    selectedFile?.source ||
+    selectedFile?.items
+      .map((item) => item.source)
+      .filter(Boolean)
+      .join("\n\n\n") ||
+    "";
   const entries = buildFileBrowserEntries(files, directories, currentDirectory);
 
   const rootLabel = collectionTitle?.trim() || "Contents";
@@ -404,7 +418,11 @@ export function FileList({
       </aside>
       <section className={styles.documentStream}>
         <article
-          className={styles.fileSection}
+          className={
+            isDivider || !selectedFile
+              ? styles.fileSection
+              : `${styles.fileSection} ${styles.pageStageContainer}`
+          }
           id={selectedFile ? makeFileAnchor(selectedFile.path) : undefined}
           key={
             isDivider || !selectedFile
@@ -413,85 +431,178 @@ export function FileList({
           }
         >
           {isDivider || !selectedFile ? (
-            <DividerPage
-              breadcrumb={breadcrumb}
-              definitionIndex={definitionIndex}
-              definitionTrails={definitionTrails}
-              loadedDefinitions={loadedDefinitions}
-              onCloseDefinition={handleCloseDefinition}
-              onCloseDefinitionTrail={handleCloseDefinitionTrail}
-              onNavigate={(directory) => onNavigateDirectory(directory)}
-              onReferenceClick={handleReferenceClick}
-              preface={currentPreface}
-              showTypes={showTypes}
-              title={selectedNode?.title ?? rootLabel}
-            />
-          ) : (
-            <div className={styles.groupStream}>
-              <Breadcrumb
-                crumbs={breadcrumb}
+            <>
+              <DividerPage
+                breadcrumb={breadcrumb}
+                definitionIndex={definitionIndex}
+                definitionTrails={definitionTrails}
+                loadedDefinitions={loadedDefinitions}
+                onCloseDefinition={handleCloseDefinition}
+                onCloseDefinitionTrail={handleCloseDefinitionTrail}
                 onNavigate={(directory) => onNavigateDirectory(directory)}
+                onReferenceClick={handleReferenceClick}
+                preface={currentPreface}
+                showTypes={showTypes}
+                title={selectedNode?.title ?? rootLabel}
               />
-              {loadError ? <PageLoadError message={loadError} /> : null}
-              {isSelectedFileLoading ? <PageLoadingState /> : null}
-              {selectedFile.items.map((item, itemIndex) => {
-                const fallbackKey = `${activeFileIndex}-${itemIndex}`;
-                const anchorId = makeGroupAnchor(item, fallbackKey);
-                const trail = definitionTrails[anchorId] ?? [];
-                const itemKey =
-                  item.id || `${selectedFile.path}-${item.kind}-${itemIndex}`;
-
-                if (item.page) {
-                  return (
-                    <PageItem
-                      anchorId={anchorId}
-                      key={itemKey}
-                      page={item.page}
+              {readerNodes.length > 1 ? (
+                <PageNavigation
+                  nextLabel={
+                    nextNodeIndex === null
+                      ? null
+                      : (readerNodes[nextNodeIndex]?.title ?? null)
+                  }
+                  onNext={() => {
+                    if (nextNodeIndex !== null) {
+                      selectNodeAndScroll(nextNodeIndex);
+                    }
+                  }}
+                  onPrevious={() => {
+                    if (previousNodeIndex !== null) {
+                      selectNodeAndScroll(previousNodeIndex);
+                    }
+                  }}
+                  previousLabel={
+                    previousNodeIndex === null
+                      ? null
+                      : (readerNodes[previousNodeIndex]?.title ?? null)
+                  }
+                />
+              ) : null}
+            </>
+          ) : (
+            <div
+              className={
+                showPageSource
+                  ? `${styles.pageStage} ${styles.pageStageFlipped}`
+                  : styles.pageStage
+              }
+            >
+              {/* Front face: Rendered content */}
+              <div
+                aria-hidden={showPageSource}
+                className={`${styles.pageFace} ${styles.pageFront}${
+                  showPageSource ? ` ${styles.pageFaceInactive}` : ""
+                }`}
+              >
+                <div className={styles.pageTopBar}>
+                  <div className={styles.pageTopBarBreadcrumb}>
+                    <Breadcrumb
+                      crumbs={breadcrumb}
+                      onNavigate={(directory) => onNavigateDirectory(directory)}
                     />
-                  );
-                }
+                  </div>
+                  <button
+                    aria-label="Show page MathLingua source"
+                    className={`${styles.iconToggle} ${styles.pageSourceToggle}`}
+                    onClick={() => setShowPageSource(true)}
+                    tabIndex={showPageSource ? -1 : 0}
+                    title="Show page MathLingua source"
+                    type="button"
+                  >
+                    <CodeIcon />
+                  </button>
+                </div>
+                <div className={styles.groupStream}>
+                  {loadError ? <PageLoadError message={loadError} /> : null}
+                  {isSelectedFileLoading ? <PageLoadingState /> : null}
+                  {selectedFile.items.map((item, itemIndex) => {
+                    const fallbackKey = `${activeFileIndex}-${itemIndex}`;
+                    const anchorId = makeGroupAnchor(item, fallbackKey);
+                    const trail = definitionTrails[anchorId] ?? [];
+                    const itemKey =
+                      item.id || `${selectedFile.path}-${item.kind}-${itemIndex}`;
 
-                return (
-                  <GroupStack
-                    anchorId={anchorId}
-                    definitionIndex={definitionIndex}
-                    group={item}
-                    key={itemKey}
-                    loadedDefinitions={loadedDefinitions}
-                    onCloseDefinition={handleCloseDefinition}
-                    onCloseDefinitionTrail={handleCloseDefinitionTrail}
-                    onReferenceClick={handleReferenceClick}
-                    showTypes={showTypes}
-                    trail={trail}
+                    if (item.page) {
+                      return (
+                        <PageItem
+                          anchorId={anchorId}
+                          key={itemKey}
+                          page={item.page}
+                        />
+                      );
+                    }
+
+                    return (
+                      <GroupStack
+                        anchorId={anchorId}
+                        definitionIndex={definitionIndex}
+                        group={item}
+                        key={itemKey}
+                        loadedDefinitions={loadedDefinitions}
+                        onCloseDefinition={handleCloseDefinition}
+                        onCloseDefinitionTrail={handleCloseDefinitionTrail}
+                        onReferenceClick={handleReferenceClick}
+                        showTypes={showTypes}
+                        trail={trail}
+                      />
+                    );
+                  })}
+                </div>
+                {readerNodes.length > 1 ? (
+                  <PageNavigation
+                    nextLabel={
+                      nextNodeIndex === null
+                        ? null
+                        : (readerNodes[nextNodeIndex]?.title ?? null)
+                    }
+                    onNext={() => {
+                      if (nextNodeIndex !== null) {
+                        selectNodeAndScroll(nextNodeIndex);
+                      }
+                    }}
+                    onPrevious={() => {
+                      if (previousNodeIndex !== null) {
+                        selectNodeAndScroll(previousNodeIndex);
+                      }
+                    }}
+                    previousLabel={
+                      previousNodeIndex === null
+                        ? null
+                        : (readerNodes[previousNodeIndex]?.title ?? null)
+                    }
                   />
-                );
-              })}
+                ) : null}
+              </div>
+
+              {/* Back face: Full page MathLingua source */}
+              <div
+                aria-hidden={!showPageSource}
+                className={`${styles.pageFace} ${styles.pageBack}${
+                  showPageSource ? "" : ` ${styles.pageFaceInactive}`
+                }`}
+              >
+                <div className={styles.pageTopBar}>
+                  <div className={styles.pageTopBarBreadcrumb}>
+                    <span className={styles.pageSourceFilename}>
+                      {selectedFile.title
+                        ? `${selectedFile.title} (${selectedFile.path})`
+                        : selectedFile.path}
+                    </span>
+                  </div>
+                  <button
+                    aria-label="Show rendered page"
+                    className={`${styles.iconToggle} ${styles.pageSourceToggle}`}
+                    onClick={() => setShowPageSource(false)}
+                    tabIndex={showPageSource ? 0 : -1}
+                    title="Show rendered page"
+                    type="button"
+                  >
+                    <CardIcon />
+                  </button>
+                </div>
+                <div className={styles.pageSourceContainer}>
+                  <div className={styles.pageSourceSheet}>
+                    <MathLinguaSource
+                      className={styles.pageSourceCode}
+                      onReferenceClick={(key) => handleReferenceClick("page-source", key)}
+                      source={pageSource}
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
           )}
-          {readerNodes.length > 1 ? (
-            <PageNavigation
-              nextLabel={
-                nextNodeIndex === null
-                  ? null
-                  : (readerNodes[nextNodeIndex]?.title ?? null)
-              }
-              onNext={() => {
-                if (nextNodeIndex !== null) {
-                  selectNodeAndScroll(nextNodeIndex);
-                }
-              }}
-              onPrevious={() => {
-                if (previousNodeIndex !== null) {
-                  selectNodeAndScroll(previousNodeIndex);
-                }
-              }}
-              previousLabel={
-                previousNodeIndex === null
-                  ? null
-                  : (readerNodes[previousNodeIndex]?.title ?? null)
-              }
-            />
-          ) : null}
         </article>
       </section>
     </div>
@@ -937,6 +1048,32 @@ function DefinitionTrailCloseIcon() {
     >
       <path d="M6 6l12 12" />
       <path d="M18 6 6 18" />
+    </svg>
+  );
+}
+
+function CodeIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      className={styles.pageSourceToggleIcon}
+      viewBox="0 0 24 24"
+    >
+      <polyline points="16 18 22 12 16 6" />
+      <polyline points="8 6 2 12 8 18" />
+    </svg>
+  );
+}
+
+function CardIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      className={styles.pageSourceToggleIcon}
+      viewBox="0 0 24 24"
+    >
+      <rect height="16" rx="2" ry="2" width="18" x="3" y="4" />
+      <line x1="3" x2="21" y1="9" y2="9" />
     </svg>
   );
 }

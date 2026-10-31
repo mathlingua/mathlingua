@@ -597,6 +597,7 @@ mod tests {
             files: vec![FileView {
                 path: "content/example.mlg".to_string(),
                 title: None,
+                source: "Title: \"Example\"".to_string(),
                 items: vec![GroupView {
                     id: "18582990-701a-40d3-8ce3-ae12bd08a561".to_string(),
                     kind: "Title".to_string(),

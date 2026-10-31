@@ -25,6 +25,7 @@ pub struct DirectoryView {
 pub struct FileView {
     pub path: String,
     pub title: Option<String>,
+    pub source: String,
     pub items: Vec<GroupView>,
 }
 

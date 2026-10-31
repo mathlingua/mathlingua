@@ -593,6 +593,7 @@ mod tests {
         let collection = CollectionView {
             title: "demo".to_string(),
             preface: vec![],
+            preface_source: None,
             directories: vec![],
             files: vec![FileView {
                 path: "content/example.mlg".to_string(),

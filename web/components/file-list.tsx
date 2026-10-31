@@ -24,6 +24,8 @@ const NARROW_OUTLINE_MEDIA_QUERY = "(max-width: 860px)";
 interface FileListProps {
   /** Rendered items of the collection's root `content/_preface_.mlg`, shown on the cover. */
   collectionPreface?: GroupView[];
+  /** Original MathLingua source for the collection root's preface, if one exists. */
+  collectionPrefaceSource?: string;
   /** Collection title, used as the breadcrumb root and top-level outline label. */
   collectionTitle?: string;
   /** Directory currently shown by the outline browser. */
@@ -69,6 +71,7 @@ interface FileListProps {
 /** Renders the collection outline beside the selected file's group cards. */
 export function FileList({
   collectionPreface,
+  collectionPrefaceSource,
   collectionTitle,
   currentDirectory,
   definitionItemIds,
@@ -181,7 +184,7 @@ export function FileList({
     );
   }
 
-  const pageSource =
+  const fileSource =
     selectedFile?.source ||
     selectedFile?.items
       .map((item) => item.source)
@@ -208,14 +211,47 @@ export function FileList({
   // A section's optional _preface_.mlg, rendered beneath its title. The root
   // divider (the cover) uses the collection-level preface; other dividers use
   // their own directory's preface.
+  const currentDirectoryView = !isDivider
+    ? null
+    : selectedNode.directory === ""
+      ? null
+      : directories.find(
+          (dir) =>
+            dir.path.replace(/^content\//, "") === selectedNode.directory,
+        );
+
   const currentPreface = !isDivider
     ? []
     : selectedNode.directory === ""
       ? (collectionPreface ?? [])
-      : (directories.find(
-          (dir) =>
-            dir.path.replace(/^content\//, "") === selectedNode.directory,
-        )?.preface ?? []);
+      : (currentDirectoryView?.preface ?? []);
+
+  const currentPrefaceSource = !isDivider
+    ? ""
+    : selectedNode.directory === ""
+      ? (collectionPrefaceSource ||
+         collectionPreface?.map((item) => item.source).filter(Boolean).join("\n\n\n") ||
+         "")
+      : (currentDirectoryView?.preface_source ||
+         currentDirectoryView?.preface?.map((item) => item.source).filter(Boolean).join("\n\n\n") ||
+         "");
+
+  const pageSource = isDivider ? currentPrefaceSource : fileSource;
+
+  const prefacePath =
+    selectedNode?.directory === ""
+      ? "content/_preface_.mlg"
+      : `content/${selectedNode?.directory ?? ""}/_preface_.mlg`;
+
+  const pageFilename = isDivider
+    ? selectedNode?.title
+      ? `${selectedNode.title} (${prefacePath})`
+      : prefacePath
+    : selectedFile
+      ? selectedFile.title
+        ? `${selectedFile.title} (${selectedFile.path})`
+        : selectedFile.path
+      : "";
 
   const breadcrumb = selectedNode
     ? buildNodeBreadcrumb(directories, selectedNode, rootLabel)
@@ -418,11 +454,7 @@ export function FileList({
       </aside>
       <section className={styles.documentStream}>
         <article
-          className={
-            isDivider || !selectedFile
-              ? styles.fileSection
-              : `${styles.fileSection} ${styles.pageStageContainer}`
-          }
+          className={`${styles.fileSection} ${styles.pageStageContainer}`}
           id={selectedFile ? makeFileAnchor(selectedFile.path) : undefined}
           key={
             isDivider || !selectedFile
@@ -430,68 +462,28 @@ export function FileList({
               : selectedFile.path
           }
         >
-          {isDivider || !selectedFile ? (
-            <>
-              <DividerPage
-                breadcrumb={breadcrumb}
-                definitionIndex={definitionIndex}
-                definitionTrails={definitionTrails}
-                loadedDefinitions={loadedDefinitions}
-                onCloseDefinition={handleCloseDefinition}
-                onCloseDefinitionTrail={handleCloseDefinitionTrail}
-                onNavigate={(directory) => onNavigateDirectory(directory)}
-                onReferenceClick={handleReferenceClick}
-                preface={currentPreface}
-                showTypes={showTypes}
-                title={selectedNode?.title ?? rootLabel}
-              />
-              {readerNodes.length > 1 ? (
-                <PageNavigation
-                  nextLabel={
-                    nextNodeIndex === null
-                      ? null
-                      : (readerNodes[nextNodeIndex]?.title ?? null)
-                  }
-                  onNext={() => {
-                    if (nextNodeIndex !== null) {
-                      selectNodeAndScroll(nextNodeIndex);
-                    }
-                  }}
-                  onPrevious={() => {
-                    if (previousNodeIndex !== null) {
-                      selectNodeAndScroll(previousNodeIndex);
-                    }
-                  }}
-                  previousLabel={
-                    previousNodeIndex === null
-                      ? null
-                      : (readerNodes[previousNodeIndex]?.title ?? null)
-                  }
-                />
-              ) : null}
-            </>
-          ) : (
+          <div
+            className={
+              showPageSource
+                ? `${styles.pageStage} ${styles.pageStageFlipped}`
+                : styles.pageStage
+            }
+          >
+            {/* Front face: Rendered content */}
             <div
-              className={
-                showPageSource
-                  ? `${styles.pageStage} ${styles.pageStageFlipped}`
-                  : styles.pageStage
-              }
+              aria-hidden={showPageSource}
+              className={`${styles.pageFace} ${styles.pageFront}${
+                showPageSource ? ` ${styles.pageFaceInactive}` : ""
+              }`}
             >
-              {/* Front face: Rendered content */}
-              <div
-                aria-hidden={showPageSource}
-                className={`${styles.pageFace} ${styles.pageFront}${
-                  showPageSource ? ` ${styles.pageFaceInactive}` : ""
-                }`}
-              >
-                <div className={styles.pageTopBar}>
-                  <div className={styles.pageTopBarBreadcrumb}>
-                    <Breadcrumb
-                      crumbs={breadcrumb}
-                      onNavigate={(directory) => onNavigateDirectory(directory)}
-                    />
-                  </div>
+              <div className={styles.pageTopBar}>
+                <div className={styles.pageTopBarBreadcrumb}>
+                  <Breadcrumb
+                    crumbs={breadcrumb}
+                    onNavigate={(directory) => onNavigateDirectory(directory)}
+                  />
+                </div>
+                {pageSource ? (
                   <button
                     aria-label="Show page MathLingua source"
                     className={`${styles.iconToggle} ${styles.pageSourceToggle}`}
@@ -502,7 +494,22 @@ export function FileList({
                   >
                     <CodeIcon />
                   </button>
-                </div>
+                ) : null}
+              </div>
+
+              {isDivider || !selectedFile ? (
+                <DividerPage
+                  definitionIndex={definitionIndex}
+                  definitionTrails={definitionTrails}
+                  loadedDefinitions={loadedDefinitions}
+                  onCloseDefinition={handleCloseDefinition}
+                  onCloseDefinitionTrail={handleCloseDefinitionTrail}
+                  onReferenceClick={handleReferenceClick}
+                  preface={currentPreface}
+                  showTypes={showTypes}
+                  title={selectedNode?.title ?? rootLabel}
+                />
+              ) : (
                 <div className={styles.groupStream}>
                   {loadError ? <PageLoadError message={loadError} /> : null}
                   {isSelectedFileLoading ? <PageLoadingState /> : null}
@@ -539,33 +546,36 @@ export function FileList({
                     );
                   })}
                 </div>
-                {readerNodes.length > 1 ? (
-                  <PageNavigation
-                    nextLabel={
-                      nextNodeIndex === null
-                        ? null
-                        : (readerNodes[nextNodeIndex]?.title ?? null)
-                    }
-                    onNext={() => {
-                      if (nextNodeIndex !== null) {
-                        selectNodeAndScroll(nextNodeIndex);
-                      }
-                    }}
-                    onPrevious={() => {
-                      if (previousNodeIndex !== null) {
-                        selectNodeAndScroll(previousNodeIndex);
-                      }
-                    }}
-                    previousLabel={
-                      previousNodeIndex === null
-                        ? null
-                        : (readerNodes[previousNodeIndex]?.title ?? null)
-                    }
-                  />
-                ) : null}
-              </div>
+              )}
 
-              {/* Back face: Full page MathLingua source */}
+              {readerNodes.length > 1 ? (
+                <PageNavigation
+                  nextLabel={
+                    nextNodeIndex === null
+                      ? null
+                      : (readerNodes[nextNodeIndex]?.title ?? null)
+                  }
+                  onNext={() => {
+                    if (nextNodeIndex !== null) {
+                      selectNodeAndScroll(nextNodeIndex);
+                    }
+                  }}
+                  onPrevious={() => {
+                    if (previousNodeIndex !== null) {
+                      selectNodeAndScroll(previousNodeIndex);
+                    }
+                  }}
+                  previousLabel={
+                    previousNodeIndex === null
+                      ? null
+                      : (readerNodes[previousNodeIndex]?.title ?? null)
+                  }
+                />
+              ) : null}
+            </div>
+
+            {/* Back face: Full page MathLingua source */}
+            {pageSource ? (
               <div
                 aria-hidden={!showPageSource}
                 className={`${styles.pageFace} ${styles.pageBack}${
@@ -575,9 +585,7 @@ export function FileList({
                 <div className={styles.pageTopBar}>
                   <div className={styles.pageTopBarBreadcrumb}>
                     <span className={styles.pageSourceFilename}>
-                      {selectedFile.title
-                        ? `${selectedFile.title} (${selectedFile.path})`
-                        : selectedFile.path}
+                      {pageFilename}
                     </span>
                   </div>
                   <button
@@ -601,8 +609,8 @@ export function FileList({
                   </div>
                 </div>
               </div>
-            </div>
-          )}
+            ) : null}
+          </div>
         </article>
       </section>
     </div>
@@ -774,25 +782,21 @@ function GroupStack({
  * content renders beneath it.
  */
 function DividerPage({
-  breadcrumb,
   definitionIndex,
   definitionTrails,
   loadedDefinitions,
   onCloseDefinition,
   onCloseDefinitionTrail,
-  onNavigate,
   onReferenceClick,
   preface,
   showTypes,
   title,
 }: {
-  breadcrumb: BreadcrumbCrumb[];
   definitionIndex: Map<string, DefinitionIndexEntry>;
   definitionTrails: Record<string, string[]>;
   loadedDefinitions?: Record<string, GroupView>;
   onCloseDefinition: (rootAnchorId: string, index: number) => void;
   onCloseDefinitionTrail: (rootAnchorId: string) => void;
-  onNavigate: (directory: string) => void;
   onReferenceClick: (rootAnchorId: string, referenceKey: string) => void;
   preface: GroupView[];
   showTypes: boolean;
@@ -801,7 +805,6 @@ function DividerPage({
   if (preface.length > 0) {
     return (
       <div className={styles.groupStream}>
-        <Breadcrumb crumbs={breadcrumb} onNavigate={onNavigate} />
         <header className={styles.dividerHead}>
           <h1 className={styles.dividerHeadTitle}>{title}</h1>
           <span aria-hidden="true" className={styles.dividerRule} />
@@ -832,7 +835,6 @@ function DividerPage({
 
   return (
     <div className={styles.dividerPage}>
-      <Breadcrumb crumbs={breadcrumb} onNavigate={onNavigate} />
       <div className={styles.dividerCenter}>
         <h1 className={styles.dividerTitle}>{title}</h1>
         <span aria-hidden="true" className={styles.dividerRule} />

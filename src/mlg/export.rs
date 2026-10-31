@@ -261,6 +261,7 @@ fn write_static_export_data(data_dir: &Path, collection: &CollectionView) -> io:
         schema_version: 1,
         title: collection.title.clone(),
         preface: collection.preface.clone(),
+        preface_source: collection.preface_source.clone(),
         directories: collection.directories.clone(),
         files: Vec::new(),
         definitions: BTreeMap::new(),
@@ -507,6 +508,8 @@ struct ExportManifest {
     title: String,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     preface: Vec<GroupView>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    preface_source: Option<String>,
     directories: Vec<DirectoryView>,
     files: Vec<ExportFile>,
     definitions: BTreeMap<String, String>,
@@ -556,6 +559,7 @@ mod tests {
         let collection = CollectionView {
             title: "Demo".to_string(),
             preface: Vec::new(),
+            preface_source: None,
             directories: Vec::new(),
             files: vec![FileView {
                 path: "content/sets/intro.mlg".to_string(),
@@ -637,10 +641,12 @@ mod tests {
         let collection = CollectionView {
             title: "Demo".to_owned(),
             preface: Vec::new(),
+            preface_source: None,
             directories: vec![DirectoryView {
                 path: "content/algebra".to_owned(),
                 title: None,
                 preface: Vec::new(),
+                preface_source: None,
             }],
             files: vec![FileView {
                 path: "content/algebra/groups.mlg".to_owned(),

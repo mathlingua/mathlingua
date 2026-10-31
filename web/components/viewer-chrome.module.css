@@ -3,7 +3,7 @@
 .header {
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: 20;
   background: var(--chrome-bg);
   border-bottom: 1px solid var(--line);
   backdrop-filter: blur(18px);
@@ -12,9 +12,11 @@
 .header::before {
   content: "";
   position: absolute;
-  inset: 0 0 auto;
-  height: var(--viewer-safe-area-top);
-  background: var(--surface);
+  top: -200px;
+  left: 0;
+  right: 0;
+  height: calc(200px + var(--viewer-safe-area-top));
+  background: var(--page-bg);
   pointer-events: none;
 }
 
@@ -821,12 +823,15 @@
 :global(html[data-theme^="journal"]) .header {
   border-bottom: 2px solid var(--line);
   background:
-    linear-gradient(180deg, rgba(61, 35, 24, 0.96) 0%, rgba(36, 20, 14, 0.98) 100%),
-    var(--chrome-bg);
+    linear-gradient(180deg, #3d2318 0%, #24140e 100%);
   box-shadow: 
     0 4px 15px rgba(0, 0, 0, 0.45),
     inset 0 -1px 0 rgba(212, 175, 55, 0.25);
   backdrop-filter: blur(10px);
+}
+
+:global(html[data-theme^="journal"]) .header::before {
+  background: #24140e;
 }
 
 :global(html[data-theme^="journal"]) .subbar {
@@ -934,11 +939,14 @@
 
 :global(html[data-theme="journal-dark"]) .header {
   background:
-    linear-gradient(180deg, rgba(36, 21, 14, 0.97) 0%, rgba(20, 10, 6, 0.99) 100%),
-    var(--chrome-bg);
+    linear-gradient(180deg, #24150e 0%, #140905 100%);
   box-shadow: 
     0 4px 18px rgba(0, 0, 0, 0.65),
     inset 0 -1px 0 rgba(184, 147, 59, 0.2);
+}
+
+:global(html[data-theme="journal-dark"]) .header::before {
+  background: #140905;
 }
 
 :global(html[data-theme="journal-dark"]) .controlLabel {

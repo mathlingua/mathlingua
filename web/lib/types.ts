@@ -9,6 +9,8 @@ export type CollectionView = {
   /** Rendered items of the collection's optional root `content/_preface_.mlg`,
    * shown on the cover page beneath the collection title. */
   preface?: GroupView[];
+  /** Original MathLingua source for the collection root's preface, if one exists. */
+  preface_source?: string;
 };
 
 /** Lightweight manifest loaded first by a static export. */
@@ -20,6 +22,8 @@ export type CollectionManifest = {
   /** Rendered items of the collection's optional root `content/_preface_.mlg`,
    * shown on the cover page beneath the collection title. */
   preface?: GroupView[];
+  /** Original MathLingua source for the collection root's preface, if one exists. */
+  preface_source?: string;
   /** Renderable directories, already ordered by the backend. */
   directories: DirectoryView[];
   /** Lightweight file entries, already ordered by the backend. */
@@ -61,6 +65,8 @@ export type DirectoryView = {
   /** Rendered items of the directory's optional `_preface_.mlg`, shown on the
    * section page beneath the title. Absent or empty when there is no preface. */
   preface?: GroupView[];
+  /** Original MathLingua source for the directory's preface, if one exists. */
+  preface_source?: string;
 };
 
 /** Serialized view model for one MathLingua source file. */

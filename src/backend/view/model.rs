@@ -9,6 +9,9 @@ pub struct CollectionView {
     /// shown on the cover page beneath the collection title. Empty when absent.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub preface: Vec<GroupView>,
+    /// Original MathLingua source for the collection root's preface, if one exists.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub preface_source: Option<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
@@ -19,6 +22,9 @@ pub struct DirectoryView {
     /// section page beneath the title. Empty when the directory has no preface.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub preface: Vec<GroupView>,
+    /// Original MathLingua source for the directory's preface, if one exists.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub preface_source: Option<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]

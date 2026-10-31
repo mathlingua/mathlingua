@@ -169,22 +169,28 @@ export function getFamilyForTheme(theme: ViewerTheme): {
   return { family: defaultFamily, mode: DEFAULT_VIEWER_THEME_MODE };
 }
 
+const VIEWER_THEME_SAFE_AREA_COLORS: Partial<Record<ViewerTheme, string>> = {
+  journal: "#24140e",
+  "journal-dark": "#140905",
+  "field-guide": "#fbf8ef",
+  "field-guide-dark": "#171b1c",
+};
+
 export function applyViewerTheme(theme: ViewerTheme) {
   const root = document.documentElement;
   root.dataset.theme = theme;
-  root.style.colorScheme =
+  const colorScheme =
     VIEWER_THEMES.find((item) => item.id === theme)?.colorScheme ?? "light";
+  root.style.colorScheme = colorScheme;
 
   // Safari uses the document canvas and `theme-color` while painting around
   // the iPhone notch. Keep both opaque and synchronized with the selected
-  // theme, including when a saved theme is restored during initial load.
-  const surfaceColor = getComputedStyle(root)
-    .getPropertyValue("--surface")
-    .trim();
-  if (surfaceColor) {
-    root.style.backgroundColor = surfaceColor;
-    document
-      .querySelector<HTMLMetaElement>('meta[name="theme-color"]')
-      ?.setAttribute("content", surfaceColor);
-  }
+  // theme's chrome / top bar color (e.g. opaque solid brown for Journal).
+  const safeAreaColor =
+    VIEWER_THEME_SAFE_AREA_COLORS[theme] ??
+    (colorScheme === "dark" ? "#111315" : "#ffffff");
+  root.style.backgroundColor = safeAreaColor;
+  document
+    .querySelector<HTMLMetaElement>('meta[name="theme-color"]')
+    ?.setAttribute("content", safeAreaColor);
 }

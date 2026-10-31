@@ -94,14 +94,18 @@ pub(crate) fn build_collection_view_with_cached_proto_groups(
 
     // The content root's own preface (`content/_preface_.mlg`) belongs to the
     // collection cover, not to a listed directory.
-    let collection_preface = prefaces
+    let (collection_preface, collection_preface_source) = match prefaces
         .remove("content")
         .or_else(|| prefaces.remove(""))
-        .unwrap_or_default();
+    {
+        Some((items, src)) => (items, Some(src)),
+        None => (Vec::new(), None),
+    };
 
     Some(CollectionView {
         title: collection_title(collection_root),
         preface: collection_preface,
+        preface_source: collection_preface_source,
         directories: directory_metadata
             .iter()
             .filter(|(_, metadata)| !metadata.hidden)
@@ -111,11 +115,15 @@ pub(crate) fn build_collection_view_with_cached_proto_groups(
                     return None;
                 }
 
-                let preface = prefaces.remove(&path).unwrap_or_default();
+                let (preface, preface_source) = match prefaces.remove(&path) {
+                    Some((items, src)) => (items, Some(src)),
+                    None => (Vec::new(), None),
+                };
                 Some(DirectoryView {
                     path,
                     title: metadata.title.clone(),
                     preface,
+                    preface_source,
                 })
             })
             .collect(),
@@ -124,13 +132,13 @@ pub(crate) fn build_collection_view_with_cached_proto_groups(
 }
 
 /// Renders each directory's optional `_preface_.mlg` into view items, keyed by
-/// the directory's collection-relative path.
+/// the directory's collection-relative path, paired with the raw source string.
 fn build_directory_prefaces(
     collection_root: &Path,
     preface_files: &[(PathBuf, PathBuf)],
     registry: &RenderRegistry,
     event_log: &mut EventLog,
-) -> BTreeMap<String, Vec<GroupView>> {
+) -> BTreeMap<String, (Vec<GroupView>, String)> {
     let mut prefaces = BTreeMap::new();
 
     for (directory, preface_path) in preface_files {
@@ -154,7 +162,7 @@ fn build_directory_prefaces(
             .flat_map(|(group, source)| group_views(group, source, None, registry))
             .collect::<Vec<_>>();
 
-        prefaces.insert(relative_path(collection_root, directory), items);
+        prefaces.insert(relative_path(collection_root, directory), (items, source));
     }
 
     prefaces

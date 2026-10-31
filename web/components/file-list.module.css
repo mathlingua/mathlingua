@@ -533,6 +533,7 @@
 .pageNavigation {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   gap: 1rem;
   width: min(100%, 47rem);
   margin: 2.4rem auto 0;
@@ -544,7 +545,8 @@
   display: inline-flex;
   align-items: center;
   gap: 0.55rem;
-  max-width: min(48%, 18rem);
+  width: fit-content;
+  max-width: min(48%, 22rem);
   min-width: 0;
   min-height: 2.55rem;
   padding: 0.35rem 0.55rem;
@@ -556,6 +558,11 @@
   font-size: calc(0.84rem * var(--viewer-font-scale, 1));
   text-align: left;
   cursor: pointer;
+  flex: 0 1 auto;
+}
+
+.pageNavButton:only-child {
+  max-width: min(100%, 28rem);
 }
 
 .pageNavButton:hover:not(:disabled) {
@@ -575,6 +582,7 @@
 }
 
 .pageNavButtonNext {
+  justify-content: flex-end;
   margin-left: auto;
   text-align: right;
 }
@@ -927,18 +935,12 @@
   transform: translate(-50%, -50%);
 }
 
-:global(html[data-theme^="manuscript"]) .pageSectionTitle h2,
-:global(html[data-theme^="manuscript"]) .pageNavigation {
-  border-color: var(--line-strong);
-  border-style: double;
-}
-
 :global(html[data-theme^="manuscript"]) .pageSectionTitle h2 {
-  border-bottom-width: 3px;
+  border-bottom: 3px double var(--line-strong);
 }
 
 :global(html[data-theme^="manuscript"]) .pageNavigation {
-  border-top-width: 3px;
+  border: none;
 }
 
 :global(html[data-theme^="manuscript"]) .pageNavLabel {
@@ -1095,18 +1097,12 @@
   transform: translate(-50%, -50%);
 }
 
-:global(html[data-theme^="journal"]) .pageSectionTitle h2,
-:global(html[data-theme^="journal"]) .pageNavigation {
-  border-color: var(--line);
-  border-style: solid;
-}
-
 :global(html[data-theme^="journal"]) .pageSectionTitle h2 {
-  border-bottom-width: 1.5px;
+  border-bottom: 1.5px solid var(--line);
 }
 
 :global(html[data-theme^="journal"]) .pageNavigation {
-  border-top-width: 1.5px;
+  border: none;
 }
 
 :global(html[data-theme^="journal"]) .pageNavLabel {
@@ -1415,13 +1411,18 @@
   }
 
   .pageNavButton {
-    flex: 1 1 0;
-    max-width: none;
+    flex: 0 1 auto;
+    width: fit-content;
+    max-width: calc(50% - 0.35rem);
     padding: 0.55rem 0.65rem;
     border: 1px solid var(--line);
     border-radius: var(--radius-card);
     background: var(--card-bg);
     box-shadow: var(--shadow);
+  }
+
+  .pageNavButton:only-child {
+    max-width: 100%;
   }
 
   .pageNavButtonNext {

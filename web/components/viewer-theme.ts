@@ -170,8 +170,8 @@ export function getFamilyForTheme(theme: ViewerTheme): {
 }
 
 const VIEWER_THEME_SAFE_AREA_COLORS: Partial<Record<ViewerTheme, string>> = {
-  journal: "#24140e",
-  "journal-dark": "#140905",
+  journal: "#3d2318",
+  "journal-dark": "#24150e",
   "field-guide": "#fbf8ef",
   "field-guide-dark": "#171b1c",
 };
@@ -190,6 +190,9 @@ export function applyViewerTheme(theme: ViewerTheme) {
     VIEWER_THEME_SAFE_AREA_COLORS[theme] ??
     (colorScheme === "dark" ? "#111315" : "#ffffff");
   root.style.backgroundColor = safeAreaColor;
+  if (typeof document !== "undefined" && document.body) {
+    document.body.style.backgroundColor = safeAreaColor;
+  }
   document
     .querySelector<HTMLMetaElement>('meta[name="theme-color"]')
     ?.setAttribute("content", safeAreaColor);

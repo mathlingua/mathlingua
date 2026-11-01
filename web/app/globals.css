@@ -421,7 +421,7 @@ html[data-theme="journal"] {
     "Cinzel", "Playfair Display", Baskerville, "Iowan Old Style", Georgia, serif;
   --font-ui:
     "Cinzel", "Gill Sans", "Avenir Next Condensed", sans-serif;
-  --page-bg: #22120b;
+  --page-bg: #3d2318;
   --surface: #fcf8ee;
   --surface-alt: #f4ebd7;
   --ink: #221811;
@@ -434,7 +434,7 @@ html[data-theme="journal"] {
   --shadow:
     0 1px 0 rgba(255, 230, 160, 0.4),
     0 10px 25px rgba(25, 12, 6, 0.45);
-  --chrome-bg: rgba(36, 19, 12, 0.96);
+  --chrome-bg: #3d2318;
   --card-bg:
     radial-gradient(circle at 12% 10%, rgba(255, 250, 230, 0.4), transparent 30%),
     radial-gradient(circle at 88% 90%, rgba(180, 150, 110, 0.15), transparent 35%),
@@ -504,7 +504,7 @@ html[data-theme="journal-dark"] {
     "Cinzel", "Playfair Display", Baskerville, "Iowan Old Style", Georgia, serif;
   --font-ui:
     "Cinzel", "Gill Sans", "Avenir Next Condensed", sans-serif;
-  --page-bg: #140905;
+  --page-bg: #24150e;
   --surface: #24150e;
   --surface-alt: #1d0f09;
   --ink: #ede0cd;
@@ -515,7 +515,7 @@ html[data-theme="journal-dark"] {
   --accent: #b92d3b;
   --accent-soft: #3d2114;
   --shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
-  --chrome-bg: rgba(22, 11, 7, 0.96);
+  --chrome-bg: #24150e;
   --card-bg:
     radial-gradient(circle at 14% 12%, rgba(212, 175, 55, 0.05), transparent 28%),
     #24150e;
@@ -1360,6 +1360,16 @@ html {
      React toolbar mounts. The saved theme is applied synchronously in the
      document head, so this resolves to that theme's surface on first paint. */
   background: var(--surface);
+}
+
+html[data-theme^="journal"],
+html[data-theme^="journal"] body {
+  background-color: #3d2318;
+}
+
+html[data-theme="journal-dark"],
+html[data-theme="journal-dark"] body {
+  background-color: #24150e;
 }
 
 body {

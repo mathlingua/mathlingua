@@ -6,7 +6,20 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, viewport-fit=cover"
     />
-    <meta name="theme-color" content="#ffffff" />
+    <meta name="theme-color" content="#3d2318" />
+    <style>
+      html, body {
+        background-color: #3d2318;
+      }
+      html[data-theme="journal"],
+      html[data-theme="journal"] body {
+        background-color: #3d2318 !important;
+      }
+      html[data-theme="journal-dark"],
+      html[data-theme="journal-dark"] body {
+        background-color: #24150e !important;
+      }
+    </style>
     <base href="__MLG_BASE_HREF__" />
     <meta name="description" content="Rendered Mathlingua collection viewer" />
     <link rel="icon" href="./icon.png" />
@@ -73,8 +86,8 @@
             document.documentElement.dataset.theme = theme;
             document.documentElement.style.colorScheme = colorScheme;
             const initialSafeAreaColors = {
-              journal: "#24140e",
-              "journal-dark": "#140905",
+              journal: "#3d2318",
+              "journal-dark": "#24150e",
               "field-guide": "#fbf8ef",
               "field-guide-dark": "#171b1c",
             };
@@ -82,6 +95,15 @@
               initialSafeAreaColors[theme] ??
               (colorScheme === "dark" ? "#111315" : "#ffffff");
             document.documentElement.style.backgroundColor = safeAreaColor;
+            if (document.body) {
+              document.body.style.backgroundColor = safeAreaColor;
+            } else {
+              document.addEventListener("DOMContentLoaded", () => {
+                if (document.body) {
+                  document.body.style.backgroundColor = safeAreaColor;
+                }
+              });
+            }
             document
               .querySelector('meta[name="theme-color"]')
               ?.setAttribute("content", safeAreaColor);
@@ -105,8 +127,8 @@
       })();
       window.__MLG_VIEW_CONFIG__ = __MLG_RUNTIME_CONFIG_JSON__;
     </script>
-    <script type="module" crossorigin src="./assets/index-CGADz2Bq.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-S8eRWsQD.css">
+    <script type="module" crossorigin src="./assets/index-C3x_JAhW.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-CJXRJ2OD.css">
   </head>
   <body>
     <div id="root"></div>

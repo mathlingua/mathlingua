@@ -15,8 +15,8 @@
   top: -200px;
   left: 0;
   right: 0;
-  height: calc(200px + var(--viewer-safe-area-top));
-  background: var(--page-bg);
+  height: 200px;
+  background: var(--chrome-bg);
   pointer-events: none;
 }
 
@@ -827,11 +827,12 @@
   box-shadow: 
     0 4px 15px rgba(0, 0, 0, 0.45),
     inset 0 -1px 0 rgba(212, 175, 55, 0.25);
-  backdrop-filter: blur(10px);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 :global(html[data-theme^="journal"]) .header::before {
-  background: #24140e;
+  background: #3d2318;
 }
 
 :global(html[data-theme^="journal"]) .subbar {
@@ -943,10 +944,12 @@
   box-shadow: 
     0 4px 18px rgba(0, 0, 0, 0.65),
     inset 0 -1px 0 rgba(184, 147, 59, 0.2);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 :global(html[data-theme="journal-dark"]) .header::before {
-  background: #140905;
+  background: #24150e;
 }
 
 :global(html[data-theme="journal-dark"]) .controlLabel {

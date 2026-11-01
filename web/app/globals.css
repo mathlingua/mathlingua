@@ -1362,20 +1362,9 @@ html {
   background: var(--surface);
 }
 
-html[data-theme="journal"] {
-  background-color: var(--surface);
-  background-image: linear-gradient(
-    to bottom,
-    #3d2318 0%,
-    #3d2318 120px,
-    var(--surface) 120px,
-    var(--surface) 100%
-  );
-  background-repeat: no-repeat;
-}
-
-html[data-theme="journal"] body {
-  background: transparent;
+html[data-theme^="journal"],
+html[data-theme^="journal"] body {
+  background-color: #3d2318;
 }
 
 html[data-theme="journal-dark"],
@@ -1502,6 +1491,14 @@ html[data-theme="lcd-dark"] body::after {
   );
   background-size: 4px 4px;
   opacity: 0.24;
+}
+
+html[data-theme="journal"] body {
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(85, 45, 30, 0.45) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 80%, rgba(30, 15, 10, 0.7) 0%, transparent 70%),
+    linear-gradient(135deg, #3d2318 0%, #24140e 50%, #160a06 100%),
+    var(--page-bg);
 }
 
 html[data-theme="journal"] body::after {

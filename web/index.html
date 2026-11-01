@@ -8,23 +8,16 @@
     />
     <meta name="theme-color" content="#3d2318" />
     <style>
-      html[data-theme="journal"] {
-        background-color: #fcf8ee;
-        background-image: linear-gradient(
-          to bottom,
-          #3d2318 0%,
-          #3d2318 120px,
-          #fcf8ee 120px,
-          #fcf8ee 100%
-        );
-        background-repeat: no-repeat;
+      html, body {
+        background-color: #3d2318;
       }
+      html[data-theme="journal"],
       html[data-theme="journal"] body {
-        background: transparent;
+        background-color: #3d2318 !important;
       }
       html[data-theme="journal-dark"],
       html[data-theme="journal-dark"] body {
-        background-color: #24150e;
+        background-color: #24150e !important;
       }
     </style>
     <base href="__MLG_BASE_HREF__" />
@@ -101,6 +94,16 @@
             const safeAreaColor =
               initialSafeAreaColors[theme] ??
               (colorScheme === "dark" ? "#111315" : "#ffffff");
+            document.documentElement.style.backgroundColor = safeAreaColor;
+            if (document.body) {
+              document.body.style.backgroundColor = safeAreaColor;
+            } else {
+              document.addEventListener("DOMContentLoaded", () => {
+                if (document.body) {
+                  document.body.style.backgroundColor = safeAreaColor;
+                }
+              });
+            }
             document
               .querySelector('meta[name="theme-color"]')
               ?.setAttribute("content", safeAreaColor);

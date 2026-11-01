@@ -5,6 +5,9 @@
   min-height: calc(
     100vh - var(--viewer-total-chrome-height, var(--viewer-chrome-height))
   );
+  min-height: calc(
+    100dvh - var(--viewer-total-chrome-height, var(--viewer-chrome-height))
+  );
   transition: grid-template-columns 180ms ease;
   background: var(--surface);
 }
@@ -470,6 +473,8 @@
   top: 0;
   left: 0;
   right: 0;
+  max-height: 100%;
+  overflow: hidden;
   pointer-events: none;
 }
 

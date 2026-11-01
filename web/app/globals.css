@@ -1375,6 +1375,7 @@ html[data-theme="journal-dark"] body {
 body {
   margin: 0;
   min-height: 100vh;
+  min-height: 100dvh;
   background: var(--page-bg);
   color: var(--ink);
   font-family: var(--font-body);

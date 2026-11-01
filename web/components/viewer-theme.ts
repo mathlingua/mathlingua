@@ -183,15 +183,17 @@ export function applyViewerTheme(theme: ViewerTheme) {
     VIEWER_THEMES.find((item) => item.id === theme)?.colorScheme ?? "light";
   root.style.colorScheme = colorScheme;
 
-  // Safari uses the document canvas and `theme-color` while painting around
-  // the iPhone notch. Keep both opaque and synchronized with the selected
-  // theme's chrome / top bar color (e.g. opaque solid brown for Journal).
+  // Safari uses `theme-color` while painting around the iPhone notch and status
+  // bar. Keep it synchronized with the selected theme's chrome / top bar color
+  // (e.g. opaque solid brown for Journal). Backgrounds on the root element are
+  // handled via CSS rules (e.g. split top-bar/parchment gradient for Journal) so
+  // that bottom overscroll and safe-areas blend into the document surface.
   const safeAreaColor =
     VIEWER_THEME_SAFE_AREA_COLORS[theme] ??
     (colorScheme === "dark" ? "#111315" : "#ffffff");
-  root.style.backgroundColor = safeAreaColor;
+  root.style.backgroundColor = "";
   if (typeof document !== "undefined" && document.body) {
-    document.body.style.backgroundColor = safeAreaColor;
+    document.body.style.backgroundColor = "";
   }
   document
     .querySelector<HTMLMetaElement>('meta[name="theme-color"]')

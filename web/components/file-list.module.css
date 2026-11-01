@@ -420,7 +420,10 @@
 .documentStream {
   min-width: 0;
   padding-top: var(--viewer-spacing-stream-padding-top, 3.1rem);
-  padding-bottom: var(--viewer-spacing-stream-padding-bottom, 5rem);
+  padding-bottom: calc(
+    var(--viewer-spacing-stream-padding-bottom, 5rem) +
+      env(safe-area-inset-bottom, 0px)
+  );
   padding-left: var(--viewer-spacing-stream-padding-x, 2rem);
   padding-right: var(--viewer-spacing-stream-padding-x, 2rem);
   overflow-x: clip;
@@ -1533,7 +1536,10 @@
 
   .documentStream {
     padding-top: var(--viewer-spacing-stream-padding-top, 2rem);
-    padding-bottom: var(--viewer-spacing-stream-padding-bottom, 4rem);
+    padding-bottom: calc(
+      var(--viewer-spacing-stream-padding-bottom, 4rem) +
+        env(safe-area-inset-bottom, 0px)
+    );
     padding-left: var(--viewer-spacing-stream-padding-x, 1.35rem);
     padding-right: var(--viewer-spacing-stream-padding-x, 1.35rem);
   }
@@ -1566,7 +1572,10 @@
 @media (max-width: 520px) {
   .documentStream {
     padding-top: var(--viewer-spacing-stream-padding-top, 1.25rem);
-    padding-bottom: var(--viewer-spacing-stream-padding-bottom, 3.25rem);
+    padding-bottom: calc(
+      var(--viewer-spacing-stream-padding-bottom, 3.25rem) +
+        env(safe-area-inset-bottom, 0px)
+    );
     padding-left: var(--viewer-spacing-stream-padding-x, 0.95rem);
     padding-right: var(--viewer-spacing-stream-padding-x, 0.95rem);
   }

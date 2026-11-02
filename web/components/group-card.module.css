@@ -82,7 +82,7 @@
   display: inline-block;
   margin-left: 0.38em;
   color: var(--ink);
-  line-height: 1.62;
+  line-height: var(--viewer-spacing-prose-line-height, 1.62);
   vertical-align: baseline;
 }
 

@@ -148,7 +148,7 @@
 @media (max-width: 520px) {
   .markdown {
     font-size: calc(1.02rem * var(--viewer-font-scale, 1));
-    line-height: 1.58;
+    line-height: var(--viewer-spacing-prose-line-height, 1.58);
   }
 
   .markdown h1 {
@@ -199,7 +199,7 @@
 
 :global(html[data-theme^="manuscript"]) .markdown {
   font-size: calc(1.06rem * var(--viewer-font-scale, 1));
-  line-height: 1.68;
+  line-height: var(--viewer-spacing-prose-line-height, 1.68);
 }
 
 :global(html[data-theme^="manuscript"]) .markdown h1,
@@ -228,7 +228,7 @@
 
 :global(html[data-theme^="journal"]) .markdown {
   font-size: calc(1.05rem * var(--viewer-font-scale, 1));
-  line-height: 1.7;
+  line-height: var(--viewer-spacing-prose-line-height, 1.7);
 }
 
 :global(html[data-theme^="journal"]) .markdown h1,

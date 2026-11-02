@@ -287,6 +287,8 @@ html[data-spacing="spacious"] {
     --viewer-spacing-section-margin-top: 0.3rem;
     --viewer-spacing-item-gap: 0.02rem;
     --viewer-spacing-formulation-line-height: 1.25;
+    --viewer-spacing-prose-line-height: 1.44;
+    --viewer-spacing-prose-paragraph-gap: 0.65rem;
     --viewer-spacing-section-break-gap: 1.75rem;
   }
 
@@ -306,6 +308,8 @@ html[data-spacing="spacious"] {
     --viewer-spacing-section-margin-top: 0.6rem;
     --viewer-spacing-item-gap: 0.08rem;
     --viewer-spacing-formulation-line-height: 1.36;
+    --viewer-spacing-prose-line-height: 1.62;
+    --viewer-spacing-prose-paragraph-gap: 1rem;
     --viewer-spacing-section-break-gap: 3.5rem;
   }
 
@@ -325,6 +329,8 @@ html[data-spacing="spacious"] {
     --viewer-spacing-section-margin-top: 0.9rem;
     --viewer-spacing-item-gap: 0.2rem;
     --viewer-spacing-formulation-line-height: 1.54;
+    --viewer-spacing-prose-line-height: 1.8;
+    --viewer-spacing-prose-paragraph-gap: 1.45rem;
     --viewer-spacing-section-break-gap: 5.5rem;
   }
 }

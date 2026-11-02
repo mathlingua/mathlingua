@@ -114,6 +114,11 @@
             document.documentElement.dataset.font = "euler";
           }
 
+          const spacing = window.localStorage.getItem("mlg-view-spacing");
+          if (["compact", "comfortable", "spacious"].includes(spacing)) {
+            document.documentElement.dataset.spacing = spacing;
+          }
+
           const fontScale = Number(
             window.localStorage.getItem("mlg-view-font-scale"),
           );

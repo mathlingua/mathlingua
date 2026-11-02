@@ -114,6 +114,11 @@
             document.documentElement.dataset.font = "euler";
           }
 
+          const spacing = window.localStorage.getItem("mlg-view-spacing");
+          if (["compact", "comfortable", "spacious"].includes(spacing)) {
+            document.documentElement.dataset.spacing = spacing;
+          }
+
           const fontScale = Number(
             window.localStorage.getItem("mlg-view-font-scale"),
           );
@@ -127,8 +132,8 @@
       })();
       window.__MLG_VIEW_CONFIG__ = __MLG_RUNTIME_CONFIG_JSON__;
     </script>
-    <script type="module" crossorigin src="./assets/index-Bwzfd3-9.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-8kmOATuM.css">
+    <script type="module" crossorigin src="./assets/index-CbEwvp5o.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-7-2zeyIy.css">
   </head>
   <body>
     <div id="root"></div>

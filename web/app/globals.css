@@ -482,24 +482,6 @@ html[data-theme="journal"] {
   --card-heading-weight: 700;
   --prose-heading-color: #8b1e28;
   --prose-heading-weight: 700;
-  --viewer-spacing-stream-gap: 1.35rem;
-  --viewer-spacing-stream-padding-top: 1.85rem;
-  --viewer-spacing-stream-padding-bottom: 3.5rem;
-  --viewer-spacing-stream-padding-x: 1.25rem;
-  --viewer-spacing-card-padding-y: 1.15rem;
-  --viewer-spacing-card-padding-x: 1.35rem;
-  --viewer-spacing-card-padding-bottom: 1.25rem;
-  --viewer-spacing-card-closable-top: 2.6rem;
-  --viewer-spacing-heading-to-text-gap: 0.55rem;
-  --viewer-spacing-prose-to-card-gap: 1.15rem;
-  --viewer-spacing-heading-top-gap: 1.35rem;
-  --viewer-spacing-section-gap: 0.35rem;
-  --viewer-spacing-section-margin-top: 0.5rem;
-  --viewer-spacing-item-gap: 0.05rem;
-  --viewer-spacing-formulation-line-height: 1.35;
-  --viewer-spacing-prose-line-height: 1.58;
-  --viewer-spacing-prose-paragraph-gap: 0.75rem;
-  --viewer-spacing-section-break-gap: 2.5rem;
 }
 
 html[data-theme="journal-dark"] {
@@ -561,24 +543,6 @@ html[data-theme="journal-dark"] {
   --card-heading-weight: 700;
   --prose-heading-color: #d94b59;
   --prose-heading-weight: 700;
-  --viewer-spacing-stream-gap: 1.35rem;
-  --viewer-spacing-stream-padding-top: 1.85rem;
-  --viewer-spacing-stream-padding-bottom: 3.5rem;
-  --viewer-spacing-stream-padding-x: 1.25rem;
-  --viewer-spacing-card-padding-y: 1.15rem;
-  --viewer-spacing-card-padding-x: 1.35rem;
-  --viewer-spacing-card-padding-bottom: 1.25rem;
-  --viewer-spacing-card-closable-top: 2.6rem;
-  --viewer-spacing-heading-to-text-gap: 0.55rem;
-  --viewer-spacing-prose-to-card-gap: 1.15rem;
-  --viewer-spacing-heading-top-gap: 1.35rem;
-  --viewer-spacing-section-gap: 0.35rem;
-  --viewer-spacing-section-margin-top: 0.5rem;
-  --viewer-spacing-item-gap: 0.05rem;
-  --viewer-spacing-formulation-line-height: 1.35;
-  --viewer-spacing-prose-line-height: 1.58;
-  --viewer-spacing-prose-paragraph-gap: 0.75rem;
-  --viewer-spacing-section-break-gap: 2.5rem;
 }
 
 html[data-theme="mono"] {

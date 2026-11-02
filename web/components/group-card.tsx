@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { ArgumentList } from "./argument-list";
 import type { GroupView, SectionView } from "../lib/types";
 import { LatexRenderer } from "./latex-renderer";
@@ -23,6 +23,8 @@ interface GroupCardProps {
   onClose?: () => void;
   /** Whether resolved expression types are visible. */
   showTypes?: boolean;
+  /** Optional definition trail or child cards rendered below the card face. */
+  children?: ReactNode;
 }
 
 /**
@@ -35,6 +37,7 @@ export function GroupCard({
   onReferenceClick,
   onClose,
   showTypes = false,
+  children,
 }: GroupCardProps) {
   const [showSupportSections, setShowSupportSections] = useState(false);
   const [showSource, setShowSource] = useState(false);
@@ -265,6 +268,7 @@ export function GroupCard({
           />
         </article>
       </div>
+      {children}
       {proofText ? (
         <article className={styles.proof}>
           <header className={styles.proofHeader}>

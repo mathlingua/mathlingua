@@ -1398,7 +1398,7 @@ Documented:
         assert_eq!(
             refines.inline_latex.as_deref(),
             Some(
-                r#"G ::= \left(X, \ast, e\right) \textrm{ is } \htmlData{mlg-ref=5c67726f7570}{\textrm{group}}"#
+                r#"\htmlData{mlg-ref=5c67726f7570}{G ::= \left(X, \ast, e\right) \textrm{ is } \textrm{group}}"#
             )
         );
         assert!(!event_log.has_errors());
@@ -1654,7 +1654,7 @@ Documented:
         assert_eq!(view.files[0].items[0].definition_keys, vec!["5c736574"]);
         assert_eq!(
             declares.inline_latex,
-            Some(r#"X \textrm{ is } \htmlData{mlg-ref=5c736574}{\textrm{set}}"#.to_string())
+            Some(r#"\htmlData{mlg-ref=5c736574}{X \textrm{ is } \textrm{set}}"#.to_string())
         );
         assert!(!event_log.has_errors());
     }

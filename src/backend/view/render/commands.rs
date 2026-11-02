@@ -194,27 +194,30 @@ pub(super) fn render_dynamic_refined_command_called(
 ) -> String {
     let base_signature = refined_command_header_base_signature(refined_header);
     let header_substitutions = command_header_substitutions(header, registry);
+    let mut signatures = vec![base_signature.clone()];
     let refinement_templates = command
         .parts
         .iter()
         .map(|part| {
             let signature = dynamic_refined_part_signature(command, part, &base_signature);
-            let Some(render) = registry.commands.get(&signature) else {
-                return render_called_template(&format_chain(&part.chain), &HashMap::new());
+            let latex = if let Some(render) = registry.commands.get(&signature) {
+                let mut substitutions = header_substitutions.clone();
+                let values = expression_tail_argument_values(&part.tail, registry);
+                let missing_parameters = render
+                    .parameters
+                    .iter()
+                    .filter(|name| !substitutions.contains_key(*name))
+                    .cloned()
+                    .collect::<Vec<_>>();
+                for (name, value) in missing_parameters.into_iter().zip(values) {
+                    substitutions.insert(name, value);
+                }
+                render.render_called(&substitutions)
+            } else {
+                render_called_template(&format_chain(&part.chain), &HashMap::new())
             };
-
-            let mut substitutions = header_substitutions.clone();
-            let values = expression_tail_argument_values(&part.tail, registry);
-            let missing_parameters = render
-                .parameters
-                .iter()
-                .filter(|name| !substitutions.contains_key(*name))
-                .cloned()
-                .collect::<Vec<_>>();
-            for (name, value) in missing_parameters.into_iter().zip(values) {
-                substitutions.insert(name, value);
-            }
-            command_reference_latex(&signature, render.render_called(&substitutions), registry)
+            signatures.push(signature);
+            latex
         })
         .collect();
 
@@ -225,16 +228,12 @@ pub(super) fn render_dynamic_refined_command_called(
                 &HashMap::new(),
             )
         },
-        |render| {
-            command_reference_latex(
-                &base_signature,
-                render.render_called(&header_substitutions),
-                registry,
-            )
-        },
+        |render| render.render_called(&header_substitutions),
     );
 
-    prepend_refinement_prefix(base_latex, refinement_templates)
+    let latex = prepend_refinement_prefix(base_latex, refinement_templates);
+    let sig_refs: Vec<&str> = signatures.iter().map(|s| s.as_str()).collect();
+    command_references_latex(&sig_refs, latex, registry)
 }
 
 fn dynamic_refined_part_signature(
@@ -411,6 +410,7 @@ pub(super) fn refined_command_called_template(
     let mut refinement_templates = Vec::new();
 
     let base_signature = refined_command_base_signature(command);
+    let mut signatures = vec![base_signature.clone()];
 
     for part in &command.parts {
         let signature = refined_command_part_signature(command, part);
@@ -419,17 +419,14 @@ pub(super) fn refined_command_called_template(
                 &render.parameters,
                 refined_command_part_argument_values(command, part, registry),
             );
-            refinement_templates.push(command_reference_latex(
-                &signature,
-                render.render_called(&substitutions),
-                registry,
-            ));
+            refinement_templates.push(render.render_called(&substitutions));
         } else {
             refinement_templates.push(render_called_template(
                 &format_chain(&part.chain),
                 &HashMap::new(),
             ));
         }
+        signatures.push(signature);
     }
 
     let base_latex = if let Some(render) = registry.commands.get(&base_signature) {
@@ -437,11 +434,7 @@ pub(super) fn refined_command_called_template(
             &render.parameters,
             refined_command_base_argument_values(command, registry),
         );
-        command_reference_latex(
-            &base_signature,
-            render.render_called(&substitutions),
-            registry,
-        )
+        render.render_called(&substitutions)
     } else {
         render_called_template(
             &refined_tail_signature(&command.refined_tail),
@@ -450,8 +443,11 @@ pub(super) fn refined_command_called_template(
     };
 
     let latex = prepend_refinement_prefix(base_latex, refinement_templates);
+    let sig_refs: Vec<&str> = signatures.iter().map(|s| s.as_str()).collect();
 
-    CalledTemplate { latex }
+    CalledTemplate {
+        latex: command_references_latex(&sig_refs, latex, registry),
+    }
 }
 
 pub(super) fn append_refinement_suffix(base_latex: String, refinements: Vec<String>) -> String {

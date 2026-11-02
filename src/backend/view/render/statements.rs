@@ -1,9 +1,47 @@
 use super::*;
 
+pub(super) fn type_expression_reference_signatures(ty: &TypeExpression) -> Vec<String> {
+    match ty {
+        TypeExpression::Command(command) => vec![command_expression_signature(command)],
+        TypeExpression::RefinedCommand(command) => {
+            let mut signatures = vec![refined_command_base_signature(command)];
+            for part in &command.parts {
+                signatures.push(refined_command_part_signature(command, part));
+            }
+            signatures
+        }
+        _ => Vec::new(),
+    }
+}
+
 pub(super) fn render_declaration_statement(
     statement: &DeclarationStatement,
     registry: &RenderRegistry,
 ) -> String {
+    if let Some(DeclarationRelation::Is(ty)) = &statement.relation {
+        let signatures = type_expression_reference_signatures(ty);
+        if !signatures.is_empty() {
+            let unlinked = registry.with_link_references(false);
+            let mut rendered = render_is_subject(&statement.subject, &unlinked);
+            if let Some(expansion) = &statement.expansion {
+                rendered.push_str(" ::= ");
+                rendered.push_str(&render_is_subject(expansion, &unlinked));
+            }
+            if let Some(definition) = &statement.definition {
+                rendered.push_str(" := ");
+                rendered.push_str(&render_expression(definition, &unlinked));
+            }
+            rendered.push(' ');
+            rendered.push_str(&render_declaration_relation(
+                &DeclarationRelation::Is(ty.clone()),
+                &unlinked,
+            ));
+
+            let sig_refs: Vec<&str> = signatures.iter().map(|s| s.as_str()).collect();
+            return command_references_latex(&sig_refs, rendered, registry);
+        }
+    }
+
     let mut rendered = render_is_subject(&statement.subject, registry);
     if let Some(expansion) = &statement.expansion {
         rendered.push_str(" ::= ");
@@ -24,6 +62,33 @@ pub(super) fn render_is_via_statement(
     statement: &IsViaStatement,
     registry: &RenderRegistry,
 ) -> String {
+    let signatures = type_expression_reference_signatures(&statement.is_statement.ty);
+    if !signatures.is_empty() {
+        let unlinked = registry.with_link_references(false);
+        let subject = render_is_subject(&statement.is_statement.subject, &unlinked);
+        let ty = render_type_expression_with_subject(
+            &statement.is_statement.ty,
+            Some(subject.clone()),
+            &unlinked,
+        );
+        let full = if ty.includes_subject {
+            format!(
+                "{} \\textrm{{ via }} {}",
+                ty.latex,
+                render_form_or_declaration(&statement.via, &unlinked)
+            )
+        } else {
+            format!(
+                "{} \\textrm{{ is }} {} \\textrm{{ via }} {}",
+                subject,
+                ty.latex,
+                render_form_or_declaration(&statement.via, &unlinked)
+            )
+        };
+        let sig_refs: Vec<&str> = signatures.iter().map(|s| s.as_str()).collect();
+        return command_references_latex(&sig_refs, full, registry);
+    }
+
     let subject = render_is_subject(&statement.is_statement.subject, registry);
     let ty = render_type_expression_with_subject(
         &statement.is_statement.ty,
@@ -250,6 +315,7 @@ pub(super) fn render_is_command_with_subject_latex(
     registry: &RenderRegistry,
 ) -> String {
     let signature = command_expression_signature(command);
+    let unlinked = registry.with_link_references(false);
     let Some(render) = registry.commands.get(&signature) else {
         return format!(
             "{} \\textrm{{ is }} {}",
@@ -259,18 +325,20 @@ pub(super) fn render_is_command_with_subject_latex(
     };
 
     let substitutions =
-        command_substitutions(command, render, Some(subject_latex.clone()), registry);
-    let ty = command_type_template(command, Some(subject_latex.clone()), registry).unwrap_or_else(
+        command_substitutions(command, render, Some(subject_latex.clone()), &unlinked);
+    let ty = command_type_template(command, Some(subject_latex.clone()), &unlinked).unwrap_or_else(
         || TypeTemplate {
             latex: render.render_called(&substitutions),
             includes_subject: false,
         },
     );
-    if ty.includes_subject {
-        return ty.latex;
-    }
+    let full = if ty.includes_subject {
+        ty.latex
+    } else {
+        format!("{} \\textrm{{ is }} {}", subject_latex, ty.latex)
+    };
 
-    format!("{} \\textrm{{ is }} {}", subject_latex, ty.latex)
+    command_reference_latex(&signature, full, registry)
 }
 
 pub(super) fn render_is_refined_command_with_subject_latex(
@@ -278,11 +346,16 @@ pub(super) fn render_is_refined_command_with_subject_latex(
     command: &RefinedCommandExpression,
     registry: &RenderRegistry,
 ) -> String {
-    format!(
-        "{} \\textrm{{ is }} {}",
-        subject_latex,
-        render_refined_command_called(command, registry)
-    )
+    let unlinked = registry.with_link_references(false);
+    let ty_latex = render_refined_command_called(command, &unlinked);
+    let full = format!("{} \\textrm{{ is }} {}", subject_latex, ty_latex);
+
+    let mut signatures = vec![refined_command_base_signature(command)];
+    for part in &command.parts {
+        signatures.push(refined_command_part_signature(command, part));
+    }
+    let sig_refs: Vec<&str> = signatures.iter().map(|s| s.as_str()).collect();
+    command_references_latex(&sig_refs, full, registry)
 }
 
 pub(super) fn render_function_type(

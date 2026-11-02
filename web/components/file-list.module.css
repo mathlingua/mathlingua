@@ -847,6 +847,7 @@
   box-sizing: border-box;
   width: min(100%, 47rem);
   min-width: 0;
+  margin: 1.15rem auto 0;
   padding: 2.35rem clamp(1rem, 4vw, 2.6rem) 2rem;
   border: var(--definition-border-width) solid var(--line);
   border-radius: var(--radius-definition);
@@ -1325,6 +1326,7 @@
 
 :global(html[data-theme^="journal"]) .definitionTrail {
   border: 1.5px solid var(--line);
+  margin-top: 0.85rem;
 }
 
 :global(html[data-theme="journal-dark"]) .readerLayout {

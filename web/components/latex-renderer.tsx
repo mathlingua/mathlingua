@@ -80,7 +80,7 @@ export function allowMathLinguaCommands(context: {
     return (
       attributes.length === 1 &&
       attributes[0] === "data-mlg-ref" &&
-      /^[0-9a-f]+$/.test(context.attributes["data-mlg-ref"] ?? "")
+      /^[0-9a-f]+([:,][0-9a-f]+)*$/.test(context.attributes["data-mlg-ref"] ?? "")
     );
   }
 

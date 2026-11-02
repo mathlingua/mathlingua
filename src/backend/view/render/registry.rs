@@ -338,6 +338,12 @@ impl RenderRegistry {
         }
         scoped
     }
+
+    pub(super) fn with_link_references(&self, link_references: bool) -> RenderRegistry {
+        let mut copy = self.clone();
+        copy.link_references = link_references;
+        copy
+    }
 }
 
 /// Parses one item-level `Writing:` alias body into its `(name, LaTeX body)` pair,
@@ -531,11 +537,22 @@ pub(super) fn command_reference_latex(
     latex: String,
     registry: &RenderRegistry,
 ) -> String {
-    if registry.link_references {
-        format!(
-            "\\htmlData{{mlg-ref={}}}{{{latex}}}",
-            reference_key(signature)
-        )
+    command_references_latex(&[signature], latex, registry)
+}
+
+pub(super) fn command_references_latex(
+    signatures: &[&str],
+    latex: String,
+    registry: &RenderRegistry,
+) -> String {
+    let non_empty: Vec<&str> = signatures.iter().copied().filter(|s| !s.is_empty()).collect();
+    if registry.link_references && !non_empty.is_empty() {
+        let keys = non_empty
+            .into_iter()
+            .map(reference_key)
+            .collect::<Vec<_>>()
+            .join(":");
+        format!("\\htmlData{{mlg-ref={keys}}}{{{latex}}}")
     } else {
         latex
     }
@@ -623,17 +640,16 @@ pub(in crate::backend::view) fn render_refines_section_latex(
     };
     let base_signature = refined_command_header_base_signature(refined_header);
     let base_render = registry.commands.get(&base_signature)?;
-    let base_latex = command_reference_latex(
-        &base_signature,
-        base_render.render_called(&command_header_substitutions(&header, registry)),
-        registry,
+    let unlinked = registry.with_link_references(false);
+    let base_latex = base_render.render_called(&command_header_substitutions(&header, &unlinked));
+
+    let full_statement = format!(
+        "{} \\textrm{{ is }} {}",
+        render_declaration_statement(&statement, &unlinked),
+        base_latex
     );
 
-    Some(format!(
-        "{} \\textrm{{ is }} {}",
-        render_declaration_statement(&statement, registry),
-        base_latex
-    ))
+    Some(command_reference_latex(&base_signature, full_statement, registry))
 }
 
 /// Renders a `Refines:` group's `specifies:` statement with `[[subject]]`

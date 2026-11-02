@@ -283,22 +283,31 @@ export function FileList({
   };
 
   const handleReferenceClick = (rootAnchorId: string, referenceKey: string) => {
-    if (
-      !definitionIndex.has(referenceKey) &&
-      !loadedDefinitions?.[referenceKey] &&
-      !definitionItemIds?.[referenceKey]
-    ) {
+    const keys = referenceKey
+      .split(/[:,\s]+/)
+      .map((k) => k.trim())
+      .filter(Boolean);
+
+    const validKeys = keys.filter(
+      (key) =>
+        definitionIndex.has(key) ||
+        loadedDefinitions?.[key] ||
+        definitionItemIds?.[key],
+    );
+
+    if (validKeys.length === 0) {
       return;
     }
 
-    onLoadDefinition?.(referenceKey);
+    for (const key of validKeys) {
+      onLoadDefinition?.(key);
+    }
 
     setDefinitionTrails((current) => {
       const existingTrail = current[rootAnchorId] ?? [];
-      const nextTrail = [
-        ...existingTrail.filter((key) => key !== referenceKey),
-        referenceKey,
-      ];
+      const filtered = existingTrail.filter((k) => !validKeys.includes(k));
+      const uniqueValidKeys = Array.from(new Set(validKeys));
+      const nextTrail = [...filtered, ...uniqueValidKeys];
 
       return {
         ...current,
@@ -726,7 +735,7 @@ function GroupStack({
         onReferenceClick={(referenceKey) =>
           onReferenceClick(anchorId, referenceKey)
         }
-      />
+      >
       {trail.length > 0 ? (
         <div className={styles.definitionTrail}>
           <button
@@ -771,6 +780,7 @@ function GroupStack({
           })}
         </div>
       ) : null}
+      </GroupCard>
     </div>
   );
 }

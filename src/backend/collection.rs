@@ -61,7 +61,7 @@ impl SourceFileFilter {
         }
     }
 
-    fn allows(&self, event: &Event) -> bool {
+    pub(crate) fn allows(&self, event: &Event) -> bool {
         match self {
             Self::All => true,
             Self::Only(files) => event_file_path(event).is_some_and(|path| files.contains(path)),
@@ -301,6 +301,10 @@ impl SourceCollection {
             .chain(&self.parsed_preface_files)
             .cloned()
             .collect()
+    }
+
+    pub(crate) fn all_parsed_files(&self) -> impl Iterator<Item = &ParsedSourceFile> {
+        self.parsed_files.iter().chain(&self.parsed_preface_files)
     }
 
     pub(crate) fn build_view(&mut self, event_log: &mut EventLog) -> Option<CollectionView> {

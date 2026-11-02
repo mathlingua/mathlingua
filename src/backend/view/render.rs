@@ -31,7 +31,15 @@ pub(super) use registry::{
 use signatures::*;
 use statements::*;
 use templates::*;
-pub(super) use text::{render_scoped_text_markdown, render_scoped_text_markdown_with_labels};
+pub(super) use commands::{
+    render_command_expression, render_infix_command_expression,
+};
+pub(super) use expressions::{render_builtin_command_expression, render_expression};
+pub(super) use templates::render_written_display_template;
+pub(super) use text::{
+    markdown_code_span_len, math_fragment, render_scoped_text_markdown,
+    render_scoped_text_markdown_with_labels, theorem_reference_fragment,
+};
 
 #[cfg(test)]
 mod tests;

@@ -120,12 +120,24 @@ fn check_in_collecting_type_info(
     format_before_checking(cwd, event_log);
 
     let mut collection = SourceCollection::load(cwd, event_log, ORIGIN);
-    let render_registry = crate::backend::view::build_render_registry(collection.parsed_files());
     let diagnostic_filter = collection.diagnostic_filter(cwd, paths, event_log, ORIGIN);
     let files_checked = diagnostic_filter.selected_file_count(&collection);
 
     let type_info =
         collection.run_check_passes_filtered(event_log, ORIGIN, &diagnostic_filter, type_info_for);
+
+    let all_parsed: Vec<_> = collection.all_parsed_files().cloned().collect();
+    let render_registry = crate::backend::view::build_render_registry(&all_parsed);
+
+    if !has_blocking_user_issues_since(event_log, starting_event_count) {
+        crate::backend::view::check_collection_latex(
+            &collection,
+            &render_registry,
+            &diagnostic_filter,
+            event_log,
+            ORIGIN,
+        );
+    }
 
     let has_new_blocking_user_issues =
         has_blocking_user_issues_since(event_log, starting_event_count);
@@ -6849,10 +6861,88 @@ Documented:
         );
 
         assert_eq!(result.files_checked, 1);
-        assert_eq!(
-            user_events(&event_log),
-            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
-        );
+        let events = user_events(&event_log);
+        assert!(!events.iter().any(|e| matches!(e.as_message(), Some(m) if m.level == Level::Error)));
+        assert!(events.iter().any(|e| matches!(e.as_message(), Some(m) if m.level == Level::Warning && m.message.contains("Undefined control sequence: \\\\group"))));
+        assert!(events.iter().any(|e| matches!(e.as_message(), Some(m) if m.level == Level::Log && m.message == "Checked 1 file")));
+    }
+
+    #[test]
+    fn check_issues_warnings_for_latex_errors_with_command_and_location() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("theory.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\broken]
+Defines: b is \\expression
+Documented:
+. called: "broken"
+. written: "\invalid{latex"
+
+Theorem:
+then:
+. \broken
+
+Text:
+. "Here is broken math $ \frac{1} $ in text."
+"#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(temp_dir.path(), &[PathBuf::from("theory.mlg")], &mut event_log);
+
+        assert_eq!(result.files_checked, 1);
+        let events = user_events(&event_log);
+
+        // Verification 1: Warnings are issued, not errors, so check has no errors
+        assert!(!events.iter().any(|e| matches!(e.as_message(), Some(m) if m.level == Level::Error)));
+
+        // Verification 2: Command expansion warning with \command, row, column, and KaTeX error
+        let cmd_warning = events
+            .iter()
+            .find(|e| {
+                matches!(
+                    e.as_message(),
+                    Some(m) if m.message.starts_with("For `\\broken`:")
+                        && matches!(&m.location, Some(EventLocation::File { span: Some(span), .. }) if span.start.row == Some(9))
+                )
+            })
+            .expect("expected warning for `\\broken` on line 10 (row 9)");
+        let msg = cmd_warning.as_message().unwrap();
+        assert_eq!(msg.level, Level::Warning);
+        assert!(msg.message.contains("KaTeX parse error:"));
+        let loc = msg.location.as_ref().expect("expected location on command warning");
+        match loc {
+            EventLocation::File { span: Some(span), path } => {
+                assert_eq!(path.file_name().unwrap(), "theory.mlg");
+                assert_eq!(span.start.row, Some(9));
+                assert_eq!(span.start.column, Some(2));
+            }
+            _ => panic!("expected File location with span"),
+        }
+
+        // Verification 3: Text: entry with raw LaTeX error
+        let text_warning = events
+            .iter()
+            .find(|e| matches!(e.as_message(), Some(m) if m.message.contains("\\frac{1}")))
+            .expect("expected text raw LaTeX warning");
+        let msg = text_warning.as_message().unwrap();
+        assert_eq!(msg.level, Level::Warning);
+        assert!(msg.message.starts_with("KaTeX parse error:"));
+        let loc = msg.location.as_ref().expect("expected location on text warning");
+        match loc {
+            EventLocation::File { span: Some(span), path } => {
+                assert_eq!(path.file_name().unwrap(), "theory.mlg");
+                assert_eq!(span.start.row, Some(13));
+                assert_eq!(span.start.column, Some(23));
+            }
+            _ => panic!("expected File location with span"),
+        }
+
+        // Verification 4: Summary says "Checked 1 file"
+        assert!(events.iter().any(|e| matches!(e.as_message(), Some(m) if m.level == Level::Log && m.message == "Checked 1 file")));
     }
 
     #[test]

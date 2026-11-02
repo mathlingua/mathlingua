@@ -273,7 +273,7 @@ pub(super) fn substitute_math_template(
     result
 }
 
-pub(super) fn render_written_display_template(template: &str) -> String {
+pub(crate) fn render_written_display_template(template: &str) -> String {
     let mut result = String::new();
     let chars = template.chars().collect::<Vec<_>>();
     let mut index = 0;

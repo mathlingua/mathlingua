@@ -1,6 +1,6 @@
 use super::*;
 
-pub(super) fn render_command_expression(
+pub(crate) fn render_command_expression(
     command: &CommandExpression,
     registry: &RenderRegistry,
 ) -> String {
@@ -63,7 +63,7 @@ pub(super) fn render_predicate_command_expression(
     )
 }
 
-pub(super) fn render_infix_command_expression(
+pub(crate) fn render_infix_command_expression(
     left: &Expression,
     command: &InfixCommand,
     right: &Expression,

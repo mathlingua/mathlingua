@@ -183,7 +183,7 @@ struct RelationModifier<'a> {
     wording: &'a str,
 }
 
-fn markdown_code_span_len(input: &str) -> Option<usize> {
+pub(crate) fn markdown_code_span_len(input: &str) -> Option<usize> {
     if !input.starts_with('`') {
         return None;
     }
@@ -243,14 +243,14 @@ fn label_reference_fragment(input: &str) -> Option<(&str, usize)> {
     Some((body, 2 + end + 2))
 }
 
-fn theorem_reference_fragment(input: &str) -> Option<(&str, usize)> {
+pub(crate) fn theorem_reference_fragment(input: &str) -> Option<(&str, usize)> {
     let (open, close) = ("{:", ":}");
     let tail = input.strip_prefix(open)?;
     let end = tail.find(close)?;
     Some((&tail[..end], open.len() + end + close.len()))
 }
 
-fn math_fragment(input: &str, display: bool) -> Option<(&str, usize)> {
+pub(crate) fn math_fragment(input: &str, display: bool) -> Option<(&str, usize)> {
     let (open, close) = if display {
         ("{{.", ".}}")
     } else {

@@ -10,6 +10,7 @@ lalrpop = "0.23.1"
 [dependencies]
 clap = { version = "4.6.1", features = ["derive"] }
 crossterm = "0.28"
+katex = "0.4.6"
 lalrpop-util = "0.23.1"
 logos = "0.16.1"
 lsp-server = "0.7"

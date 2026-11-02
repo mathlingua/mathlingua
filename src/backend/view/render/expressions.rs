@@ -1,6 +1,6 @@
 use super::*;
 
-pub(super) fn render_expression(expression: &Expression, registry: &RenderRegistry) -> String {
+pub(crate) fn render_expression(expression: &Expression, registry: &RenderRegistry) -> String {
     match &expression.kind {
         ExpressionKind::Name(name) => escape_math_identifier(name, registry),
         // The `?` on an inferred parameter is authoring-only; render the bare name.
@@ -730,7 +730,7 @@ pub(super) fn render_variadic_parameter_elements(
     elements
 }
 
-fn render_builtin_command_expression(
+pub(crate) fn render_builtin_command_expression(
     command: &BuiltinCommandExpression,
     registry: &RenderRegistry,
 ) -> String {

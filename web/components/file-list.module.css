@@ -1300,9 +1300,50 @@
   font-style: normal;
 }
 
-:global(html[data-theme^="journal"]) .definitionTrail {
-  border: 1.5px solid var(--line);
+:global(html[data-theme="journal"]) .definitionTrail {
   margin-top: 0.85rem;
+  border: 1px solid rgba(165, 125, 40, 0.45);
+  border-top-color: rgba(105, 70, 20, 0.6);
+  border-bottom-color: rgba(220, 185, 90, 0.6);
+}
+
+:global(html[data-theme="journal"]) .definitionTrailClose {
+  color: var(--muted-strong);
+}
+
+:global(html[data-theme="journal"]) .definitionTrailClose:hover {
+  background: rgba(35, 18, 10, 0.07);
+  border-color: rgba(165, 125, 40, 0.35);
+  color: var(--ink);
+}
+
+:global(html[data-theme="journal"]) .definitionTrail [class*="cardFace"] {
+  box-shadow:
+    0 1px 0 rgba(255, 230, 160, 0.35),
+    0 4px 12px rgba(20, 10, 5, 0.18);
+}
+
+:global(html[data-theme="journal-dark"]) .definitionTrail {
+  margin-top: 0.85rem;
+  border: 1px solid rgba(140, 110, 38, 0.35);
+  border-top-color: rgba(55, 35, 12, 0.75);
+  border-bottom-color: rgba(184, 147, 59, 0.35);
+}
+
+:global(html[data-theme="journal-dark"]) .definitionTrailClose {
+  color: var(--muted-strong);
+}
+
+:global(html[data-theme="journal-dark"]) .definitionTrailClose:hover {
+  background: rgba(0, 0, 0, 0.35);
+  border-color: rgba(184, 147, 59, 0.35);
+  color: var(--ink);
+}
+
+:global(html[data-theme="journal-dark"]) .definitionTrail [class*="cardFace"] {
+  box-shadow:
+    0 1px 0 rgba(184, 147, 59, 0.15),
+    0 4px 14px rgba(0, 0, 0, 0.45);
 }
 
 :global(html[data-theme="journal-dark"]) .readerLayout {

@@ -824,7 +824,7 @@
   width: min(100%, 47rem);
   min-width: 0;
   margin: 1.15rem auto 0;
-  padding: 3.5rem clamp(1rem, 4vw, 2.6rem) 2rem;
+  padding: 2.95rem clamp(1rem, 4vw, 2.6rem) 2rem;
   border: var(--definition-border-width) solid var(--line);
   border-radius: var(--radius-definition);
   background: var(--definition-bg);
@@ -1563,7 +1563,7 @@
 
   .definitionTrail {
     width: 100%;
-    padding: 3.5rem 0.9rem 1.25rem;
+    padding: 2.95rem 0.9rem 1.25rem;
   }
 
   .pageTitle h1 {
@@ -1693,7 +1693,7 @@
   }
 
   .definitionTrail {
-    padding: 3.5rem 0.65rem 1.15rem;
+    padding: 2.9rem 0.65rem 1.15rem;
     gap: 0.95rem;
   }
 

@@ -113,7 +113,7 @@ function MarkdownBlock({
         );
       }
       return (
-        <pre>
+        <pre className={styles.markdownPre}>
           <code>{block.text}</code>
         </pre>
       );

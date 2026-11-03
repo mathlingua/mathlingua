@@ -594,30 +594,6 @@
   box-shadow: 
     0 1px 0 rgba(255, 230, 160, 0.4),
     0 8px 24px rgba(20, 10, 5, 0.25);
-  position: relative;
-}
-
-:global(html[data-theme^="journal"]) .pageSourceSheet::before,
-:global(html[data-theme^="journal"]) .pageSourceSheet::after {
-  content: "";
-  position: absolute;
-  width: 0.75rem;
-  height: 0.75rem;
-  pointer-events: none;
-}
-
-:global(html[data-theme^="journal"]) .pageSourceSheet::before {
-  top: 0.32rem;
-  left: 0.32rem;
-  border-top: 1.5px solid var(--line);
-  border-left: 1.5px solid var(--line);
-}
-
-:global(html[data-theme^="journal"]) .pageSourceSheet::after {
-  right: 0.32rem;
-  bottom: 0.32rem;
-  border-right: 1.5px solid var(--line);
-  border-bottom: 1.5px solid var(--line);
 }
 
 :global(html[data-theme^="manuscript"]) .iconToggle:hover {
@@ -1666,6 +1642,13 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  :global(html[data-theme^="journal"]) .pageNavButton,
+  :global(html[data-theme^="journal"]) .pageNavButton:hover:not(:disabled) {
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
   }
 
   .definitionTrail {

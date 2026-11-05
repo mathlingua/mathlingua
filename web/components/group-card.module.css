@@ -19,78 +19,16 @@
   perspective: 1200px;
 }
 
-.cardShadow {
-  position: absolute;
-  inset: 0;
-  border-radius: var(--radius-card);
-  box-shadow: var(--shadow);
-  pointer-events: none;
-  z-index: 0;
-}
-
-.cardShadowAnimate {
-  animation: shadowLift 480ms cubic-bezier(0.34, 1.05, 0.64, 1) forwards;
-}
-
 .cardFlipper {
   position: relative;
-  display: grid;
-  grid-template-columns: 1fr;
-  grid-template-rows: 1fr;
   width: 100%;
   transform-style: preserve-3d;
   transform: rotateY(0deg);
+  transition: transform 380ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .cardFlipperFlipped {
   transform: rotateY(180deg);
-}
-
-.cardFlipperAnimateToBack {
-  animation: flipToBack 480ms cubic-bezier(0.34, 1.05, 0.64, 1) forwards;
-}
-
-.cardFlipperAnimateToFront {
-  animation: flipToFront 480ms cubic-bezier(0.34, 1.05, 0.64, 1) forwards;
-}
-
-@keyframes flipToBack {
-  0% {
-    transform: rotateY(0deg) translateZ(0);
-  }
-  50% {
-    transform: rotateY(90deg) translateZ(48px) scale(1.025);
-  }
-  100% {
-    transform: rotateY(180deg) translateZ(0);
-  }
-}
-
-@keyframes flipToFront {
-  0% {
-    transform: rotateY(180deg) translateZ(0);
-  }
-  50% {
-    transform: rotateY(90deg) translateZ(48px) scale(1.025);
-  }
-  100% {
-    transform: rotateY(0deg) translateZ(0);
-  }
-}
-
-@keyframes shadowLift {
-  0% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(0.92, 0.98);
-    opacity: 0.6;
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
 }
 
 .proof {
@@ -164,8 +102,6 @@
 }
 
 .cardFace {
-  grid-column: 1;
-  grid-row: 1;
   position: relative;
   box-sizing: border-box;
   width: 100%;
@@ -178,6 +114,7 @@
   border: var(--card-border-width) solid var(--line);
   border-radius: var(--radius-card);
   background: var(--card-bg);
+  -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
   box-shadow: var(--shadow);
   overflow-wrap: anywhere;
@@ -188,6 +125,12 @@
 }
 
 .cardFaceInactive {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
   pointer-events: none;
   user-select: none;
 }
@@ -542,12 +485,6 @@
     0 8px 24px rgba(20, 10, 5, 0.25);
 }
 
-:global(html[data-theme^="journal"]) .cardShadow {
-  box-shadow:
-    0 1px 0 rgba(255, 230, 160, 0.4),
-    0 8px 24px rgba(20, 10, 5, 0.25);
-}
-
 :global(html[data-theme^="journal"]) .cardEdge {
   background: linear-gradient(
     to bottom,
@@ -590,10 +527,6 @@
 }
 
 :global(html[data-theme="journal-dark"]) .cardFace {
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55);
-}
-
-:global(html[data-theme="journal-dark"]) .cardShadow {
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55);
 }
 
@@ -730,12 +663,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .cardFlipperAnimateToBack,
-  .cardFlipperAnimateToFront,
-  .cardShadowAnimate {
-    animation: none !important;
-  }
-
   .cardFlipper {
     transition: none !important;
   }

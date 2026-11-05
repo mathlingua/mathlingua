@@ -41,9 +41,6 @@ export function GroupCard({
 }: GroupCardProps) {
   const [showSupportSections, setShowSupportSections] = useState(false);
   const [showSource, setShowSource] = useState(false);
-  const [flipDirection, setFlipDirection] = useState<
-    "toBack" | "toFront" | null
-  >(null);
   const [showProofSource, setShowProofSource] = useState(false);
   const headingTooltip = group.heading ?? undefined;
   const headingLatex = group.heading_latex
@@ -80,28 +77,15 @@ export function GroupCard({
 
   const handleShowSource = () => {
     setShowSource(true);
-    setFlipDirection("toBack");
   };
 
   const handleShowRendered = () => {
     setShowSource(false);
-    setFlipDirection("toFront");
   };
 
-  let flipperClass = styles.cardFlipper;
-  if (showSource) {
-    flipperClass += ` ${styles.cardFlipperFlipped}`;
-  }
-  if (flipDirection === "toBack") {
-    flipperClass += ` ${styles.cardFlipperAnimateToBack}`;
-  } else if (flipDirection === "toFront") {
-    flipperClass += ` ${styles.cardFlipperAnimateToFront}`;
-  }
-
-  const shadowClass =
-    flipDirection !== null
-      ? `${styles.cardShadow} ${styles.cardShadowAnimate}`
-      : styles.cardShadow;
+  const flipperClass = showSource
+    ? `${styles.cardFlipper} ${styles.cardFlipperFlipped}`
+    : styles.cardFlipper;
 
   return (
     <section className={styles.card} id={anchorId}>
@@ -112,15 +96,7 @@ export function GroupCard({
             : styles.cardStage
         }
       >
-        <div aria-hidden="true" className={shadowClass} />
-        <div
-          className={flipperClass}
-          onAnimationEnd={(e) => {
-            if (e.target === e.currentTarget) {
-              setFlipDirection(null);
-            }
-          }}
-        >
+        <div className={flipperClass}>
           <article aria-hidden={showSource} className={frontFaceClass}>
             <button
               aria-label="Show MathLingua source"

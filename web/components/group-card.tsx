@@ -41,6 +41,9 @@ export function GroupCard({
 }: GroupCardProps) {
   const [showSupportSections, setShowSupportSections] = useState(false);
   const [showSource, setShowSource] = useState(false);
+  const [flipDirection, setFlipDirection] = useState<
+    "toBack" | "toFront" | null
+  >(null);
   const [showProofSource, setShowProofSource] = useState(false);
   const headingTooltip = group.heading ?? undefined;
   const headingLatex = group.heading_latex
@@ -75,6 +78,31 @@ export function GroupCard({
       );
   const hasVisibleSections = visibleSections.length > 0;
 
+  const handleShowSource = () => {
+    setShowSource(true);
+    setFlipDirection("toBack");
+  };
+
+  const handleShowRendered = () => {
+    setShowSource(false);
+    setFlipDirection("toFront");
+  };
+
+  let flipperClass = styles.cardFlipper;
+  if (showSource) {
+    flipperClass += ` ${styles.cardFlipperFlipped}`;
+  }
+  if (flipDirection === "toBack") {
+    flipperClass += ` ${styles.cardFlipperAnimateToBack}`;
+  } else if (flipDirection === "toFront") {
+    flipperClass += ` ${styles.cardFlipperAnimateToFront}`;
+  }
+
+  const shadowClass =
+    flipDirection !== null
+      ? `${styles.cardShadow} ${styles.cardShadowAnimate}`
+      : styles.cardShadow;
+
   return (
     <section className={styles.card} id={anchorId}>
       <div
@@ -84,189 +112,221 @@ export function GroupCard({
             : styles.cardStage
         }
       >
-        <article aria-hidden={showSource} className={frontFaceClass}>
-          <button
-            aria-label="Show MathLingua source"
-            className={`${styles.iconToggle} ${styles.sourceToggle}`}
-            onClick={() => setShowSource(true)}
-            tabIndex={showSource ? -1 : 0}
-            title="Show MathLingua source"
-            type="button"
-          >
-            <CodeIcon />
-          </button>
-          {onClose ? (
+        <div aria-hidden="true" className={shadowClass} />
+        <div
+          className={flipperClass}
+          onAnimationEnd={(e) => {
+            if (e.target === e.currentTarget) {
+              setFlipDirection(null);
+            }
+          }}
+        >
+          <article aria-hidden={showSource} className={frontFaceClass}>
             <button
-              aria-label="Close definition"
-              className={`${styles.iconToggle} ${styles.closeToggle}`}
-              onClick={onClose}
+              aria-label="Show MathLingua source"
+              className={`${styles.iconToggle} ${styles.sourceToggle}`}
+              onClick={handleShowSource}
               tabIndex={showSource ? -1 : 0}
-              title="Close definition"
+              title="Show MathLingua source"
               type="button"
             >
-              <CloseIcon />
+              <CodeIcon />
             </button>
-          ) : null}
-          {hasHeading ? (
-            <header className={styles.header}>
-              <h3
-                className={
-                  resourceCard
-                    ? `${styles.heading} ${styles.resourceHeading}`
-                    : `${styles.heading} ${styles.headingLatex}`
-                }
-                title={resourceCard?.href ?? headingTooltip}
+            {onClose ? (
+              <button
+                aria-label="Close definition"
+                className={`${styles.iconToggle} ${styles.closeToggle}`}
+                onClick={onClose}
+                tabIndex={showSource ? -1 : 0}
+                title="Close definition"
+                type="button"
               >
-                {resourceCard ? (
-                  resourceCard.href ? (
-                    <a
-                      className={styles.resourceTitleLink}
-                      href={resourceCard.href}
-                      rel="noreferrer"
-                      target="_blank"
-                    >
-                      <MarkdownInline text={resourceCard.title} />
-                    </a>
-                  ) : (
-                    <MarkdownInline text={resourceCard.title} />
-                  )
-                ) : headingLatex ? (
-                  <LatexRenderer
-                    latex={headingLatex}
-                    onReferenceClick={onReferenceClick}
-                  />
-                ) : null}
-              </h3>
-              {parameterDestructurings.length > 0 ? (
-                <div className={styles.parameterDestructurings}>
-                  {parameterDestructurings.map((latex, index) => (
-                    <span className={styles.parameterDestructuring} key={index}>
-                      <LatexRenderer
-                        latex={latex}
-                        onReferenceClick={onReferenceClick}
-                      />
-                    </span>
-                  ))}
-                </div>
-              ) : null}
-            </header>
-          ) : null}
-          {bodyText ? (
-            <div className={styles.bodyText}>
-              <MarkdownText
-                onReferenceClick={onReferenceClick}
-                text={bodyText}
-              />
-            </div>
-          ) : null}
-          {resourceCard ? (
-            <ResourceCardDetails
-              card={resourceCard}
-              showHiddenFields={showSupportSections}
-            />
-          ) : null}
-          {hasVisibleSections ? (
-            <div
-              className={
-                hasHeading || bodyText || resourceCard
-                  ? styles.sectionStack
-                  : `${styles.sectionStack} ${styles.sectionStackFlush}`
-              }
-            >
-              {visibleSections.map((section, index) => (
-                <section
-                  className={styles.sectionBlock}
-                  key={`${section.label}-${index}`}
+                <CloseIcon />
+              </button>
+            ) : null}
+            {hasHeading ? (
+              <header className={styles.header}>
+                <h3
+                  className={
+                    resourceCard
+                      ? `${styles.heading} ${styles.resourceHeading}`
+                      : `${styles.heading} ${styles.headingLatex}`
+                  }
+                  title={resourceCard?.href ?? headingTooltip}
                 >
-                  <div className={sectionStyles.sectionLabelRow}>
-                    <span className={sectionStyles.sectionLabel}>
-                      {section.label}
-                    </span>
-                    {section.inline_argument ? (
-                      section.inline_latex ? (
-                        <span
-                          className={`${sectionStyles.inlineArgument} ${sectionStyles.inlineArgumentLatex}`}
-                        >
-                          <LatexRenderer
-                            latex={section.inline_latex}
-                            onReferenceClick={onReferenceClick}
-                          />
-                        </span>
-                      ) : (
-                        <MathLinguaInline
-                          className={sectionStyles.inlineArgument}
-                          text={section.inline_argument}
-                        />
-                      )
-                    ) : null}
-                  </div>
-                  {showTypes && (section.inline_type_info?.length ?? 0) > 0 ? (
-                    <TypeAnnotations entries={section.inline_type_info ?? []} />
-                  ) : null}
-                  {section.arguments.length > 0 ? (
-                    <ArgumentList
-                      arguments={section.arguments}
+                  {resourceCard ? (
+                    resourceCard.href ? (
+                      <a
+                        className={styles.resourceTitleLink}
+                        href={resourceCard.href}
+                        rel="noreferrer"
+                        target="_blank"
+                      >
+                        <MarkdownInline text={resourceCard.title} />
+                      </a>
+                    ) : (
+                      <MarkdownInline text={resourceCard.title} />
+                    )
+                  ) : headingLatex ? (
+                    <LatexRenderer
+                      latex={headingLatex}
                       onReferenceClick={onReferenceClick}
-                      showTypes={showTypes}
                     />
                   ) : null}
-                </section>
-              ))}
-            </div>
-          ) : null}
-          {hasSupportSections ? (
-            <button
-              aria-expanded={showSupportSections}
-              aria-label={
-                showSupportSections
-                  ? "Hide supporting sections"
-                  : "Show supporting sections"
-              }
-              className={styles.documentedToggle}
-              onClick={() => setShowSupportSections((value) => !value)}
-              tabIndex={showSource ? -1 : 0}
-              title={
-                showSupportSections
-                  ? "Hide supporting sections"
-                  : "Show supporting sections"
-              }
-              type="button"
-            >
-              <span
-                className={styles.documentedToggleChevron}
-                aria-hidden="true"
+                </h3>
+                {parameterDestructurings.length > 0 ? (
+                  <div className={styles.parameterDestructurings}>
+                    {parameterDestructurings.map((latex, index) => (
+                      <span
+                        className={styles.parameterDestructuring}
+                        key={index}
+                      >
+                        <LatexRenderer
+                          latex={latex}
+                          onReferenceClick={onReferenceClick}
+                        />
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
+              </header>
+            ) : null}
+            {bodyText ? (
+              <div className={styles.bodyText}>
+                <MarkdownText
+                  onReferenceClick={onReferenceClick}
+                  text={bodyText}
+                />
+              </div>
+            ) : null}
+            {resourceCard ? (
+              <ResourceCardDetails
+                card={resourceCard}
+                showHiddenFields={showSupportSections}
               />
-            </button>
-          ) : null}
-        </article>
-        <article aria-hidden={!showSource} className={backFaceClass}>
-          <button
-            aria-label="Show rendered entry"
-            className={`${styles.iconToggle} ${styles.sourceToggle}`}
-            onClick={() => setShowSource(false)}
-            tabIndex={showSource ? 0 : -1}
-            title="Show rendered entry"
-            type="button"
-          >
-            <CardIcon />
-          </button>
-          {onClose ? (
+            ) : null}
+            {hasVisibleSections ? (
+              <div
+                className={
+                  hasHeading || bodyText || resourceCard
+                    ? styles.sectionStack
+                    : `${styles.sectionStack} ${styles.sectionStackFlush}`
+                }
+              >
+                {visibleSections.map((section, index) => (
+                  <section
+                    className={styles.sectionBlock}
+                    key={`${section.label}-${index}`}
+                  >
+                    <div className={sectionStyles.sectionLabelRow}>
+                      <span className={sectionStyles.sectionLabel}>
+                        {section.label}
+                      </span>
+                      {section.inline_argument ? (
+                        section.inline_latex ? (
+                          <span
+                            className={`${sectionStyles.inlineArgument} ${sectionStyles.inlineArgumentLatex}`}
+                          >
+                            <LatexRenderer
+                              latex={section.inline_latex}
+                              onReferenceClick={onReferenceClick}
+                            />
+                          </span>
+                        ) : (
+                          <MathLinguaInline
+                            className={sectionStyles.inlineArgument}
+                            text={section.inline_argument}
+                          />
+                        )
+                      ) : null}
+                    </div>
+                    {showTypes &&
+                    (section.inline_type_info?.length ?? 0) > 0 ? (
+                      <TypeAnnotations
+                        entries={section.inline_type_info ?? []}
+                      />
+                    ) : null}
+                    {section.arguments.length > 0 ? (
+                      <ArgumentList
+                        arguments={section.arguments}
+                        onReferenceClick={onReferenceClick}
+                        showTypes={showTypes}
+                      />
+                    ) : null}
+                  </section>
+                ))}
+              </div>
+            ) : null}
+            {hasSupportSections ? (
+              <button
+                aria-expanded={showSupportSections}
+                aria-label={
+                  showSupportSections
+                    ? "Hide supporting sections"
+                    : "Show supporting sections"
+                }
+                className={styles.documentedToggle}
+                onClick={() => setShowSupportSections((value) => !value)}
+                tabIndex={showSource ? -1 : 0}
+                title={
+                  showSupportSections
+                    ? "Hide supporting sections"
+                    : "Show supporting sections"
+                }
+                type="button"
+              >
+                <span
+                  className={styles.documentedToggleChevron}
+                  aria-hidden="true"
+                />
+              </button>
+            ) : null}
+          </article>
+          <article aria-hidden={!showSource} className={backFaceClass}>
             <button
-              aria-label="Close definition"
-              className={`${styles.iconToggle} ${styles.closeToggle}`}
-              onClick={onClose}
+              aria-label="Show rendered entry"
+              className={`${styles.iconToggle} ${styles.sourceToggle}`}
+              onClick={handleShowRendered}
               tabIndex={showSource ? 0 : -1}
-              title="Close definition"
+              title="Show rendered entry"
               type="button"
             >
-              <CloseIcon />
+              <CardIcon />
             </button>
-          ) : null}
-          <MathLinguaSource
-            onReferenceClick={onReferenceClick}
-            source={group.source}
+            {onClose ? (
+              <button
+                aria-label="Close definition"
+                className={`${styles.iconToggle} ${styles.closeToggle}`}
+                onClick={onClose}
+                tabIndex={showSource ? 0 : -1}
+                title="Close definition"
+                type="button"
+              >
+                <CloseIcon />
+              </button>
+            ) : null}
+            <MathLinguaSource
+              onReferenceClick={onReferenceClick}
+              source={group.source}
+            />
+          </article>
+          <div
+            aria-hidden="true"
+            className={`${styles.cardEdge} ${styles.cardEdgeLeft}`}
           />
-        </article>
+          <div
+            aria-hidden="true"
+            className={`${styles.cardEdge} ${styles.cardEdgeRight}`}
+          />
+          <div
+            aria-hidden="true"
+            className={`${styles.cardEdge} ${styles.cardEdgeTop}`}
+          />
+          <div
+            aria-hidden="true"
+            className={`${styles.cardEdge} ${styles.cardEdgeBottom}`}
+          />
+        </div>
       </div>
       {children}
       {proofText ? (

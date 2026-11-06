@@ -110,24 +110,3 @@ Resource:
 . homepage: "https://example.com"
 . description: "Elements of Mathematics."
 Id: "6f862aad-8e36-40f6-ab19-22ae6560da4a"
-
-
--- Text-only items state a result in prose, with no formal body.
-TextDefinition: "A *monoid* is a magma with an identity element."
-Documented:
-. called: "monoid"
-Id: "5543f2ef-6501-4362-ae0d-8425916f9ac3"
-
-
-TextAxiom: "Every nonempty set of naturals has a least element."
-Id: "61ac5cc0-b37b-48cb-b43d-8d9610d27dd5"
-
-
-TextTheorem: "There are infinitely many primes."
-References:
-. $bourbaki.algebra
-Id: "5bcd9782-411f-49de-be81-901aae86be4f"
-
-
-TextConjecture: "Every even number above two is a sum of two primes."
-Id: "51b55da2-a789-468f-9a2f-f67c8fb021a4"

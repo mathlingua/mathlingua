@@ -2,7 +2,9 @@
 Rejects an invalid resource reference in References.
 == end:description ==
 == begin:input ==
-TextTheorem: "A result."
+Theorem:
+given: x is \\anything
+then: x = x
 References:
 . not_a_resource
 Id: "56b68710-3bb5-4930-bd68-8038df845ec8"

@@ -5379,10 +5379,6 @@ then:
             "States",
             "SubsectionTitle",
             "Text",
-            "TextAxiom",
-            "TextConjecture",
-            "TextDefinition",
-            "TextTheorem",
             "Theorem",
             "Title",
             "Topic",
@@ -6833,30 +6829,21 @@ Documented:
     }
 
     #[test]
-    fn check_treats_text_placeholder_groups_as_opaque() {
-        // `Text*` placeholders are opaque prose: their markdown/LaTeX body is never
-        // parsed as MathLingua, so `\group` (undefined here) raises no diagnostic.
+    fn check_treats_text_groups_as_opaque() {
         let temp_dir = TestDir::new();
-        let file = temp_dir.path().join("placeholder.mlg");
+        let file = temp_dir.path().join("prose.mlg");
 
         write_mlg_fixture(
             &file,
-            r#"TextTheorem: "In every $\group$ the identity is unique."
-    Documented:
-    . called: "Uniqueness of identity"
-    . notes: "Turn this into a structured Theorem once \group exists."
-    Id: "11111111-1111-4111-8111-111111111111"
-
-    TextDefinition: "A **prime** has exactly two divisors."
-    Id: "22222222-2222-4222-8222-222222222222"
-    "#,
+            r#"Text: "In every $\group$ the identity is unique."
+"#,
         )
         .unwrap();
 
         let mut event_log = EventLog::new();
         let result = check_in(
             temp_dir.path(),
-            &[PathBuf::from("placeholder.mlg")],
+            &[PathBuf::from("prose.mlg")],
             &mut event_log,
         );
 

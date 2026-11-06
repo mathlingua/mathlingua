@@ -6,7 +6,9 @@ Accepts one valid resource citation in a References section.
 Resource:
 . title: "Source"
 
-TextTheorem: "A cited theorem."
+Theorem:
+given: x is \\anything
+then: x = x
 References:
 . $source
 == end:input ==

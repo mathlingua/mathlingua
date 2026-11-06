@@ -355,10 +355,8 @@ fn group_view(
                 registry,
             )
         })
-        .or_else(|| theorem_like_heading_latex(&kind, group.heading.as_deref(), &group.sections))
-        .or_else(|| text_item_heading_latex(&kind, &group.sections));
-    let body_text = person_body_text(&kind, &group.sections, registry)
-        .or_else(|| text_item_body(&kind, &group.sections, registry));
+        .or_else(|| theorem_like_heading_latex(&kind, group.heading.as_deref(), &group.sections));
+    let body_text = person_body_text(&kind, &group.sections, registry);
     let proof_text = theorem_proof_text(&kind, &group.sections, registry);
     let proof_source = theorem_proof_source(&kind, &group.sections);
     let parameter_destructurings =
@@ -737,53 +735,6 @@ fn person_body_text(
         .and_then(section_text)
         .map(|text| render_scoped_text_markdown(&unindent_text(&text), registry))
         .filter(|text| !text.trim().is_empty())
-}
-
-/// The human-readable kind word for a `Text*` placeholder group, or `None` for
-/// any other group.
-fn text_item_kind_word(kind: &str) -> Option<&'static str> {
-    match kind {
-        "TextTheorem" => Some("Theorem"),
-        "TextAxiom" => Some("Axiom"),
-        "TextConjecture" => Some("Conjecture"),
-        "TextDefinition" => Some("Definition"),
-        _ => None,
-    }
-}
-
-/// The markdown-with-LaTeX body of a `Text*` placeholder, rendered as the card's
-/// prose body. `None` for any other group.
-fn text_item_body(
-    kind: &str,
-    sections: &[ProtoSection],
-    registry: &RenderRegistry,
-) -> Option<String> {
-    text_item_kind_word(kind)?;
-    sections
-        .iter()
-        .find(|section| section.label == kind)
-        .and_then(section_text)
-        .map(|text| render_scoped_text_markdown(&unindent_text(&text), registry))
-        .filter(|text| !text.trim().is_empty())
-}
-
-/// A `Text*` placeholder card's title: its `Documented:` `called:`/`written:`
-/// forms when present, otherwise the kind word (`Theorem`, `Definition`, …) so an
-/// untitled placeholder is still labeled. `None` for any other group.
-fn text_item_heading_latex(kind: &str, sections: &[ProtoSection]) -> Option<String> {
-    let kind_word = text_item_kind_word(kind)?;
-    let (called, written) = documented_title_forms(sections);
-    let called_latex = called
-        .as_deref()
-        .and_then(|text| render_documented_text_latex("called", text));
-    let written_latex = written
-        .as_deref()
-        .and_then(|text| render_documented_text_latex("written", text));
-    let title = match (called_latex, written_latex) {
-        (Some(called), Some(written)) => Some(join_title_parts(&called, &written)),
-        (called, written) => called.or(written),
-    };
-    Some(title.unwrap_or_else(|| format!("\\textrm{{{kind_word}}}")))
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

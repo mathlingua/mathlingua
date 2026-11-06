@@ -305,7 +305,6 @@ An empty document is supported by the current implementation because `Document.i
 - **`Relation`** — `RelationGroup`, heading: none. Sections: `Relation: OpenText*`, `using?: DeclarationStatement+`, either `between: RelationSubject` / `and: RelationSubject` (undirected) or `from: RelationSubject` / `to: RelationSubject` (directed), `when?: Clause+`, `specifies?: RelationSpecifies`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `Writing?: "WritingAlias"+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
 - **`Equivalent`** — `EquivalentGroup`, heading: command. Sections: `Equivalent:` (marker, no arguments), `using?: DeclarationStatement+`, `when?: Clause+`, `to: Expression+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `References?: ResourceHeader+`
 - **`Topic`** — `TopicGroup`, heading: topic. Sections: `Topic: OpenText*`, `within?: OpenText`, `Related?: TopicRelatedItem+`, `Documented?: CalledDocumentedItem+`
-- **`TextTheorem`** / **`TextAxiom`** / **`TextConjecture`** / **`TextDefinition`** — `TextItemGroup` (one `TextItemKind` per leading label), heading: none. Sections: `<label>: OpenText` (a markdown-with-LaTeX body), `Documented?: TextDocumentedItem+`, `References?: ResourceHeader+`, `Id: OpenText`. These are opaque prose placeholders for a structured theorem/axiom/conjecture/definition to be written later; the type-checker never inspects them. `TextDocumentedItem` is restricted to `called:`, `written:`, `description:`, and `notes:`.
 
 Notes:
 
@@ -367,7 +366,6 @@ Used inside `Documented:`.
 - **`overview`** — `OverviewGroup`, heading: label?. Sections: `overview: OpenText`
 - **`related`** — `RelatedGroup`, heading: label?. Sections: `related: OpenText+`
 - **`discoverer`** — `DiscovererGroup`, heading: label?. Sections: `discoverer: OpenText*`
-- **`notes`** — `NotesGroup`, heading: label?. Sections: `notes: OpenText+` (prose reminders; used by the opaque `Text*` placeholders to record how to fill in a structured form later)
 
 ### Justification items
 
@@ -612,7 +610,6 @@ DocumentedItemUnion ::=
     | DescriptionGroup
     | RelatedGroup
     | DiscovererGroup
-    | NotesGroup
 ```
 
 
@@ -688,7 +685,6 @@ TopLevelItemUnion ::=
     | RelationGroup
     | EquivalentGroup
     | TopicGroup
-    | TextItemGroup
 ```
 
 ```union
@@ -1044,16 +1040,6 @@ documentation fields are rejected. The item is stated, not checked: topic and
 signature references need not resolve, and it registers no command signatures or
 type facts.
 
-```group
-TextTheorem | TextAxiom | TextConjecture | TextDefinition: <OpenText>
-Documented?: <TextDocumentedItem>+
-References?: <ResourceHeader>+
-Id: <OpenText>
-```
-
-`TextDocumentedItem` is restricted to `called:`, `written:`, `description:`,
-and `notes:`.
-
 ### Nested item groups
 
 ```group
@@ -1138,11 +1124,6 @@ related: <OpenText>+
 ```group
 [LabelHeader]?
 discoverer: <OpenText>*
-```
-
-```group
-[LabelHeader]?
-notes: <OpenText>+
 ```
 
 ```group

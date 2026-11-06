@@ -1,8 +1,0 @@
-== begin:description ==
-Accepts a prose-only TextDefinition item.
-== end:description ==
-== begin:input ==
-TextDefinition: "A group has an associative operation."
-== end:input ==
-== begin:output ==
-== end:output ==

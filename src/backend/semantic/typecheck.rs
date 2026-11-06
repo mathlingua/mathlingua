@@ -3726,9 +3726,7 @@ fn validate_top_level_item_types(
         | TopLevelItem::Resource(_)
         // A `Topic:` only names a documentation topic (heading, prose, optional
         // parent, optional rendering override); there is nothing to type-check.
-        | TopLevelItem::Topic(_)
-        // `Text*` placeholders are opaque prose; the checker never inspects them.
-        | TopLevelItem::TextItem(_) => check_proto_group_scoped_text(
+        | TopLevelItem::Topic(_) => check_proto_group_scoped_text(
             proto_group,
             &base_context,
             path,
@@ -4019,8 +4017,7 @@ fn validate_local_specification_scopes(
         | TopLevelItem::Person(_)
         | TopLevelItem::Resource(_)
         | TopLevelItem::Specify(_)
-        | TopLevelItem::Topic(_)
-        | TopLevelItem::TextItem(_) => {}
+        | TopLevelItem::Topic(_) => {}
     }
 }
 

@@ -153,7 +153,6 @@ fn documented_section(item: &TopLevelItem) -> Option<&DocumentedSection> {
         TopLevelItem::Theorem(group) => group.documented.as_ref(),
         TopLevelItem::Conjecture(group) => group.documented.as_ref(),
         TopLevelItem::Equivalent(group) => group.documented.as_ref(),
-        TopLevelItem::TextItem(group) => group.documented.as_ref(),
         TopLevelItem::Relation(group) => group.documented.as_ref(),
         TopLevelItem::Topic(group) => group.documented.as_ref(),
         _ => None,

@@ -344,16 +344,10 @@ argument_section!(OverviewSection, OpenText);
 argument_section!(DescriptionSection, OpenText);
 arguments_section!(RelatedSection, OpenText);
 zero_or_more_arguments_section!(DiscovererSection, OpenText);
-// `notes:` documentation item: prose reminders (markdown) kept with an item —
-// most useful on the opaque `Text*` placeholders, recording how to fill in a
-// structured form later.
-arguments_section!(NotesSection, OpenText);
 zero_or_more_arguments_section!(BySection, OpenText);
 argument_section!(ProofSection, OpenText);
 argument_section!(IdSection, OpenText);
 argument_section!(VersionSection, OpenText);
-// The markdown-with-LaTeX body of an opaque `Text*` placeholder group.
-argument_section!(TextItemSection, OpenText);
 arguments_section!(SpecifySection, SpecifyItem);
 argument_section!(NumericSpecificationIsSection, TypeExpression);
 arguments_section!(PersonSection, OpenText);
@@ -425,7 +419,6 @@ pub enum TopLevelItem {
     Relation(RelationGroup),
     Equivalent(EquivalentGroup),
     Topic(TopicGroup),
-    TextItem(TextItemGroup),
 }
 
 /// One entry in a top-level `Example:` section.
@@ -538,7 +531,6 @@ pub enum DocumentedItem {
     Description(DescriptionGroup),
     Related(RelatedGroup),
     Discoverer(DiscovererGroup),
-    Notes(NotesGroup),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -808,44 +800,6 @@ pub struct ConjectureGroup {
     pub writing: Option<ItemWritingSection>,
     pub references: Option<ReferencesSection>,
     pub metadata: Option<MetadataSection>,
-}
-
-/// Which kind of prose placeholder a [`TextItemGroup`] is. Each maps to a leading
-/// section label (`TextTheorem:`, `TextAxiom:`, `TextConjecture:`,
-/// `TextDefinition:`).
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum TextItemKind {
-    Theorem,
-    Axiom,
-    Conjecture,
-    Definition,
-}
-
-impl TextItemKind {
-    /// The leading section label that introduces this kind.
-    pub fn label(self) -> &'static str {
-        match self {
-            Self::Theorem => "TextTheorem",
-            Self::Axiom => "TextAxiom",
-            Self::Conjecture => "TextConjecture",
-            Self::Definition => "TextDefinition",
-        }
-    }
-}
-
-/// A top-level prose placeholder (`TextTheorem:`, `TextAxiom:`,
-/// `TextConjecture:`, `TextDefinition:`): a markdown-with-LaTeX body standing in
-/// for a structured theorem/axiom/conjecture/definition that will be written
-/// later. It is opaque to the type-checker; `Documented:` (`called:`/`written:`/
-/// `description:`/`notes:`) and `References:` record the naming, prose, and
-/// citations to carry into the structured form.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct TextItemGroup {
-    pub kind: TextItemKind,
-    pub text: TextItemSection,
-    pub documented: Option<DocumentedSection>,
-    pub references: Option<ReferencesSection>,
-    pub id: IdSection,
 }
 
 /// The endpoints and direction of a top-level `Relation:` item.
@@ -1126,12 +1080,6 @@ pub struct RelatedGroup {
 pub struct DiscovererGroup {
     pub heading: Option<LabelHeader>,
     pub discoverer: DiscovererSection,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct NotesGroup {
-    pub heading: Option<LabelHeader>,
-    pub notes: NotesSection,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

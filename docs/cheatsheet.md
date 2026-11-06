@@ -37,10 +37,6 @@ A concise high-level reference for the Mathlingua language. For in-depth specifi
 | `Person` | `Person: "Name"` | Author, contributor, or mathematician metadata |
 | `Resource` | `Resource:` | Bibliographic source (book, paper, website) cited by entries |
 | `Topic` | `Topic: "Name"` | Subject tag or domain classification |
-| `TextTheorem` | `TextTheorem: "..."` | Opaque prose placeholder for an unformalized theorem |
-| `TextAxiom` | `TextAxiom: "..."` | Opaque prose placeholder for an unformalized axiom |
-| `TextConjecture` | `TextConjecture: "..."` | Opaque prose placeholder for an unformalized conjecture |
-| `TextDefinition` | `TextDefinition: "..."` | Opaque prose placeholder for an unformalized definition |
 | <a id="structural-clauses"></a>**Structural Clauses** | | |
 | `forAll` | `forAll: x_` | Universal quantifier over variables or specifications |
 | `exists` | `exists: x_` | Existential quantifier asserting at least one satisfying witness |

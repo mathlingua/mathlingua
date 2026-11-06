@@ -176,9 +176,7 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
         | TopLevelItem::Writing(_)
         | TopLevelItem::Person(_)
         | TopLevelItem::Resource(_)
-        | TopLevelItem::Topic(_)
-        // `Text*` placeholders are opaque prose: no command references to validate.
-        | TopLevelItem::TextItem(_) => {}
+        | TopLevelItem::Topic(_) => {}
     }
 }
 

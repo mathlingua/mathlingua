@@ -270,22 +270,6 @@ const GROUPS: &[GroupSpec] = &[
             ("Id", false),
         ],
     },
-    GroupSpec {
-        head: "TextTheorem",
-        sections: TEXT_ITEM_SECTIONS_THEOREM,
-    },
-    GroupSpec {
-        head: "TextAxiom",
-        sections: TEXT_ITEM_SECTIONS_AXIOM,
-    },
-    GroupSpec {
-        head: "TextConjecture",
-        sections: TEXT_ITEM_SECTIONS_CONJECTURE,
-    },
-    GroupSpec {
-        head: "TextDefinition",
-        sections: TEXT_ITEM_SECTIONS_DEFINITION,
-    },
 ];
 
 const RELATION_UNDIRECTED: &[Section] = &[
@@ -318,33 +302,6 @@ const RELATION_DIRECTED: &[Section] = &[
     ("References", false),
     ("Metadata", false),
     ("Id", false),
-];
-
-// The four opaque `Text*` placeholders share one shape, differing only in the
-// leading (required) section label; `Id:` is required.
-const TEXT_ITEM_SECTIONS_THEOREM: &[Section] = &[
-    ("TextTheorem", true),
-    ("Documented", false),
-    ("References", false),
-    ("Id", true),
-];
-const TEXT_ITEM_SECTIONS_AXIOM: &[Section] = &[
-    ("TextAxiom", true),
-    ("Documented", false),
-    ("References", false),
-    ("Id", true),
-];
-const TEXT_ITEM_SECTIONS_CONJECTURE: &[Section] = &[
-    ("TextConjecture", true),
-    ("Documented", false),
-    ("References", false),
-    ("Id", true),
-];
-const TEXT_ITEM_SECTIONS_DEFINITION: &[Section] = &[
-    ("TextDefinition", true),
-    ("Documented", false),
-    ("References", false),
-    ("Id", true),
 ];
 
 // `Axiom`/`Theorem`/`Conjecture` share one shape (see

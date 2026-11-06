@@ -286,22 +286,6 @@ export function GroupCard({
               source={group.source}
             />
           </article>
-          <div
-            aria-hidden="true"
-            className={`${styles.cardEdge} ${styles.cardEdgeLeft}`}
-          />
-          <div
-            aria-hidden="true"
-            className={`${styles.cardEdge} ${styles.cardEdgeRight}`}
-          />
-          <div
-            aria-hidden="true"
-            className={`${styles.cardEdge} ${styles.cardEdgeTop}`}
-          />
-          <div
-            aria-hidden="true"
-            className={`${styles.cardEdge} ${styles.cardEdgeBottom}`}
-          />
         </div>
       </div>
       {children}

@@ -136,54 +136,11 @@
 }
 
 .cardFront {
-  transform: translateZ(3px);
+  transform: rotateY(0deg);
 }
 
 .cardBack {
-  transform: rotateY(180deg) translateZ(3px);
-}
-
-.cardEdge {
-  position: absolute;
-  pointer-events: none;
-  background: var(--line);
-  box-sizing: border-box;
-}
-
-.cardEdgeLeft {
-  top: 0;
-  bottom: 0;
-  left: -3px;
-  width: 6px;
-  transform: rotateY(-90deg);
-  border-radius: 1px;
-}
-
-.cardEdgeRight {
-  top: 0;
-  bottom: 0;
-  right: -3px;
-  width: 6px;
-  transform: rotateY(90deg);
-  border-radius: 1px;
-}
-
-.cardEdgeTop {
-  left: 0;
-  right: 0;
-  top: -3px;
-  height: 6px;
-  transform: rotateX(90deg);
-  border-radius: 1px;
-}
-
-.cardEdgeBottom {
-  left: 0;
-  right: 0;
-  bottom: -3px;
-  height: 6px;
-  transform: rotateX(-90deg);
-  border-radius: 1px;
+  transform: rotateY(180deg);
 }
 
 .header {
@@ -485,18 +442,6 @@
     0 8px 24px rgba(20, 10, 5, 0.25);
 }
 
-:global(html[data-theme^="journal"]) .cardEdge {
-  background: linear-gradient(
-    to bottom,
-    #8a6718,
-    #c59b27 30%,
-    #ecd580 50%,
-    #c59b27 70%,
-    #8a6718
-  );
-  box-shadow: inset 0 0 1px rgba(0, 0, 0, 0.4);
-}
-
 :global(html[data-theme^="journal"]) .header {
   position: relative;
   padding-bottom: 0.65rem;
@@ -528,18 +473,6 @@
 
 :global(html[data-theme="journal-dark"]) .cardFace {
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55);
-}
-
-:global(html[data-theme="journal-dark"]) .cardEdge {
-  background: linear-gradient(
-    to bottom,
-    #664e18,
-    #8c6e26 30%,
-    #b8933b 50%,
-    #8c6e26 70%,
-    #664e18
-  );
-  box-shadow: inset 0 0 1px rgba(0, 0, 0, 0.6);
 }
 
 :global(html[data-theme^="field-guide"]) .cardFace {

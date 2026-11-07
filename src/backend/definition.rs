@@ -61,6 +61,8 @@ pub(crate) fn load_collection_files(
     (files, target_index)
 }
 
+// =============================================================================
+
 fn parse_in_memory(path: &Path, source: &str) -> ParsedSourceFile {
     let mut event_log = EventLog::new();
     ParsedSourceFile {
@@ -112,7 +114,7 @@ fn is_mlg(path: &Path) -> bool {
         .is_some_and(|extension| extension.eq_ignore_ascii_case("mlg"))
 }
 
-// ===============================[ tests ]=====================================
+// =============================================================================
 
 #[cfg(test)]
 mod tests {

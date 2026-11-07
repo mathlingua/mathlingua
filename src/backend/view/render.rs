@@ -1,8 +1,6 @@
 use std::collections::HashMap;
-
 use crate::frontend::formulation::parse_writing_alias;
 use crate::frontend::*;
-
 mod commands;
 mod escaping;
 mod expressions;
@@ -13,7 +11,6 @@ mod signatures;
 mod statements;
 mod templates;
 mod text;
-
 use commands::*;
 use escaping::*;
 use expressions::*;

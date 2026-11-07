@@ -105,6 +105,8 @@ pub(in crate::backend::semantic) fn walk_type_expression(
     }
 }
 
+// =============================================================================
+
 fn walk_function_type_spec(spec: &FunctionTypeSpec, visit: &mut impl FnMut(&SignatureShape)) {
     match &spec.kind {
         FunctionTypeSpecKind::Is(ty) => walk_type_expression(ty, visit),

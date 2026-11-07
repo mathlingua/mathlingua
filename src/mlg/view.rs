@@ -18,13 +18,6 @@ use std::thread::{self, JoinHandle};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tiny_http::{Header, Method, Request, Response, Server, StatusCode};
 
-const ORIGIN: &str = "mlg_view";
-const VIEW_BIND_HOST: &str = "0.0.0.0";
-const COLLECTION_DATA_URL: &str = "/api/collection.json";
-const COLLECTION_VERSION_URL: &str = "/api/version";
-static NEXT_VIEW_SESSION_DIR_ID: AtomicUsize = AtomicUsize::new(0);
-static VIEW_DATA_VERSION: AtomicUsize = AtomicUsize::new(1);
-
 pub struct ViewResult {
     pub event_log: EventLog,
     pub successful: bool,
@@ -40,27 +33,6 @@ pub fn watch_view(
     listener: Option<Box<dyn EventLogListener>>,
 ) -> ViewResult {
     view_with_watch(cwd, port, true, listener)
-}
-
-fn view_with_watch(
-    cwd: &Path,
-    port: u16,
-    watch: bool,
-    listener: Option<Box<dyn EventLogListener>>,
-) -> ViewResult {
-    let mut event_log = EventLog::new();
-    if let Some(listener) = listener {
-        event_log.add_boxed_listener(listener);
-    }
-
-    let starting_event_count = event_log.events().len();
-    let io_ok = view_in(cwd, port, watch, &mut event_log).is_ok();
-    let successful = io_ok && (watch || no_errors_since(&event_log, starting_event_count));
-
-    ViewResult {
-        event_log,
-        successful,
-    }
 }
 
 pub(super) fn view_in(
@@ -189,6 +161,52 @@ pub(super) fn view_in(
     result
 }
 
+// =============================================================================
+
+const ORIGIN: &str = "mlg_view";
+
+const VIEW_BIND_HOST: &str = "0.0.0.0";
+
+const COLLECTION_DATA_URL: &str = "/api/collection.json";
+
+const COLLECTION_VERSION_URL: &str = "/api/version";
+
+static NEXT_VIEW_SESSION_DIR_ID: AtomicUsize = AtomicUsize::new(0);
+
+static VIEW_DATA_VERSION: AtomicUsize = AtomicUsize::new(1);
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+enum ViewDataRefresh {
+    Updated,
+    Blocked(Vec<Event>),
+}
+
+enum ViewRefreshMessage {
+    Clear,
+    Events(Vec<Event>),
+}
+
+fn view_with_watch(
+    cwd: &Path,
+    port: u16,
+    watch: bool,
+    listener: Option<Box<dyn EventLogListener>>,
+) -> ViewResult {
+    let mut event_log = EventLog::new();
+    if let Some(listener) = listener {
+        event_log.add_boxed_listener(listener);
+    }
+
+    let starting_event_count = event_log.events().len();
+    let io_ok = view_in(cwd, port, watch, &mut event_log).is_ok();
+    let successful = io_ok && (watch || no_errors_since(&event_log, starting_event_count));
+
+    ViewResult {
+        event_log,
+        successful,
+    }
+}
+
 fn wait_for_view_change(watcher: &mut SourceWatcher, event_log: &mut EventLog) {
     watcher.reset();
     watcher.wait_for_change();
@@ -205,13 +223,6 @@ fn bind_view_listener(port: u16, event_log: &mut EventLog) -> io::Result<TcpList
             Err(io::Error::new(error.kind(), message))
         }
     }
-}
-
-// ===============================[ tests ]=====================================
-
-#[cfg(test)]
-fn check_port_is_available(port: u16, event_log: &mut EventLog) -> io::Result<()> {
-    bind_view_listener(port, event_log).map(drop)
 }
 
 fn port_error_message(port: u16, error: &io::Error) -> String {
@@ -509,17 +520,6 @@ fn rebuild_collection_view_data(cwd: &Path, view_data_path: &Path) -> io::Result
     Ok(ViewDataRefresh::Updated)
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-enum ViewDataRefresh {
-    Updated,
-    Blocked(Vec<Event>),
-}
-
-enum ViewRefreshMessage {
-    Clear,
-    Events(Vec<Event>),
-}
-
 fn create_view_session_dir() -> io::Result<PathBuf> {
     let unique = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -532,7 +532,12 @@ fn create_view_session_dir() -> io::Result<PathBuf> {
     Ok(path)
 }
 
-// ===============================[ tests ]=====================================
+// =============================================================================
+
+#[cfg(test)]
+fn check_port_is_available(port: u16, event_log: &mut EventLog) -> io::Result<()> {
+    bind_view_listener(port, event_log).map(drop)
+}
 
 #[cfg(test)]
 mod tests {

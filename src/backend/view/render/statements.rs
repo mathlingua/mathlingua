@@ -111,31 +111,6 @@ pub(super) fn render_is_via_statement(
     }
 }
 
-fn render_declaration_relation(
-    relation: &DeclarationRelation,
-    registry: &RenderRegistry,
-) -> String {
-    match relation {
-        DeclarationRelation::Is(ty) => {
-            format!("\\textrm{{ is }} {}", render_type_expression(ty, registry))
-        }
-        DeclarationRelation::Spec { operator, target } => {
-            format!(
-                "{} {}",
-                render_quoted_operator(operator),
-                render_expression(target, registry)
-            )
-        }
-        DeclarationRelation::InfixSpec { spec, target } => {
-            format!(
-                "{} {}",
-                render_command_like(&spec.chain, registry),
-                render_expression(target, registry)
-            )
-        }
-    }
-}
-
 pub(super) fn render_is_subject(subject: &IsSubject, registry: &RenderRegistry) -> String {
     match &subject.kind {
         IsSubjectKind::Forms(forms) => forms
@@ -251,46 +226,6 @@ pub(super) fn render_form_or_declaration(
     }
 }
 
-fn render_documented_mapping_form(
-    name: &str,
-    form: &FunctionForm,
-    registry: &RenderRegistry,
-) -> Option<String> {
-    let parameters = form
-        .magnetic_placeholder
-        .iter()
-        .map(|placeholder| placeholder.name.clone())
-        .chain(
-            form.placeholders
-                .iter()
-                .map(|placeholder| placeholder.name.clone()),
-        )
-        .collect::<Vec<_>>();
-    let render = registry.mapping_writing.iter().find(|render| {
-        render.function_name == name
-            && render.parameters == parameters
-            && render.magnetic == form.magnetic_placeholder.is_some()
-            && render.mapping_written.is_some()
-    })?;
-    let mut substitutions = HashMap::new();
-    insert_parameter_substitution(
-        &mut substitutions,
-        &render.function_name,
-        escape_math_identifier(name, registry),
-    );
-    for parameter in &render.parameters {
-        insert_parameter_substitution(
-            &mut substitutions,
-            parameter,
-            escape_math_identifier(parameter, registry),
-        );
-    }
-    Some(substitute_math_template(
-        render.mapping_written.as_deref()?,
-        &substitutions,
-    ))
-}
-
 pub(super) fn render_is_command(
     subject: &Expression,
     command: &CommandExpression,
@@ -374,6 +309,87 @@ pub(super) fn render_function_type(
     )
 }
 
+pub(super) fn render_type_expression(ty: &TypeExpression, registry: &RenderRegistry) -> String {
+    render_type_expression_with_subject(ty, None, registry).latex
+}
+
+pub(super) fn render_builtin_type_chain(chain: &Chain) -> String {
+    format!("\\textrm{{{}}}", escape_latex_text(&format_chain(chain)))
+}
+
+// =============================================================================
+
+#[derive(Clone, Debug)]
+struct RenderedTypeExpression {
+    latex: String,
+    includes_subject: bool,
+}
+
+fn render_declaration_relation(
+    relation: &DeclarationRelation,
+    registry: &RenderRegistry,
+) -> String {
+    match relation {
+        DeclarationRelation::Is(ty) => {
+            format!("\\textrm{{ is }} {}", render_type_expression(ty, registry))
+        }
+        DeclarationRelation::Spec { operator, target } => {
+            format!(
+                "{} {}",
+                render_quoted_operator(operator),
+                render_expression(target, registry)
+            )
+        }
+        DeclarationRelation::InfixSpec { spec, target } => {
+            format!(
+                "{} {}",
+                render_command_like(&spec.chain, registry),
+                render_expression(target, registry)
+            )
+        }
+    }
+}
+
+fn render_documented_mapping_form(
+    name: &str,
+    form: &FunctionForm,
+    registry: &RenderRegistry,
+) -> Option<String> {
+    let parameters = form
+        .magnetic_placeholder
+        .iter()
+        .map(|placeholder| placeholder.name.clone())
+        .chain(
+            form.placeholders
+                .iter()
+                .map(|placeholder| placeholder.name.clone()),
+        )
+        .collect::<Vec<_>>();
+    let render = registry.mapping_writing.iter().find(|render| {
+        render.function_name == name
+            && render.parameters == parameters
+            && render.magnetic == form.magnetic_placeholder.is_some()
+            && render.mapping_written.is_some()
+    })?;
+    let mut substitutions = HashMap::new();
+    insert_parameter_substitution(
+        &mut substitutions,
+        &render.function_name,
+        escape_math_identifier(name, registry),
+    );
+    for parameter in &render.parameters {
+        insert_parameter_substitution(
+            &mut substitutions,
+            parameter,
+            escape_math_identifier(parameter, registry),
+        );
+    }
+    Some(substitute_math_template(
+        render.mapping_written.as_deref()?,
+        &substitutions,
+    ))
+}
+
 fn render_function_type_spec(spec: &FunctionTypeSpec, registry: &RenderRegistry) -> String {
     match &spec.kind {
         FunctionTypeSpecKind::Is(ty) => {
@@ -405,16 +421,6 @@ fn render_set_type(set: &SetType, registry: &RenderRegistry) -> String {
         SetTypeElement::Tuple(tuple) => render_tuple_type(tuple, registry),
     };
     format!("\\left\\{{{} \\: : \\: \\ldots\\right\\}}", element)
-}
-
-#[derive(Clone, Debug)]
-struct RenderedTypeExpression {
-    latex: String,
-    includes_subject: bool,
-}
-
-pub(super) fn render_type_expression(ty: &TypeExpression, registry: &RenderRegistry) -> String {
-    render_type_expression_with_subject(ty, None, registry).latex
 }
 
 fn render_is_type_with_subject(
@@ -470,8 +476,4 @@ fn render_type_expression_with_subject(
             includes_subject: false,
         },
     }
-}
-
-pub(super) fn render_builtin_type_chain(chain: &Chain) -> String {
-    format!("\\textrm{{{}}}", escape_latex_text(&format_chain(chain)))
 }

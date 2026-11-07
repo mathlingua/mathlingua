@@ -12,13 +12,10 @@
 //! formulation: each row's text is parsed on its own and the resulting AST is
 //! matched against the walk's expressions by structural equality.  Both sides
 //! parse the same text with the same parser, so the match is exact.
-
 use super::*;
-
 use std::collections::BTreeMap;
 use std::ops::Range;
 use std::path::PathBuf;
-
 use crate::frontend::formulation::parse_refined_declaration_statement;
 
 /// One expression, sub-expression, or statement resolved on a source line.
@@ -41,25 +38,6 @@ pub type DocumentTypeInfo = BTreeMap<usize, Vec<TypeEntry>>;
 
 /// Per-line type information for every checked source file, keyed by its path.
 pub type CollectionTypeInfo = BTreeMap<PathBuf, DocumentTypeInfo>;
-
-/// The AST a line's formulation parses to. A line is registered under every
-/// form it parses as, because which one the structural parser chose depends on
-/// the section the formulation appears in.
-enum TargetForm {
-    Expression(Box<Expression>),
-    Declaration(Box<DeclarationStatement>),
-}
-
-/// A line the recorder is looking for.
-struct Target {
-    row: usize,
-    /// The formulation exactly as written, used as the outermost entry's label
-    /// so the popup echoes the author's own spelling rather than a normalized
-    /// rendering of it.
-    text: String,
-    forms: Vec<TargetForm>,
-    matched: bool,
-}
 
 /// A line the walk has reached, whose entries are yet to be filed.
 pub(super) struct Claim {
@@ -140,6 +118,62 @@ impl TypeRecorder {
     }
 }
 
+/// Renders a fact as a predicate about its (implied) subject — `is \real`
+/// rather than `x is \real` — because the entry it annotates already names the
+/// expression the fact is about.
+pub(super) fn format_fact_predicate(fact: &TypeFact) -> String {
+    match fact {
+        TypeFact::Is { ty, .. } | TypeFact::RefinedIs { ty, .. } => format!("is {ty}"),
+        TypeFact::Spec {
+            operator, target, ..
+        } => format!("\"{operator}\" {target}"),
+        TypeFact::InfixSpec {
+            signature,
+            args,
+            target,
+            ..
+        } => {
+            let rendered_args = if args.is_empty() {
+                String::new()
+            } else {
+                format!("{{{}}}", args.join(", "))
+            };
+            format!("{signature}{rendered_args} {target}")
+        }
+        TypeFact::MemberOf { collection, .. } => format!("in {collection}"),
+        TypeFact::FunctionType { inputs, output, .. } => format!(
+            "is ({}) => ({})",
+            inputs
+                .iter()
+                .map(format_spec_predicate)
+                .collect::<Vec<_>>()
+                .join(", "),
+            format_spec_predicate(output)
+        ),
+    }
+}
+
+// =============================================================================
+
+/// The AST a line's formulation parses to. A line is registered under every
+/// form it parses as, because which one the structural parser chose depends on
+/// the section the formulation appears in.
+enum TargetForm {
+    Expression(Box<Expression>),
+    Declaration(Box<DeclarationStatement>),
+}
+
+/// A line the recorder is looking for.
+struct Target {
+    row: usize,
+    /// The formulation exactly as written, used as the outermost entry's label
+    /// so the popup echoes the author's own spelling rather than a normalized
+    /// rendering of it.
+    text: String,
+    forms: Vec<TargetForm>,
+    matched: bool,
+}
+
 /// Every formulation in `source`, parsed on its own and tagged with its row.
 ///
 /// Parse failures are dropped silently: a formulation the checker cannot read is
@@ -197,41 +231,6 @@ fn push_target(row: usize, text: &str, targets: &mut Vec<Target>) {
         forms,
         matched: false,
     });
-}
-
-/// Renders a fact as a predicate about its (implied) subject — `is \real`
-/// rather than `x is \real` — because the entry it annotates already names the
-/// expression the fact is about.
-pub(super) fn format_fact_predicate(fact: &TypeFact) -> String {
-    match fact {
-        TypeFact::Is { ty, .. } | TypeFact::RefinedIs { ty, .. } => format!("is {ty}"),
-        TypeFact::Spec {
-            operator, target, ..
-        } => format!("\"{operator}\" {target}"),
-        TypeFact::InfixSpec {
-            signature,
-            args,
-            target,
-            ..
-        } => {
-            let rendered_args = if args.is_empty() {
-                String::new()
-            } else {
-                format!("{{{}}}", args.join(", "))
-            };
-            format!("{signature}{rendered_args} {target}")
-        }
-        TypeFact::MemberOf { collection, .. } => format!("in {collection}"),
-        TypeFact::FunctionType { inputs, output, .. } => format!(
-            "is ({}) => ({})",
-            inputs
-                .iter()
-                .map(format_spec_predicate)
-                .collect::<Vec<_>>()
-                .join(", "),
-            format_spec_predicate(output)
-        ),
-    }
 }
 
 fn format_spec_predicate(spec: &FunctionTypeFactSpec) -> String {

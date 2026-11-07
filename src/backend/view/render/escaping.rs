@@ -18,6 +18,30 @@ pub(super) fn escape_math_identifier(value: &str, registry: &RenderRegistry) -> 
     render_identifier_part(value, registry)
 }
 
+pub(super) fn escape_latex_math(value: &str) -> String {
+    value
+        .replace('\\', "\\backslash ")
+        .replace('_', "\\_")
+        .replace('{', "\\{")
+        .replace('}', "\\}")
+}
+
+pub(super) fn escape_latex_command_name(value: &str) -> String {
+    value
+        .chars()
+        .filter(|ch| ch.is_ascii_alphabetic())
+        .collect()
+}
+
+pub(super) fn escape_latex_text(value: &str) -> String {
+    value
+        .replace('\\', "\\textbackslash{}")
+        .replace('{', "\\{")
+        .replace('}', "\\}")
+}
+
+// =============================================================================
+
 fn render_underscore_identifier(value: &str, registry: &RenderRegistry) -> String {
     let mut parts = value.split('_');
     let Some(base_part) = parts.next() else {
@@ -75,26 +99,4 @@ fn trailing_digit_subscript(value: &str) -> Option<(&str, &str)> {
     }
 
     Some((base, digits))
-}
-
-pub(super) fn escape_latex_math(value: &str) -> String {
-    value
-        .replace('\\', "\\backslash ")
-        .replace('_', "\\_")
-        .replace('{', "\\{")
-        .replace('}', "\\}")
-}
-
-pub(super) fn escape_latex_command_name(value: &str) -> String {
-    value
-        .chars()
-        .filter(|ch| ch.is_ascii_alphabetic())
-        .collect()
-}
-
-pub(super) fn escape_latex_text(value: &str) -> String {
-    value
-        .replace('\\', "\\textbackslash{}")
-        .replace('{', "\\{")
-        .replace('}', "\\}")
 }

@@ -145,6 +145,8 @@ pub fn plan_rename(
     Ok(collect_edits(files, &mapping))
 }
 
+// =============================================================================
+
 /// Rewrite every occurrence of each `old` signature to its paired `new`
 /// signature across `files`. A given occurrence matches at most one signature
 /// in the mapping, but occurrences are still deduplicated per file by start
@@ -338,7 +340,7 @@ fn span_from_offsets(source: &str, start: usize, end: usize) -> RenameSpan {
     }
 }
 
-// ===============================[ tests ]=====================================
+// =============================================================================
 
 #[cfg(test)]
 mod tests {

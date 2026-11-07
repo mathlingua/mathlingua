@@ -17,7 +17,6 @@ pub use structure::{
 pub use version::{VersionResult, version};
 pub use view::{ViewResult, view, watch_view};
 pub use whte_rbt_obj::{WhteRbtObjResult, whte_rbt_obj};
-
 mod check;
 mod clean;
 mod completion;

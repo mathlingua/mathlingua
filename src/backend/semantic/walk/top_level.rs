@@ -180,6 +180,35 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
     }
 }
 
+pub(in crate::backend::semantic) fn walk_theorem_like(
+    given: Option<&GivenSection>,
+    where_: Option<&WhereSection>,
+    then: &ThenSection,
+    iff: Option<&IffSection>,
+    visit: &mut impl FnMut(&SignatureShape),
+) {
+    if let Some(section) = given {
+        for statement in &section.arguments {
+            walk_declaration_statement(statement, visit);
+        }
+    }
+    if let Some(section) = where_ {
+        for clause in &section.arguments {
+            walk_clause(clause, visit);
+        }
+    }
+    for clause in &then.arguments {
+        walk_clause(clause, visit);
+    }
+    if let Some(section) = iff {
+        for clause in &section.arguments {
+            walk_clause(clause, visit);
+        }
+    }
+}
+
+// =============================================================================
+
 /// Walks the items of a `Defines:`/`Realizes:` `specifies:` section.
 fn walk_optional_specifies(
     specifies: &Option<DefinesSpecifiesSection>,
@@ -228,31 +257,4 @@ fn declaration_has_dynamic_refined_tail(statement: &DeclarationStatement) -> boo
         Some(DeclarationRelation::Is(TypeExpression::RefinedCommand(command)))
             if matches!(command.refined_tail, RefinedTail::Name { .. })
     )
-}
-
-pub(in crate::backend::semantic) fn walk_theorem_like(
-    given: Option<&GivenSection>,
-    where_: Option<&WhereSection>,
-    then: &ThenSection,
-    iff: Option<&IffSection>,
-    visit: &mut impl FnMut(&SignatureShape),
-) {
-    if let Some(section) = given {
-        for statement in &section.arguments {
-            walk_declaration_statement(statement, visit);
-        }
-    }
-    if let Some(section) = where_ {
-        for clause in &section.arguments {
-            walk_clause(clause, visit);
-        }
-    }
-    for clause in &then.arguments {
-        walk_clause(clause, visit);
-    }
-    if let Some(section) = iff {
-        for clause in &section.arguments {
-            walk_clause(clause, visit);
-        }
-    }
 }

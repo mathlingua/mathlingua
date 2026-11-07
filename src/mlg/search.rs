@@ -5,8 +5,6 @@ use crate::mlg::util::no_errors_since;
 use serde::Serialize;
 use std::path::Path;
 
-const ORIGIN: &str = "mlg_search";
-
 pub struct SearchResult {
     pub event_log: EventLog,
     pub collection_view: Option<CollectionView>,
@@ -128,6 +126,10 @@ pub fn perform_search(view: &CollectionView, query: &str) -> SearchReport {
         matches,
     }
 }
+
+// =============================================================================
+
+const ORIGIN: &str = "mlg_search";
 
 fn extract_snippet(source: &str, query_lower: &str) -> Option<String> {
     for line in source.lines() {

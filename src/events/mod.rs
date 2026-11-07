@@ -10,7 +10,6 @@ mod marker_event;
 mod marker_id;
 mod marker_range;
 mod message_event;
-
 pub use event::{Audience, Event};
 pub use event_console_writer::EventConsoleWriter;
 pub use event_filter::{ColorMode, EventFilter};

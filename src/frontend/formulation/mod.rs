@@ -2,9 +2,7 @@ pub mod ast;
 pub mod lexer;
 pub mod parser;
 pub mod token;
-
 lalrpop_util::lalrpop_mod!(pub grammar, "/frontend/formulation/grammar.rs");
-
 #[allow(unused_imports)]
 pub use parser::parse_declaration_statement;
 pub(crate) use parser::parse_type_expression;

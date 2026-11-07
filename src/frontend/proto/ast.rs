@@ -41,29 +41,12 @@ impl Line {
     }
 }
 
-/// Extracts a leading `[label]: ` prefix from a line, returning the label text
-/// and the remaining content after the colon.
-///
-/// A labeled line has the form `[label]: xxx` where `label` is non-empty, contains
-/// no whitespace, and `]: ` is immediately followed by non-empty content `xxx`.
-pub fn extract_line_label(text: &str) -> Option<(&str, &str)> {
-    let stripped = text.strip_prefix('[')?;
-    let bracket_index = stripped.find(']')?;
-    let label = &stripped[..bracket_index];
-    if label.is_empty() || label.contains(char::is_whitespace) || label.contains('[') {
-        return None;
+impl fmt::Display for Line {
+    /// Formats a proto line in source-like form.
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write_prefix(f, &self.metadata)?;
+        write!(f, "{}", self.text)
     }
-    let after_bracket = &stripped[bracket_index + 1..];
-    let after_colon = after_bracket.strip_prefix(':')?;
-    let trimmed = after_colon.trim_start();
-    if trimmed.len() == after_colon.len() {
-        // There was no whitespace after the colon (e.g., `[x]:=` or `[x]:y`).
-        return None;
-    }
-    if trimmed.is_empty() {
-        return None;
-    }
-    Some((label, trimmed))
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -71,60 +54,6 @@ pub struct Formulation {
     pub text: String,
     pub label: Option<String>,
     pub metadata: Metadata,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct TextLiteral {
-    pub text: String,
-    pub label: Option<String>,
-    pub metadata: Metadata,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum Argument {
-    Formulation(Formulation),
-    Text(TextLiteral),
-    Group(Group),
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Section {
-    pub label: String,
-    pub inline_argument: Option<String>,
-    pub arguments: Vec<Argument>,
-    pub metadata: Metadata,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Group {
-    pub heading: Option<String>,
-    pub sections: Vec<Section>,
-    pub metadata: Metadata,
-}
-
-// =======================[ Display implementations ]===========================
-
-fn write_prefix(f: &mut fmt::Formatter<'_>, metadata: &Metadata) -> fmt::Result {
-    let indent_width = if metadata.has_dot {
-        metadata.indent.saturating_sub(2)
-    } else {
-        metadata.indent
-    };
-
-    write!(f, "{}", " ".repeat(indent_width))?;
-    if metadata.has_dot {
-        write!(f, ". ")?;
-    }
-
-    Ok(())
-}
-
-impl fmt::Display for Line {
-    /// Formats a proto line in source-like form.
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write_prefix(f, &self.metadata)?;
-        write!(f, "{}", self.text)
-    }
 }
 
 impl fmt::Display for Formulation {
@@ -138,6 +67,13 @@ impl fmt::Display for Formulation {
     }
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct TextLiteral {
+    pub text: String,
+    pub label: Option<String>,
+    pub metadata: Metadata,
+}
+
 impl fmt::Display for TextLiteral {
     /// Formats a text argument in source-like form.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -149,6 +85,13 @@ impl fmt::Display for TextLiteral {
     }
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Argument {
+    Formulation(Formulation),
+    Text(TextLiteral),
+    Group(Group),
+}
+
 impl fmt::Display for Argument {
     /// Formats any proto argument in source-like form.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -158,6 +101,14 @@ impl fmt::Display for Argument {
             Argument::Group(group) => write!(f, "{group}"),
         }
     }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Section {
+    pub label: String,
+    pub inline_argument: Option<String>,
+    pub arguments: Vec<Argument>,
+    pub metadata: Metadata,
 }
 
 impl fmt::Display for Section {
@@ -175,6 +126,13 @@ impl fmt::Display for Section {
 
         Ok(())
     }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Group {
+    pub heading: Option<String>,
+    pub sections: Vec<Section>,
+    pub metadata: Metadata,
 }
 
 impl fmt::Display for Group {
@@ -200,7 +158,49 @@ impl fmt::Display for Group {
     }
 }
 
-// ===============================[ tests ]=====================================
+/// Extracts a leading `[label]: ` prefix from a line, returning the label text
+/// and the remaining content after the colon.
+///
+/// A labeled line has the form `[label]: xxx` where `label` is non-empty, contains
+/// no whitespace, and `]: ` is immediately followed by non-empty content `xxx`.
+pub fn extract_line_label(text: &str) -> Option<(&str, &str)> {
+    let stripped = text.strip_prefix('[')?;
+    let bracket_index = stripped.find(']')?;
+    let label = &stripped[..bracket_index];
+    if label.is_empty() || label.contains(char::is_whitespace) || label.contains('[') {
+        return None;
+    }
+    let after_bracket = &stripped[bracket_index + 1..];
+    let after_colon = after_bracket.strip_prefix(':')?;
+    let trimmed = after_colon.trim_start();
+    if trimmed.len() == after_colon.len() {
+        // There was no whitespace after the colon (e.g., `[x]:=` or `[x]:y`).
+        return None;
+    }
+    if trimmed.is_empty() {
+        return None;
+    }
+    Some((label, trimmed))
+}
+
+// =============================================================================
+
+fn write_prefix(f: &mut fmt::Formatter<'_>, metadata: &Metadata) -> fmt::Result {
+    let indent_width = if metadata.has_dot {
+        metadata.indent.saturating_sub(2)
+    } else {
+        metadata.indent
+    };
+
+    write!(f, "{}", " ".repeat(indent_width))?;
+    if metadata.has_dot {
+        write!(f, ". ")?;
+    }
+
+    Ok(())
+}
+
+// =============================================================================
 
 #[cfg(test)]
 mod tests {

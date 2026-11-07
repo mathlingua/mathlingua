@@ -5,7 +5,6 @@
 //! definitions it uses, ordered so that nothing appears before what it depends
 //! on. Pasted into a fresh collection, the result checks cleanly whenever the
 //! collection it came from did.
-
 use crate::backend::release::ReleaseItem;
 use std::collections::HashMap;
 
@@ -51,6 +50,23 @@ pub(crate) fn extract_items<'a>(
     Ok(ordered.into_iter().map(|index| &items[index]).collect())
 }
 
+/// Render extracted items as pasteable MathLingua source: each item's exact
+/// source slice, separated by two blank lines.
+///
+/// Two blank lines is what `mlg format` normalizes to between top-level items,
+/// so extracted output is already in canonical form and survives a format pass
+/// unchanged. [`ReleaseItem::source`] has had its trailing blank lines trimmed,
+/// so joining on `"\n\n\n"` produces exactly that gap.
+pub(crate) fn render_extracted_source(items: &[&ReleaseItem]) -> String {
+    items
+        .iter()
+        .map(|item| item.source.as_str())
+        .collect::<Vec<_>>()
+        .join("\n\n\n")
+}
+
+// =============================================================================
+
 /// Post-order depth-first walk: push `index` only after every dependency it can
 /// reach has been pushed. `visited` doubles as the cycle guard, since it is set
 /// on entry rather than on push — a cycle among definitions therefore yields
@@ -76,22 +92,7 @@ fn visit(
     ordered.push(index);
 }
 
-/// Render extracted items as pasteable MathLingua source: each item's exact
-/// source slice, separated by two blank lines.
-///
-/// Two blank lines is what `mlg format` normalizes to between top-level items,
-/// so extracted output is already in canonical form and survives a format pass
-/// unchanged. [`ReleaseItem::source`] has had its trailing blank lines trimmed,
-/// so joining on `"\n\n\n"` produces exactly that gap.
-pub(crate) fn render_extracted_source(items: &[&ReleaseItem]) -> String {
-    items
-        .iter()
-        .map(|item| item.source.as_str())
-        .collect::<Vec<_>>()
-        .join("\n\n\n")
-}
-
-// ===============================[ tests ]=====================================
+// =============================================================================
 
 #[cfg(test)]
 mod tests {

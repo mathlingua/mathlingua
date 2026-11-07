@@ -25,6 +25,31 @@ pub struct RenderRegistry {
     pub(super) link_references: bool,
 }
 
+impl RenderRegistry {
+    /// Returns a copy of this registry with the given `name -> LaTeX body` writing
+    /// overrides applied on top of the collection-wide aliases.
+    ///
+    /// Item-level `Writing:` sections use this so an identifier renders differently
+    /// within one item without disturbing the rest of the collection. An empty
+    /// override set returns an unchanged clone.
+    pub(in crate::backend::view) fn with_writing_overrides<I>(&self, overrides: I) -> RenderRegistry
+    where
+        I: IntoIterator<Item = (String, String)>,
+    {
+        let mut scoped = self.clone();
+        for (name, body) in overrides {
+            scoped.writing.insert(name, body);
+        }
+        scoped
+    }
+
+    pub(super) fn with_link_references(&self, link_references: bool) -> RenderRegistry {
+        let mut copy = self.clone();
+        copy.link_references = link_references;
+        copy
+    }
+}
+
 #[derive(Clone, Debug)]
 pub(super) struct ResourceRender {
     title: String,
@@ -54,6 +79,44 @@ pub(super) struct CommandRender {
     /// title can show both forms even when the `written:` form is the one that
     /// names the item inline.
     pub(super) called_template: Option<String>,
+}
+
+impl CommandRender {
+    pub(super) fn render_called(&self, substitutions: &HashMap<String, String>) -> String {
+        match self.called_source {
+            CalledRenderSource::Called => render_called_template(&self.called, substitutions),
+            CalledRenderSource::Written => substitute_math_template(&self.called, substitutions),
+        }
+    }
+
+    /// The `written:` template to use for these substitutions, or `None` when it is
+    /// absent — either not written at all, or effectively missing because it is a
+    /// top-level `@[vars]{…}` conditional with no fallback whose variables are unbound
+    /// (see [`template_is_present`]). Callers fall back to `called:` in that case.
+    pub(super) fn effective_written(
+        &self,
+        substitutions: &HashMap<String, String>,
+    ) -> Option<&str> {
+        self.written
+            .as_deref()
+            .filter(|written| template_is_present(written, substitutions))
+    }
+
+    /// The card title for this item.
+    ///
+    /// An item documented with both a `called:` and a `written:` form is titled
+    /// with both: the name, a wide space, then the muted notation (see
+    /// [`join_title_parts`]). With only one of them the title is just that form,
+    /// exactly as it names the item inline.
+    pub(super) fn render_title(&self, substitutions: &HashMap<String, String>) -> String {
+        match (&self.called_template, self.effective_written(substitutions)) {
+            (Some(called), Some(written)) => join_title_parts(
+                &render_called_template(called, substitutions),
+                &substitute_math_template(written, substitutions),
+            ),
+            _ => self.render_called(substitutions),
+        }
+    }
 }
 
 /// Template bindings that are specific to a mapping-parameter header.  The
@@ -97,50 +160,12 @@ pub(super) enum CalledRenderSource {
     Written,
 }
 
-impl CommandRender {
-    pub(super) fn render_called(&self, substitutions: &HashMap<String, String>) -> String {
-        match self.called_source {
-            CalledRenderSource::Called => render_called_template(&self.called, substitutions),
-            CalledRenderSource::Written => substitute_math_template(&self.called, substitutions),
-        }
-    }
-
-    /// The `written:` template to use for these substitutions, or `None` when it is
-    /// absent — either not written at all, or effectively missing because it is a
-    /// top-level `@[vars]{…}` conditional with no fallback whose variables are unbound
-    /// (see [`template_is_present`]). Callers fall back to `called:` in that case.
-    pub(super) fn effective_written(
-        &self,
-        substitutions: &HashMap<String, String>,
-    ) -> Option<&str> {
-        self.written
-            .as_deref()
-            .filter(|written| template_is_present(written, substitutions))
-    }
-
-    /// The card title for this item.
-    ///
-    /// An item documented with both a `called:` and a `written:` form is titled
-    /// with both: the name, a wide space, then the muted notation (see
-    /// [`join_title_parts`]). With only one of them the title is just that form,
-    /// exactly as it names the item inline.
-    pub(super) fn render_title(&self, substitutions: &HashMap<String, String>) -> String {
-        match (&self.called_template, self.effective_written(substitutions)) {
-            (Some(called), Some(written)) => join_title_parts(
-                &render_called_template(called, substitutions),
-                &substitute_math_template(written, substitutions),
-            ),
-            _ => self.render_called(substitutions),
-        }
-    }
+pub(super) struct RenderEntry {
+    /// Canonical command signature used as the registry key.
+    signature: String,
+    /// Rendering metadata stored for that signature.
+    render: CommandRender,
 }
-
-/// The CSS class applied to the written form of a two-part card title.
-///
-/// Kept in sync with the web viewer: `latex-renderer.tsx` only trusts this exact
-/// class, and the title CSS in `latex-renderer.module.css` mutes it. Changing the
-/// name requires updating both.
-const TITLE_WRITTEN_CLASS: &str = "mlg-title-written";
 
 /// Joins the two halves of a two-part card title as `<called>  <written>`.
 ///
@@ -176,42 +201,6 @@ pub fn build_render_registry(
     }
 
     registry
-}
-
-fn collect_resource(item: &TopLevelItem, registry: &mut RenderRegistry) {
-    let TopLevelItem::Resource(group) = item else {
-        return;
-    };
-
-    let mut title = None;
-    let mut authors = Vec::new();
-    let mut url = None;
-    let mut offset = 1;
-
-    for item in &group.resource.arguments {
-        match item {
-            ResourceItem::Title(group) => title = Some(group.title.argument.0.clone()),
-            ResourceItem::Author(group) => {
-                authors.extend(group.author.arguments.iter().map(|author| author.0.clone()))
-            }
-            ResourceItem::Url(group) => url = Some(group.url.argument.0.clone()),
-            ResourceItem::Offset(group) => {
-                offset = group.offset.argument.0.parse::<u64>().unwrap_or(1).max(1)
-            }
-            _ => {}
-        }
-    }
-
-    let key = group.heading.parts.join(".");
-    registry.resources.insert(
-        key.clone(),
-        ResourceRender {
-            title: title.unwrap_or_else(|| title_case_label(&key)),
-            authors,
-            url,
-            offset,
-        },
-    );
 }
 
 /// Resolves a `$resource` citation to its human-readable label and optional URL.
@@ -250,6 +239,461 @@ pub(in crate::backend::view) fn render_resource_reference(
     });
 
     RenderedResourceReference { text, href }
+}
+
+/// Resolves the rendered title for a top-level `Topic:` heading string.
+///
+/// Uses the topic's explicit `Documented:called:` override when present, otherwise
+/// title-cases the dotted heading path (so `#real.analysis` renders as "Real
+/// Analysis").
+pub(in crate::backend::view) fn resolve_topic_heading_latex(
+    heading: Option<&str>,
+    registry: &RenderRegistry,
+) -> Option<String> {
+    let header = parse_topic_header(heading?).ok()?;
+    let text = registry
+        .topic_titles
+        .get(&topic_heading_key(&header.parts))
+        .cloned()
+        .unwrap_or_else(|| title_case_label(&header.parts.join(".")));
+    render_documented_text_latex("called", &text)
+}
+
+/// Parses one item-level `Writing:` alias body into its `(name, LaTeX body)` pair,
+/// or `None` when the text is not a `name :~> body` alias with a plain-name subject.
+pub(in crate::backend::view) fn writing_alias_override(text: &str) -> Option<(String, String)> {
+    let alias = parse_writing_alias(text).ok()?;
+    let FormOrDeclarationKind::Name(name) = alias.form.kind else {
+        return None;
+    };
+    Some((name, alias.body))
+}
+
+pub(in crate::backend::view) fn build_linked_render_registry(
+    files: &[ParsedSourceFile],
+) -> RenderRegistry {
+    let mut registry = build_render_registry(files);
+    registry.link_references = true;
+    registry
+}
+
+pub(in crate::backend::view) fn definition_reference_keys_for_heading(
+    heading: Option<&str>,
+) -> Vec<String> {
+    let Some(heading) = heading else {
+        return Vec::new();
+    };
+    let Ok(header) = parse_command_header(heading) else {
+        return Vec::new();
+    };
+
+    command_header_signatures(&header)
+        .into_iter()
+        .map(|signature| reference_key(&signature.signature))
+        .collect()
+}
+
+pub(in crate::backend::view) fn render_formulation_latex(
+    text: &str,
+    registry: &RenderRegistry,
+) -> Option<String> {
+    render_parsed_formulation_latex(text, registry)
+        .or_else(|| render_simple_set_spec_latex(text, registry))
+}
+
+pub(in crate::backend::view) fn render_writing_alias_latex(
+    text: &str,
+    _registry: &RenderRegistry,
+) -> Option<String> {
+    let alias = parse_writing_alias(text).ok()?;
+    let FormOrDeclarationKind::Name(name) = alias.form.kind else {
+        return None;
+    };
+
+    Some(format!(
+        "\\textrm{{{}}} \\mathrel{{:\\!\\rightsquigarrow}} {}",
+        escape_latex_text(&name),
+        alias.body
+    ))
+}
+
+pub(in crate::backend::view) fn render_documented_text_latex(
+    label: &str,
+    text: &str,
+) -> Option<String> {
+    match label {
+        "called" => Some(render_called_display_template(text)),
+        "written" => Some(render_written_display_template(text)),
+        _ => None,
+    }
+}
+
+pub(super) fn command_reference_latex(
+    signature: &str,
+    latex: String,
+    registry: &RenderRegistry,
+) -> String {
+    command_references_latex(&[signature], latex, registry)
+}
+
+pub(super) fn command_references_latex(
+    signatures: &[&str],
+    latex: String,
+    registry: &RenderRegistry,
+) -> String {
+    let non_empty: Vec<&str> = signatures.iter().copied().filter(|s| !s.is_empty()).collect();
+    if registry.link_references && !non_empty.is_empty() {
+        let keys = non_empty
+            .into_iter()
+            .map(reference_key)
+            .collect::<Vec<_>>()
+            .join(":");
+        format!("\\htmlData{{mlg-ref={keys}}}{{{latex}}}")
+    } else {
+        latex
+    }
+}
+
+pub(in crate::backend::view) fn render_group_heading_latex(
+    kind: &str,
+    heading: Option<&str>,
+    primary_inline_argument: Option<&str>,
+    registry: &RenderRegistry,
+) -> Option<String> {
+    if !supports_resolved_group_heading(kind) {
+        return None;
+    }
+
+    let header = parse_command_header(heading?).ok()?;
+    let render = registry.commands.get(&command_header_signature(&header))?;
+
+    if kind == "Refines"
+        && let Some(latex) =
+            render_refines_group_heading_latex(&header, primary_inline_argument, render, registry)
+    {
+        return Some(latex);
+    }
+
+    let substitutions = command_header_substitutions(&header, registry);
+
+    Some(render.render_title(&substitutions))
+}
+
+/// The `name ::= …` destructuring lines to show beneath a definition card's
+/// title, one per named-destructuring header parameter (e.g. `H ::= (X', *', e')`).
+/// Empty when the group has no command heading or no destructured parameters.
+pub(in crate::backend::view) fn render_group_parameter_destructurings(
+    kind: &str,
+    heading: Option<&str>,
+    registry: &RenderRegistry,
+) -> Vec<String> {
+    if !supports_resolved_group_heading(kind) {
+        return Vec::new();
+    }
+
+    let Some(heading) = heading else {
+        return Vec::new();
+    };
+    let Ok(header) = parse_command_header(heading) else {
+        return Vec::new();
+    };
+
+    command_header_parameter_destructurings(&header, registry)
+}
+
+/// Renders a `Refines:` argument with its heading-implied base type made explicit.
+///
+/// The source may omit the `is <base>` relation because the base command is
+/// already encoded after the final `::` in a refined command heading. The view
+/// repeats it for readability without changing the parsed source or semantics.
+/// Refined infix-spec headings are excluded because their base is a relation,
+/// not a type suitable for an `is` suffix.
+pub(in crate::backend::view) fn render_refines_section_latex(
+    text: &str,
+    heading: &str,
+    registry: &RenderRegistry,
+) -> Option<String> {
+    let statement = parse_refined_declaration_statement(text).ok()?;
+    if statement.relation.is_some() {
+        return Some(render_declaration_statement(&statement, registry));
+    }
+
+    let header = parse_command_header(heading).ok()?;
+    let CommandHeader::Refined(refined_header) = &header else {
+        return None;
+    };
+    let base_signature = refined_command_header_base_signature(refined_header);
+    let base_render = registry.commands.get(&base_signature)?;
+    let unlinked = registry.with_link_references(false);
+    let base_latex = base_render.render_called(&command_header_substitutions(&header, &unlinked));
+
+    let full_statement = format!(
+        "{} \\textrm{{ is }} {}",
+        render_declaration_statement(&statement, &unlinked),
+        base_latex
+    );
+
+    Some(command_reference_latex(&base_signature, full_statement, registry))
+}
+
+/// Renders a `Refines:` group's `specifies:` statement with `[[subject]]`
+/// resolved to the base type named by the enclosing refined heading.
+///
+/// Unlike an ordinary formulation, the dynamic refined tail is meaningful only
+/// in that group: in `\(injective)::[[f]]` under a refinement of
+/// `\function:?on{A}:?to{B}`, `[[f]]` denotes that parameterized function type.
+pub(in crate::backend::view) fn render_refines_specifies_latex(
+    text: &str,
+    heading: &str,
+    registry: &RenderRegistry,
+) -> Option<String> {
+    let statement = parse_refined_declaration_statement(text).ok()?;
+    let DeclarationRelation::Is(TypeExpression::RefinedCommand(command)) =
+        statement.relation.as_ref()?
+    else {
+        return None;
+    };
+    if !matches!(command.refined_tail, RefinedTail::Name { .. }) {
+        return None;
+    }
+
+    let header = parse_command_header(heading).ok()?;
+    let CommandHeader::Refined(refined_header) = &header else {
+        return None;
+    };
+    let mut target = statement.clone();
+    target.relation = None;
+    Some(format!(
+        "{} \\textrm{{ is }} {}",
+        render_declaration_statement(&target, registry),
+        render_dynamic_refined_command_called(command, &header, refined_header, registry),
+    ))
+}
+
+pub(super) fn render_refines_group_heading_latex(
+    header: &CommandHeader,
+    _refines_argument: Option<&str>,
+    refinement_render: &CommandRender,
+    registry: &RenderRegistry,
+) -> Option<String> {
+    let (base_signature, infix_spec) = match header {
+        CommandHeader::Refined(refined_header) => {
+            (refined_command_header_base_signature(refined_header), false)
+        }
+        CommandHeader::InfixSpec(spec) if spec.refinement.is_some() => {
+            let mut base = spec.clone();
+            base.refinement = None;
+            (
+                command_header_signature(&CommandHeader::InfixSpec(base)),
+                true,
+            )
+        }
+        _ => return None,
+    };
+    let refinement_latex =
+        refinement_render.render_called(&command_header_substitutions(header, registry));
+    let target_render = registry.commands.get(&base_signature)?;
+    let target_latex = command_reference_latex(
+        &base_signature,
+        target_render.render_called(&command_header_substitutions(header, registry)),
+        registry,
+    );
+
+    Some(if infix_spec {
+        append_refinement_suffix(target_latex, vec![refinement_latex])
+    } else {
+        prepend_refinement_prefix(target_latex, vec![refinement_latex])
+    })
+}
+
+pub(super) fn render_parsed_formulation_latex(
+    text: &str,
+    registry: &RenderRegistry,
+) -> Option<String> {
+    if let Ok(expression) = parse_expression(text) {
+        return Some(render_expression(&expression, registry));
+    }
+
+    if let Ok(statement) = parse_is_via_statement(text) {
+        return Some(render_is_via_statement(&statement, registry));
+    }
+
+    if let Ok(statement) = parse_refined_declaration_statement(text) {
+        return Some(render_declaration_statement(&statement, registry));
+    }
+
+    parse_form_or_declaration(text)
+        .ok()
+        .map(|form| render_form_or_declaration(&form, registry))
+}
+
+pub(super) fn render_entries(item: &TopLevelItem) -> Vec<RenderEntry> {
+    match item {
+        TopLevelItem::Declares(group) => render_entries_from_parts(
+            command_header_signatures(&group.heading),
+            primary_declares_target_name(&group.declares.argument),
+            group.documented.as_ref(),
+        ),
+        TopLevelItem::Defines(group) => render_entries_from_parts(
+            command_header_signatures(&group.heading),
+            primary_declaration_statement_name(&group.defines.argument),
+            group.documented.as_ref(),
+        ),
+        TopLevelItem::Realizes(group) => render_entries_from_parts(
+            command_header_signatures(&group.heading),
+            primary_declaration_statement_name(&group.realizes.argument),
+            group.documented.as_ref(),
+        ),
+        TopLevelItem::Refines(group) => render_refines_entries(
+            command_header_signatures(&group.heading),
+            primary_declaration_statement_name(&group.refines.argument),
+            group.documented.as_ref(),
+        ),
+        TopLevelItem::States(group) => render_entries_from_parts(
+            command_header_signatures(&group.heading),
+            None,
+            group.documented.as_ref(),
+        ),
+        TopLevelItem::Axiom(group) => {
+            render_theorem_like_entries(group.heading.as_ref(), group.documented.as_ref())
+        }
+        TopLevelItem::Theorem(group) => {
+            render_theorem_like_entries(group.heading.as_ref(), group.documented.as_ref())
+        }
+        TopLevelItem::Conjecture(group) => {
+            render_theorem_like_entries(group.heading.as_ref(), group.documented.as_ref())
+        }
+        TopLevelItem::Example(group) => render_entries_from_parts(
+            group
+                .heading
+                .as_ref()
+                .map(command_header_signatures)
+                .unwrap_or_default(),
+            None,
+            None,
+        ),
+        TopLevelItem::Equivalent(group) => render_entries_from_parts(
+            command_header_signatures(&group.heading),
+            None,
+            group.documented.as_ref(),
+        ),
+        _ => Vec::new(),
+    }
+}
+
+pub(super) fn render_entries_from_parts(
+    signatures: Vec<CommandHeaderSignature>,
+    subject_variable: Option<String>,
+    documented: Option<&DocumentedSection>,
+) -> Vec<RenderEntry> {
+    render_entries_from_parts_with_fallback(signatures, subject_variable, documented, None)
+}
+
+pub(super) fn render_refines_entries(
+    signatures: Vec<CommandHeaderSignature>,
+    subject_variable: Option<String>,
+    documented: Option<&DocumentedSection>,
+) -> Vec<RenderEntry> {
+    let Some(documented) = documented else {
+        return Vec::new();
+    };
+
+    let adjective = documented.arguments.iter().find_map(|item| match item {
+        DocumentedItem::Adjective(group) => Some(&group.adjective),
+        _ => None,
+    });
+    let written = documented.arguments.iter().find_map(|item| match item {
+        DocumentedItem::Written(group) => Some(&group.written),
+        _ => None,
+    });
+
+    let Some(adjective) = adjective else {
+        return Vec::new();
+    };
+
+    // `Refines:` is named by an `adjective:` rather than a `called:`, so there is
+    // no called form to pair with the written one and its title is unchanged.
+    render_entries_from_signatures(
+        signatures,
+        subject_variable,
+        Some((
+            primary_adjective_text(adjective),
+            CalledRenderSource::Called,
+        )),
+        written.map(join_written_text),
+        None,
+    )
+}
+
+pub(super) fn join_called_text(section: &CalledSection) -> String {
+    section
+        .arguments
+        .iter()
+        .map(|text| text.0.as_str())
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+pub(super) fn primary_adjective_text(section: &AdjectiveSection) -> String {
+    section
+        .arguments
+        .first()
+        .map(|text| text.0.clone())
+        .unwrap_or_default()
+}
+
+pub(super) fn join_written_text(section: &WrittenSection) -> String {
+    section
+        .arguments
+        .iter()
+        .map(|text| text.0.as_str())
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+// =============================================================================
+
+/// The CSS class applied to the written form of a two-part card title.
+///
+/// Kept in sync with the web viewer: `latex-renderer.tsx` only trusts this exact
+/// class, and the title CSS in `latex-renderer.module.css` mutes it. Changing the
+/// name requires updating both.
+const TITLE_WRITTEN_CLASS: &str = "mlg-title-written";
+
+fn collect_resource(item: &TopLevelItem, registry: &mut RenderRegistry) {
+    let TopLevelItem::Resource(group) = item else {
+        return;
+    };
+
+    let mut title = None;
+    let mut authors = Vec::new();
+    let mut url = None;
+    let mut offset = 1;
+
+    for item in &group.resource.arguments {
+        match item {
+            ResourceItem::Title(group) => title = Some(group.title.argument.0.clone()),
+            ResourceItem::Author(group) => {
+                authors.extend(group.author.arguments.iter().map(|author| author.0.clone()))
+            }
+            ResourceItem::Url(group) => url = Some(group.url.argument.0.clone()),
+            ResourceItem::Offset(group) => {
+                offset = group.offset.argument.0.parse::<u64>().unwrap_or(1).max(1)
+            }
+            _ => {}
+        }
+    }
+
+    let key = group.heading.parts.join(".");
+    registry.resources.insert(
+        key.clone(),
+        ResourceRender {
+            title: title.unwrap_or_else(|| title_case_label(&key)),
+            authors,
+            url,
+            offset,
+        },
+    );
 }
 
 fn is_pdf_url(url: &str) -> bool {
@@ -291,24 +735,6 @@ fn topic_heading_key(parts: &[String]) -> String {
     format!("#{}", parts.join("."))
 }
 
-/// Resolves the rendered title for a top-level `Topic:` heading string.
-///
-/// Uses the topic's explicit `Documented:called:` override when present, otherwise
-/// title-cases the dotted heading path (so `#real.analysis` renders as "Real
-/// Analysis").
-pub(in crate::backend::view) fn resolve_topic_heading_latex(
-    heading: Option<&str>,
-    registry: &RenderRegistry,
-) -> Option<String> {
-    let header = parse_topic_header(heading?).ok()?;
-    let text = registry
-        .topic_titles
-        .get(&topic_heading_key(&header.parts))
-        .cloned()
-        .unwrap_or_else(|| title_case_label(&header.parts.join(".")));
-    render_documented_text_latex("called", &text)
-}
-
 fn collect_writing_aliases(item: &TopLevelItem, registry: &mut RenderRegistry) {
     let TopLevelItem::Writing(group) = item else {
         return;
@@ -319,41 +745,6 @@ fn collect_writing_aliases(item: &TopLevelItem, registry: &mut RenderRegistry) {
             registry.writing.insert(name.clone(), alias.body.clone());
         }
     }
-}
-
-impl RenderRegistry {
-    /// Returns a copy of this registry with the given `name -> LaTeX body` writing
-    /// overrides applied on top of the collection-wide aliases.
-    ///
-    /// Item-level `Writing:` sections use this so an identifier renders differently
-    /// within one item without disturbing the rest of the collection. An empty
-    /// override set returns an unchanged clone.
-    pub(in crate::backend::view) fn with_writing_overrides<I>(&self, overrides: I) -> RenderRegistry
-    where
-        I: IntoIterator<Item = (String, String)>,
-    {
-        let mut scoped = self.clone();
-        for (name, body) in overrides {
-            scoped.writing.insert(name, body);
-        }
-        scoped
-    }
-
-    pub(super) fn with_link_references(&self, link_references: bool) -> RenderRegistry {
-        let mut copy = self.clone();
-        copy.link_references = link_references;
-        copy
-    }
-}
-
-/// Parses one item-level `Writing:` alias body into its `(name, LaTeX body)` pair,
-/// or `None` when the text is not a `name :~> body` alias with a plain-name subject.
-pub(in crate::backend::view) fn writing_alias_override(text: &str) -> Option<(String, String)> {
-    let alias = parse_writing_alias(text).ok()?;
-    let FormOrDeclarationKind::Name(name) = alias.form.kind else {
-        return None;
-    };
-    Some((name, alias.body))
 }
 
 fn collect_mapping_writing(item: &TopLevelItem, registry: &mut RenderRegistry) {
@@ -473,91 +864,6 @@ fn mapping_invocation_matches(
             })
 }
 
-pub(in crate::backend::view) fn build_linked_render_registry(
-    files: &[ParsedSourceFile],
-) -> RenderRegistry {
-    let mut registry = build_render_registry(files);
-    registry.link_references = true;
-    registry
-}
-
-pub(in crate::backend::view) fn definition_reference_keys_for_heading(
-    heading: Option<&str>,
-) -> Vec<String> {
-    let Some(heading) = heading else {
-        return Vec::new();
-    };
-    let Ok(header) = parse_command_header(heading) else {
-        return Vec::new();
-    };
-
-    command_header_signatures(&header)
-        .into_iter()
-        .map(|signature| reference_key(&signature.signature))
-        .collect()
-}
-
-pub(in crate::backend::view) fn render_formulation_latex(
-    text: &str,
-    registry: &RenderRegistry,
-) -> Option<String> {
-    render_parsed_formulation_latex(text, registry)
-        .or_else(|| render_simple_set_spec_latex(text, registry))
-}
-
-pub(in crate::backend::view) fn render_writing_alias_latex(
-    text: &str,
-    _registry: &RenderRegistry,
-) -> Option<String> {
-    let alias = parse_writing_alias(text).ok()?;
-    let FormOrDeclarationKind::Name(name) = alias.form.kind else {
-        return None;
-    };
-
-    Some(format!(
-        "\\textrm{{{}}} \\mathrel{{:\\!\\rightsquigarrow}} {}",
-        escape_latex_text(&name),
-        alias.body
-    ))
-}
-
-pub(in crate::backend::view) fn render_documented_text_latex(
-    label: &str,
-    text: &str,
-) -> Option<String> {
-    match label {
-        "called" => Some(render_called_display_template(text)),
-        "written" => Some(render_written_display_template(text)),
-        _ => None,
-    }
-}
-
-pub(super) fn command_reference_latex(
-    signature: &str,
-    latex: String,
-    registry: &RenderRegistry,
-) -> String {
-    command_references_latex(&[signature], latex, registry)
-}
-
-pub(super) fn command_references_latex(
-    signatures: &[&str],
-    latex: String,
-    registry: &RenderRegistry,
-) -> String {
-    let non_empty: Vec<&str> = signatures.iter().copied().filter(|s| !s.is_empty()).collect();
-    if registry.link_references && !non_empty.is_empty() {
-        let keys = non_empty
-            .into_iter()
-            .map(reference_key)
-            .collect::<Vec<_>>()
-            .join(":");
-        format!("\\htmlData{{mlg-ref={keys}}}{{{latex}}}")
-    } else {
-        latex
-    }
-}
-
 fn reference_key(signature: &str) -> String {
     const HEX: &[u8; 16] = b"0123456789abcdef";
     let mut key = String::with_capacity(signature.len() * 2);
@@ -568,122 +874,6 @@ fn reference_key(signature: &str) -> String {
     }
 
     key
-}
-
-pub(in crate::backend::view) fn render_group_heading_latex(
-    kind: &str,
-    heading: Option<&str>,
-    primary_inline_argument: Option<&str>,
-    registry: &RenderRegistry,
-) -> Option<String> {
-    if !supports_resolved_group_heading(kind) {
-        return None;
-    }
-
-    let header = parse_command_header(heading?).ok()?;
-    let render = registry.commands.get(&command_header_signature(&header))?;
-
-    if kind == "Refines"
-        && let Some(latex) =
-            render_refines_group_heading_latex(&header, primary_inline_argument, render, registry)
-    {
-        return Some(latex);
-    }
-
-    let substitutions = command_header_substitutions(&header, registry);
-
-    Some(render.render_title(&substitutions))
-}
-
-/// The `name ::= …` destructuring lines to show beneath a definition card's
-/// title, one per named-destructuring header parameter (e.g. `H ::= (X', *', e')`).
-/// Empty when the group has no command heading or no destructured parameters.
-pub(in crate::backend::view) fn render_group_parameter_destructurings(
-    kind: &str,
-    heading: Option<&str>,
-    registry: &RenderRegistry,
-) -> Vec<String> {
-    if !supports_resolved_group_heading(kind) {
-        return Vec::new();
-    }
-
-    let Some(heading) = heading else {
-        return Vec::new();
-    };
-    let Ok(header) = parse_command_header(heading) else {
-        return Vec::new();
-    };
-
-    command_header_parameter_destructurings(&header, registry)
-}
-
-/// Renders a `Refines:` argument with its heading-implied base type made explicit.
-///
-/// The source may omit the `is <base>` relation because the base command is
-/// already encoded after the final `::` in a refined command heading. The view
-/// repeats it for readability without changing the parsed source or semantics.
-/// Refined infix-spec headings are excluded because their base is a relation,
-/// not a type suitable for an `is` suffix.
-pub(in crate::backend::view) fn render_refines_section_latex(
-    text: &str,
-    heading: &str,
-    registry: &RenderRegistry,
-) -> Option<String> {
-    let statement = parse_refined_declaration_statement(text).ok()?;
-    if statement.relation.is_some() {
-        return Some(render_declaration_statement(&statement, registry));
-    }
-
-    let header = parse_command_header(heading).ok()?;
-    let CommandHeader::Refined(refined_header) = &header else {
-        return None;
-    };
-    let base_signature = refined_command_header_base_signature(refined_header);
-    let base_render = registry.commands.get(&base_signature)?;
-    let unlinked = registry.with_link_references(false);
-    let base_latex = base_render.render_called(&command_header_substitutions(&header, &unlinked));
-
-    let full_statement = format!(
-        "{} \\textrm{{ is }} {}",
-        render_declaration_statement(&statement, &unlinked),
-        base_latex
-    );
-
-    Some(command_reference_latex(&base_signature, full_statement, registry))
-}
-
-/// Renders a `Refines:` group's `specifies:` statement with `[[subject]]`
-/// resolved to the base type named by the enclosing refined heading.
-///
-/// Unlike an ordinary formulation, the dynamic refined tail is meaningful only
-/// in that group: in `\(injective)::[[f]]` under a refinement of
-/// `\function:?on{A}:?to{B}`, `[[f]]` denotes that parameterized function type.
-pub(in crate::backend::view) fn render_refines_specifies_latex(
-    text: &str,
-    heading: &str,
-    registry: &RenderRegistry,
-) -> Option<String> {
-    let statement = parse_refined_declaration_statement(text).ok()?;
-    let DeclarationRelation::Is(TypeExpression::RefinedCommand(command)) =
-        statement.relation.as_ref()?
-    else {
-        return None;
-    };
-    if !matches!(command.refined_tail, RefinedTail::Name { .. }) {
-        return None;
-    }
-
-    let header = parse_command_header(heading).ok()?;
-    let CommandHeader::Refined(refined_header) = &header else {
-        return None;
-    };
-    let mut target = statement.clone();
-    target.relation = None;
-    Some(format!(
-        "{} \\textrm{{ is }} {}",
-        render_declaration_statement(&target, registry),
-        render_dynamic_refined_command_called(command, &header, refined_header, registry),
-    ))
 }
 
 fn supports_resolved_group_heading(kind: &str) -> bool {
@@ -699,124 +889,6 @@ fn supports_resolved_group_heading(kind: &str) -> bool {
             | "Conjecture"
             | "Equivalent"
     )
-}
-
-pub(super) fn render_refines_group_heading_latex(
-    header: &CommandHeader,
-    _refines_argument: Option<&str>,
-    refinement_render: &CommandRender,
-    registry: &RenderRegistry,
-) -> Option<String> {
-    let (base_signature, infix_spec) = match header {
-        CommandHeader::Refined(refined_header) => {
-            (refined_command_header_base_signature(refined_header), false)
-        }
-        CommandHeader::InfixSpec(spec) if spec.refinement.is_some() => {
-            let mut base = spec.clone();
-            base.refinement = None;
-            (
-                command_header_signature(&CommandHeader::InfixSpec(base)),
-                true,
-            )
-        }
-        _ => return None,
-    };
-    let refinement_latex =
-        refinement_render.render_called(&command_header_substitutions(header, registry));
-    let target_render = registry.commands.get(&base_signature)?;
-    let target_latex = command_reference_latex(
-        &base_signature,
-        target_render.render_called(&command_header_substitutions(header, registry)),
-        registry,
-    );
-
-    Some(if infix_spec {
-        append_refinement_suffix(target_latex, vec![refinement_latex])
-    } else {
-        prepend_refinement_prefix(target_latex, vec![refinement_latex])
-    })
-}
-
-pub(super) fn render_parsed_formulation_latex(
-    text: &str,
-    registry: &RenderRegistry,
-) -> Option<String> {
-    if let Ok(expression) = parse_expression(text) {
-        return Some(render_expression(&expression, registry));
-    }
-
-    if let Ok(statement) = parse_is_via_statement(text) {
-        return Some(render_is_via_statement(&statement, registry));
-    }
-
-    if let Ok(statement) = parse_refined_declaration_statement(text) {
-        return Some(render_declaration_statement(&statement, registry));
-    }
-
-    parse_form_or_declaration(text)
-        .ok()
-        .map(|form| render_form_or_declaration(&form, registry))
-}
-
-pub(super) struct RenderEntry {
-    /// Canonical command signature used as the registry key.
-    signature: String,
-    /// Rendering metadata stored for that signature.
-    render: CommandRender,
-}
-
-pub(super) fn render_entries(item: &TopLevelItem) -> Vec<RenderEntry> {
-    match item {
-        TopLevelItem::Declares(group) => render_entries_from_parts(
-            command_header_signatures(&group.heading),
-            primary_declares_target_name(&group.declares.argument),
-            group.documented.as_ref(),
-        ),
-        TopLevelItem::Defines(group) => render_entries_from_parts(
-            command_header_signatures(&group.heading),
-            primary_declaration_statement_name(&group.defines.argument),
-            group.documented.as_ref(),
-        ),
-        TopLevelItem::Realizes(group) => render_entries_from_parts(
-            command_header_signatures(&group.heading),
-            primary_declaration_statement_name(&group.realizes.argument),
-            group.documented.as_ref(),
-        ),
-        TopLevelItem::Refines(group) => render_refines_entries(
-            command_header_signatures(&group.heading),
-            primary_declaration_statement_name(&group.refines.argument),
-            group.documented.as_ref(),
-        ),
-        TopLevelItem::States(group) => render_entries_from_parts(
-            command_header_signatures(&group.heading),
-            None,
-            group.documented.as_ref(),
-        ),
-        TopLevelItem::Axiom(group) => {
-            render_theorem_like_entries(group.heading.as_ref(), group.documented.as_ref())
-        }
-        TopLevelItem::Theorem(group) => {
-            render_theorem_like_entries(group.heading.as_ref(), group.documented.as_ref())
-        }
-        TopLevelItem::Conjecture(group) => {
-            render_theorem_like_entries(group.heading.as_ref(), group.documented.as_ref())
-        }
-        TopLevelItem::Example(group) => render_entries_from_parts(
-            group
-                .heading
-                .as_ref()
-                .map(command_header_signatures)
-                .unwrap_or_default(),
-            None,
-            None,
-        ),
-        TopLevelItem::Equivalent(group) => render_entries_from_parts(
-            command_header_signatures(&group.heading),
-            None,
-            group.documented.as_ref(),
-        ),
-        _ => Vec::new(),
-    }
 }
 
 fn collect_provided_call_render_rules(item: &TopLevelItem, registry: &mut RenderRegistry) {
@@ -989,50 +1061,6 @@ fn primary_declares_target_name(target: &DeclaresTarget) -> Option<String> {
         DeclaresTarget::Form(form) => primary_form_name(form),
         DeclaresTarget::Declaration(statement) => primary_declaration_statement_name(statement),
     }
-}
-
-pub(super) fn render_entries_from_parts(
-    signatures: Vec<CommandHeaderSignature>,
-    subject_variable: Option<String>,
-    documented: Option<&DocumentedSection>,
-) -> Vec<RenderEntry> {
-    render_entries_from_parts_with_fallback(signatures, subject_variable, documented, None)
-}
-
-pub(super) fn render_refines_entries(
-    signatures: Vec<CommandHeaderSignature>,
-    subject_variable: Option<String>,
-    documented: Option<&DocumentedSection>,
-) -> Vec<RenderEntry> {
-    let Some(documented) = documented else {
-        return Vec::new();
-    };
-
-    let adjective = documented.arguments.iter().find_map(|item| match item {
-        DocumentedItem::Adjective(group) => Some(&group.adjective),
-        _ => None,
-    });
-    let written = documented.arguments.iter().find_map(|item| match item {
-        DocumentedItem::Written(group) => Some(&group.written),
-        _ => None,
-    });
-
-    let Some(adjective) = adjective else {
-        return Vec::new();
-    };
-
-    // `Refines:` is named by an `adjective:` rather than a `called:`, so there is
-    // no called form to pair with the written one and its title is unchanged.
-    render_entries_from_signatures(
-        signatures,
-        subject_variable,
-        Some((
-            primary_adjective_text(adjective),
-            CalledRenderSource::Called,
-        )),
-        written.map(join_written_text),
-        None,
-    )
 }
 
 fn render_theorem_like_entries(
@@ -1225,30 +1253,4 @@ fn is_title_case_stop_word(word: &str) -> bool {
             | "via"
             | "with"
     )
-}
-
-pub(super) fn join_called_text(section: &CalledSection) -> String {
-    section
-        .arguments
-        .iter()
-        .map(|text| text.0.as_str())
-        .collect::<Vec<_>>()
-        .join(" ")
-}
-
-pub(super) fn primary_adjective_text(section: &AdjectiveSection) -> String {
-    section
-        .arguments
-        .first()
-        .map(|text| text.0.clone())
-        .unwrap_or_default()
-}
-
-pub(super) fn join_written_text(section: &WrittenSection) -> String {
-    section
-        .arguments
-        .iter()
-        .map(|text| text.0.as_str())
-        .collect::<Vec<_>>()
-        .join(" ")
 }

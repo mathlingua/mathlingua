@@ -1,5 +1,13 @@
 use super::*;
 
+#[derive(Clone, Debug)]
+pub(super) struct CommandHeaderSignature {
+    pub(super) signature: String,
+    pub(super) parameters: Vec<String>,
+    pub(super) variadic_parameters: Vec<(VariadicParameter, usize)>,
+    pub(super) mapping_parameter: Option<MappingParameterRender>,
+}
+
 pub(super) fn command_header_signature(header: &CommandHeader) -> String {
     match header {
         CommandHeader::Command(command) => {
@@ -23,14 +31,6 @@ pub(super) fn command_header_signature(header: &CommandHeader) -> String {
         }
         CommandHeader::Refined(command) => refined_command_header_signature(command),
     }
-}
-
-#[derive(Clone, Debug)]
-pub(super) struct CommandHeaderSignature {
-    pub(super) signature: String,
-    pub(super) parameters: Vec<String>,
-    pub(super) variadic_parameters: Vec<(VariadicParameter, usize)>,
-    pub(super) mapping_parameter: Option<MappingParameterRender>,
 }
 
 pub(super) fn command_header_signatures(header: &CommandHeader) -> Vec<CommandHeaderSignature> {
@@ -138,23 +138,6 @@ pub(super) fn infix_spec_header_signatures(spec: &InfixSpecHeader) -> Vec<Comman
         .collect()
 }
 
-fn refined_command_header_for_infix_spec(spec: &InfixSpecHeader) -> Option<RefinedCommandHeader> {
-    let refinement = spec.refinement.as_ref()?;
-    Some(RefinedCommandHeader {
-        span: spec.span,
-        prefix_chain: refinement.prefix_chain.clone(),
-        parts: refinement.parts.clone(),
-        refined_tail: RefinedTail::Chain(spec.chain.clone()),
-        head_args: spec.head_args.clone(),
-        tail: spec.tail.clone(),
-        paren_args: Vec::new(),
-    })
-}
-
-fn wrap_refined_infix_spec_signature(signature: &str) -> String {
-    format!("\\:{}:/", signature.strip_prefix('\\').unwrap_or(signature))
-}
-
 pub(super) fn refined_command_header_signatures(
     command: &RefinedCommandHeader,
 ) -> Vec<CommandHeaderSignature> {
@@ -207,38 +190,6 @@ pub(super) fn refined_command_header_signatures(
             })
         })
         .collect()
-}
-
-fn mapping_parameter_render(header: &CommandHeader) -> Option<MappingParameterRender> {
-    let CommandHeader::Command(command) = header else {
-        return None;
-    };
-    let mut owner = None;
-    let mut selectors = Vec::new();
-    for group in command
-        .head_args
-        .iter()
-        .chain(command.tail.iter().flat_map(|part| part.args.iter()))
-    {
-        for form in &group.forms {
-            let FormOrDeclarationKind::MappingParameter {
-                owner: candidate,
-                selector,
-            } = &form.kind
-            else {
-                continue;
-            };
-            if owner.as_ref().is_some_and(|owner| owner != candidate) {
-                return None;
-            }
-            owner = Some(candidate.clone());
-            selectors.push(selector.name().to_owned());
-        }
-    }
-    Some(MappingParameterRender {
-        owner: owner?,
-        selectors,
-    })
 }
 
 pub(super) fn command_expression_signature(command: &CommandExpression) -> String {
@@ -344,10 +295,91 @@ pub(super) fn add_header_tail_signature(signature: &mut String, tail: &[CommandH
     }
 }
 
+pub(super) fn add_expression_tail_signature(
+    signature: &mut String,
+    tail: &[CommandExpressionTailPart],
+) {
+    for part in tail {
+        signature.push(':');
+        signature.push_str(&format_chain(&part.chain));
+    }
+}
+
+pub(super) fn refined_tail_signature(tail: &RefinedTail) -> String {
+    match tail {
+        RefinedTail::Chain(chain) => format_chain(chain),
+        RefinedTail::Name { name, .. } => name.clone(),
+    }
+}
+
+pub(super) fn format_chain(chain: &Chain) -> String {
+    chain
+        .parts
+        .iter()
+        .map(|part| match part {
+            ChainPart::Name(name) => name.clone(),
+            ChainPart::Alias(name) => format!("${name}"),
+            ChainPart::Operator(operator) => operator.clone(),
+        })
+        .collect::<Vec<_>>()
+        .join(".")
+}
+
+// =============================================================================
+
 #[derive(Clone, Debug, Default)]
 struct HeaderSignatureVariant {
     signature_suffix: String,
     parameters: Vec<String>,
+}
+
+fn refined_command_header_for_infix_spec(spec: &InfixSpecHeader) -> Option<RefinedCommandHeader> {
+    let refinement = spec.refinement.as_ref()?;
+    Some(RefinedCommandHeader {
+        span: spec.span,
+        prefix_chain: refinement.prefix_chain.clone(),
+        parts: refinement.parts.clone(),
+        refined_tail: RefinedTail::Chain(spec.chain.clone()),
+        head_args: spec.head_args.clone(),
+        tail: spec.tail.clone(),
+        paren_args: Vec::new(),
+    })
+}
+
+fn wrap_refined_infix_spec_signature(signature: &str) -> String {
+    format!("\\:{}:/", signature.strip_prefix('\\').unwrap_or(signature))
+}
+
+fn mapping_parameter_render(header: &CommandHeader) -> Option<MappingParameterRender> {
+    let CommandHeader::Command(command) = header else {
+        return None;
+    };
+    let mut owner = None;
+    let mut selectors = Vec::new();
+    for group in command
+        .head_args
+        .iter()
+        .chain(command.tail.iter().flat_map(|part| part.args.iter()))
+    {
+        for form in &group.forms {
+            let FormOrDeclarationKind::MappingParameter {
+                owner: candidate,
+                selector,
+            } = &form.kind
+            else {
+                continue;
+            };
+            if owner.as_ref().is_some_and(|owner| owner != candidate) {
+                return None;
+            }
+            owner = Some(candidate.clone());
+            selectors.push(selector.name().to_owned());
+        }
+    }
+    Some(MappingParameterRender {
+        owner: owner?,
+        selectors,
+    })
 }
 
 fn header_tail_variants(tail: &[CommandHeaderTailPart]) -> Vec<HeaderSignatureVariant> {
@@ -504,34 +536,4 @@ fn paren_heading_group_parameters(groups: &[ParenHeadingArgs]) -> Vec<String> {
 
 fn infix_operand_parameters(operand: Option<&FormOrDeclaration>) -> Vec<String> {
     operand.and_then(primary_form_name).into_iter().collect()
-}
-
-pub(super) fn add_expression_tail_signature(
-    signature: &mut String,
-    tail: &[CommandExpressionTailPart],
-) {
-    for part in tail {
-        signature.push(':');
-        signature.push_str(&format_chain(&part.chain));
-    }
-}
-
-pub(super) fn refined_tail_signature(tail: &RefinedTail) -> String {
-    match tail {
-        RefinedTail::Chain(chain) => format_chain(chain),
-        RefinedTail::Name { name, .. } => name.clone(),
-    }
-}
-
-pub(super) fn format_chain(chain: &Chain) -> String {
-    chain
-        .parts
-        .iter()
-        .map(|part| match part {
-            ChainPart::Name(name) => name.clone(),
-            ChainPart::Alias(name) => format!("${name}"),
-            ChainPart::Operator(operator) => operator.clone(),
-        })
-        .collect::<Vec<_>>()
-        .join(".")
 }

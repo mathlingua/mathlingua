@@ -22,7 +22,30 @@ fn registry_for(source: &str) -> super::RenderRegistry {
     }])
 }
 
-// ===============================[ tests ]=====================================
+/// Renders `argument` through a `written:` template that is exactly the single
+/// placeholder `A?`, `A+?`, or `A-?`, so the result is the substituted value alone.
+fn rendered_with_modifier(modifier: &str, argument: &str) -> String {
+    let registry = registry_for(&format!(
+        "[\\f:of{{A}}]\nDeclares: X\nDocumented:\n. written: \"A{modifier}?\"\n"
+    ));
+
+    render_formulation_latex(&format!(r#"\f:of{{{argument}}}"#), &registry)
+        .expect("expected the formulation to render")
+}
+
+fn keep(argument: &str) -> String {
+    rendered_with_modifier("", argument)
+}
+
+fn ensure(argument: &str) -> String {
+    rendered_with_modifier("+", argument)
+}
+
+fn strip(argument: &str) -> String {
+    rendered_with_modifier("-", argument)
+}
+
+// =============================================================================
 
 #[test]
 fn renders_command_expressions_from_written_templates() {
@@ -1507,29 +1530,6 @@ Documented:
                 .to_string()
         )
     );
-}
-
-/// Renders `argument` through a `written:` template that is exactly the single
-/// placeholder `A?`, `A+?`, or `A-?`, so the result is the substituted value alone.
-fn rendered_with_modifier(modifier: &str, argument: &str) -> String {
-    let registry = registry_for(&format!(
-        "[\\f:of{{A}}]\nDeclares: X\nDocumented:\n. written: \"A{modifier}?\"\n"
-    ));
-
-    render_formulation_latex(&format!(r#"\f:of{{{argument}}}"#), &registry)
-        .expect("expected the formulation to render")
-}
-
-fn keep(argument: &str) -> String {
-    rendered_with_modifier("", argument)
-}
-
-fn ensure(argument: &str) -> String {
-    rendered_with_modifier("+", argument)
-}
-
-fn strip(argument: &str) -> String {
-    rendered_with_modifier("-", argument)
 }
 
 #[test]

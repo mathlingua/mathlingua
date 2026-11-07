@@ -1,5 +1,17 @@
 use super::*;
 
+pub(super) struct DefinitionItem<'a> {
+    kind: DefinitionKind,
+    heading: &'a CommandHeader,
+    documented: Option<&'a DocumentedSection>,
+}
+
+impl<'a> DefinitionItem<'a> {
+    pub(super) fn heading(&self) -> &'a CommandHeader {
+        self.heading
+    }
+}
+
 pub fn check_documents(files: &[ParsedSourceFile], event_log: &mut EventLog) {
     check_documents_collecting_type_info(files, event_log, None);
 }
@@ -29,6 +41,236 @@ pub fn check_documents_collecting_all_type_info(
     event_log: &mut EventLog,
 ) -> CollectionTypeInfo {
     check_documents_collecting_type_infos(files, event_log, None, true)
+}
+
+pub(super) fn collect_document_definitions(
+    file: &ParsedSourceFile,
+    registry: &mut SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    let mut locator = SourceLocator::new(&file.source);
+    for item in &file.document.items {
+        if let Some(rule) = disambiguation_rule_from_item(item) {
+            let position = None;
+            if registry
+                .disambiguations
+                .iter()
+                .any(|existing| existing.key == rule.key)
+            {
+                emit_error(
+                    event_log,
+                    &file.path,
+                    position,
+                    format!(
+                        "Duplicate disambiguation for `{}`",
+                        format_disambiguation_key(&rule.key)
+                    ),
+                );
+            } else {
+                registry.disambiguations.push(rule);
+            }
+            continue;
+        }
+
+        let Some(definition) = definition_item(item) else {
+            continue;
+        };
+        let kind = definition.kind;
+        let full_shape = shape_for_header(definition.heading);
+        let position = locator.locate_heading(&full_shape);
+        if matches!(definition.heading, CommandHeader::InfixSpec(spec) if spec.refinement.is_none())
+            && kind != DefinitionKind::Declares
+        {
+            emit_error(
+                event_log,
+                &file.path,
+                position,
+                "Spec-infix headings may only be used with Declares entries",
+            );
+            continue;
+        }
+        if (matches!(definition.heading, CommandHeader::Refined(_))
+            || matches!(definition.heading, CommandHeader::InfixSpec(spec) if spec.refinement.is_some()))
+            && kind != DefinitionKind::Refines
+        {
+            emit_error(
+                event_log,
+                &file.path,
+                position,
+                "Refined command headings may only be used with Refines entries",
+            );
+            continue;
+        }
+        check_documented_rendering(file, kind, definition.documented, position, event_log);
+        let placeholder_pattern = match placeholder_signature_for_header(definition.heading) {
+            Ok(pattern) => pattern.map(|(_, pattern)| pattern),
+            Err(message) => {
+                emit_error(event_log, &file.path, position, message);
+                continue;
+            }
+        };
+        for header_shape in shapes_for_header(definition.heading) {
+            if let Some(previous) = registry.definitions.get(&header_shape.shape.signature) {
+                emit_error(
+                    event_log,
+                    &file.path,
+                    position,
+                    format!(
+                        "Duplicate command signature `{}` in {}; previously defined as {} in {}",
+                        header_shape.shape.signature,
+                        kind.label(),
+                        previous.kind.label(),
+                        display_definition_location(previous)
+                    ),
+                );
+                continue;
+            }
+
+            let type_shape = header_shape.clone();
+            let registered_signature = header_shape.shape.signature.clone();
+            registry.definitions.insert(
+                registered_signature.clone(),
+                DefinitionEntry {
+                    kind,
+                    shape: header_shape.shape,
+                    path: file.path.clone(),
+                    position,
+                    placeholder_pattern: placeholder_pattern.clone(),
+                },
+            );
+            if let Some(pattern) = &placeholder_pattern {
+                registry
+                    .placeholder_definitions
+                    .entry(pattern.general_signature.clone())
+                    .or_default()
+                    .push(registered_signature);
+            }
+            collect_definition_type_metadata(item, &type_shape, registry);
+        }
+    }
+}
+
+pub(super) fn definition_item(item: &TopLevelItem) -> Option<DefinitionItem<'_>> {
+    match item {
+        TopLevelItem::Declares(group) => Some(DefinitionItem {
+            kind: DefinitionKind::Declares,
+            heading: &group.heading,
+            documented: group.documented.as_ref(),
+        }),
+        TopLevelItem::Defines(group) => Some(DefinitionItem {
+            kind: DefinitionKind::Defines,
+            heading: &group.heading,
+            documented: group.documented.as_ref(),
+        }),
+        TopLevelItem::Realizes(group) => Some(DefinitionItem {
+            kind: DefinitionKind::Realizes,
+            heading: &group.heading,
+            documented: group.documented.as_ref(),
+        }),
+        TopLevelItem::Refines(group) => Some(DefinitionItem {
+            kind: DefinitionKind::Refines,
+            heading: &group.heading,
+            documented: group.documented.as_ref(),
+        }),
+        TopLevelItem::States(group) => Some(DefinitionItem {
+            kind: DefinitionKind::States,
+            heading: &group.heading,
+            documented: group.documented.as_ref(),
+        }),
+        TopLevelItem::Axiom(group) => group.heading.as_ref().map(|heading| DefinitionItem {
+            kind: DefinitionKind::Axiom,
+            heading,
+            documented: group.documented.as_ref(),
+        }),
+        TopLevelItem::Theorem(group) => group.heading.as_ref().map(|heading| DefinitionItem {
+            kind: DefinitionKind::Theorem,
+            heading,
+            documented: group.documented.as_ref(),
+        }),
+        TopLevelItem::Conjecture(group) => group.heading.as_ref().map(|heading| DefinitionItem {
+            kind: DefinitionKind::Conjecture,
+            heading,
+            documented: group.documented.as_ref(),
+        }),
+        TopLevelItem::Example(group) => group.heading.as_ref().map(|heading| DefinitionItem {
+            kind: DefinitionKind::Example,
+            heading,
+            documented: None,
+        }),
+        TopLevelItem::Equivalent(group) => Some(DefinitionItem {
+            kind: DefinitionKind::Equivalent,
+            heading: &group.heading,
+            documented: group.documented.as_ref(),
+        }),
+        _ => None,
+    }
+}
+
+pub(super) fn check_documented_rendering(
+    file: &ParsedSourceFile,
+    kind: DefinitionKind,
+    documented: Option<&DocumentedSection>,
+    position: Option<SourcePosition>,
+    event_log: &mut EventLog,
+) {
+    if !matches!(
+        kind,
+        DefinitionKind::Declares
+            | DefinitionKind::Defines
+            | DefinitionKind::Realizes
+            | DefinitionKind::Refines
+            | DefinitionKind::States
+    ) {
+        return;
+    }
+
+    if kind == DefinitionKind::Refines {
+        let has_adjective = documented.is_some_and(|section| {
+            section
+                .arguments
+                .iter()
+                .any(|item| matches!(item, DocumentedItem::Adjective(_)))
+        });
+
+        if !has_adjective {
+            emit_error(
+                event_log,
+                &file.path,
+                position,
+                "Refines entries must include an `adjective:` item in `Documented:`",
+            );
+        }
+        return;
+    }
+
+    let has_rendering = documented.is_some_and(|section| {
+        section.arguments.iter().any(|item| match item {
+            DocumentedItem::Written(_) => true,
+            DocumentedItem::Called(_) => true,
+            _ => false,
+        })
+    });
+
+    if !has_rendering {
+        emit_error(
+            event_log,
+            &file.path,
+            position,
+            format!(
+                "{} entries must include either a `called:` or `written:` item in `Documented:`",
+                kind.label()
+            ),
+        );
+    }
+}
+
+// =============================================================================
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct MappingFormParts {
+    name: String,
+    parameters: Vec<String>,
+    magnetic: bool,
 }
 
 fn check_documents_collecting_type_infos(
@@ -157,13 +399,6 @@ fn documented_section(item: &TopLevelItem) -> Option<&DocumentedSection> {
         TopLevelItem::Topic(group) => group.documented.as_ref(),
         _ => None,
     }
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-struct MappingFormParts {
-    name: String,
-    parameters: Vec<String>,
-    magnetic: bool,
 }
 
 fn declares_mapping_parts(target: &DeclaresTarget) -> Option<MappingFormParts> {
@@ -352,113 +587,6 @@ fn validate_top_level_writing_count(files: &[ParsedSourceFile], event_log: &mut 
     }
 }
 
-pub(super) fn collect_document_definitions(
-    file: &ParsedSourceFile,
-    registry: &mut SignatureRegistry,
-    event_log: &mut EventLog,
-) {
-    let mut locator = SourceLocator::new(&file.source);
-    for item in &file.document.items {
-        if let Some(rule) = disambiguation_rule_from_item(item) {
-            let position = None;
-            if registry
-                .disambiguations
-                .iter()
-                .any(|existing| existing.key == rule.key)
-            {
-                emit_error(
-                    event_log,
-                    &file.path,
-                    position,
-                    format!(
-                        "Duplicate disambiguation for `{}`",
-                        format_disambiguation_key(&rule.key)
-                    ),
-                );
-            } else {
-                registry.disambiguations.push(rule);
-            }
-            continue;
-        }
-
-        let Some(definition) = definition_item(item) else {
-            continue;
-        };
-        let kind = definition.kind;
-        let full_shape = shape_for_header(definition.heading);
-        let position = locator.locate_heading(&full_shape);
-        if matches!(definition.heading, CommandHeader::InfixSpec(spec) if spec.refinement.is_none())
-            && kind != DefinitionKind::Declares
-        {
-            emit_error(
-                event_log,
-                &file.path,
-                position,
-                "Spec-infix headings may only be used with Declares entries",
-            );
-            continue;
-        }
-        if (matches!(definition.heading, CommandHeader::Refined(_))
-            || matches!(definition.heading, CommandHeader::InfixSpec(spec) if spec.refinement.is_some()))
-            && kind != DefinitionKind::Refines
-        {
-            emit_error(
-                event_log,
-                &file.path,
-                position,
-                "Refined command headings may only be used with Refines entries",
-            );
-            continue;
-        }
-        check_documented_rendering(file, kind, definition.documented, position, event_log);
-        let placeholder_pattern = match placeholder_signature_for_header(definition.heading) {
-            Ok(pattern) => pattern.map(|(_, pattern)| pattern),
-            Err(message) => {
-                emit_error(event_log, &file.path, position, message);
-                continue;
-            }
-        };
-        for header_shape in shapes_for_header(definition.heading) {
-            if let Some(previous) = registry.definitions.get(&header_shape.shape.signature) {
-                emit_error(
-                    event_log,
-                    &file.path,
-                    position,
-                    format!(
-                        "Duplicate command signature `{}` in {}; previously defined as {} in {}",
-                        header_shape.shape.signature,
-                        kind.label(),
-                        previous.kind.label(),
-                        display_definition_location(previous)
-                    ),
-                );
-                continue;
-            }
-
-            let type_shape = header_shape.clone();
-            let registered_signature = header_shape.shape.signature.clone();
-            registry.definitions.insert(
-                registered_signature.clone(),
-                DefinitionEntry {
-                    kind,
-                    shape: header_shape.shape,
-                    path: file.path.clone(),
-                    position,
-                    placeholder_pattern: placeholder_pattern.clone(),
-                },
-            );
-            if let Some(pattern) = &placeholder_pattern {
-                registry
-                    .placeholder_definitions
-                    .entry(pattern.general_signature.clone())
-                    .or_default()
-                    .push(registered_signature);
-            }
-            collect_definition_type_metadata(item, &type_shape, registry);
-        }
-    }
-}
-
 fn format_disambiguation_key(key: &DisambiguationKey) -> String {
     match key {
         DisambiguationKey::BinaryOperator(operator)
@@ -468,75 +596,7 @@ fn format_disambiguation_key(key: &DisambiguationKey) -> String {
     }
 }
 
-pub(super) struct DefinitionItem<'a> {
-    kind: DefinitionKind,
-    heading: &'a CommandHeader,
-    documented: Option<&'a DocumentedSection>,
-}
-
-impl<'a> DefinitionItem<'a> {
-    pub(super) fn heading(&self) -> &'a CommandHeader {
-        self.heading
-    }
-}
-
-pub(super) fn definition_item(item: &TopLevelItem) -> Option<DefinitionItem<'_>> {
-    match item {
-        TopLevelItem::Declares(group) => Some(DefinitionItem {
-            kind: DefinitionKind::Declares,
-            heading: &group.heading,
-            documented: group.documented.as_ref(),
-        }),
-        TopLevelItem::Defines(group) => Some(DefinitionItem {
-            kind: DefinitionKind::Defines,
-            heading: &group.heading,
-            documented: group.documented.as_ref(),
-        }),
-        TopLevelItem::Realizes(group) => Some(DefinitionItem {
-            kind: DefinitionKind::Realizes,
-            heading: &group.heading,
-            documented: group.documented.as_ref(),
-        }),
-        TopLevelItem::Refines(group) => Some(DefinitionItem {
-            kind: DefinitionKind::Refines,
-            heading: &group.heading,
-            documented: group.documented.as_ref(),
-        }),
-        TopLevelItem::States(group) => Some(DefinitionItem {
-            kind: DefinitionKind::States,
-            heading: &group.heading,
-            documented: group.documented.as_ref(),
-        }),
-        TopLevelItem::Axiom(group) => group.heading.as_ref().map(|heading| DefinitionItem {
-            kind: DefinitionKind::Axiom,
-            heading,
-            documented: group.documented.as_ref(),
-        }),
-        TopLevelItem::Theorem(group) => group.heading.as_ref().map(|heading| DefinitionItem {
-            kind: DefinitionKind::Theorem,
-            heading,
-            documented: group.documented.as_ref(),
-        }),
-        TopLevelItem::Conjecture(group) => group.heading.as_ref().map(|heading| DefinitionItem {
-            kind: DefinitionKind::Conjecture,
-            heading,
-            documented: group.documented.as_ref(),
-        }),
-        TopLevelItem::Example(group) => group.heading.as_ref().map(|heading| DefinitionItem {
-            kind: DefinitionKind::Example,
-            heading,
-            documented: None,
-        }),
-        TopLevelItem::Equivalent(group) => Some(DefinitionItem {
-            kind: DefinitionKind::Equivalent,
-            heading: &group.heading,
-            documented: group.documented.as_ref(),
-        }),
-        _ => None,
-    }
-}
-
-// ===============================[ tests ]=====================================
+// =============================================================================
 
 #[cfg(test)]
 mod tests {
@@ -749,64 +809,6 @@ Id: "33333333-3333-4333-8333-333333333333"
                 .is_some_and(|message| message.message.contains("Unrecognized symbol `missing`"))),
             "{:#?}",
             invalid_alias_log.events()
-        );
-    }
-}
-
-pub(super) fn check_documented_rendering(
-    file: &ParsedSourceFile,
-    kind: DefinitionKind,
-    documented: Option<&DocumentedSection>,
-    position: Option<SourcePosition>,
-    event_log: &mut EventLog,
-) {
-    if !matches!(
-        kind,
-        DefinitionKind::Declares
-            | DefinitionKind::Defines
-            | DefinitionKind::Realizes
-            | DefinitionKind::Refines
-            | DefinitionKind::States
-    ) {
-        return;
-    }
-
-    if kind == DefinitionKind::Refines {
-        let has_adjective = documented.is_some_and(|section| {
-            section
-                .arguments
-                .iter()
-                .any(|item| matches!(item, DocumentedItem::Adjective(_)))
-        });
-
-        if !has_adjective {
-            emit_error(
-                event_log,
-                &file.path,
-                position,
-                "Refines entries must include an `adjective:` item in `Documented:`",
-            );
-        }
-        return;
-    }
-
-    let has_rendering = documented.is_some_and(|section| {
-        section.arguments.iter().any(|item| match item {
-            DocumentedItem::Written(_) => true,
-            DocumentedItem::Called(_) => true,
-            _ => false,
-        })
-    });
-
-    if !has_rendering {
-        emit_error(
-            event_log,
-            &file.path,
-            position,
-            format!(
-                "{} entries must include either a `called:` or `written:` item in `Documented:`",
-                kind.label()
-            ),
         );
     }
 }

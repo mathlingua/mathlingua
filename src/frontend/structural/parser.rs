@@ -1,5 +1,4 @@
 use std::collections::{HashMap, VecDeque};
-
 use crate::events::EventLog;
 use crate::frontend::formulation::ast::{
     DeclarationRelation, DeclarationStatement, Expression, ExpressionKind, FormOrDeclaration,
@@ -17,10 +16,32 @@ use crate::frontend::proto::ast::{
     Argument as ProtoArgument, Formulation as ProtoFormulation, Group as ProtoGroup,
     Section as ProtoSection, TextLiteral as ProtoText,
 };
-
 use super::ast::*;
 
-const ORIGIN: &str = "structural_parser";
+/// One flattened entry from a proto section body.
+///
+/// Section entries unify inline arguments with body arguments so helper parsers
+/// can apply the same validation logic regardless of how the author chose to
+/// place the section content.
+pub(in crate::frontend::structural::parser) enum SectionEntry<'a> {
+    /// Inline text after the section colon.
+    Inline { text: &'a str, row: usize },
+    /// A formulation body argument.
+    Formulation {
+        text: &'a str,
+        label: Option<&'a str>,
+        row: usize,
+    },
+    /// A quoted text body argument.
+    Text {
+        text: &'a str,
+        #[allow(dead_code)]
+        label: Option<&'a str>,
+        row: usize,
+    },
+    /// A nested proto group body argument.
+    Group { group: &'a ProtoGroup, row: usize },
+}
 
 /// Parses raw MathLingua source into the strongly typed structural AST.
 ///
@@ -56,8 +77,6 @@ pub(crate) fn parse_document_from_groups(
         items: ZeroOrMore::from(items),
     }
 }
-
-// ===============================[ sections ]=====================================
 
 /// Returns the first section label of a proto group.
 ///
@@ -163,31 +182,6 @@ pub(in crate::frontend::structural::parser) fn identify_sections<'a>(
     Some(result)
 }
 
-/// One flattened entry from a proto section body.
-///
-/// Section entries unify inline arguments with body arguments so helper parsers
-/// can apply the same validation logic regardless of how the author chose to
-/// place the section content.
-pub(in crate::frontend::structural::parser) enum SectionEntry<'a> {
-    /// Inline text after the section colon.
-    Inline { text: &'a str, row: usize },
-    /// A formulation body argument.
-    Formulation {
-        text: &'a str,
-        label: Option<&'a str>,
-        row: usize,
-    },
-    /// A quoted text body argument.
-    Text {
-        text: &'a str,
-        #[allow(dead_code)]
-        label: Option<&'a str>,
-        row: usize,
-    },
-    /// A nested proto group body argument.
-    Group { group: &'a ProtoGroup, row: usize },
-}
-
 /// Flattens a section's inline and body arguments into parseable entries.
 ///
 /// Inline arguments are yielded first using the section row, followed by body
@@ -238,8 +232,6 @@ pub(in crate::frontend::structural::parser) fn section_entries(
 
     entries
 }
-
-// ===============================[ groups ]=====================================
 
 /// Parses one or more required nested groups from a section.
 ///
@@ -301,8 +293,6 @@ pub(in crate::frontend::structural::parser) fn parse_optional_groups<T>(
     items.into()
 }
 
-// ===============================[ headings ]=====================================
-
 /// Parses an alias body into the supported alias variants.
 ///
 /// Expression aliases are attempted first because their left-hand side grammar
@@ -342,149 +332,6 @@ pub(in crate::frontend::structural::parser) fn parse_is_or_via_item(
         return Ok(IsOrViaItem::IsVia(item));
     }
     parse_refined_declaration_statement(input).map(IsOrViaItem::Declaration)
-}
-
-/// Recognizes a trailing label `[:...:]` on a grouped specification such as
-/// `(.*_1 is \foo.)[:1:]`. Returns the label and the inner specification source text.
-fn split_labeled_specification(input: &str) -> Result<Option<(Label, &str)>, FormulationParseError> {
-    let current = input.trim();
-    let Some(body) = current.strip_suffix(":]") else {
-        return Ok(None);
-    };
-    let Some(label_start) = body.rfind("[:") else {
-        return Ok(None);
-    };
-    let label_content = body[label_start + 2..].trim();
-    if label_content.is_empty() {
-        return Ok(None);
-    }
-    if label_content.contains(',') {
-        return Err(FormulationParseError::custom(
-            "multi-labels are not permitted; a specification cannot have more than one label",
-        ));
-    }
-    let rest = body[..label_start].trim();
-    if rest.ends_with(":]") || rest.ends_with(":)") {
-        return Err(FormulationParseError::custom(
-            "chained labels are not permitted; a specification cannot have more than one label",
-        ));
-    }
-    let parts: Vec<String> = label_content.split('.').map(str::to_owned).collect();
-    if parts.iter().any(|part| {
-        part.is_empty()
-            || !part
-                .chars()
-                .all(|ch| ch.is_ascii_alphanumeric() || ch == '_')
-    }) {
-        return Ok(None);
-    }
-    let label = Label {
-        span: crate::frontend::formulation::ast::Span::new(
-            label_start + 2,
-            label_start + 2 + label_content.len(),
-        ),
-        parts,
-    };
-    let inner = rest
-        .strip_prefix("(.")
-        .and_then(|r| r.strip_suffix(".)"))
-        .or_else(|| {
-            rest.strip_prefix('(')
-                .and_then(|r| r.strip_suffix(')'))
-        });
-    let Some(inner) = inner else {
-        return Ok(None);
-    };
-    Ok(Some((label, inner.trim())))
-}
-
-/// Parses the argument of a `Declares:` section.
-///
-/// The target may state the type the definition extends with an `is`/spec
-/// relation (`A is \set`), and an `is` relation may be followed by the `via`
-/// view used to regard the defined item as that type
-/// (`G ::= (X, *, e) is \monoid via (X, *)`).
-fn parse_declares_section(input: &str) -> Result<DeclaresSection, FormulationParseError> {
-    let (target_text, via_text) = split_via_view(input);
-    let via = via_text.map(parse_form_or_declaration).transpose()?;
-    let argument = parse_declares_target(target_text)?;
-    if via.is_some() && !declares_target_states_is(&argument) {
-        return Err(FormulationParseError::custom(
-            "`via` requires the `Declares:` target to name the type it extends, \
-             as in `G ::= (X, *, e) is \\monoid via (X, *)`",
-        ));
-    }
-
-    Ok(DeclaresSection { argument, via })
-}
-
-/// Whether a `Declares:` target names an extended type with an `is` relation.
-fn declares_target_states_is(target: &DeclaresTarget) -> bool {
-    matches!(
-        target,
-        DeclaresTarget::Declaration(statement)
-            if matches!(statement.relation, Some(DeclarationRelation::Is(_)))
-    )
-}
-
-/// Whether a `Declares:` target states the type it extends at all, by an `is` or
-/// a specification relation. Such a target may not also have an `extends:`
-/// section: the two spellings say the same thing.
-fn declares_target_states_extends(target: &DeclaresTarget) -> bool {
-    matches!(
-        target,
-        DeclaresTarget::Declaration(statement) if statement.relation.is_some()
-    )
-}
-
-/// Parses one `extends:` clause: the type extended, with an optional `via` view.
-///
-/// This is the same syntax a `Declares:` target uses for a single clause, minus
-/// the bare-form case, since a clause always states a type.
-fn parse_extends_item(input: &str) -> Result<ExtendsItem, FormulationParseError> {
-    let (statement_text, via_text) = split_via_view(input);
-    let via = via_text.map(parse_form_or_declaration).transpose()?;
-    let statement = parse_refined_declaration_statement(statement_text)?;
-    if via.is_some() && !matches!(statement.relation, Some(DeclarationRelation::Is(_))) {
-        return Err(FormulationParseError::custom(
-            "`via` requires an `is` clause to name the extended type, \
-             as in `G is \\monoid via (X, *)`",
-        ));
-    }
-
-    Ok(ExtendsItem { statement, via })
-}
-
-/// Parses a `Declares:` target: the described form, or a declaration naming the
-/// type it extends. The `is` relation may name a refined command, so a
-/// definition can extend a refinement of a type and not only a bare command.
-fn parse_declares_target(input: &str) -> Result<DeclaresTarget, FormulationParseError> {
-    if let Ok(form) = parse_form_or_declaration(input) {
-        return Ok(DeclaresTarget::Form(form));
-    }
-
-    parse_refined_declaration_statement(input).map(DeclaresTarget::Declaration)
-}
-
-/// Parses the restricted target of a documented mapping `writing:` rule.
-fn parse_mapping_writing_target(
-    input: &str,
-) -> Result<MappingWritingTarget, FormulationParseError> {
-    if let Ok(form) = parse_form_or_declaration(input)
-        && matches!(form.kind, FormOrDeclarationKind::FunctionDeclaration { .. })
-    {
-        return Ok(MappingWritingTarget::Mapping(form));
-    }
-
-    if let Ok(expression) = parse_expression(input)
-        && matches!(expression.kind, ExpressionKind::FunctionCall { .. })
-    {
-        return Ok(MappingWritingTarget::Invocation(expression));
-    }
-
-    Err(FormulationParseError::custom(
-        "expected a mapping form such as `x(i_)` or its named invocation form such as `x(i)`",
-    ))
 }
 
 /// Parses a required command heading from a proto group.
@@ -653,8 +500,6 @@ pub(in crate::frontend::structural::parser) fn ensure_no_heading(
         Some(())
     }
 }
-
-// ===============================[ clauses ]=====================================
 
 /// Parses exactly one required clause from a section.
 ///
@@ -968,8 +813,6 @@ pub(in crate::frontend::structural::parser) fn parse_optional_because_items(
     result.into()
 }
 
-// ===============================[ formulations ]=====================================
-
 /// Parses exactly one required formulation from a section.
 ///
 /// The parser function is supplied by the caller so this helper can parse
@@ -1081,80 +924,6 @@ pub(in crate::frontend::structural::parser) fn parse_required_label_references(
     })
 }
 
-/// Parses one or more resource headers from an `entry:` section in `References:`.
-fn parse_required_resource_entry_headers(
-    section: &ProtoSection,
-    tracker: &mut EventLog,
-) -> Option<OneOrMore<ResourceHeader>> {
-    let starting_issue_count = tracker.issue_count();
-    let mut resources = Vec::new();
-
-    for entry in section_entries(section) {
-        let (text, entry_label, row) = match entry {
-            SectionEntry::Inline { text, row } => (text.to_owned(), None, row),
-            SectionEntry::Formulation { text, label, row } => (text.to_owned(), label, row),
-            SectionEntry::Text { text, label, row } => (
-                strip_quoted_text(text).unwrap_or_else(|| text.to_owned()),
-                label,
-                row,
-            ),
-            SectionEntry::Group { row, .. } => {
-                tracker.user_error_at_row(
-                    Some(ORIGIN),
-                    row,
-                    "Expected a resource reference in section `entry`",
-                );
-                continue;
-            }
-        };
-
-        if let Some(lbl) = entry_label {
-            tracker.user_error_at_row(
-                Some(ORIGIN),
-                row,
-                format!("Unexpected label `[{lbl}]` in `entry:`"),
-            );
-        }
-
-        let unquoted = strip_quoted_text(&text).unwrap_or_else(|| text.clone());
-        if let Ok(reference) = parse_resource_header(&unquoted) {
-            resources.push(reference);
-        } else if text.contains(',') {
-            for piece in text.split(',') {
-                let piece = piece.trim();
-                let piece_unquoted = strip_quoted_text(piece).unwrap_or_else(|| piece.to_owned());
-                match parse_resource_header(&piece_unquoted) {
-                    Ok(reference) => resources.push(reference),
-                    Err(error) => tracker.user_error_at_row(
-                        Some(ORIGIN),
-                        row,
-                        format!("Invalid `entry` resource formulation: {error}"),
-                    ),
-                }
-            }
-        } else {
-            match parse_resource_header(&unquoted) {
-                Ok(reference) => resources.push(reference),
-                Err(error) => tracker.user_error_at_row(
-                    Some(ORIGIN),
-                    row,
-                    format!("Invalid `entry` resource formulation: {error}"),
-                ),
-            }
-        }
-    }
-
-    one_or_more(resources.into(), || {
-        if tracker.issue_count() == starting_issue_count {
-            tracker.user_error_at_row(
-                Some(ORIGIN),
-                section.metadata.row,
-                "Expected resource references in `entry`",
-            );
-        }
-    })
-}
-
 /// Parses a `for:`/`entry:` group in `References:`.
 pub(super) fn parse_reference_for_group(
     group: &ProtoGroup,
@@ -1173,69 +942,6 @@ pub(super) fn parse_reference_for_group(
                 tracker,
             )?,
         },
-    })
-}
-
-/// Parses one or more resource citations or `for:`/`entry:` groups from a `References:` section.
-///
-/// Item-wide references use formulation or quoted entries (`. $book.name`), while
-/// label-targeted references use a nested `for:`/`entry:` group.
-fn parse_required_resource_references(
-    section: &ProtoSection,
-    tracker: &mut EventLog,
-) -> Option<OneOrMore<ReferenceItem>> {
-    let starting_issue_count = tracker.issue_count();
-    let mut references = Vec::new();
-
-    for entry in section_entries(section) {
-        let (text, label, row) = match entry {
-            SectionEntry::Inline { text, row } => (text.to_owned(), None, row),
-            SectionEntry::Formulation { text, label, row } => (text.to_owned(), label, row),
-            SectionEntry::Text { text, label, row } => (
-                strip_quoted_text(text).unwrap_or_else(|| text.to_owned()),
-                label,
-                row,
-            ),
-            SectionEntry::Group { group, .. } => {
-                if let Some(for_group) = parse_reference_for_group(group, tracker) {
-                    references.push(ReferenceItem::ForEntry(for_group));
-                }
-                continue;
-            }
-        };
-
-        if let Some(lbl) = label {
-            tracker.user_error_at_row(
-                Some(ORIGIN),
-                row,
-                format!(
-                    "Labeled `References:` entry `[{lbl}]` is not supported; use `for: (:{lbl}:)` and `entry:`"
-                ),
-            );
-            continue;
-        }
-
-        let text = strip_quoted_text(&text).unwrap_or(text);
-        match parse_resource_header(&text) {
-            Ok(reference) => {
-                references.push(ReferenceItem::Resource(reference));
-            }
-            Err(error) => tracker.user_error_at_row(
-                Some(ORIGIN),
-                row,
-                format!("Invalid References formulation: {error}"),
-            ),
-        }
-    }
-
-    one_or_more(references.into(), || {
-        if tracker.issue_count() == starting_issue_count {
-            tracker.user_error_at_row(
-                Some(ORIGIN),
-                section.metadata.row,
-                "Expected References formulations",
-            );
-        }
     })
 }
 
@@ -1335,107 +1041,6 @@ pub(in crate::frontend::structural::parser) fn parse_required_bindings(
     })
 }
 
-/// Parses zero or more formulations from an optional section.
-///
-/// Inline section arguments and formulation arguments are accepted.  Text and
-/// nested groups are diagnosed because callers requested formulation content.
-/// Parses `specifies:` items: inline `is`/`is … via …` specifications, plus
-/// `have:` groups, optionally with `asserting:`, standing in for a specification.
-fn parse_required_specify_items(
-    section: &ProtoSection,
-    tracker: &mut EventLog,
-) -> Option<OneOrMore<IsOrViaItem>> {
-    let starting_issue_count = tracker.issue_count();
-    let mut result = Vec::new();
-    for entry in section_entries(section) {
-        match entry {
-            SectionEntry::Inline { text, row } => {
-                match parse_is_or_via_item(text) {
-                    Ok(item) => result.push(item),
-                    Err(error) => tracker.user_error_at_row(
-                        Some(ORIGIN),
-                        row,
-                        format!("Invalid specifies formulation: {error}"),
-                    ),
-                }
-            }
-            SectionEntry::Formulation {
-                text,
-                label: entry_label,
-                row,
-            } => {
-                match parse_is_or_via_item(text) {
-                    Ok(mut item) => {
-                        if let Some(lbl) = entry_label {
-                            if matches!(&item, IsOrViaItem::Labeled { .. }) {
-                                tracker.user_error_at_row(
-                                    Some(ORIGIN),
-                                    row,
-                                    format!("Specification already has a label; multiple labels are not permitted"),
-                                );
-                            } else {
-                                match parse_label_header(lbl) {
-                                    Ok(header) => {
-                                        item = IsOrViaItem::Labeled {
-                                            label: Label {
-                                                span: header.span,
-                                                parts: header.parts,
-                                            },
-                                            item: Box::new(item),
-                                        };
-                                    }
-                                    Err(error) => {
-                                        tracker.user_error_at_row(
-                                            Some(ORIGIN),
-                                            row,
-                                            format!("Invalid label `{lbl}`: {error}"),
-                                        );
-                                    }
-                                }
-                            }
-                        }
-                        result.push(item);
-                    }
-                    Err(error) => tracker.user_error_at_row(
-                        Some(ORIGIN),
-                        row,
-                        format!("Invalid specifies formulation: {error}"),
-                    ),
-                }
-            }
-            SectionEntry::Group { group, row } => {
-                if group.sections.first().map(|section| section.label.as_str()) == Some("have") {
-                    if let Some(have) = parse_have_group(group, tracker) {
-                        result.push(IsOrViaItem::Have(Box::new(have)));
-                    }
-                } else {
-                    tracker.user_error_at_row(
-                        Some(ORIGIN),
-                        row,
-                        "Expected a specification or a `have:` group in `specifies`".to_owned(),
-                    );
-                }
-            }
-            SectionEntry::Text { row, .. } => {
-                tracker.user_error_at_row(
-                    Some(ORIGIN),
-                    row,
-                    "Expected formulation in section `specifies`".to_owned(),
-                );
-            }
-        }
-    }
-    one_or_more(result.into(), || {
-        if tracker.issue_count() == starting_issue_count {
-            tracker.user_error_at_row(
-                Some(ORIGIN),
-                section.metadata.row,
-                "Expected specifies formulations".to_owned(),
-            );
-        }
-    })
-}
-
 pub(in crate::frontend::structural::parser) fn parse_optional_formulations<T>(
     section: Option<&ProtoSection>,
     label: &str,
@@ -1479,8 +1084,6 @@ pub(in crate::frontend::structural::parser) fn parse_optional_formulations<T>(
 
     result.into()
 }
-
-// ===============================[ text ]=====================================
 
 /// Parses exactly one required quoted open-text entry.
 ///
@@ -1666,8 +1269,6 @@ pub(in crate::frontend::structural::parser) fn one_or_more<T>(
 pub(in crate::frontend::structural::parser) fn strip_quoted_text(input: &str) -> Option<String> {
     crate::frontend::strip_quoted_text(input)
 }
-
-// ===============================[ clauses ]=====================================
 
 /// Parses a `not:` clause group.
 ///
@@ -1900,21 +1501,6 @@ pub(super) fn parse_have_clause(group: &ProtoGroup, tracker: &mut EventLog) -> O
             arguments: parse_required_clauses(section(&sections, "have")?, "have", tracker)?,
         },
     })
-}
-
-/// Dispatches a `have:` clause group. `have:`/`iff:` is the shorthand iff
-/// clause; every other `have:` shape is the optionally-asserting escape hatch.
-fn parse_have_or_assertion(group: &ProtoGroup, tracker: &mut EventLog) -> Option<Clause> {
-    let has_assertion_section = group
-        .sections
-        .iter()
-        .any(|section| matches!(section.label.as_str(), "asserting" | "by" | "because"));
-    let has_iff = group.sections.iter().any(|section| section.label == "iff");
-    if has_assertion_section || !has_iff {
-        parse_have_group(group, tracker).map(|group| Clause::Have(Box::new(group)))
-    } else {
-        parse_have_clause(group, tracker).map(Clause::Iff)
-    }
 }
 
 /// Parses a `have:`/`asserting:`/`by?:`/`because?:` group.
@@ -2352,10 +1938,6 @@ pub(super) fn parse_clause_group(group: &ProtoGroup, tracker: &mut EventLog) -> 
     }
 }
 
-// ===============================[ nested ]=====================================
-
-// ===============================[ metadata ]=====================================
-
 /// Parses an `id:` metadata group.
 ///
 /// Metadata groups do not accept headings because their meaning is determined
@@ -2386,8 +1968,6 @@ pub(in crate::frontend::structural::parser) fn parse_version(
         },
     })
 }
-
-// ===============================[ documentation ]=====================================
 
 /// Parses an `alias:` nested group.
 ///
@@ -2467,23 +2047,6 @@ pub(in crate::frontend::structural::parser) fn parse_definition_requirement_grou
             )?,
         },
     })
-}
-
-fn parse_definition_requirement(
-    input: &str,
-) -> Result<DefinitionRequirement, FormulationParseError> {
-    let expression = parse_expression(input)?;
-    let ExpressionKind::IsType { subject, ty } = expression.kind else {
-        return Err(FormulationParseError::Custom(
-            "`definition:` must have the form `\\command is <spec>`".to_owned(),
-        ));
-    };
-    let ExpressionKind::Command(command) = subject.kind else {
-        return Err(FormulationParseError::Custom(
-            "`definition:` subject must be a command expression".to_owned(),
-        ));
-    };
-    Ok(DefinitionRequirement { command, ty })
 }
 
 /// Parses a cast-backed `from:` nested group inside `Enables:`.
@@ -2758,8 +2321,6 @@ pub(in crate::frontend::structural::parser) fn parse_discoverer(
     })
 }
 
-// ===============================[ resource_items ]=====================================
-
 /// Parses a resource `title:` item.
 pub(in crate::frontend::structural::parser) fn parse_resource_title(
     group: &ProtoGroup,
@@ -2988,32 +2549,6 @@ pub(in crate::frontend::structural::parser) fn parse_resource_description(
     })
 }
 
-// ===============================[ specify items ]=====================================
-
-fn parse_numeric_specification(
-    group: &ProtoGroup,
-    label: &str,
-    tracker: &mut EventLog,
-) -> Option<NumericSpecificationGroup> {
-    ensure_no_heading(group, tracker)?;
-    let sections = identify_sections(label, &group.sections, tracker, &[label, "is"])?;
-    ensure_empty_section(section(&sections, label)?, label, tracker);
-    Some(NumericSpecificationGroup {
-        is_: NumericSpecificationIsSection {
-            argument: parse_required_formulation(
-                section(&sections, "is")?,
-                "is",
-                tracker,
-                |input| parse_type_expression(input, false),
-            )?,
-        },
-    })
-}
-
-// ===============================[ top_level ]=====================================
-
-// ===============================[ dispatch ]=====================================
-
 /// Dispatches one proto group to the top-level structural parser matching its first section.
 ///
 /// The first section label determines the group kind.  Unknown labels are
@@ -3221,8 +2756,6 @@ pub(in crate::frontend::structural::parser) fn parse_example(
     })
 }
 
-// ===============================[ outline ]=====================================
-
 /// Parses a top-level `Title:` group.
 ///
 /// Title groups cannot have bracket headings and must contain exactly the
@@ -3309,109 +2842,6 @@ pub(in crate::frontend::structural::parser) fn parse_text_group(
     })
 }
 
-/// Parses one or more required quoted writing aliases.
-///
-/// Each entry is a double-quoted string whose contents form a `name :~> body`
-/// rule, for example `. "pi :~> \pi"`. Quotes are required because the body to
-/// the right of `:~>` may be arbitrary LaTeX that would otherwise be misparsed
-/// as formulation syntax, and the left-hand side must be a plain `Name`. Shared
-/// by the collection-wide `Writing:` group and each item-level `Writing:` section.
-///
-/// Returns `None` (after reporting the offending entries) if any entry is
-/// unquoted, fails to parse, or uses a non-name left-hand side.
-fn parse_required_writing_aliases(
-    section: &ProtoSection,
-    tracker: &mut EventLog,
-) -> Option<OneOrMore<WritingAlias>> {
-    let starting_issue_count = tracker.issue_count();
-    let mut result = Vec::new();
-    let mut all_valid = true;
-    for entry in section_entries(section) {
-        match entry {
-            SectionEntry::Inline { text, row }
-            | SectionEntry::Text {
-                text,
-                row,
-                ..
-            } => {
-                let Some(inner) = strip_quoted_text(text) else {
-                    tracker.user_error_at_row(
-                        Some(ORIGIN),
-                        row,
-                        format!("Expected a quoted Writing alias, found `{text}`"),
-                    );
-                    all_valid = false;
-                    continue;
-                };
-                match parse_writing_alias(&inner) {
-                    Ok(alias) if matches!(alias.form.kind, FormOrDeclarationKind::Name(_)) => {
-                        result.push(alias);
-                    }
-                    Ok(_) => {
-                        tracker.user_error_at_row(
-                            Some(ORIGIN),
-                            row,
-                            "Writing aliases must use a name on the left of `:~>`",
-                        );
-                        all_valid = false;
-                    }
-                    Err(error) => {
-                        tracker.user_error_at_row(
-                            Some(ORIGIN),
-                            row,
-                            format!("Invalid Writing alias: {error}"),
-                        );
-                        all_valid = false;
-                    }
-                }
-            }
-            SectionEntry::Formulation { row, .. } => {
-                tracker.user_error_at_row(
-                    Some(ORIGIN),
-                    row,
-                    "Expected a quoted Writing alias, found formulation",
-                );
-                all_valid = false;
-            }
-            SectionEntry::Group { row, .. } => {
-                tracker.user_error_at_row(
-                    Some(ORIGIN),
-                    row,
-                    "Expected a quoted Writing alias, found nested group",
-                );
-                all_valid = false;
-            }
-        }
-    }
-    if !all_valid {
-        return None;
-    }
-    one_or_more(result.into(), || {
-        if tracker.issue_count() == starting_issue_count {
-            tracker.user_error_at_row(
-                Some(ORIGIN),
-                section.metadata.row,
-                "Expected Writing aliases",
-            );
-        }
-    })
-}
-
-/// Parses an optional item-level `Writing:` section.
-///
-/// The section appears after `Aliases:` on definition- and result-like items and
-/// overrides, for that item only, how the collection-wide `Writing:` group renders
-/// the named identifiers.
-fn parse_optional_item_writing(
-    sections: &HashMap<String, &ProtoSection>,
-    tracker: &mut EventLog,
-) -> Option<ItemWritingSection> {
-    sections.get("Writing").copied().and_then(|section| {
-        parse_required_writing_aliases(section, tracker)
-            .map(|arguments| ItemWritingSection { arguments })
-    })
-}
-
 /// Parses a collection-wide `Writing:` group.
 ///
 /// These aliases are intentionally narrower than documented `writing:` groups:
@@ -3429,8 +2859,6 @@ pub(in crate::frontend::structural::parser) fn parse_top_level_writing(
         writing: TopLevelWritingSection { arguments },
     })
 }
-
-// ===============================[ definitions ]=====================================
 
 /// Parses a global operator/function disambiguation table.
 ///
@@ -3555,83 +2983,6 @@ pub(in crate::frontend::structural::parser) fn parse_disambiguates(
                 .map(|arguments| MetadataSection { arguments })
         }),
     })
-}
-
-fn parse_required_disambiguates_heading(
-    group: &ProtoGroup,
-    tracker: &mut EventLog,
-) -> Option<FormOrDeclaration> {
-    let Some(raw_heading) = group.heading.as_deref() else {
-        tracker.user_error_at_row(
-            Some(ORIGIN),
-            group.metadata.row,
-            "Expected disambiguation heading",
-        );
-        return None;
-    };
-
-    if raw_heading.contains(':') {
-        tracker.user_error_at_row(
-            Some(ORIGIN),
-            group.metadata.row,
-            "Disambiguates headings cannot use colon-directed operators",
-        );
-        return None;
-    }
-
-    let heading = match parse_form_or_declaration(raw_heading) {
-        Ok(heading) => heading,
-        Err(error) => {
-            tracker.user_error_at_row(
-                Some(ORIGIN),
-                group.metadata.row,
-                format!("Invalid disambiguation heading: {error}"),
-            );
-            return None;
-        }
-    };
-
-    match &heading.kind {
-        FormOrDeclarationKind::FunctionDeclaration { name: None, .. }
-        | FormOrDeclarationKind::InfixOperator { .. }
-        | FormOrDeclarationKind::PrefixOperator { .. }
-        | FormOrDeclarationKind::PostfixOperator { .. } => Some(heading),
-        FormOrDeclarationKind::FunctionDeclaration { name: Some(_), .. } => {
-            tracker.user_error_at_row(
-                Some(ORIGIN),
-                group.metadata.row,
-                "Disambiguates function headings cannot use declaration aliases",
-            );
-            None
-        }
-        FormOrDeclarationKind::Name(_)
-        | FormOrDeclarationKind::MappingParameter { .. }
-        | FormOrDeclarationKind::TupleDeclaration { .. }
-        | FormOrDeclarationKind::SetDeclaration { .. } => {
-            tracker.user_error_at_row(
-                Some(ORIGIN),
-                group.metadata.row,
-                "Disambiguates headings must be operator or function forms",
-            );
-            None
-        }
-    }
-}
-
-fn ensure_empty_section(section: &ProtoSection, label: &str, tracker: &mut EventLog) {
-    for entry in section_entries(section) {
-        let row = match entry {
-            SectionEntry::Inline { row, .. }
-            | SectionEntry::Formulation { row, .. }
-            | SectionEntry::Text { row, .. }
-            | SectionEntry::Group { row, .. } => row,
-        };
-        tracker.user_error_at_row(
-            Some(ORIGIN),
-            row,
-            format!("Section `{label}` does not accept content"),
-        );
-    }
 }
 
 /// Parses a command-backed `Declares:` group.
@@ -3841,66 +3192,6 @@ pub(in crate::frontend::structural::parser) fn parse_defines(
                 .map(|arguments| MetadataSection { arguments })
         }),
     })
-}
-
-/// Extracts the optional `implicitly:`/`explicitly:` marker from a `Refines:`
-/// group's sections.
-///
-/// Both are zero-argument marker sections and are mutually exclusive; violations
-/// are reported to `tracker` (and the first-declared marker is still returned so
-/// that later semantic checks can proceed).
-fn parse_refinement_kind(
-    sections: &HashMap<String, &ProtoSection>,
-    tracker: &mut EventLog,
-) -> Option<RefinementKind> {
-    let implicitly = section(sections, "implicitly");
-    let explicitly = section(sections, "explicitly");
-
-    for (label, marker) in [("implicitly", implicitly), ("explicitly", explicitly)] {
-        if let Some(marker) = marker
-            && (marker.inline_argument.is_some() || !marker.arguments.is_empty())
-        {
-            tracker.user_error_at_row(
-                Some(ORIGIN),
-                marker.metadata.row,
-                format!("`{label}:` is a marker section and takes no arguments"),
-            );
-        }
-    }
-
-    match (implicitly, explicitly) {
-        (Some(_), Some(explicitly)) => {
-            tracker.user_error_at_row(
-                Some(ORIGIN),
-                explicitly.metadata.row,
-                "A `Refines:` may specify at most one of `implicitly:` or `explicitly:`".to_owned(),
-            );
-            Some(RefinementKind::Implicit)
-        }
-        (Some(_), None) => Some(RefinementKind::Implicit),
-        (None, Some(_)) => Some(RefinementKind::Explicit),
-        (None, None) => None,
-    }
-}
-
-/// Reads a zero-argument marker section such as `abstractly:`, reporting any
-/// content it was given.
-fn parse_marker_section(
-    sections: &HashMap<String, &ProtoSection>,
-    label: &str,
-    tracker: &mut EventLog,
-) -> bool {
-    let Some(marker) = section(sections, label) else {
-        return false;
-    };
-    if marker.inline_argument.is_some() || !marker.arguments.is_empty() {
-        tracker.user_error_at_row(
-            Some(ORIGIN),
-            marker.metadata.row,
-            format!("`{label}:` is a marker section and takes no arguments"),
-        );
-    }
-    true
 }
 
 /// Parses a command-backed `Realizes:` group.
@@ -4191,8 +3482,6 @@ pub(in crate::frontend::structural::parser) fn parse_states(
     })
 }
 
-// ===============================[ equivalent ]=====================================
-
 /// Parses a top-level `Equivalent:` item.
 ///
 /// The required `[...]` command heading names the equivalence class, and the
@@ -4258,8 +3547,6 @@ pub(in crate::frontend::structural::parser) fn parse_equivalent(
         }),
     })
 }
-
-// ===============================[ relation ]=====================================
 
 /// Parses a top-level `Relation:` item.
 ///
@@ -4392,57 +3679,6 @@ pub(in crate::frontend::structural::parser) fn parse_relation(
     })
 }
 
-/// Reports whether a section's single argument is quoted text.
-///
-/// Both top-level `Relation:` subjects and its `specifies:` accept either quoted text
-/// (a `"#topic"`/`"\signature"` reference, or a prose description) or an unquoted
-/// formulation; this routes the section to the matching parser. The inline
-/// argument carries its quotes verbatim, so quoting is detected with
-/// [`strip_quoted_text`].
-fn section_is_quoted_text(section: &ProtoSection) -> bool {
-    match section_entries(section).first() {
-        Some(SectionEntry::Text { .. }) => true,
-        Some(SectionEntry::Inline { text, .. }) => strip_quoted_text(text).is_some(),
-        _ => false,
-    }
-}
-
-/// Parses one endpoint of a `Relation:` (`between:`/`and:` or `from:`/`to:`).
-///
-/// A quoted `"#topic"` or `"\signature"` is a reference (to a topic or a
-/// definition); anything unquoted is parsed as an ordinary refined declaration
-/// such as `a is \real`.
-fn parse_required_relation_subject(
-    section: &ProtoSection,
-    label: &str,
-    tracker: &mut EventLog,
-) -> Option<RelationSubject> {
-    if section_is_quoted_text(section) {
-        parse_required_open_text(section, label, tracker).map(RelationSubject::Reference)
-    } else {
-        parse_required_formulation(section, label, tracker, parse_refined_declaration_statement)
-            .map(|declaration| RelationSubject::Declaration(Box::new(declaration)))
-    }
-}
-
-/// Parses the `specifies:` of a `Relation:`.
-///
-/// A quoted string is a prose description; anything unquoted is parsed as a
-/// logical clause (a statement of what the relationship means).
-fn parse_required_relation_specifies(
-    section: &ProtoSection,
-    tracker: &mut EventLog,
-) -> Option<RelationSpecifies> {
-    if section_is_quoted_text(section) {
-        parse_required_open_text(section, "specifies", tracker).map(RelationSpecifies::Text)
-    } else {
-        parse_required_clause(section, "specifies", tracker)
-            .map(|clause| RelationSpecifies::Statement(Box::new(clause)))
-    }
-}
-
-// ===============================[ topic ]=====================================
-
 /// Parses a top-level `Topic:` item.
 ///
 /// A `Topic:` names a documentation topic via a required `#`-sigil heading. The
@@ -4532,8 +3768,6 @@ pub(super) fn parse_topic_documented_item_group(
         }
     }
 }
-
-// ===============================[ theorems ]=====================================
 
 /// Parses an `Axiom:` group using the shared theorem-like parser.
 ///
@@ -4649,31 +3883,6 @@ pub(in crate::frontend::structural::parser) fn parse_conjecture(
     )
 }
 
-/// Rejects a name/argument on a theorem-like head section.
-///
-/// `Axiom:`/`Theorem:`/`Conjecture:` do not accept a name;
-/// a result's name belongs in `Documented:` `called:`, matching the definition items.
-fn ensure_no_named_result_arg(section: Option<&ProtoSection>, name: &str, tracker: &mut EventLog) {
-    let Some(section) = section else {
-        return;
-    };
-    if let Some(entry) = section_entries(section).first() {
-        let row = match entry {
-            SectionEntry::Inline { row, .. }
-            | SectionEntry::Formulation { row, .. }
-            | SectionEntry::Text { row, .. }
-            | SectionEntry::Group { row, .. } => *row,
-        };
-        tracker.user_error_at_row(
-            Some(ORIGIN),
-            row,
-            format!(
-                "`{name}:` does not take a name; put the result's name in `Documented:` `called:`"
-            ),
-        );
-    }
-}
-
 #[allow(clippy::type_complexity)]
 /// Parses the common shape shared by axiom/theorem/lemma/conjecture groups.
 ///
@@ -4775,8 +3984,6 @@ pub(in crate::frontend::structural::parser) fn parse_argument_theorem_like(
     ))
 }
 
-// ===============================[ metadata ]=====================================
-
 /// Parses a `Person:` metadata group.
 ///
 /// Person groups require an author-style heading and carry required name text on
@@ -4851,7 +4058,758 @@ pub(in crate::frontend::structural::parser) fn parse_specify(
     })
 }
 
-// ===============================[ tests ]=====================================
+// =============================================================================
+
+const ORIGIN: &str = "structural_parser";
+
+/// Recognizes a trailing label `[:...:]` on a grouped specification such as
+/// `(.*_1 is \foo.)[:1:]`. Returns the label and the inner specification source text.
+fn split_labeled_specification(input: &str) -> Result<Option<(Label, &str)>, FormulationParseError> {
+    let current = input.trim();
+    let Some(body) = current.strip_suffix(":]") else {
+        return Ok(None);
+    };
+    let Some(label_start) = body.rfind("[:") else {
+        return Ok(None);
+    };
+    let label_content = body[label_start + 2..].trim();
+    if label_content.is_empty() {
+        return Ok(None);
+    }
+    if label_content.contains(',') {
+        return Err(FormulationParseError::custom(
+            "multi-labels are not permitted; a specification cannot have more than one label",
+        ));
+    }
+    let rest = body[..label_start].trim();
+    if rest.ends_with(":]") || rest.ends_with(":)") {
+        return Err(FormulationParseError::custom(
+            "chained labels are not permitted; a specification cannot have more than one label",
+        ));
+    }
+    let parts: Vec<String> = label_content.split('.').map(str::to_owned).collect();
+    if parts.iter().any(|part| {
+        part.is_empty()
+            || !part
+                .chars()
+                .all(|ch| ch.is_ascii_alphanumeric() || ch == '_')
+    }) {
+        return Ok(None);
+    }
+    let label = Label {
+        span: crate::frontend::formulation::ast::Span::new(
+            label_start + 2,
+            label_start + 2 + label_content.len(),
+        ),
+        parts,
+    };
+    let inner = rest
+        .strip_prefix("(.")
+        .and_then(|r| r.strip_suffix(".)"))
+        .or_else(|| {
+            rest.strip_prefix('(')
+                .and_then(|r| r.strip_suffix(')'))
+        });
+    let Some(inner) = inner else {
+        return Ok(None);
+    };
+    Ok(Some((label, inner.trim())))
+}
+
+/// Parses the argument of a `Declares:` section.
+///
+/// The target may state the type the definition extends with an `is`/spec
+/// relation (`A is \set`), and an `is` relation may be followed by the `via`
+/// view used to regard the defined item as that type
+/// (`G ::= (X, *, e) is \monoid via (X, *)`).
+fn parse_declares_section(input: &str) -> Result<DeclaresSection, FormulationParseError> {
+    let (target_text, via_text) = split_via_view(input);
+    let via = via_text.map(parse_form_or_declaration).transpose()?;
+    let argument = parse_declares_target(target_text)?;
+    if via.is_some() && !declares_target_states_is(&argument) {
+        return Err(FormulationParseError::custom(
+            "`via` requires the `Declares:` target to name the type it extends, \
+             as in `G ::= (X, *, e) is \\monoid via (X, *)`",
+        ));
+    }
+
+    Ok(DeclaresSection { argument, via })
+}
+
+/// Whether a `Declares:` target names an extended type with an `is` relation.
+fn declares_target_states_is(target: &DeclaresTarget) -> bool {
+    matches!(
+        target,
+        DeclaresTarget::Declaration(statement)
+            if matches!(statement.relation, Some(DeclarationRelation::Is(_)))
+    )
+}
+
+/// Whether a `Declares:` target states the type it extends at all, by an `is` or
+/// a specification relation. Such a target may not also have an `extends:`
+/// section: the two spellings say the same thing.
+fn declares_target_states_extends(target: &DeclaresTarget) -> bool {
+    matches!(
+        target,
+        DeclaresTarget::Declaration(statement) if statement.relation.is_some()
+    )
+}
+
+/// Parses one `extends:` clause: the type extended, with an optional `via` view.
+///
+/// This is the same syntax a `Declares:` target uses for a single clause, minus
+/// the bare-form case, since a clause always states a type.
+fn parse_extends_item(input: &str) -> Result<ExtendsItem, FormulationParseError> {
+    let (statement_text, via_text) = split_via_view(input);
+    let via = via_text.map(parse_form_or_declaration).transpose()?;
+    let statement = parse_refined_declaration_statement(statement_text)?;
+    if via.is_some() && !matches!(statement.relation, Some(DeclarationRelation::Is(_))) {
+        return Err(FormulationParseError::custom(
+            "`via` requires an `is` clause to name the extended type, \
+             as in `G is \\monoid via (X, *)`",
+        ));
+    }
+
+    Ok(ExtendsItem { statement, via })
+}
+
+/// Parses a `Declares:` target: the described form, or a declaration naming the
+/// type it extends. The `is` relation may name a refined command, so a
+/// definition can extend a refinement of a type and not only a bare command.
+fn parse_declares_target(input: &str) -> Result<DeclaresTarget, FormulationParseError> {
+    if let Ok(form) = parse_form_or_declaration(input) {
+        return Ok(DeclaresTarget::Form(form));
+    }
+
+    parse_refined_declaration_statement(input).map(DeclaresTarget::Declaration)
+}
+
+/// Parses the restricted target of a documented mapping `writing:` rule.
+fn parse_mapping_writing_target(
+    input: &str,
+) -> Result<MappingWritingTarget, FormulationParseError> {
+    if let Ok(form) = parse_form_or_declaration(input)
+        && matches!(form.kind, FormOrDeclarationKind::FunctionDeclaration { .. })
+    {
+        return Ok(MappingWritingTarget::Mapping(form));
+    }
+
+    if let Ok(expression) = parse_expression(input)
+        && matches!(expression.kind, ExpressionKind::FunctionCall { .. })
+    {
+        return Ok(MappingWritingTarget::Invocation(expression));
+    }
+
+    Err(FormulationParseError::custom(
+        "expected a mapping form such as `x(i_)` or its named invocation form such as `x(i)`",
+    ))
+}
+
+/// Parses one or more resource headers from an `entry:` section in `References:`.
+fn parse_required_resource_entry_headers(
+    section: &ProtoSection,
+    tracker: &mut EventLog,
+) -> Option<OneOrMore<ResourceHeader>> {
+    let starting_issue_count = tracker.issue_count();
+    let mut resources = Vec::new();
+
+    for entry in section_entries(section) {
+        let (text, entry_label, row) = match entry {
+            SectionEntry::Inline { text, row } => (text.to_owned(), None, row),
+            SectionEntry::Formulation { text, label, row } => (text.to_owned(), label, row),
+            SectionEntry::Text { text, label, row } => (
+                strip_quoted_text(text).unwrap_or_else(|| text.to_owned()),
+                label,
+                row,
+            ),
+            SectionEntry::Group { row, .. } => {
+                tracker.user_error_at_row(
+                    Some(ORIGIN),
+                    row,
+                    "Expected a resource reference in section `entry`",
+                );
+                continue;
+            }
+        };
+
+        if let Some(lbl) = entry_label {
+            tracker.user_error_at_row(
+                Some(ORIGIN),
+                row,
+                format!("Unexpected label `[{lbl}]` in `entry:`"),
+            );
+        }
+
+        let unquoted = strip_quoted_text(&text).unwrap_or_else(|| text.clone());
+        if let Ok(reference) = parse_resource_header(&unquoted) {
+            resources.push(reference);
+        } else if text.contains(',') {
+            for piece in text.split(',') {
+                let piece = piece.trim();
+                let piece_unquoted = strip_quoted_text(piece).unwrap_or_else(|| piece.to_owned());
+                match parse_resource_header(&piece_unquoted) {
+                    Ok(reference) => resources.push(reference),
+                    Err(error) => tracker.user_error_at_row(
+                        Some(ORIGIN),
+                        row,
+                        format!("Invalid `entry` resource formulation: {error}"),
+                    ),
+                }
+            }
+        } else {
+            match parse_resource_header(&unquoted) {
+                Ok(reference) => resources.push(reference),
+                Err(error) => tracker.user_error_at_row(
+                    Some(ORIGIN),
+                    row,
+                    format!("Invalid `entry` resource formulation: {error}"),
+                ),
+            }
+        }
+    }
+
+    one_or_more(resources.into(), || {
+        if tracker.issue_count() == starting_issue_count {
+            tracker.user_error_at_row(
+                Some(ORIGIN),
+                section.metadata.row,
+                "Expected resource references in `entry`",
+            );
+        }
+    })
+}
+
+/// Parses one or more resource citations or `for:`/`entry:` groups from a `References:` section.
+///
+/// Item-wide references use formulation or quoted entries (`. $book.name`), while
+/// label-targeted references use a nested `for:`/`entry:` group.
+fn parse_required_resource_references(
+    section: &ProtoSection,
+    tracker: &mut EventLog,
+) -> Option<OneOrMore<ReferenceItem>> {
+    let starting_issue_count = tracker.issue_count();
+    let mut references = Vec::new();
+
+    for entry in section_entries(section) {
+        let (text, label, row) = match entry {
+            SectionEntry::Inline { text, row } => (text.to_owned(), None, row),
+            SectionEntry::Formulation { text, label, row } => (text.to_owned(), label, row),
+            SectionEntry::Text { text, label, row } => (
+                strip_quoted_text(text).unwrap_or_else(|| text.to_owned()),
+                label,
+                row,
+            ),
+            SectionEntry::Group { group, .. } => {
+                if let Some(for_group) = parse_reference_for_group(group, tracker) {
+                    references.push(ReferenceItem::ForEntry(for_group));
+                }
+                continue;
+            }
+        };
+
+        if let Some(lbl) = label {
+            tracker.user_error_at_row(
+                Some(ORIGIN),
+                row,
+                format!(
+                    "Labeled `References:` entry `[{lbl}]` is not supported; use `for: (:{lbl}:)` and `entry:`"
+                ),
+            );
+            continue;
+        }
+
+        let text = strip_quoted_text(&text).unwrap_or(text);
+        match parse_resource_header(&text) {
+            Ok(reference) => {
+                references.push(ReferenceItem::Resource(reference));
+            }
+            Err(error) => tracker.user_error_at_row(
+                Some(ORIGIN),
+                row,
+                format!("Invalid References formulation: {error}"),
+            ),
+        }
+    }
+
+    one_or_more(references.into(), || {
+        if tracker.issue_count() == starting_issue_count {
+            tracker.user_error_at_row(
+                Some(ORIGIN),
+                section.metadata.row,
+                "Expected References formulations",
+            );
+        }
+    })
+}
+
+/// Parses zero or more formulations from an optional section.
+///
+/// Inline section arguments and formulation arguments are accepted.  Text and
+/// nested groups are diagnosed because callers requested formulation content.
+/// Parses `specifies:` items: inline `is`/`is … via …` specifications, plus
+/// `have:` groups, optionally with `asserting:`, standing in for a specification.
+fn parse_required_specify_items(
+    section: &ProtoSection,
+    tracker: &mut EventLog,
+) -> Option<OneOrMore<IsOrViaItem>> {
+    let starting_issue_count = tracker.issue_count();
+    let mut result = Vec::new();
+    for entry in section_entries(section) {
+        match entry {
+            SectionEntry::Inline { text, row } => {
+                match parse_is_or_via_item(text) {
+                    Ok(item) => result.push(item),
+                    Err(error) => tracker.user_error_at_row(
+                        Some(ORIGIN),
+                        row,
+                        format!("Invalid specifies formulation: {error}"),
+                    ),
+                }
+            }
+            SectionEntry::Formulation {
+                text,
+                label: entry_label,
+                row,
+            } => {
+                match parse_is_or_via_item(text) {
+                    Ok(mut item) => {
+                        if let Some(lbl) = entry_label {
+                            if matches!(&item, IsOrViaItem::Labeled { .. }) {
+                                tracker.user_error_at_row(
+                                    Some(ORIGIN),
+                                    row,
+                                    format!("Specification already has a label; multiple labels are not permitted"),
+                                );
+                            } else {
+                                match parse_label_header(lbl) {
+                                    Ok(header) => {
+                                        item = IsOrViaItem::Labeled {
+                                            label: Label {
+                                                span: header.span,
+                                                parts: header.parts,
+                                            },
+                                            item: Box::new(item),
+                                        };
+                                    }
+                                    Err(error) => {
+                                        tracker.user_error_at_row(
+                                            Some(ORIGIN),
+                                            row,
+                                            format!("Invalid label `{lbl}`: {error}"),
+                                        );
+                                    }
+                                }
+                            }
+                        }
+                        result.push(item);
+                    }
+                    Err(error) => tracker.user_error_at_row(
+                        Some(ORIGIN),
+                        row,
+                        format!("Invalid specifies formulation: {error}"),
+                    ),
+                }
+            }
+            SectionEntry::Group { group, row } => {
+                if group.sections.first().map(|section| section.label.as_str()) == Some("have") {
+                    if let Some(have) = parse_have_group(group, tracker) {
+                        result.push(IsOrViaItem::Have(Box::new(have)));
+                    }
+                } else {
+                    tracker.user_error_at_row(
+                        Some(ORIGIN),
+                        row,
+                        "Expected a specification or a `have:` group in `specifies`".to_owned(),
+                    );
+                }
+            }
+            SectionEntry::Text { row, .. } => {
+                tracker.user_error_at_row(
+                    Some(ORIGIN),
+                    row,
+                    "Expected formulation in section `specifies`".to_owned(),
+                );
+            }
+        }
+    }
+    one_or_more(result.into(), || {
+        if tracker.issue_count() == starting_issue_count {
+            tracker.user_error_at_row(
+                Some(ORIGIN),
+                section.metadata.row,
+                "Expected specifies formulations".to_owned(),
+            );
+        }
+    })
+}
+
+/// Dispatches a `have:` clause group. `have:`/`iff:` is the shorthand iff
+/// clause; every other `have:` shape is the optionally-asserting escape hatch.
+fn parse_have_or_assertion(group: &ProtoGroup, tracker: &mut EventLog) -> Option<Clause> {
+    let has_assertion_section = group
+        .sections
+        .iter()
+        .any(|section| matches!(section.label.as_str(), "asserting" | "by" | "because"));
+    let has_iff = group.sections.iter().any(|section| section.label == "iff");
+    if has_assertion_section || !has_iff {
+        parse_have_group(group, tracker).map(|group| Clause::Have(Box::new(group)))
+    } else {
+        parse_have_clause(group, tracker).map(Clause::Iff)
+    }
+}
+
+fn parse_definition_requirement(
+    input: &str,
+) -> Result<DefinitionRequirement, FormulationParseError> {
+    let expression = parse_expression(input)?;
+    let ExpressionKind::IsType { subject, ty } = expression.kind else {
+        return Err(FormulationParseError::Custom(
+            "`definition:` must have the form `\\command is <spec>`".to_owned(),
+        ));
+    };
+    let ExpressionKind::Command(command) = subject.kind else {
+        return Err(FormulationParseError::Custom(
+            "`definition:` subject must be a command expression".to_owned(),
+        ));
+    };
+    Ok(DefinitionRequirement { command, ty })
+}
+
+fn parse_numeric_specification(
+    group: &ProtoGroup,
+    label: &str,
+    tracker: &mut EventLog,
+) -> Option<NumericSpecificationGroup> {
+    ensure_no_heading(group, tracker)?;
+    let sections = identify_sections(label, &group.sections, tracker, &[label, "is"])?;
+    ensure_empty_section(section(&sections, label)?, label, tracker);
+    Some(NumericSpecificationGroup {
+        is_: NumericSpecificationIsSection {
+            argument: parse_required_formulation(
+                section(&sections, "is")?,
+                "is",
+                tracker,
+                |input| parse_type_expression(input, false),
+            )?,
+        },
+    })
+}
+
+/// Parses one or more required quoted writing aliases.
+///
+/// Each entry is a double-quoted string whose contents form a `name :~> body`
+/// rule, for example `. "pi :~> \pi"`. Quotes are required because the body to
+/// the right of `:~>` may be arbitrary LaTeX that would otherwise be misparsed
+/// as formulation syntax, and the left-hand side must be a plain `Name`. Shared
+/// by the collection-wide `Writing:` group and each item-level `Writing:` section.
+///
+/// Returns `None` (after reporting the offending entries) if any entry is
+/// unquoted, fails to parse, or uses a non-name left-hand side.
+fn parse_required_writing_aliases(
+    section: &ProtoSection,
+    tracker: &mut EventLog,
+) -> Option<OneOrMore<WritingAlias>> {
+    let starting_issue_count = tracker.issue_count();
+    let mut result = Vec::new();
+    let mut all_valid = true;
+    for entry in section_entries(section) {
+        match entry {
+            SectionEntry::Inline { text, row }
+            | SectionEntry::Text {
+                text,
+                row,
+                ..
+            } => {
+                let Some(inner) = strip_quoted_text(text) else {
+                    tracker.user_error_at_row(
+                        Some(ORIGIN),
+                        row,
+                        format!("Expected a quoted Writing alias, found `{text}`"),
+                    );
+                    all_valid = false;
+                    continue;
+                };
+                match parse_writing_alias(&inner) {
+                    Ok(alias) if matches!(alias.form.kind, FormOrDeclarationKind::Name(_)) => {
+                        result.push(alias);
+                    }
+                    Ok(_) => {
+                        tracker.user_error_at_row(
+                            Some(ORIGIN),
+                            row,
+                            "Writing aliases must use a name on the left of `:~>`",
+                        );
+                        all_valid = false;
+                    }
+                    Err(error) => {
+                        tracker.user_error_at_row(
+                            Some(ORIGIN),
+                            row,
+                            format!("Invalid Writing alias: {error}"),
+                        );
+                        all_valid = false;
+                    }
+                }
+            }
+            SectionEntry::Formulation { row, .. } => {
+                tracker.user_error_at_row(
+                    Some(ORIGIN),
+                    row,
+                    "Expected a quoted Writing alias, found formulation",
+                );
+                all_valid = false;
+            }
+            SectionEntry::Group { row, .. } => {
+                tracker.user_error_at_row(
+                    Some(ORIGIN),
+                    row,
+                    "Expected a quoted Writing alias, found nested group",
+                );
+                all_valid = false;
+            }
+        }
+    }
+    if !all_valid {
+        return None;
+    }
+    one_or_more(result.into(), || {
+        if tracker.issue_count() == starting_issue_count {
+            tracker.user_error_at_row(
+                Some(ORIGIN),
+                section.metadata.row,
+                "Expected Writing aliases",
+            );
+        }
+    })
+}
+
+/// Parses an optional item-level `Writing:` section.
+///
+/// The section appears after `Aliases:` on definition- and result-like items and
+/// overrides, for that item only, how the collection-wide `Writing:` group renders
+/// the named identifiers.
+fn parse_optional_item_writing(
+    sections: &HashMap<String, &ProtoSection>,
+    tracker: &mut EventLog,
+) -> Option<ItemWritingSection> {
+    sections.get("Writing").copied().and_then(|section| {
+        parse_required_writing_aliases(section, tracker)
+            .map(|arguments| ItemWritingSection { arguments })
+    })
+}
+
+fn parse_required_disambiguates_heading(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<FormOrDeclaration> {
+    let Some(raw_heading) = group.heading.as_deref() else {
+        tracker.user_error_at_row(
+            Some(ORIGIN),
+            group.metadata.row,
+            "Expected disambiguation heading",
+        );
+        return None;
+    };
+
+    if raw_heading.contains(':') {
+        tracker.user_error_at_row(
+            Some(ORIGIN),
+            group.metadata.row,
+            "Disambiguates headings cannot use colon-directed operators",
+        );
+        return None;
+    }
+
+    let heading = match parse_form_or_declaration(raw_heading) {
+        Ok(heading) => heading,
+        Err(error) => {
+            tracker.user_error_at_row(
+                Some(ORIGIN),
+                group.metadata.row,
+                format!("Invalid disambiguation heading: {error}"),
+            );
+            return None;
+        }
+    };
+
+    match &heading.kind {
+        FormOrDeclarationKind::FunctionDeclaration { name: None, .. }
+        | FormOrDeclarationKind::InfixOperator { .. }
+        | FormOrDeclarationKind::PrefixOperator { .. }
+        | FormOrDeclarationKind::PostfixOperator { .. } => Some(heading),
+        FormOrDeclarationKind::FunctionDeclaration { name: Some(_), .. } => {
+            tracker.user_error_at_row(
+                Some(ORIGIN),
+                group.metadata.row,
+                "Disambiguates function headings cannot use declaration aliases",
+            );
+            None
+        }
+        FormOrDeclarationKind::Name(_)
+        | FormOrDeclarationKind::MappingParameter { .. }
+        | FormOrDeclarationKind::TupleDeclaration { .. }
+        | FormOrDeclarationKind::SetDeclaration { .. } => {
+            tracker.user_error_at_row(
+                Some(ORIGIN),
+                group.metadata.row,
+                "Disambiguates headings must be operator or function forms",
+            );
+            None
+        }
+    }
+}
+
+fn ensure_empty_section(section: &ProtoSection, label: &str, tracker: &mut EventLog) {
+    for entry in section_entries(section) {
+        let row = match entry {
+            SectionEntry::Inline { row, .. }
+            | SectionEntry::Formulation { row, .. }
+            | SectionEntry::Text { row, .. }
+            | SectionEntry::Group { row, .. } => row,
+        };
+        tracker.user_error_at_row(
+            Some(ORIGIN),
+            row,
+            format!("Section `{label}` does not accept content"),
+        );
+    }
+}
+
+/// Extracts the optional `implicitly:`/`explicitly:` marker from a `Refines:`
+/// group's sections.
+///
+/// Both are zero-argument marker sections and are mutually exclusive; violations
+/// are reported to `tracker` (and the first-declared marker is still returned so
+/// that later semantic checks can proceed).
+fn parse_refinement_kind(
+    sections: &HashMap<String, &ProtoSection>,
+    tracker: &mut EventLog,
+) -> Option<RefinementKind> {
+    let implicitly = section(sections, "implicitly");
+    let explicitly = section(sections, "explicitly");
+
+    for (label, marker) in [("implicitly", implicitly), ("explicitly", explicitly)] {
+        if let Some(marker) = marker
+            && (marker.inline_argument.is_some() || !marker.arguments.is_empty())
+        {
+            tracker.user_error_at_row(
+                Some(ORIGIN),
+                marker.metadata.row,
+                format!("`{label}:` is a marker section and takes no arguments"),
+            );
+        }
+    }
+
+    match (implicitly, explicitly) {
+        (Some(_), Some(explicitly)) => {
+            tracker.user_error_at_row(
+                Some(ORIGIN),
+                explicitly.metadata.row,
+                "A `Refines:` may specify at most one of `implicitly:` or `explicitly:`".to_owned(),
+            );
+            Some(RefinementKind::Implicit)
+        }
+        (Some(_), None) => Some(RefinementKind::Implicit),
+        (None, Some(_)) => Some(RefinementKind::Explicit),
+        (None, None) => None,
+    }
+}
+
+/// Reads a zero-argument marker section such as `abstractly:`, reporting any
+/// content it was given.
+fn parse_marker_section(
+    sections: &HashMap<String, &ProtoSection>,
+    label: &str,
+    tracker: &mut EventLog,
+) -> bool {
+    let Some(marker) = section(sections, label) else {
+        return false;
+    };
+    if marker.inline_argument.is_some() || !marker.arguments.is_empty() {
+        tracker.user_error_at_row(
+            Some(ORIGIN),
+            marker.metadata.row,
+            format!("`{label}:` is a marker section and takes no arguments"),
+        );
+    }
+    true
+}
+
+/// Reports whether a section's single argument is quoted text.
+///
+/// Both top-level `Relation:` subjects and its `specifies:` accept either quoted text
+/// (a `"#topic"`/`"\signature"` reference, or a prose description) or an unquoted
+/// formulation; this routes the section to the matching parser. The inline
+/// argument carries its quotes verbatim, so quoting is detected with
+/// [`strip_quoted_text`].
+fn section_is_quoted_text(section: &ProtoSection) -> bool {
+    match section_entries(section).first() {
+        Some(SectionEntry::Text { .. }) => true,
+        Some(SectionEntry::Inline { text, .. }) => strip_quoted_text(text).is_some(),
+        _ => false,
+    }
+}
+
+/// Parses one endpoint of a `Relation:` (`between:`/`and:` or `from:`/`to:`).
+///
+/// A quoted `"#topic"` or `"\signature"` is a reference (to a topic or a
+/// definition); anything unquoted is parsed as an ordinary refined declaration
+/// such as `a is \real`.
+fn parse_required_relation_subject(
+    section: &ProtoSection,
+    label: &str,
+    tracker: &mut EventLog,
+) -> Option<RelationSubject> {
+    if section_is_quoted_text(section) {
+        parse_required_open_text(section, label, tracker).map(RelationSubject::Reference)
+    } else {
+        parse_required_formulation(section, label, tracker, parse_refined_declaration_statement)
+            .map(|declaration| RelationSubject::Declaration(Box::new(declaration)))
+    }
+}
+
+/// Parses the `specifies:` of a `Relation:`.
+///
+/// A quoted string is a prose description; anything unquoted is parsed as a
+/// logical clause (a statement of what the relationship means).
+fn parse_required_relation_specifies(
+    section: &ProtoSection,
+    tracker: &mut EventLog,
+) -> Option<RelationSpecifies> {
+    if section_is_quoted_text(section) {
+        parse_required_open_text(section, "specifies", tracker).map(RelationSpecifies::Text)
+    } else {
+        parse_required_clause(section, "specifies", tracker)
+            .map(|clause| RelationSpecifies::Statement(Box::new(clause)))
+    }
+}
+
+/// Rejects a name/argument on a theorem-like head section.
+///
+/// `Axiom:`/`Theorem:`/`Conjecture:` do not accept a name;
+/// a result's name belongs in `Documented:` `called:`, matching the definition items.
+fn ensure_no_named_result_arg(section: Option<&ProtoSection>, name: &str, tracker: &mut EventLog) {
+    let Some(section) = section else {
+        return;
+    };
+    if let Some(entry) = section_entries(section).first() {
+        let row = match entry {
+            SectionEntry::Inline { row, .. }
+            | SectionEntry::Formulation { row, .. }
+            | SectionEntry::Text { row, .. }
+            | SectionEntry::Group { row, .. } => *row,
+        };
+        tracker.user_error_at_row(
+            Some(ORIGIN),
+            row,
+            format!(
+                "`{name}:` does not take a name; put the result's name in `Documented:` `called:`"
+            ),
+        );
+    }
+}
+
+// =============================================================================
 
 #[cfg(test)]
 mod tests {

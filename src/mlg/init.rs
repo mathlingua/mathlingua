@@ -9,8 +9,6 @@ use std::fs;
 use std::io::{self, IsTerminal, Write};
 use std::path::Path;
 
-const ORIGIN: &str = "mlg_init";
-
 pub struct InitResult {
     pub event_log: EventLog,
     pub successful: bool,
@@ -95,6 +93,10 @@ pub(super) fn init_in_with(
 
     Ok(())
 }
+
+// =============================================================================
+
+const ORIGIN: &str = "mlg_init";
 
 /// Reconciles an `mlg.json` that already exists.
 ///
@@ -230,7 +232,7 @@ fn describe_fields(fields: &[String]) -> String {
     format!("{noun} {list}")
 }
 
-// ===============================[ tests ]=====================================
+// =============================================================================
 
 #[cfg(test)]
 mod tests {

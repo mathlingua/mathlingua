@@ -13,10 +13,6 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-const ORIGIN: &str = "mlg_export";
-const DATA_DIR: &str = "data";
-const MANIFEST_FILE: &str = "manifest.json";
-
 pub struct ExportResult {
     pub event_log: EventLog,
     pub successful: bool,
@@ -138,6 +134,61 @@ pub(super) fn export_in(
         format!("Exported static site to {}", output.display()),
     );
     Ok(())
+}
+
+// =============================================================================
+
+const ORIGIN: &str = "mlg_export";
+
+const DATA_DIR: &str = "data";
+
+const MANIFEST_FILE: &str = "manifest.json";
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct ExportOptions {
+    base_path: String,
+    cname: Option<String>,
+}
+
+impl ExportOptions {
+    fn new(base_path: Option<&str>, cname: Option<&str>) -> Result<Self, String> {
+        Ok(Self {
+            base_path: normalize_base_path(base_path)?,
+            cname: normalize_cname(cname)?,
+        })
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ExportManifest {
+    schema_version: u32,
+    title: String,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    preface: Vec<GroupView>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    preface_source: Option<String>,
+    directories: Vec<DirectoryView>,
+    files: Vec<ExportFile>,
+    definitions: BTreeMap<String, String>,
+    items: BTreeMap<String, String>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ExportFile {
+    path: String,
+    title: Option<String>,
+    data_path: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ExportPage {
+    path: String,
+    title: Option<String>,
+    source: String,
+    item_ids: Vec<String>,
 }
 
 fn prepare_output_directory(
@@ -393,21 +444,6 @@ fn create_export_session_dir() -> io::Result<PathBuf> {
     Ok(path)
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-struct ExportOptions {
-    base_path: String,
-    cname: Option<String>,
-}
-
-impl ExportOptions {
-    fn new(base_path: Option<&str>, cname: Option<&str>) -> Result<Self, String> {
-        Ok(Self {
-            base_path: normalize_base_path(base_path)?,
-            cname: normalize_cname(cname)?,
-        })
-    }
-}
-
 /// Infers the GitHub Pages base path for the collection rooted at `root`, or `None`
 /// when it cannot be determined (not a git repository, no `origin`, a non-GitHub
 /// remote, or a user/organization site served from the domain root).
@@ -501,39 +537,7 @@ fn normalize_cname(value: Option<&str>) -> Result<Option<String>, String> {
     Ok(Some(trimmed.to_string()))
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct ExportManifest {
-    schema_version: u32,
-    title: String,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    preface: Vec<GroupView>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    preface_source: Option<String>,
-    directories: Vec<DirectoryView>,
-    files: Vec<ExportFile>,
-    definitions: BTreeMap<String, String>,
-    items: BTreeMap<String, String>,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct ExportFile {
-    path: String,
-    title: Option<String>,
-    data_path: String,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct ExportPage {
-    path: String,
-    title: Option<String>,
-    source: String,
-    item_ids: Vec<String>,
-}
-
-// ===============================[ tests ]=====================================
+// =============================================================================
 
 #[cfg(test)]
 mod tests {

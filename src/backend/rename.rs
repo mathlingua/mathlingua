@@ -1,7 +1,6 @@
 use crate::backend::definition::load_collection_files;
 use crate::backend::semantic::{plan_rename, prepare_rename as prepare_rename_in_files};
 use std::path::Path;
-
 pub use crate::backend::semantic::{
     RenameEditPlan as RenameEdit, RenameError, RenamePreparation, RenameSpan,
 };

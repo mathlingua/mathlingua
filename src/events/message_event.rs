@@ -1,5 +1,4 @@
 use std::path::PathBuf;
-
 use super::{Audience, EventLocation, Level};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

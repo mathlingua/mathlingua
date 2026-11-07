@@ -63,6 +63,8 @@ pub fn render_group_markdown(group: &GroupView) -> String {
     out
 }
 
+// =============================================================================
+
 fn render_section_markdown(section: &SectionView, indent: usize, out: &mut String) {
     let pad = "  ".repeat(indent);
     let label = &section.label;
@@ -145,6 +147,8 @@ fn render_argument_markdown(arg: &ArgumentView, indent: usize, out: &mut String)
         }
     }
 }
+
+// =============================================================================
 
 #[cfg(test)]
 mod tests {

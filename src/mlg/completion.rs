@@ -15,7 +15,6 @@
 //! [`crate::frontend::structural::parser`], which are the language's source of
 //! truth for section names, order and optionality. If a group's sections change
 //! there, update the corresponding entry here.
-
 use std::collections::HashSet;
 
 /// What a candidate inserts, so the server can pick the matching LSP
@@ -58,6 +57,56 @@ pub struct Signature {
     /// ...), shown as completion detail.
     pub kind: Option<String>,
 }
+
+/// Compute completions for `text` at the zero-based `line` / `character`
+/// (character counted in Unicode scalar values, which matches LSP offsets for
+/// the ASCII section syntax handled here).
+pub fn complete_with_signatures(
+    text: &str,
+    line: usize,
+    character: usize,
+    signatures: &[Signature],
+) -> Vec<CompletionCandidate> {
+    let lines: Vec<&str> = text.split('\n').collect();
+    if line >= lines.len() {
+        return Vec::new();
+    }
+    let cur = lines[line];
+    let before: String = cur.chars().take(character).collect();
+
+    if let Some(items) = command_completions(&before, signatures) {
+        return items;
+    }
+    if is_bullet_prefix(&before) {
+        return bullet_completions(&lines, line, &before);
+    }
+    section_completions(&lines, line, &before)
+}
+
+/// Harvest the command signatures declared by top-level `[...]` headings in
+/// `text`. A heading is a line whose trimmed form starts with `[` and ends with
+/// `]`; only those whose body starts with `\` (command signatures) are kept.
+pub fn collect_signatures(text: &str) -> Vec<Signature> {
+    let lines: Vec<&str> = text.split('\n').collect();
+    let mut signatures = Vec::new();
+    for (index, line) in lines.iter().enumerate() {
+        let trimmed = line.trim();
+        if trimmed.len() < 2 || !trimmed.starts_with('[') || !trimmed.ends_with(']') {
+            continue;
+        }
+        let inner = trimmed[1..trimmed.len() - 1].trim();
+        if !inner.starts_with('\\') {
+            continue;
+        }
+        signatures.push(Signature {
+            text: inner.to_string(),
+            kind: heading_kind(&lines, index),
+        });
+    }
+    signatures
+}
+
+// =============================================================================
 
 /// One section within a group: its name and whether it is required.
 type Section = (&'static str, bool);
@@ -321,6 +370,7 @@ const THEOREM_LIKE_AXIOM: &[Section] = &[
     ("Metadata", false),
     ("Id", false),
 ];
+
 const THEOREM_LIKE_THEOREM: &[Section] = &[
     ("Theorem", true),
     ("given", false),
@@ -336,6 +386,7 @@ const THEOREM_LIKE_THEOREM: &[Section] = &[
     ("Metadata", false),
     ("Id", false),
 ];
+
 const THEOREM_LIKE_CONJECTURE: &[Section] = &[
     ("Conjecture", true),
     ("given", false),
@@ -350,6 +401,7 @@ const THEOREM_LIKE_CONJECTURE: &[Section] = &[
     ("Metadata", false),
     ("Id", false),
 ];
+
 /// Clause groups that may start inside a clause-valued section (`when:`,
 /// `then:`, `satisfies:`, ...). Mirrors the clause dispatcher in the parser.
 const CLAUSE_STARTERS: &[&str] = &[
@@ -381,32 +433,6 @@ const CLAUSE_SECTIONS: &[&str] = &[
     "specifies",
     "expresses",
 ];
-
-/// For sections whose bullets contain typed item groups, the group labels that
-/// can start there. Mirrors the per-section item dispatchers in the parser.
-fn item_starters(section: &str) -> Option<&'static [&'static str]> {
-    Some(match section {
-        "Documented" => &[
-            "written",
-            "called",
-            "adjective",
-            "writing",
-            "overview",
-            "description",
-            "related",
-            "discoverer",
-            "notes",
-        ],
-        "Enables" => &["capability", "from", "view"],
-        "Requires" => &["capability", "definition"],
-        "Justification" => &["for", "have"],
-        "References" => &["for"],
-        "Metadata" => &["id", "version"],
-        "Aliases" => &["alias"],
-        "Specify" => &["decimal", "zeroOrPositiveInt", "positiveInt", "int"],
-        _ => return None,
-    })
-}
 
 /// Section orders for the nested groups that appear on argument bullets:
 /// clause groups (`forAll:`, `exists:`, ...) and typed item groups (`from:`,
@@ -474,6 +500,32 @@ const NESTED_GROUPS: &[(&str, &[Section])] = &[
     ),
 ];
 
+/// For sections whose bullets contain typed item groups, the group labels that
+/// can start there. Mirrors the per-section item dispatchers in the parser.
+fn item_starters(section: &str) -> Option<&'static [&'static str]> {
+    Some(match section {
+        "Documented" => &[
+            "written",
+            "called",
+            "adjective",
+            "writing",
+            "overview",
+            "description",
+            "related",
+            "discoverer",
+            "notes",
+        ],
+        "Enables" => &["capability", "from", "view"],
+        "Requires" => &["capability", "definition"],
+        "Justification" => &["for", "have"],
+        "References" => &["for"],
+        "Metadata" => &["id", "version"],
+        "Aliases" => &["alias"],
+        "Specify" => &["decimal", "zeroOrPositiveInt", "positiveInt", "int"],
+        _ => return None,
+    })
+}
+
 fn group_spec(head: &str) -> Option<&'static GroupSpec> {
     GROUPS.iter().find(|g| g.head == head)
 }
@@ -492,54 +544,6 @@ fn sections_for(head: &str) -> Option<&'static [Section]> {
 /// All top-level group head labels (used when starting a fresh item).
 fn top_level_heads() -> impl Iterator<Item = &'static str> {
     GROUPS.iter().map(|g| g.head)
-}
-
-/// Compute completions for `text` at the zero-based `line` / `character`
-/// (character counted in Unicode scalar values, which matches LSP offsets for
-/// the ASCII section syntax handled here).
-pub fn complete_with_signatures(
-    text: &str,
-    line: usize,
-    character: usize,
-    signatures: &[Signature],
-) -> Vec<CompletionCandidate> {
-    let lines: Vec<&str> = text.split('\n').collect();
-    if line >= lines.len() {
-        return Vec::new();
-    }
-    let cur = lines[line];
-    let before: String = cur.chars().take(character).collect();
-
-    if let Some(items) = command_completions(&before, signatures) {
-        return items;
-    }
-    if is_bullet_prefix(&before) {
-        return bullet_completions(&lines, line, &before);
-    }
-    section_completions(&lines, line, &before)
-}
-
-/// Harvest the command signatures declared by top-level `[...]` headings in
-/// `text`. A heading is a line whose trimmed form starts with `[` and ends with
-/// `]`; only those whose body starts with `\` (command signatures) are kept.
-pub fn collect_signatures(text: &str) -> Vec<Signature> {
-    let lines: Vec<&str> = text.split('\n').collect();
-    let mut signatures = Vec::new();
-    for (index, line) in lines.iter().enumerate() {
-        let trimmed = line.trim();
-        if trimmed.len() < 2 || !trimmed.starts_with('[') || !trimmed.ends_with(']') {
-            continue;
-        }
-        let inner = trimmed[1..trimmed.len() - 1].trim();
-        if !inner.starts_with('\\') {
-            continue;
-        }
-        signatures.push(Signature {
-            text: inner.to_string(),
-            kind: heading_kind(&lines, index),
-        });
-    }
-    signatures
 }
 
 /// The group label following a heading — the section name on the next line
@@ -956,6 +960,8 @@ fn gather_nested<'a>(
     }
     (head, present_above, present_all)
 }
+
+// =============================================================================
 
 #[cfg(test)]
 mod tests {

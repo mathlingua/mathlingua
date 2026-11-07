@@ -20,8 +20,6 @@ use ratatui::{Frame, Terminal};
 use std::io::{self, Stdout};
 use std::time::Duration;
 
-const ORIGIN: &str = "mlg_debug";
-
 pub struct DebugResult {
     pub event_log: EventLog,
     pub successful: bool,
@@ -47,60 +45,9 @@ pub fn debug(listener: Option<Box<dyn EventLogListener>>) -> DebugResult {
     }
 }
 
-fn run_debug_tui() -> io::Result<()> {
-    enable_raw_mode()?;
-    let mut stdout = io::stdout();
-    if let Err(error) = execute!(stdout, EnterAlternateScreen) {
-        let _ = disable_raw_mode();
-        return Err(error);
-    }
+// =============================================================================
 
-    let backend = CrosstermBackend::new(stdout);
-    let mut terminal = match Terminal::new(backend) {
-        Ok(terminal) => terminal,
-        Err(error) => {
-            let _ = disable_raw_mode();
-            let mut stdout = io::stdout();
-            let _ = execute!(stdout, LeaveAlternateScreen);
-            return Err(error);
-        }
-    };
-    let result = run_app(&mut terminal);
-
-    let raw_mode_result = disable_raw_mode();
-    let leave_result = execute!(terminal.backend_mut(), LeaveAlternateScreen);
-    let cursor_result = terminal.show_cursor();
-
-    result?;
-    raw_mode_result?;
-    leave_result?;
-    cursor_result
-}
-
-fn run_app(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> io::Result<()> {
-    let mut app = DebugApp::default();
-
-    loop {
-        terminal.draw(|frame| draw(frame, &mut app))?;
-
-        if !event::poll(Duration::from_millis(100))? {
-            continue;
-        }
-
-        let TerminalEvent::Key(key) = event::read()? else {
-            continue;
-        };
-        if key.kind != KeyEventKind::Press {
-            continue;
-        }
-
-        if app.handle_key(key) {
-            break;
-        }
-    }
-
-    Ok(())
-}
+const ORIGIN: &str = "mlg_debug";
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 enum DebugMode {
@@ -360,6 +307,94 @@ impl TextBuffer {
     }
 }
 
+struct FormulationAttempt {
+    name: &'static str,
+    parsed: Result<String, ParseError>,
+}
+
+impl FormulationAttempt {
+    fn new<T: std::fmt::Debug>(name: &'static str, result: Result<T, ParseError>) -> Self {
+        Self {
+            name,
+            parsed: result.map(|tree| format!("{tree:#?}")),
+        }
+    }
+
+    fn success(&self) -> Option<FormulationSuccess<'_>> {
+        self.parsed.as_ref().ok().map(|tree| FormulationSuccess {
+            name: self.name,
+            tree,
+        })
+    }
+
+    fn error_summary(&self) -> String {
+        match &self.parsed {
+            Ok(_) => format!("{}: ok", self.name),
+            Err(error) => format!("{}:\n  {}", self.name, indent_lines(&error.to_string(), 2)),
+        }
+    }
+}
+
+struct FormulationSuccess<'a> {
+    name: &'static str,
+    tree: &'a str,
+}
+
+fn run_debug_tui() -> io::Result<()> {
+    enable_raw_mode()?;
+    let mut stdout = io::stdout();
+    if let Err(error) = execute!(stdout, EnterAlternateScreen) {
+        let _ = disable_raw_mode();
+        return Err(error);
+    }
+
+    let backend = CrosstermBackend::new(stdout);
+    let mut terminal = match Terminal::new(backend) {
+        Ok(terminal) => terminal,
+        Err(error) => {
+            let _ = disable_raw_mode();
+            let mut stdout = io::stdout();
+            let _ = execute!(stdout, LeaveAlternateScreen);
+            return Err(error);
+        }
+    };
+    let result = run_app(&mut terminal);
+
+    let raw_mode_result = disable_raw_mode();
+    let leave_result = execute!(terminal.backend_mut(), LeaveAlternateScreen);
+    let cursor_result = terminal.show_cursor();
+
+    result?;
+    raw_mode_result?;
+    leave_result?;
+    cursor_result
+}
+
+fn run_app(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> io::Result<()> {
+    let mut app = DebugApp::default();
+
+    loop {
+        terminal.draw(|frame| draw(frame, &mut app))?;
+
+        if !event::poll(Duration::from_millis(100))? {
+            continue;
+        }
+
+        let TerminalEvent::Key(key) = event::read()? else {
+            continue;
+        };
+        if key.kind != KeyEventKind::Press {
+            continue;
+        }
+
+        if app.handle_key(key) {
+            break;
+        }
+    }
+
+    Ok(())
+}
+
 fn draw(frame: &mut Frame<'_>, app: &mut DebugApp) {
     let layout = Layout::default()
         .direction(Direction::Vertical)
@@ -508,39 +543,6 @@ fn parse_command_header_text(input: &str) -> String {
     }
 }
 
-struct FormulationAttempt {
-    name: &'static str,
-    parsed: Result<String, ParseError>,
-}
-
-impl FormulationAttempt {
-    fn new<T: std::fmt::Debug>(name: &'static str, result: Result<T, ParseError>) -> Self {
-        Self {
-            name,
-            parsed: result.map(|tree| format!("{tree:#?}")),
-        }
-    }
-
-    fn success(&self) -> Option<FormulationSuccess<'_>> {
-        self.parsed.as_ref().ok().map(|tree| FormulationSuccess {
-            name: self.name,
-            tree,
-        })
-    }
-
-    fn error_summary(&self) -> String {
-        match &self.parsed {
-            Ok(_) => format!("{}: ok", self.name),
-            Err(error) => format!("{}:\n  {}", self.name, indent_lines(&error.to_string(), 2)),
-        }
-    }
-}
-
-struct FormulationSuccess<'a> {
-    name: &'static str,
-    tree: &'a str,
-}
-
 fn format_events(events: &[Event]) -> String {
     events
         .iter()
@@ -628,7 +630,7 @@ fn byte_index_for_col(text: &str, col: usize) -> usize {
         .unwrap_or(text.len())
 }
 
-// ===============================[ tests ]=====================================
+// =============================================================================
 
 #[cfg(test)]
 mod tests {

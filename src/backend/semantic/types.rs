@@ -1,11 +1,14 @@
 use super::*;
-
 use std::cell::RefCell;
 
 pub(super) const BUILTIN_EXPRESSION_SIGNATURE: &str = "\\\\expression";
+
 pub(super) const BUILTIN_STATEMENT_SIGNATURE: &str = "\\\\statement";
+
 pub(super) const BUILTIN_SPECIFICATION_SIGNATURE: &str = "\\\\specification";
+
 pub(super) const BUILTIN_TYPE_SIGNATURE: &str = "\\\\type";
+
 pub(super) const BUILTIN_ANYTHING_SIGNATURE: &str = "\\\\anything";
 
 #[derive(Clone, Debug, PartialEq, Eq)]

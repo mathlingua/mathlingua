@@ -6,7 +6,6 @@
 //! finished issue is shown and the user chooses to report it, edit again, or
 //! cancel. Reporting posts through the `gh` CLI when it is available, and
 //! otherwise opens a prefilled issue form in the browser.
-
 use crate::events::{EventLog, EventLogListener};
 use crate::mlg::extract::{check_error_warning, extract_source};
 use crate::mlg::util::no_errors_since;
@@ -15,10 +14,6 @@ use std::io::{self, IsTerminal, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::time::{SystemTime, UNIX_EPOCH};
-
-const ORIGIN: &str = "mlg_report";
-const REPOSITORY: &str = "mathlingua/mathlingua";
-const ISSUE_FORM_URL: &str = "https://github.com/mathlingua/mathlingua/issues/new";
 
 pub struct ReportResult {
     pub event_log: EventLog,
@@ -42,6 +37,67 @@ pub fn report(
     ReportResult {
         event_log,
         successful,
+    }
+}
+
+// =============================================================================
+
+const ORIGIN: &str = "mlg_report";
+
+const REPOSITORY: &str = "mathlingua/mathlingua";
+
+const ISSUE_FORM_URL: &str = "https://github.com/mathlingua/mathlingua/issues/new";
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Choice {
+    Report,
+    Edit,
+    Cancel,
+}
+
+enum GhError {
+    /// `gh` is not installed, so the caller should fall back to the browser.
+    Unavailable,
+    /// `gh` ran but refused — usually because it is not authenticated. Falling
+    /// back would silently discard whatever it was complaining about, so this
+    /// surfaces to the user instead.
+    Failed(String),
+}
+
+/// The longest issue body worth putting in a URL. Browsers and servers cap URL
+/// length well above this, but a body near the cap risks a silent truncation, so
+/// anything larger is replaced with a note.
+const MAX_URL_BODY: usize = 6000;
+
+/// A temp file holding the issue across editor sessions, removed on drop.
+struct ScratchFile {
+    path: PathBuf,
+}
+
+impl ScratchFile {
+    fn create(contents: &str) -> io::Result<Self> {
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_nanos();
+        let path =
+            std::env::temp_dir().join(format!("mlg-report-{}-{unique}.md", std::process::id()));
+        fs::write(&path, contents)?;
+        Ok(Self { path })
+    }
+
+    fn path(&self) -> &Path {
+        &self.path
+    }
+
+    fn read(&self) -> io::Result<String> {
+        fs::read_to_string(&self.path)
+    }
+}
+
+impl Drop for ScratchFile {
+    fn drop(&mut self) {
+        let _ = fs::remove_file(&self.path);
     }
 }
 
@@ -119,8 +175,6 @@ fn report_in(cwd: &Path, ids: &[String], event_log: &mut EventLog) {
     }
 }
 
-// ----------------------------[ issue contents ]-------------------------------
-
 /// The Markdown the editor opens on: a title line, prompts for the user to fill
 /// in, and the extracted MathLingua already fenced and ready to quote.
 fn issue_template(source: &str) -> String {
@@ -193,15 +247,6 @@ fn preview(title: &str, body: &str) -> String {
     format!("{rule}\n{title}\n{rule}\n\n{body}\n\n{rule}")
 }
 
-// ------------------------------[ the prompt ]---------------------------------
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum Choice {
-    Report,
-    Edit,
-    Cancel,
-}
-
 /// Map a typed answer to a choice. Blank input is deliberately not a choice:
 /// posting publicly should never happen by pressing Enter.
 fn parse_choice(input: &str) -> Option<Choice> {
@@ -235,8 +280,6 @@ fn prompt_choice(event_log: &mut EventLog) -> Option<Choice> {
     }
 }
 
-// -------------------------------[ posting ]-----------------------------------
-
 /// Post the issue, preferring `gh` and falling back to a prefilled browser form.
 ///
 /// `gh` carries the whole body regardless of size and needs no browser, so it is
@@ -269,15 +312,6 @@ fn submit(title: &str, body: &str, event_log: &mut EventLog) {
     }
 }
 
-enum GhError {
-    /// `gh` is not installed, so the caller should fall back to the browser.
-    Unavailable,
-    /// `gh` ran but refused — usually because it is not authenticated. Falling
-    /// back would silently discard whatever it was complaining about, so this
-    /// surfaces to the user instead.
-    Failed(String),
-}
-
 fn submit_with_gh(title: &str, body: &str) -> Result<String, GhError> {
     let output = Command::new("gh")
         .args(["issue", "create", "--repo", REPOSITORY, "--title"])
@@ -298,11 +332,6 @@ fn submit_with_gh(title: &str, body: &str) -> Result<String, GhError> {
         message
     }))
 }
-
-/// The longest issue body worth putting in a URL. Browsers and servers cap URL
-/// length well above this, but a body near the cap risks a silent truncation, so
-/// anything larger is replaced with a note.
-const MAX_URL_BODY: usize = 6000;
 
 /// A prefilled "new issue" URL for `title` and `body`.
 fn issue_url(title: &str, body: &str) -> String {
@@ -371,40 +400,6 @@ fn browser_command() -> (&'static str, &'static [&'static str]) {
     }
 }
 
-// -------------------------------[ editing ]-----------------------------------
-
-/// A temp file holding the issue across editor sessions, removed on drop.
-struct ScratchFile {
-    path: PathBuf,
-}
-
-impl ScratchFile {
-    fn create(contents: &str) -> io::Result<Self> {
-        let unique = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_nanos();
-        let path =
-            std::env::temp_dir().join(format!("mlg-report-{}-{unique}.md", std::process::id()));
-        fs::write(&path, contents)?;
-        Ok(Self { path })
-    }
-
-    fn path(&self) -> &Path {
-        &self.path
-    }
-
-    fn read(&self) -> io::Result<String> {
-        fs::read_to_string(&self.path)
-    }
-}
-
-impl Drop for ScratchFile {
-    fn drop(&mut self) {
-        let _ = fs::remove_file(&self.path);
-    }
-}
-
 /// Run the user's editor on `path` and wait for it to exit.
 fn open_editor(path: &Path) -> io::Result<()> {
     let (program, arguments) = editor_command();
@@ -450,7 +445,7 @@ fn default_editor() -> &'static str {
     }
 }
 
-// ===============================[ tests ]=====================================
+// =============================================================================
 
 #[cfg(test)]
 mod tests {

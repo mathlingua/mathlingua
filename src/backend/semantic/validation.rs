@@ -107,63 +107,6 @@ pub(super) fn resolve_definition_signature<'a>(
     Ok(Some(best_signature))
 }
 
-fn placeholder_pattern_rank(
-    pattern: &PlaceholderSignaturePattern,
-    invocation: &PlaceholderInvocation,
-) -> Option<(u8, u8)> {
-    let arity_rank = match pattern.mapping_arity {
-        MappingArity::Exact(count) if count == invocation.mapping_arity => 2,
-        MappingArity::Exact(_) => return None,
-        MappingArity::Variadic => 1,
-    };
-    let selector_rank = if pattern.selectors.len() == 1
-        && pattern.selectors[0] == MappingSelectorPattern::Variadic
-    {
-        1
-    } else {
-        if pattern.selectors.len() != invocation.selected_positions.len() {
-            return None;
-        }
-        let mut rank = 3;
-        for (expected, actual) in pattern.selectors.iter().zip(&invocation.selected_positions) {
-            match expected {
-                MappingSelectorPattern::Exact(position) if position == actual => {}
-                MappingSelectorPattern::Exact(_) => return None,
-                MappingSelectorPattern::Arbitrary => rank = rank.min(2),
-                MappingSelectorPattern::Variadic => return None,
-            }
-        }
-        rank
-    };
-    Some((arity_rank, selector_rank))
-}
-
-fn parse_placeholder_invocation_signature(shape: &SignatureShape) -> Option<PlaceholderInvocation> {
-    let mapping_start = shape.signature.find("{_(")? + 3;
-    let mapping_end = shape.signature[mapping_start..].find(")}")? + mapping_start;
-    let mapping_arity = shape.signature[mapping_start..mapping_end]
-        .parse::<usize>()
-        .ok()?;
-    let selected_positions = shape
-        .signature
-        .match_indices('#')
-        .map(|(index, _)| {
-            let digits = shape.signature[index + 1..]
-                .chars()
-                .take_while(char::is_ascii_digit)
-                .collect::<String>();
-            digits.parse::<usize>().ok()
-        })
-        .collect::<Option<Vec<_>>>()?;
-    let general_signature = shape.fallback_shapes.first()?.signature.clone();
-    Some(PlaceholderInvocation {
-        signature: shape.signature.clone(),
-        general_signature,
-        mapping_arity,
-        selected_positions,
-    })
-}
-
 pub(super) fn argument_groups_match(expected: &[ArgGroupShape], actual: &[ArgGroupShape]) -> bool {
     if actual.len() > expected.len() {
         return false;
@@ -229,7 +172,66 @@ pub(super) fn argument_groups_match(expected: &[ArgGroupShape], actual: &[ArgGro
         .all(|group| group.delimiter == ArgDelimiter::Paren)
 }
 
-// ===============================[ tests ]=====================================
+// =============================================================================
+
+fn placeholder_pattern_rank(
+    pattern: &PlaceholderSignaturePattern,
+    invocation: &PlaceholderInvocation,
+) -> Option<(u8, u8)> {
+    let arity_rank = match pattern.mapping_arity {
+        MappingArity::Exact(count) if count == invocation.mapping_arity => 2,
+        MappingArity::Exact(_) => return None,
+        MappingArity::Variadic => 1,
+    };
+    let selector_rank = if pattern.selectors.len() == 1
+        && pattern.selectors[0] == MappingSelectorPattern::Variadic
+    {
+        1
+    } else {
+        if pattern.selectors.len() != invocation.selected_positions.len() {
+            return None;
+        }
+        let mut rank = 3;
+        for (expected, actual) in pattern.selectors.iter().zip(&invocation.selected_positions) {
+            match expected {
+                MappingSelectorPattern::Exact(position) if position == actual => {}
+                MappingSelectorPattern::Exact(_) => return None,
+                MappingSelectorPattern::Arbitrary => rank = rank.min(2),
+                MappingSelectorPattern::Variadic => return None,
+            }
+        }
+        rank
+    };
+    Some((arity_rank, selector_rank))
+}
+
+fn parse_placeholder_invocation_signature(shape: &SignatureShape) -> Option<PlaceholderInvocation> {
+    let mapping_start = shape.signature.find("{_(")? + 3;
+    let mapping_end = shape.signature[mapping_start..].find(")}")? + mapping_start;
+    let mapping_arity = shape.signature[mapping_start..mapping_end]
+        .parse::<usize>()
+        .ok()?;
+    let selected_positions = shape
+        .signature
+        .match_indices('#')
+        .map(|(index, _)| {
+            let digits = shape.signature[index + 1..]
+                .chars()
+                .take_while(char::is_ascii_digit)
+                .collect::<String>();
+            digits.parse::<usize>().ok()
+        })
+        .collect::<Option<Vec<_>>>()?;
+    let general_signature = shape.fallback_shapes.first()?.signature.clone();
+    Some(PlaceholderInvocation {
+        signature: shape.signature.clone(),
+        general_signature,
+        mapping_arity,
+        selected_positions,
+    })
+}
+
+// =============================================================================
 
 #[cfg(test)]
 mod tests {

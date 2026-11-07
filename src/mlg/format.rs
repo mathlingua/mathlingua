@@ -9,8 +9,6 @@ use std::fs;
 use std::io;
 use std::path::Path;
 
-const ORIGIN: &str = "mlg_format";
-
 pub struct FormatResult {
     pub event_log: EventLog,
     pub successful: bool,
@@ -33,31 +31,6 @@ pub fn format(cwd: &Path, listener: Option<Box<dyn EventLogListener>>) -> Format
         event_log,
         successful,
     }
-}
-
-fn format_in(cwd: &Path, event_log: &mut EventLog) -> io::Result<()> {
-    let start = cwd.canonicalize().unwrap_or_else(|_| cwd.to_path_buf());
-    let Some(root) = find_collection_root(&start) else {
-        event_log.user_error(
-            Some(ORIGIN),
-            "Could not find an mlg.json; run `mlg format` inside a Mathlingua collection",
-        );
-        return Err(io::Error::other("no collection root"));
-    };
-
-    let Some(formatted) = format_collection(&root, event_log, ORIGIN) else {
-        return Err(io::Error::other("stale margin field"));
-    };
-
-    event_log.user_log(
-        Some(ORIGIN),
-        match formatted {
-            0 => "Nothing to format".to_string(),
-            1 => "Formatted 1 file".to_string(),
-            n => format!("Formatted {n} files"),
-        },
-    );
-    Ok(())
 }
 
 /// Format every source file of the collection rooted at `root`, returning how
@@ -97,6 +70,55 @@ pub(super) fn format_collection(
     }
 
     Some(formatted)
+}
+
+// =============================================================================
+
+const ORIGIN: &str = "mlg_format";
+
+/// One unit of a text value for reflow: a whitespace-delimited word (with math
+/// blobs kept whole, so their internal spaces don't split it), a paragraph break,
+/// a Markdown code fence, or a Markdown list item. A `Fence` carries its lines
+/// dedented to the fence's own base indentation, so the reflow re-indents them to the
+/// value's content column while preserving the relative layout the author gave the
+/// fenced content. A `ListItem` carries its nesting (extra indent past the content
+/// column, so nested lists keep their level), its normalized marker (e.g. `* ` or
+/// `1. `), and its content words, so the reflow wraps the item to the margin with
+/// continuation lines hanging-indented past the marker.
+enum Piece {
+    Word(String),
+    Paragraph,
+    Fence(Vec<String>),
+    ListItem {
+        nesting: usize,
+        marker: String,
+        words: Vec<String>,
+    },
+}
+
+fn format_in(cwd: &Path, event_log: &mut EventLog) -> io::Result<()> {
+    let start = cwd.canonicalize().unwrap_or_else(|_| cwd.to_path_buf());
+    let Some(root) = find_collection_root(&start) else {
+        event_log.user_error(
+            Some(ORIGIN),
+            "Could not find an mlg.json; run `mlg format` inside a Mathlingua collection",
+        );
+        return Err(io::Error::other("no collection root"));
+    };
+
+    let Some(formatted) = format_collection(&root, event_log, ORIGIN) else {
+        return Err(io::Error::other("stale margin field"));
+    };
+
+    event_log.user_log(
+        Some(ORIGIN),
+        match formatted {
+            0 => "Nothing to format".to_string(),
+            1 => "Formatted 1 file".to_string(),
+            n => format!("Formatted {n} files"),
+        },
+    );
+    Ok(())
 }
 
 /// The `margin` from `mlg.json`, or the default when unset/unreadable.
@@ -248,26 +270,6 @@ fn reflow_inline_text(
     let first_prefix = &open_line[..content_col];
     let replacement = reflow_text(&content_lines, first_prefix, content_col, margin, is_triple)?;
     Some((row, close_row, replacement))
-}
-
-/// One unit of a text value for reflow: a whitespace-delimited word (with math
-/// blobs kept whole, so their internal spaces don't split it), a paragraph break,
-/// a Markdown code fence, or a Markdown list item. A `Fence` carries its lines
-/// dedented to the fence's own base indentation, so the reflow re-indents them to the
-/// value's content column while preserving the relative layout the author gave the
-/// fenced content. A `ListItem` carries its nesting (extra indent past the content
-/// column, so nested lists keep their level), its normalized marker (e.g. `* ` or
-/// `1. `), and its content words, so the reflow wraps the item to the margin with
-/// continuation lines hanging-indented past the marker.
-enum Piece {
-    Word(String),
-    Paragraph,
-    Fence(Vec<String>),
-    ListItem {
-        nesting: usize,
-        marker: String,
-        words: Vec<String>,
-    },
 }
 
 /// Reflows text content into lines that fit within `margin`, treating math blobs
@@ -854,7 +856,7 @@ fn trailing_quote_is_escaped(text: &str) -> bool {
     backslashes % 2 == 1
 }
 
-// ===============================[ tests ]=====================================
+// =============================================================================
 
 #[cfg(test)]
 mod tests {

@@ -1,5 +1,4 @@
 use std::fmt;
-
 use logos::Logos;
 
 #[derive(Default, Clone, Debug, PartialEq, Eq)]
@@ -216,6 +215,8 @@ pub enum Token {
     #[token("@")]
     At,
 }
+
+// =============================================================================
 
 fn plain_named_operator(lex: &mut logos::Lexer<'_, Token>) -> String {
     let slice = lex.slice();

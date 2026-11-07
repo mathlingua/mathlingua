@@ -25,10 +25,6 @@ pub const DEFAULT_OUTPUT_DIR: &str = "docs";
 /// them in with their defaults.
 pub const CONFIG_FIELDS: [&str; 5] = ["name", "version", "margin", "formatOnCheck", "outputDir"];
 
-/// The former name of the `margin` field, still recognized so that a collection
-/// carrying it is told to rename rather than silently losing its setting.
-const LEGACY_MARGIN_FIELD: &str = "print_margin";
-
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Config {
@@ -83,6 +79,18 @@ impl Config {
     }
 }
 
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            name: String::new(),
+            version: default_version(),
+            margin: Some(DEFAULT_MARGIN),
+            format_on_check: Some(DEFAULT_FORMAT_ON_CHECK),
+            output_dir: Some(DEFAULT_OUTPUT_DIR.to_string()),
+        }
+    }
+}
+
 /// Whether `dir` is a safe output directory: a non-empty relative path that stays
 /// within the collection root (not absolute, no `..` components). This guards the
 /// destructive `mlg clean`/`mlg export` from an empty value (which would target the
@@ -107,33 +115,6 @@ pub fn load_config(root: &Path) -> Config {
         .ok()
         .and_then(|contents| serde_json::from_str::<Config>(&contents).ok())
         .unwrap_or_default()
-}
-
-fn default_version() -> String {
-    "0".to_string()
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            name: String::new(),
-            version: default_version(),
-            margin: Some(DEFAULT_MARGIN),
-            format_on_check: Some(DEFAULT_FORMAT_ON_CHECK),
-            output_dir: Some(DEFAULT_OUTPUT_DIR.to_string()),
-        }
-    }
-}
-
-/// The default value of every config field, as a JSON object.
-///
-/// Derived from [`Config::default`] so the written defaults and the in-memory
-/// ones can never drift apart.
-fn default_field_values() -> serde_json::Map<String, serde_json::Value> {
-    match serde_json::to_value(Config::default()) {
-        Ok(serde_json::Value::Object(map)) => map,
-        _ => unreachable!("Config serializes to a JSON object"),
-    }
 }
 
 /// Parses `contents` as the JSON object an `mlg.json` should be, or `None` when
@@ -301,6 +282,27 @@ pub fn validate_config_file(path: &Path, event_log: &mut EventLog, origin: &str)
     }
 }
 
+// =============================================================================
+
+/// The former name of the `margin` field, still recognized so that a collection
+/// carrying it is told to rename rather than silently losing its setting.
+const LEGACY_MARGIN_FIELD: &str = "print_margin";
+
+fn default_version() -> String {
+    "0".to_string()
+}
+
+/// The default value of every config field, as a JSON object.
+///
+/// Derived from [`Config::default`] so the written defaults and the in-memory
+/// ones can never drift apart.
+fn default_field_values() -> serde_json::Map<String, serde_json::Value> {
+    match serde_json::to_value(Config::default()) {
+        Ok(serde_json::Value::Object(map)) => map,
+        _ => unreachable!("Config serializes to a JSON object"),
+    }
+}
+
 fn report_missing_field(field: &str, path: &Path, event_log: &mut EventLog, origin: &str) {
     event_log.user_error_at_path(
         Some(origin),
@@ -327,7 +329,7 @@ fn validate_string_field(
     }
 }
 
-// ===============================[ tests ]=====================================
+// =============================================================================
 
 #[cfg(test)]
 mod tests {

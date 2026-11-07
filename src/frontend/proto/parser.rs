@@ -2,9 +2,6 @@ use super::ast::{Argument, Formulation, Group, Section, TextLiteral, extract_lin
 use super::lexer::Lexer;
 use crate::events::EventLog;
 
-const MULTILINE_FORMULATION_DELIMITERS: [(&str, &str); 4] =
-    [("(", ")"), ("[", "]"), ("{", "}"), ("(.", ".)")];
-
 pub struct Parser<'a> {
     lexer: Lexer<'a>,
 }
@@ -395,6 +392,11 @@ impl<'a> Parser<'a> {
     }
 }
 
+// =============================================================================
+
+const MULTILINE_FORMULATION_DELIMITERS: [(&str, &str); 4] =
+    [("(", ")"), ("[", "]"), ("{", "}"), ("(.", ".)")];
+
 /// Finds the colon that separates a section label from its inline argument.
 ///
 /// Formulation operators such as `::=`, `:=`, `:?`, `:->`, `:<->:`, `:=>`, `:~>`, and command tails
@@ -490,7 +492,7 @@ fn is_single_quoted_formulation(text: &str) -> bool {
     text.len() >= 2 && text.starts_with('\'') && text.ends_with('\'')
 }
 
-// ===============================[ tests ]=====================================
+// =============================================================================
 
 #[cfg(test)]
 mod tests {

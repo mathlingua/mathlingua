@@ -219,6 +219,8 @@ impl Drop for EventConsoleWriter {
     }
 }
 
+// =============================================================================
+
 struct RenderedEvent {
     text: String,
     destination: ConsoleDestination,
@@ -358,7 +360,7 @@ fn display_relative_path(path: &Path) -> String {
     }
 }
 
-// ===============================[ tests ]=====================================
+// =============================================================================
 
 #[cfg(test)]
 mod tests {

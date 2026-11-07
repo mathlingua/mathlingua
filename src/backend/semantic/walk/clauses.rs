@@ -144,6 +144,8 @@ pub(in crate::backend::semantic) fn walk_clause(
     }
 }
 
+// =============================================================================
+
 fn walk_binding_or_spec(item: &BindingOrSpec, visit: &mut impl FnMut(&SignatureShape)) {
     match item {
         BindingOrSpec::Declaration(statement) => walk_declaration_statement(statement, visit),

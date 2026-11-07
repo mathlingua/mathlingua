@@ -7,10 +7,8 @@ pub use model::{
 };
 pub use render::{RenderRegistry, build_render_registry};
 pub(crate) use latex::check_collection_latex;
-
 mod builder;
 pub(crate) mod latex;
 mod markdown;
 mod model;
 mod render;
-

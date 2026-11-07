@@ -6,9 +6,6 @@ use std::path::{Path, PathBuf};
 use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-const POLL_INTERVAL: Duration = Duration::from_millis(250);
-const SETTLE_INTERVAL: Duration = Duration::from_millis(100);
-
 pub(super) struct SourceWatcher {
     cwd: PathBuf,
     extra_paths: Vec<PathBuf>,
@@ -77,6 +74,12 @@ impl SourceWatcher {
         }
     }
 }
+
+// =============================================================================
+
+const POLL_INTERVAL: Duration = Duration::from_millis(250);
+
+const SETTLE_INTERVAL: Duration = Duration::from_millis(100);
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 struct SourceFingerprint {
@@ -190,7 +193,7 @@ fn file_fingerprint_from_metadata(path: &Path, metadata: &fs::Metadata) -> FileF
     }
 }
 
-// ===============================[ tests ]=====================================
+// =============================================================================
 
 #[cfg(test)]
 mod tests {

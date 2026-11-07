@@ -6,20 +6,6 @@ use crate::frontend::{
 use std::collections::{BTreeSet, HashMap};
 use std::path::{Path, PathBuf};
 
-/// The top-level item kinds that participate in the release dependency graph as
-/// *definitions*. A change to one of these re-versions the definitions it uses;
-/// other kinds (page content, people, resources, and theorem-like items) are
-/// versioned on their own content but never propagate.
-const DEFINITION_KINDS: [&str; 7] = [
-    "Defines",
-    "Realizes",
-    "Declares",
-    "States",
-    "Refines",
-    "Disambiguates",
-    "Equivalent",
-];
-
 /// A single top-level item as seen by `mlg release`.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct ReleaseItem {
@@ -43,19 +29,6 @@ pub(crate) struct ReleaseItem {
     pub(crate) is_definition: bool,
     /// Ids of the definitions this item uses, deduplicated and excluding itself.
     pub(crate) uses: Vec<String>,
-}
-
-struct RawItem {
-    id: Option<String>,
-    path: PathBuf,
-    kind: String,
-    header: Option<String>,
-    preview: Option<String>,
-    source: String,
-    start_byte: usize,
-    end_byte: usize,
-    start_row: usize,
-    end_row: usize,
 }
 
 /// Build the ordered list of every top-level item in the collection, together
@@ -133,6 +106,62 @@ pub(crate) fn build_release_items(files: &[ParsedSourceFile]) -> Vec<ReleaseItem
         .collect()
 }
 
+/// The source slice of the top-level item whose `Id:` value is `id` within
+/// `source`, using the same slicing as [`build_release_items`]. Returns `None`
+/// when no top-level item in `source` has that id (for example a since-added
+/// item that did not exist in an earlier revision). Used to recover an item's
+/// previous contents for `mlg release --diff`.
+pub(crate) fn item_source_by_id(source: &str, id: &str) -> Option<String> {
+    let mut proto_log = EventLog::new();
+    let groups = ProtoParser::new(source, &mut proto_log).parse();
+    let lines = source.split('\n').collect::<Vec<_>>();
+    let line_count = lines.len();
+
+    for (index, group) in groups.iter().enumerate() {
+        if top_level_group_id(group).as_deref() != Some(id) {
+            continue;
+        }
+        let start_row = group.metadata.row.min(line_count);
+        let end_row = groups
+            .get(index + 1)
+            .map(|next| next.metadata.row)
+            .unwrap_or(line_count)
+            .min(line_count);
+        return Some(slice_item_source(&lines, start_row, end_row));
+    }
+
+    None
+}
+
+// =============================================================================
+
+/// The top-level item kinds that participate in the release dependency graph as
+/// *definitions*. A change to one of these re-versions the definitions it uses;
+/// other kinds (page content, people, resources, and theorem-like items) are
+/// versioned on their own content but never propagate.
+const DEFINITION_KINDS: [&str; 7] = [
+    "Defines",
+    "Realizes",
+    "Declares",
+    "States",
+    "Refines",
+    "Disambiguates",
+    "Equivalent",
+];
+
+struct RawItem {
+    id: Option<String>,
+    path: PathBuf,
+    kind: String,
+    header: Option<String>,
+    preview: Option<String>,
+    source: String,
+    start_byte: usize,
+    end_byte: usize,
+    start_row: usize,
+    end_row: usize,
+}
+
 fn append_file_items(file: &ParsedSourceFile, raw_items: &mut Vec<RawItem>) {
     let mut proto_log = EventLog::new();
     let groups = ProtoParser::new(&file.source, &mut proto_log).parse();
@@ -195,33 +224,6 @@ fn item_preview(group: &ProtoGroup) -> Option<String> {
     crate::frontend::strip_quoted_text(trimmed)
 }
 
-/// The source slice of the top-level item whose `Id:` value is `id` within
-/// `source`, using the same slicing as [`build_release_items`]. Returns `None`
-/// when no top-level item in `source` has that id (for example a since-added
-/// item that did not exist in an earlier revision). Used to recover an item's
-/// previous contents for `mlg release --diff`.
-pub(crate) fn item_source_by_id(source: &str, id: &str) -> Option<String> {
-    let mut proto_log = EventLog::new();
-    let groups = ProtoParser::new(source, &mut proto_log).parse();
-    let lines = source.split('\n').collect::<Vec<_>>();
-    let line_count = lines.len();
-
-    for (index, group) in groups.iter().enumerate() {
-        if top_level_group_id(group).as_deref() != Some(id) {
-            continue;
-        }
-        let start_row = group.metadata.row.min(line_count);
-        let end_row = groups
-            .get(index + 1)
-            .map(|next| next.metadata.row)
-            .unwrap_or(line_count)
-            .min(line_count);
-        return Some(slice_item_source(&lines, start_row, end_row));
-    }
-
-    None
-}
-
 fn line_start_offsets(source: &str) -> Vec<usize> {
     let mut starts = vec![0usize];
     for (index, byte) in source.bytes().enumerate() {
@@ -250,7 +252,7 @@ fn is_trailing_source_gap(line: &str) -> bool {
     trimmed.is_empty() || trimmed.starts_with("--")
 }
 
-// ===============================[ tests ]=====================================
+// =============================================================================
 
 #[cfg(test)]
 mod tests {

@@ -1,9 +1,5 @@
 use crate::events::{EventLog, EventLogListener};
 
-const VERSION: &str = env!("CARGO_PKG_VERSION");
-const NAME: &str = env!("CARGO_PKG_NAME");
-const ORIGIN: &str = "mlg_version";
-
 pub struct VersionResult {
     pub event_log: EventLog,
     pub successful: bool,
@@ -33,7 +29,15 @@ pub(super) fn emit_version(event_log: &mut EventLog) {
     event_log.user_log(Some(ORIGIN), format!("{NAME}: {VERSION}"));
 }
 
-// ===============================[ tests ]=====================================
+// =============================================================================
+
+const VERSION: &str = env!("CARGO_PKG_VERSION");
+
+const NAME: &str = env!("CARGO_PKG_NAME");
+
+const ORIGIN: &str = "mlg_version";
+
+// =============================================================================
 
 #[cfg(test)]
 mod tests {

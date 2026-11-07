@@ -17,9 +17,6 @@ use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::{LazyLock, Mutex};
 
-static KATEX_CACHE: LazyLock<Mutex<HashMap<String, Result<(), String>>>> =
-    LazyLock::new(|| Mutex::new(HashMap::new()));
-
 /// Validates whether a rendered LaTeX string can be parsed by KaTeX.
 pub fn validate_latex(latex: &str) -> Result<(), String> {
     let trimmed = latex.trim();
@@ -52,15 +49,6 @@ pub fn validate_latex(latex: &str) -> Result<(), String> {
     result
 }
 
-fn clean_katex_error(err: &katex::Error) -> String {
-    let msg = err.to_string();
-    if let Some(pos) = msg.find("KaTeX parse error:") {
-        msg[pos..].trim().to_string()
-    } else {
-        msg.trim().to_string()
-    }
-}
-
 /// Checks all files in the collection for LaTeX errors that would occur during an `mlg view`.
 pub(crate) fn check_collection_latex(
     collection: &SourceCollection,
@@ -73,6 +61,101 @@ pub(crate) fn check_collection_latex(
 
     for file in collection.all_parsed_files() {
         check_file_latex(file, render_registry, filter, event_log, origin, &mut seen);
+    }
+}
+
+// =============================================================================
+
+static KATEX_CACHE: LazyLock<Mutex<HashMap<String, Result<(), String>>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
+
+enum TextMathFragment<'a> {
+    MathLingua {
+        source: &'a str,
+        start_offset: usize,
+        #[allow(dead_code)]
+        is_display: bool,
+    },
+    TheoremRef {
+        source: &'a str,
+        start_offset: usize,
+    },
+    RawLatex {
+        latex: &'a str,
+        start_offset: usize,
+        #[allow(dead_code)]
+        is_display: bool,
+    },
+}
+
+#[derive(Clone, Debug)]
+struct FoundCommand {
+    name: String,
+    span: Span,
+    rendered_latex: Option<String>,
+}
+
+struct SourceLocator<'a> {
+    source: &'a str,
+    line_offsets: Vec<usize>,
+}
+
+impl<'a> SourceLocator<'a> {
+    fn new(source: &'a str) -> Self {
+        let mut line_offsets = vec![0];
+        for (i, b) in source.bytes().enumerate() {
+            if b == b'\n' {
+                line_offsets.push(i + 1);
+            }
+        }
+        Self { source, line_offsets }
+    }
+
+    fn line_offset(&self, row: usize) -> usize {
+        self.line_offsets.get(row).copied().unwrap_or(0)
+    }
+
+    fn offset_to_row_col(&self, offset: usize) -> (usize, usize) {
+        let offset = offset.min(self.source.len());
+        let row = match self.line_offsets.binary_search(&offset) {
+            Ok(exact) => exact,
+            Err(next) => next.saturating_sub(1),
+        };
+        let line_start = self.line_offsets[row];
+        let col = offset.saturating_sub(line_start);
+        (row, col)
+    }
+
+    fn find_on_or_after_row(&self, start_row: usize, needle: &str) -> Option<usize> {
+        if needle.is_empty() {
+            return None;
+        }
+        let start_offset = self.line_offsets.get(start_row).copied().unwrap_or(0);
+        self.source[start_offset..]
+            .find(needle)
+            .map(|pos| start_offset + pos)
+    }
+
+    fn find_column_on_row(&self, row: usize, needle: &str) -> usize {
+        if needle.is_empty() {
+            return 0;
+        }
+        let line_start = self.line_offset(row);
+        let line_end = self.line_offsets.get(row + 1).map(|&o| o.saturating_sub(1)).unwrap_or(self.source.len());
+        if line_start >= self.source.len() {
+            return 0;
+        }
+        let line = &self.source[line_start..line_end];
+        line.find(needle).unwrap_or(0)
+    }
+}
+
+fn clean_katex_error(err: &katex::Error) -> String {
+    let msg = err.to_string();
+    if let Some(pos) = msg.find("KaTeX parse error:") {
+        msg[pos..].trim().to_string()
+    } else {
+        msg.trim().to_string()
     }
 }
 
@@ -458,27 +541,6 @@ fn unquote_str(text: &str) -> String {
     }
 }
 
-// ===============================[ Math Fragments ]=============================
-
-enum TextMathFragment<'a> {
-    MathLingua {
-        source: &'a str,
-        start_offset: usize,
-        #[allow(dead_code)]
-        is_display: bool,
-    },
-    TheoremRef {
-        source: &'a str,
-        start_offset: usize,
-    },
-    RawLatex {
-        latex: &'a str,
-        start_offset: usize,
-        #[allow(dead_code)]
-        is_display: bool,
-    },
-}
-
 fn scan_text_math_fragments<'a>(text: &'a str) -> Vec<TextMathFragment<'a>> {
     let mut fragments = Vec::new();
     let mut index = 0;
@@ -558,15 +620,6 @@ fn scan_text_math_fragments<'a>(text: &'a str) -> Vec<TextMathFragment<'a>> {
     }
 
     fragments
-}
-
-// ===============================[ Command Collector ]===========================
-
-#[derive(Clone, Debug)]
-struct FoundCommand {
-    name: String,
-    span: Span,
-    rendered_latex: Option<String>,
 }
 
 fn chain_to_name(chain: &Chain) -> String {
@@ -823,64 +876,7 @@ fn find_failing_command(
     None
 }
 
-// ===============================[ Source Locator ]==============================
-
-struct SourceLocator<'a> {
-    source: &'a str,
-    line_offsets: Vec<usize>,
-}
-
-impl<'a> SourceLocator<'a> {
-    fn new(source: &'a str) -> Self {
-        let mut line_offsets = vec![0];
-        for (i, b) in source.bytes().enumerate() {
-            if b == b'\n' {
-                line_offsets.push(i + 1);
-            }
-        }
-        Self { source, line_offsets }
-    }
-
-    fn line_offset(&self, row: usize) -> usize {
-        self.line_offsets.get(row).copied().unwrap_or(0)
-    }
-
-    fn offset_to_row_col(&self, offset: usize) -> (usize, usize) {
-        let offset = offset.min(self.source.len());
-        let row = match self.line_offsets.binary_search(&offset) {
-            Ok(exact) => exact,
-            Err(next) => next.saturating_sub(1),
-        };
-        let line_start = self.line_offsets[row];
-        let col = offset.saturating_sub(line_start);
-        (row, col)
-    }
-
-    fn find_on_or_after_row(&self, start_row: usize, needle: &str) -> Option<usize> {
-        if needle.is_empty() {
-            return None;
-        }
-        let start_offset = self.line_offsets.get(start_row).copied().unwrap_or(0);
-        self.source[start_offset..]
-            .find(needle)
-            .map(|pos| start_offset + pos)
-    }
-
-    fn find_column_on_row(&self, row: usize, needle: &str) -> usize {
-        if needle.is_empty() {
-            return 0;
-        }
-        let line_start = self.line_offset(row);
-        let line_end = self.line_offsets.get(row + 1).map(|&o| o.saturating_sub(1)).unwrap_or(self.source.len());
-        if line_start >= self.source.len() {
-            return 0;
-        }
-        let line = &self.source[line_start..line_end];
-        line.find(needle).unwrap_or(0)
-    }
-}
-
-// ===============================[ Tests ]=======================================
+// =============================================================================
 
 #[cfg(test)]
 mod tests {

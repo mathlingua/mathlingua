@@ -98,6 +98,458 @@ pub(super) fn collect_definition_type_metadata(
         .insert(header_shape.shape.signature.clone(), info);
 }
 
+pub(super) fn disambiguation_rule_from_item(item: &TopLevelItem) -> Option<DisambiguationRule> {
+    let TopLevelItem::Disambiguates(group) = item else {
+        return None;
+    };
+
+    let (key, parameters) = disambiguation_key_and_parameters(&group.heading)?;
+    let branches = group
+        .branches
+        .iter()
+        .map(|branch| {
+            let mut context = TypeContext::default();
+            declare_form_or_declaration(&group.heading, &mut context);
+            for clause in &branch.when.arguments {
+                collect_clause_assumptions(clause, &mut context);
+            }
+            let requirements = context
+                .facts
+                .iter()
+                .map(|fact| context.normalize_fact(fact))
+                .collect();
+            DisambiguationBranch {
+                requirements,
+                substitutions: context.substitutions,
+                to: branch.to.argument.clone(),
+            }
+        })
+        .collect();
+
+    Some(DisambiguationRule {
+        key,
+        parameters,
+        branches,
+        else_expression: group.else_.as_ref().map(|section| section.argument.clone()),
+    })
+}
+
+pub(super) fn validate_document_types(
+    file: &ParsedSourceFile,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    let mut locator = SourceLocator::new(&file.source);
+    // The semantic AST intentionally reduces prose values to `OpenText`. Keep
+    // the proto groups alongside it so every quoted text position (including
+    // nested documentation and proof items) can be checked uniformly.
+    let mut proto_log = EventLog::new();
+    let proto_groups = ProtoParser::new(&file.source, &mut proto_log).parse();
+    for (index, item) in file.document.items.iter().enumerate() {
+        begin_type_info_item(file, index, registry);
+        validate_top_level_item_types(
+            item,
+            proto_groups.get(index),
+            file.path.as_path(),
+            &mut locator,
+            registry,
+            event_log,
+        );
+    }
+}
+
+// =============================================================================
+
+struct CapabilityAliasRef<'a> {
+    alias: &'a AliasKind,
+    source_subject: Option<String>,
+    source_requires_literal: bool,
+}
+
+/// The definition kinds a top-level `Equivalent:` may group.
+const EQUIVALENT_MEMBER_KINDS: [DefinitionKind; 4] = [
+    DefinitionKind::Declares,
+    DefinitionKind::Defines,
+    DefinitionKind::States,
+    DefinitionKind::Refines,
+];
+
+/// One `to:` command of an `Equivalent:` item, as needed for validation.
+struct EquivalentMember<'a> {
+    signature: String,
+    /// The header parameters used as arguments, in order — `Some` only when every
+    /// argument was a bare header parameter (so a `when:` check is meaningful).
+    actuals: Option<Vec<String>>,
+    command_context: Option<&'a CommandContext>,
+}
+
+#[derive(Clone)]
+struct ScopedTextFrame {
+    name: Option<String>,
+    context: TypeContext,
+}
+
+struct TheoremLikeSections<'a> {
+    heading: Option<&'a CommandHeader>,
+    given: Option<&'a GivenSection>,
+    where_: Option<&'a WhereSection>,
+    then: &'a ThenSection,
+    iff: Option<&'a IffSection>,
+    aliases: Option<&'a AliasesSection>,
+    proto_group: Option<&'a ProtoGroup>,
+}
+
+impl<'a> TheoremLikeSections<'a> {
+    fn new(
+        heading: Option<&'a CommandHeader>,
+        given: Option<&'a GivenSection>,
+        where_: Option<&'a WhereSection>,
+        then: &'a ThenSection,
+        iff: Option<&'a IffSection>,
+        aliases: Option<&'a AliasesSection>,
+        proto_group: Option<&'a ProtoGroup>,
+    ) -> Self {
+        Self {
+            heading,
+            given,
+            where_,
+            then,
+            iff,
+            aliases,
+            proto_group,
+        }
+    }
+}
+
+/// Reports each target symbol whose type a `Declares` group states more than
+/// once, except when a later specification adds a refinement to the same base
+/// type.
+///
+/// A symbol carries one type, so stating it twice is redundant at best and
+/// contradictory at worst. The usual case is a `via` that already types a
+/// component — `Declares: G ::= (X, *, e) is \set via X` states `X is \set` — and
+/// a `specifies:` item that repeats it. Components the subtype clauses do not reach
+/// (`*` and `e` above) still have to be typed in `specifies:`; that is the
+/// complementary rule in [`validate_target_symbol_specifications`].
+///
+/// All of the group's `extends:` subtype clauses count as a *single* source.
+/// `extends:` exists precisely so one definition can extend several types, so
+/// two clauses may legitimately name the same subject (`X is \bar via (A, B)`
+/// and `X is \baz via (B, C)`) or reach the same component through different
+/// views. Separate subtype views in `specifies:` may overlap only when their
+/// instantiated facts for that component are identical.
+///
+/// `when:` and `using:` are not specification sources in this sense: `when:`
+/// states what a *use* of the command requires and `using:` introduces auxiliary
+/// symbols, neither of which is the definition saying what its own target is.
+#[derive(Clone, Debug)]
+struct TargetSpecificationSite {
+    symbol: String,
+    source: &'static str,
+    facts: Vec<TypeFact>,
+    subtype_view: bool,
+}
+
+#[derive(Clone, Debug)]
+struct VariadicActual {
+    values: Vec<String>,
+    rows: Option<Vec<usize>>,
+}
+
+#[derive(Clone, Debug)]
+struct ImplicitRefinedInfixSpecResolution {
+    base_signature: String,
+    base_actuals: Vec<String>,
+    refined_type_signature: String,
+    refined_type_actuals: Vec<String>,
+    base_fact: TypeFact,
+    refined_type_fact: TypeFact,
+}
+
+#[derive(Clone, Default)]
+struct TypeContext {
+    facts: Vec<TypeFact>,
+    substitutions: Vec<(String, String)>,
+    /// The same equivalence edges as `substitutions`, indexed once so the very
+    /// frequent normalization path does not rebuild this map for every key.
+    substitution_map: HashMap<String, String>,
+    collection_literals: HashMap<String, SetExpression>,
+    symbols: HashSet<String>,
+    defined_symbols: HashSet<String>,
+    /// The configured numeric type required by each variadic parameter's
+    /// indices. A one-based parameter uses `Specify:positiveInt:is`, while a
+    /// zero-based parameter uses `Specify:zeroOrPositiveInt:is`.
+    variadic_index_types: HashMap<String, NumericTypeSpecification>,
+    active_disambiguations: Vec<DisambiguationKey>,
+    defer_unresolved_provided_symbols: bool,
+    /// Maps a destructured value (`M` from `M ::= (X, *)`) to its component names
+    /// in tuple order, so member access `M.*` can resolve to the `*` component.
+    destructured_components: HashMap<String, Vec<String>>,
+    /// Maps a `Justification:` entry label (its `[label]` heading, dot-joined) to
+    /// its `have:`/`asserting:` group. A labeled specification `(.x.)[:label:]`
+    /// whose label is present here is established via the referenced group.
+    justifications: Rc<HashMap<String, HaveGroup>>,
+    /// Labels declared in the enclosing group's `References:` section.
+    reference_labels: Rc<HashSet<String>>,
+    /// Item-local expression aliases available while checking prose. The
+    /// theorem stores `Aliases:` after `Proof:`, but both belong to the same
+    /// structural item, so source order must not hide these aliases from proof
+    /// fragments.
+    local_expression_aliases: Rc<Vec<ExpressionAlias>>,
+    active_local_aliases: Vec<String>,
+}
+
+impl TypeContext {
+    fn set_reference_labels(&mut self, labels: HashSet<String>) {
+        self.reference_labels = Rc::new(labels);
+    }
+
+    fn has_reference_label(&self, label: &str) -> bool {
+        self.reference_labels.contains(label)
+    }
+
+    fn add_fact(&mut self, fact: TypeFact) {
+        self.facts.push(fact);
+    }
+
+    fn add_substitution(&mut self, left: String, right: String) {
+        let representative = std::cmp::min(&left, &right).clone();
+        self.substitution_map
+            .insert(left.clone(), representative.clone());
+        self.substitution_map.insert(right.clone(), representative);
+        self.substitutions.push((left, right));
+    }
+
+    fn add_collection_literal(&mut self, subject: String, literal: SetExpression) {
+        self.collection_literals
+            .insert(subject.clone(), literal.clone());
+        let normalized = self.normalize_key(&subject);
+        self.collection_literals.insert(normalized, literal);
+    }
+
+    fn collection_literal(&self, subject: &str) -> Option<&SetExpression> {
+        self.collection_literals
+            .get(subject)
+            .or_else(|| self.collection_literals.get(&self.normalize_key(subject)))
+    }
+
+    fn add_destructured_components(&mut self, subject: String, components: Vec<String>) {
+        self.destructured_components.insert(subject, components);
+    }
+
+    fn destructured_components_of(&self, subject: &str) -> Option<&Vec<String>> {
+        self.destructured_components.get(subject).or_else(|| {
+            self.destructured_components
+                .get(&self.normalize_key(subject))
+        })
+    }
+
+    fn declare_name(&mut self, name: impl Into<String>) {
+        let name = name.into();
+        let unstropped = unstropped_name(&name);
+        self.symbols.insert(name);
+        self.symbols.insert(unstropped);
+    }
+
+    fn declare_defined_symbol(&mut self, name: impl Into<String>) {
+        let name = name.into();
+        let unstropped = unstropped_name(&name);
+        self.defined_symbols.insert(name.clone());
+        self.defined_symbols.insert(unstropped.clone());
+        self.symbols.insert(name);
+        self.symbols.insert(unstropped);
+    }
+
+    fn has_defined_symbol(&self, name: &str) -> bool {
+        self.defined_symbols.contains(name) || self.defined_symbols.contains(&unstropped_name(name))
+    }
+
+    fn introduce_symbol(
+        &mut self,
+        name: &str,
+        path: &Path,
+        locator: &mut SourceLocator<'_>,
+        event_log: &mut EventLog,
+    ) -> bool {
+        if self.has_defined_symbol(name) {
+            emit_error(
+                event_log,
+                path,
+                locator.locate_symbol(name),
+                format!("Symbol `{name}` has already been defined"),
+            );
+            return false;
+        }
+        self.declare_defined_symbol(name);
+        true
+    }
+
+    fn has_name(&self, name: &str) -> bool {
+        self.symbols.contains(name) || self.symbols.contains(&unstropped_name(name))
+    }
+
+    fn set_justifications(&mut self, justifications: HashMap<String, HaveGroup>) {
+        self.justifications = Rc::new(justifications);
+    }
+
+    fn set_local_expression_aliases(&mut self, aliases: Vec<ExpressionAlias>) {
+        self.local_expression_aliases = Rc::new(aliases);
+    }
+
+    fn activate_local_alias(&self, key: String) -> Option<Self> {
+        if self.active_local_aliases.contains(&key) {
+            return None;
+        }
+        let mut child = self.clone();
+        child.active_local_aliases.push(key);
+        Some(child)
+    }
+
+    fn justification(&self, label: &str) -> Option<&HaveGroup> {
+        self.justifications.get(label)
+    }
+
+    fn activate_disambiguation(&self, key: &DisambiguationKey) -> Option<Self> {
+        if self.active_disambiguations.contains(key) {
+            return None;
+        }
+
+        let mut child = self.clone();
+        child.active_disambiguations.push(key.clone());
+        Some(child)
+    }
+
+    fn normalize_fact(&self, fact: &TypeFact) -> TypeFact {
+        match fact {
+            TypeFact::Is {
+                subject,
+                ty,
+                signature,
+            } => TypeFact::Is {
+                subject: self.normalize_key(subject),
+                ty: self.normalize_key(ty),
+                signature: signature.clone(),
+            },
+            TypeFact::Spec {
+                subject,
+                operator,
+                target,
+            } => TypeFact::Spec {
+                subject: self.normalize_key(subject),
+                operator: operator.clone(),
+                target: self.normalize_key(target),
+            },
+            TypeFact::InfixSpec {
+                subject,
+                signature,
+                args,
+                target,
+            } => TypeFact::InfixSpec {
+                subject: self.normalize_key(subject),
+                signature: signature.clone(),
+                args: args.iter().map(|arg| self.normalize_key(arg)).collect(),
+                target: self.normalize_key(target),
+            },
+            TypeFact::RefinedIs {
+                subject,
+                ty,
+                signature,
+                base_ty,
+                base_signature,
+            } => TypeFact::RefinedIs {
+                subject: self.normalize_key(subject),
+                ty: self.normalize_key(ty),
+                signature: signature.clone(),
+                base_ty: self.normalize_key(base_ty),
+                base_signature: base_signature.clone(),
+            },
+            TypeFact::MemberOf {
+                subject,
+                collection,
+            } => TypeFact::MemberOf {
+                subject: self.normalize_key(subject),
+                collection: self.normalize_key(collection),
+            },
+            TypeFact::FunctionType {
+                subject,
+                inputs,
+                output,
+                variadic_tuple_input,
+            } => TypeFact::FunctionType {
+                subject: self.normalize_key(subject),
+                inputs: inputs
+                    .iter()
+                    .map(|spec| self.normalize_function_type_spec(spec))
+                    .collect(),
+                output: self.normalize_function_type_spec(output),
+                variadic_tuple_input: *variadic_tuple_input,
+            },
+        }
+    }
+
+    fn normalize_function_type_spec(&self, spec: &FunctionTypeFactSpec) -> FunctionTypeFactSpec {
+        match spec {
+            FunctionTypeFactSpec::Is { ty, signature } => FunctionTypeFactSpec::Is {
+                ty: self.normalize_key(ty),
+                signature: signature.clone(),
+            },
+            FunctionTypeFactSpec::Spec { operator, target } => FunctionTypeFactSpec::Spec {
+                operator: operator.clone(),
+                target: self.normalize_key(target),
+            },
+        }
+    }
+
+    fn normalize_key(&self, key: &str) -> String {
+        let mut result = key.to_owned();
+        for _ in 0..self.substitutions.len().saturating_add(1) {
+            let next = substitute_key(&result, &self.substitution_map);
+            if next == result {
+                break;
+            }
+            result = next;
+        }
+        result
+    }
+}
+
+#[derive(Clone, Debug)]
+struct DescribedFunctionTarget {
+    subject: String,
+    inputs: Vec<String>,
+    output: String,
+    variadic_tuple_input: bool,
+}
+
+#[derive(Clone, Debug)]
+enum LiteralTypeSubject {
+    Leaf(String),
+    Tuple(Vec<LiteralTypeSubject>),
+    Set(Box<LiteralTypeSubject>),
+}
+
+#[derive(Clone, Debug, Default)]
+struct WhenParameters {
+    required: HashSet<String>,
+    allowed: HashSet<String>,
+    /// The symbol the definition describes, when the heading also makes it a
+    /// parameter — the left operand of a spec-infix heading. `when:` states what
+    /// a *use* of the command requires of its operands, so the described symbol
+    /// belongs on the `Declares:` target instead and is rejected here.
+    described: Option<String>,
+}
+
+impl WhenParameters {
+    fn require(&mut self, parameter: String) {
+        self.allowed.insert(parameter.clone());
+        self.required.insert(parameter);
+    }
+
+    fn allow(&mut self, parameter: String) {
+        self.allowed.insert(parameter);
+    }
+}
+
 /// Gives a realization the component types of the declaration it realizes.
 ///
 /// Realizing a declaration means supplying values for the symbols it specified,
@@ -517,66 +969,6 @@ fn declaration_has_collection_literal(statement: &DeclarationStatement) -> bool 
         .as_ref()
         .and_then(cast_expression_set_literal)
         .is_some()
-}
-
-pub(super) fn disambiguation_rule_from_item(item: &TopLevelItem) -> Option<DisambiguationRule> {
-    let TopLevelItem::Disambiguates(group) = item else {
-        return None;
-    };
-
-    let (key, parameters) = disambiguation_key_and_parameters(&group.heading)?;
-    let branches = group
-        .branches
-        .iter()
-        .map(|branch| {
-            let mut context = TypeContext::default();
-            declare_form_or_declaration(&group.heading, &mut context);
-            for clause in &branch.when.arguments {
-                collect_clause_assumptions(clause, &mut context);
-            }
-            let requirements = context
-                .facts
-                .iter()
-                .map(|fact| context.normalize_fact(fact))
-                .collect();
-            DisambiguationBranch {
-                requirements,
-                substitutions: context.substitutions,
-                to: branch.to.argument.clone(),
-            }
-        })
-        .collect();
-
-    Some(DisambiguationRule {
-        key,
-        parameters,
-        branches,
-        else_expression: group.else_.as_ref().map(|section| section.argument.clone()),
-    })
-}
-
-pub(super) fn validate_document_types(
-    file: &ParsedSourceFile,
-    registry: &SignatureRegistry,
-    event_log: &mut EventLog,
-) {
-    let mut locator = SourceLocator::new(&file.source);
-    // The semantic AST intentionally reduces prose values to `OpenText`. Keep
-    // the proto groups alongside it so every quoted text position (including
-    // nested documentation and proof items) can be checked uniformly.
-    let mut proto_log = EventLog::new();
-    let proto_groups = ProtoParser::new(&file.source, &mut proto_log).parse();
-    for (index, item) in file.document.items.iter().enumerate() {
-        begin_type_info_item(file, index, registry);
-        validate_top_level_item_types(
-            item,
-            proto_groups.get(index),
-            file.path.as_path(),
-            &mut locator,
-            registry,
-            event_log,
-        );
-    }
 }
 
 /// Narrows an active type-info recording to the rows of the item about to be
@@ -1967,12 +2359,6 @@ fn requires_section(item: &TopLevelItem) -> Option<&RequiresSection> {
     }
 }
 
-struct CapabilityAliasRef<'a> {
-    alias: &'a AliasKind,
-    source_subject: Option<String>,
-    source_requires_literal: bool,
-}
-
 fn capability_aliases(item: &TopLevelItem) -> Vec<CapabilityAliasRef<'_>> {
     let mut result = Vec::new();
     if let Some(requires) = requires_section(item) {
@@ -2023,23 +2409,6 @@ fn spec_operator_rule_from_alias(
         target_alias: alias.target.clone(),
         substitutions: info.substitutions.clone(),
     })
-}
-
-/// The definition kinds a top-level `Equivalent:` may group.
-const EQUIVALENT_MEMBER_KINDS: [DefinitionKind; 4] = [
-    DefinitionKind::Declares,
-    DefinitionKind::Defines,
-    DefinitionKind::States,
-    DefinitionKind::Refines,
-];
-
-/// One `to:` command of an `Equivalent:` item, as needed for validation.
-struct EquivalentMember<'a> {
-    signature: String,
-    /// The header parameters used as arguments, in order — `Some` only when every
-    /// argument was a bare header parameter (so a `when:` check is meaningful).
-    actuals: Option<Vec<String>>,
-    command_context: Option<&'a CommandContext>,
 }
 
 /// Every argument expression across a command's head, tail, and paren argument
@@ -2411,12 +2780,6 @@ fn validate_equivalent_when_compatibility(
             event_log,
         );
     }
-}
-
-#[derive(Clone)]
-struct ScopedTextFrame {
-    name: Option<String>,
-    context: TypeContext,
 }
 
 /// Checks every quoted prose value in a proto group. All values inherit the
@@ -5358,38 +5721,6 @@ fn validate_spec_infix_declares_header(
     );
 }
 
-struct TheoremLikeSections<'a> {
-    heading: Option<&'a CommandHeader>,
-    given: Option<&'a GivenSection>,
-    where_: Option<&'a WhereSection>,
-    then: &'a ThenSection,
-    iff: Option<&'a IffSection>,
-    aliases: Option<&'a AliasesSection>,
-    proto_group: Option<&'a ProtoGroup>,
-}
-
-impl<'a> TheoremLikeSections<'a> {
-    fn new(
-        heading: Option<&'a CommandHeader>,
-        given: Option<&'a GivenSection>,
-        where_: Option<&'a WhereSection>,
-        then: &'a ThenSection,
-        iff: Option<&'a IffSection>,
-        aliases: Option<&'a AliasesSection>,
-        proto_group: Option<&'a ProtoGroup>,
-    ) -> Self {
-        Self {
-            heading,
-            given,
-            where_,
-            then,
-            iff,
-            aliases,
-            proto_group,
-        }
-    }
-}
-
 fn validate_theorem_like(
     sections: TheoremLikeSections<'_>,
     base_context: &TypeContext,
@@ -7357,35 +7688,6 @@ fn validate_declaration_target_symbol_specifications(
 ) {
     let symbols = declaration_target_symbols(statement);
     validate_target_symbol_specifications(&symbols, covered, path, locator, event_log);
-}
-
-/// Reports each target symbol whose type a `Declares` group states more than
-/// once, except when a later specification adds a refinement to the same base
-/// type.
-///
-/// A symbol carries one type, so stating it twice is redundant at best and
-/// contradictory at worst. The usual case is a `via` that already types a
-/// component — `Declares: G ::= (X, *, e) is \set via X` states `X is \set` — and
-/// a `specifies:` item that repeats it. Components the subtype clauses do not reach
-/// (`*` and `e` above) still have to be typed in `specifies:`; that is the
-/// complementary rule in [`validate_target_symbol_specifications`].
-///
-/// All of the group's `extends:` subtype clauses count as a *single* source.
-/// `extends:` exists precisely so one definition can extend several types, so
-/// two clauses may legitimately name the same subject (`X is \bar via (A, B)`
-/// and `X is \baz via (B, C)`) or reach the same component through different
-/// views. Separate subtype views in `specifies:` may overlap only when their
-/// instantiated facts for that component are identical.
-///
-/// `when:` and `using:` are not specification sources in this sense: `when:`
-/// states what a *use* of the command requires and `using:` introduces auxiliary
-/// symbols, neither of which is the definition saying what its own target is.
-#[derive(Clone, Debug)]
-struct TargetSpecificationSite {
-    symbol: String,
-    source: &'static str,
-    facts: Vec<TypeFact>,
-    subtype_view: bool,
 }
 
 fn validate_single_symbol_specification(
@@ -16283,12 +16585,6 @@ fn command_parameter_substitutions(
     (substitutions, grouped_actuals)
 }
 
-#[derive(Clone, Debug)]
-struct VariadicActual {
-    values: Vec<String>,
-    rows: Option<Vec<usize>>,
-}
-
 fn instantiate_variadic_fact(
     fact: &TypeFact,
     substitutions: &HashMap<String, String>,
@@ -18130,16 +18426,6 @@ fn reduce_extension_fact(
     result
 }
 
-#[derive(Clone, Debug)]
-struct ImplicitRefinedInfixSpecResolution {
-    base_signature: String,
-    base_actuals: Vec<String>,
-    refined_type_signature: String,
-    refined_type_actuals: Vec<String>,
-    base_fact: TypeFact,
-    refined_type_fact: TypeFact,
-}
-
 /// Resolves an undeclared refined spec-infix fact through the type extended by
 /// its declared base operator. For example, if `\:subset:/` extends `\set` and
 /// `\nonempty::set` is a declared refinement, then
@@ -19563,253 +19849,6 @@ fn instantiate_function_type_spec(spec: &FunctionTypeFactSpec, subject: &str) ->
     }
 }
 
-#[derive(Clone, Default)]
-struct TypeContext {
-    facts: Vec<TypeFact>,
-    substitutions: Vec<(String, String)>,
-    /// The same equivalence edges as `substitutions`, indexed once so the very
-    /// frequent normalization path does not rebuild this map for every key.
-    substitution_map: HashMap<String, String>,
-    collection_literals: HashMap<String, SetExpression>,
-    symbols: HashSet<String>,
-    defined_symbols: HashSet<String>,
-    /// The configured numeric type required by each variadic parameter's
-    /// indices. A one-based parameter uses `Specify:positiveInt:is`, while a
-    /// zero-based parameter uses `Specify:zeroOrPositiveInt:is`.
-    variadic_index_types: HashMap<String, NumericTypeSpecification>,
-    active_disambiguations: Vec<DisambiguationKey>,
-    defer_unresolved_provided_symbols: bool,
-    /// Maps a destructured value (`M` from `M ::= (X, *)`) to its component names
-    /// in tuple order, so member access `M.*` can resolve to the `*` component.
-    destructured_components: HashMap<String, Vec<String>>,
-    /// Maps a `Justification:` entry label (its `[label]` heading, dot-joined) to
-    /// its `have:`/`asserting:` group. A labeled specification `(.x.)[:label:]`
-    /// whose label is present here is established via the referenced group.
-    justifications: Rc<HashMap<String, HaveGroup>>,
-    /// Labels declared in the enclosing group's `References:` section.
-    reference_labels: Rc<HashSet<String>>,
-    /// Item-local expression aliases available while checking prose. The
-    /// theorem stores `Aliases:` after `Proof:`, but both belong to the same
-    /// structural item, so source order must not hide these aliases from proof
-    /// fragments.
-    local_expression_aliases: Rc<Vec<ExpressionAlias>>,
-    active_local_aliases: Vec<String>,
-}
-
-impl TypeContext {
-    fn set_reference_labels(&mut self, labels: HashSet<String>) {
-        self.reference_labels = Rc::new(labels);
-    }
-
-    fn has_reference_label(&self, label: &str) -> bool {
-        self.reference_labels.contains(label)
-    }
-
-    fn add_fact(&mut self, fact: TypeFact) {
-        self.facts.push(fact);
-    }
-
-    fn add_substitution(&mut self, left: String, right: String) {
-        let representative = std::cmp::min(&left, &right).clone();
-        self.substitution_map
-            .insert(left.clone(), representative.clone());
-        self.substitution_map.insert(right.clone(), representative);
-        self.substitutions.push((left, right));
-    }
-
-    fn add_collection_literal(&mut self, subject: String, literal: SetExpression) {
-        self.collection_literals
-            .insert(subject.clone(), literal.clone());
-        let normalized = self.normalize_key(&subject);
-        self.collection_literals.insert(normalized, literal);
-    }
-
-    fn collection_literal(&self, subject: &str) -> Option<&SetExpression> {
-        self.collection_literals
-            .get(subject)
-            .or_else(|| self.collection_literals.get(&self.normalize_key(subject)))
-    }
-
-    fn add_destructured_components(&mut self, subject: String, components: Vec<String>) {
-        self.destructured_components.insert(subject, components);
-    }
-
-    fn destructured_components_of(&self, subject: &str) -> Option<&Vec<String>> {
-        self.destructured_components.get(subject).or_else(|| {
-            self.destructured_components
-                .get(&self.normalize_key(subject))
-        })
-    }
-
-    fn declare_name(&mut self, name: impl Into<String>) {
-        let name = name.into();
-        let unstropped = unstropped_name(&name);
-        self.symbols.insert(name);
-        self.symbols.insert(unstropped);
-    }
-
-    fn declare_defined_symbol(&mut self, name: impl Into<String>) {
-        let name = name.into();
-        let unstropped = unstropped_name(&name);
-        self.defined_symbols.insert(name.clone());
-        self.defined_symbols.insert(unstropped.clone());
-        self.symbols.insert(name);
-        self.symbols.insert(unstropped);
-    }
-
-    fn has_defined_symbol(&self, name: &str) -> bool {
-        self.defined_symbols.contains(name) || self.defined_symbols.contains(&unstropped_name(name))
-    }
-
-    fn introduce_symbol(
-        &mut self,
-        name: &str,
-        path: &Path,
-        locator: &mut SourceLocator<'_>,
-        event_log: &mut EventLog,
-    ) -> bool {
-        if self.has_defined_symbol(name) {
-            emit_error(
-                event_log,
-                path,
-                locator.locate_symbol(name),
-                format!("Symbol `{name}` has already been defined"),
-            );
-            return false;
-        }
-        self.declare_defined_symbol(name);
-        true
-    }
-
-    fn has_name(&self, name: &str) -> bool {
-        self.symbols.contains(name) || self.symbols.contains(&unstropped_name(name))
-    }
-
-    fn set_justifications(&mut self, justifications: HashMap<String, HaveGroup>) {
-        self.justifications = Rc::new(justifications);
-    }
-
-    fn set_local_expression_aliases(&mut self, aliases: Vec<ExpressionAlias>) {
-        self.local_expression_aliases = Rc::new(aliases);
-    }
-
-    fn activate_local_alias(&self, key: String) -> Option<Self> {
-        if self.active_local_aliases.contains(&key) {
-            return None;
-        }
-        let mut child = self.clone();
-        child.active_local_aliases.push(key);
-        Some(child)
-    }
-
-    fn justification(&self, label: &str) -> Option<&HaveGroup> {
-        self.justifications.get(label)
-    }
-
-    fn activate_disambiguation(&self, key: &DisambiguationKey) -> Option<Self> {
-        if self.active_disambiguations.contains(key) {
-            return None;
-        }
-
-        let mut child = self.clone();
-        child.active_disambiguations.push(key.clone());
-        Some(child)
-    }
-
-    fn normalize_fact(&self, fact: &TypeFact) -> TypeFact {
-        match fact {
-            TypeFact::Is {
-                subject,
-                ty,
-                signature,
-            } => TypeFact::Is {
-                subject: self.normalize_key(subject),
-                ty: self.normalize_key(ty),
-                signature: signature.clone(),
-            },
-            TypeFact::Spec {
-                subject,
-                operator,
-                target,
-            } => TypeFact::Spec {
-                subject: self.normalize_key(subject),
-                operator: operator.clone(),
-                target: self.normalize_key(target),
-            },
-            TypeFact::InfixSpec {
-                subject,
-                signature,
-                args,
-                target,
-            } => TypeFact::InfixSpec {
-                subject: self.normalize_key(subject),
-                signature: signature.clone(),
-                args: args.iter().map(|arg| self.normalize_key(arg)).collect(),
-                target: self.normalize_key(target),
-            },
-            TypeFact::RefinedIs {
-                subject,
-                ty,
-                signature,
-                base_ty,
-                base_signature,
-            } => TypeFact::RefinedIs {
-                subject: self.normalize_key(subject),
-                ty: self.normalize_key(ty),
-                signature: signature.clone(),
-                base_ty: self.normalize_key(base_ty),
-                base_signature: base_signature.clone(),
-            },
-            TypeFact::MemberOf {
-                subject,
-                collection,
-            } => TypeFact::MemberOf {
-                subject: self.normalize_key(subject),
-                collection: self.normalize_key(collection),
-            },
-            TypeFact::FunctionType {
-                subject,
-                inputs,
-                output,
-                variadic_tuple_input,
-            } => TypeFact::FunctionType {
-                subject: self.normalize_key(subject),
-                inputs: inputs
-                    .iter()
-                    .map(|spec| self.normalize_function_type_spec(spec))
-                    .collect(),
-                output: self.normalize_function_type_spec(output),
-                variadic_tuple_input: *variadic_tuple_input,
-            },
-        }
-    }
-
-    fn normalize_function_type_spec(&self, spec: &FunctionTypeFactSpec) -> FunctionTypeFactSpec {
-        match spec {
-            FunctionTypeFactSpec::Is { ty, signature } => FunctionTypeFactSpec::Is {
-                ty: self.normalize_key(ty),
-                signature: signature.clone(),
-            },
-            FunctionTypeFactSpec::Spec { operator, target } => FunctionTypeFactSpec::Spec {
-                operator: operator.clone(),
-                target: self.normalize_key(target),
-            },
-        }
-    }
-
-    fn normalize_key(&self, key: &str) -> String {
-        let mut result = key.to_owned();
-        for _ in 0..self.substitutions.len().saturating_add(1) {
-            let next = substitute_key(&result, &self.substitution_map);
-            if next == result {
-                break;
-            }
-            result = next;
-        }
-        result
-    }
-}
-
 fn check_name(
     name: &str,
     context: &TypeContext,
@@ -21207,14 +21246,6 @@ fn have_group_declarations(group: &HaveGroup) -> impl Iterator<Item = &Declarati
         })
 }
 
-#[derive(Clone, Debug)]
-struct DescribedFunctionTarget {
-    subject: String,
-    inputs: Vec<String>,
-    output: String,
-    variadic_tuple_input: bool,
-}
-
 fn function_type_fact_from_declares_specifies(
     target: &DeclaresTarget,
     specifies: &DeclaresSpecifiesSection,
@@ -21605,13 +21636,6 @@ fn facts_from_is_statement(statement: &IsStatement) -> Vec<TypeFact> {
             signature: signature.clone(),
         })
         .collect()
-}
-
-#[derive(Clone, Debug)]
-enum LiteralTypeSubject {
-    Leaf(String),
-    Tuple(Vec<LiteralTypeSubject>),
-    Set(Box<LiteralTypeSubject>),
 }
 
 fn literal_type_facts_from_is_subject(
@@ -22051,28 +22075,6 @@ fn function_type_spec_as_fact(spec: &FunctionTypeSpec) -> Option<FunctionTypeFac
             operator: operator.clone(),
             target: key_for_expression(target),
         }),
-    }
-}
-
-#[derive(Clone, Debug, Default)]
-struct WhenParameters {
-    required: HashSet<String>,
-    allowed: HashSet<String>,
-    /// The symbol the definition describes, when the heading also makes it a
-    /// parameter — the left operand of a spec-infix heading. `when:` states what
-    /// a *use* of the command requires of its operands, so the described symbol
-    /// belongs on the `Declares:` target instead and is rejected here.
-    described: Option<String>,
-}
-
-impl WhenParameters {
-    fn require(&mut self, parameter: String) {
-        self.allowed.insert(parameter.clone());
-        self.required.insert(parameter);
-    }
-
-    fn allow(&mut self, parameter: String) {
-        self.allowed.insert(parameter);
     }
 }
 
@@ -23992,7 +23994,7 @@ fn format_function_type_spec(spec: &FunctionTypeFactSpec) -> String {
     }
 }
 
-// ===============================[ tests ]=====================================
+// =============================================================================
 
 #[cfg(test)]
 mod scoped_text_tests {

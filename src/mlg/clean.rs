@@ -6,8 +6,6 @@ use std::fs;
 use std::io;
 use std::path::Path;
 
-const ORIGIN: &str = "mlg_clean";
-
 pub struct CleanResult {
     pub event_log: EventLog,
     pub successful: bool,
@@ -30,6 +28,10 @@ pub fn clean(cwd: &Path, listener: Option<Box<dyn EventLogListener>>) -> CleanRe
         successful,
     }
 }
+
+// =============================================================================
+
+const ORIGIN: &str = "mlg_clean";
 
 fn clean_in(cwd: &Path, event_log: &mut EventLog) -> io::Result<()> {
     let start = cwd.canonicalize().unwrap_or_else(|_| cwd.to_path_buf());
@@ -66,7 +68,7 @@ fn clean_in(cwd: &Path, event_log: &mut EventLog) -> io::Result<()> {
     Ok(())
 }
 
-// ===============================[ tests ]=====================================
+// =============================================================================
 
 #[cfg(test)]
 mod tests {

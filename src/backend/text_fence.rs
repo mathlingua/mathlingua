@@ -5,20 +5,9 @@
 //! such fence and reports any *syntax* errors it finds. Semantics are deliberately
 //! not checked: the fenced code is only structurally parsed, never type-checked, so
 //! an example may freely reference commands that are not defined in the collection.
-
 use std::path::Path;
-
 use crate::events::{Audience, EventLocation, EventLog, Level, MessageEvent};
 use crate::frontend::{parse_document, unescape_quoted_text};
-
-/// A ` ```mlg ` fenced code block extracted from a source file.
-struct MlgFence {
-    /// 0-based file row of the first fenced content line (the line after the
-    /// opening ` ```mlg ` marker).
-    content_start_row: usize,
-    /// The dedented, unescaped MathLingua source inside the fence.
-    code: String,
-}
 
 /// Reports MathLingua *syntax* errors in every ` ```mlg ` fenced block in `source`.
 ///
@@ -52,6 +41,17 @@ pub(crate) fn check_text_fence_syntax(
             );
         }
     }
+}
+
+// =============================================================================
+
+/// A ` ```mlg ` fenced code block extracted from a source file.
+struct MlgFence {
+    /// 0-based file row of the first fenced content line (the line after the
+    /// opening ` ```mlg ` marker).
+    content_start_row: usize,
+    /// The dedented, unescaped MathLingua source inside the fence.
+    code: String,
 }
 
 /// Extracts the 0-based start row of the parse diagnostic within its fence.
@@ -137,7 +137,7 @@ fn dedent(line: &str, indent: usize) -> String {
     line[leading.min(indent)..].to_string()
 }
 
-// ===============================[ tests ]=====================================
+// =============================================================================
 
 #[cfg(test)]
 mod tests {

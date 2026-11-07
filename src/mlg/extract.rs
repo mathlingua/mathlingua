@@ -7,7 +7,6 @@
 //! checks cleanly whenever the collection it came from did; when it did not, the
 //! check errors follow the source on stdout so that piping the command to a
 //! clipboard captures the problem along with the code.
-
 use crate::backend::collection::{SourceCollection, find_collection_root};
 use crate::backend::extract::{ExtractError, extract_items, render_extracted_source};
 use crate::backend::release::build_release_items;
@@ -16,8 +15,6 @@ use crate::events::{
 };
 use crate::mlg::util::no_errors_since;
 use std::path::Path;
-
-const ORIGIN: &str = "mlg_extract";
 
 pub struct ExtractResult {
     pub event_log: EventLog,
@@ -108,6 +105,20 @@ pub(super) fn extract_source(
     })
 }
 
+/// The warning `mlg report` shows when the collection it extracted from does
+/// not check cleanly. `mlg extract` prints the errors themselves instead.
+pub(super) fn check_error_warning(count: usize) -> String {
+    format!(
+        "The collection has {count} check {}; the extracted items may be incomplete \
+         (run `mlg check` for detail)",
+        if count == 1 { "error" } else { "errors" }
+    )
+}
+
+// =============================================================================
+
+const ORIGIN: &str = "mlg_extract";
+
 /// The error-level messages in `check_log`, each rendered the way `mlg check`
 /// prints it: a path, a line and column, and the message, relative to `base`.
 fn rendered_check_errors(check_log: &EventLog, base: &Path) -> Vec<String> {
@@ -149,17 +160,7 @@ fn render_check_errors(check_errors: &[String]) -> String {
     rendered
 }
 
-/// The warning `mlg report` shows when the collection it extracted from does
-/// not check cleanly. `mlg extract` prints the errors themselves instead.
-pub(super) fn check_error_warning(count: usize) -> String {
-    format!(
-        "The collection has {count} check {}; the extracted items may be incomplete \
-         (run `mlg check` for detail)",
-        if count == 1 { "error" } else { "errors" }
-    )
-}
-
-// ===============================[ tests ]=====================================
+// =============================================================================
 
 #[cfg(test)]
 mod tests {

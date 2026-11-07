@@ -1,5 +1,4 @@
 use logos::{Logos, SpannedIter};
-
 use super::token::{LexicalError, Token};
 
 pub type Spanned<Tok, Loc, Error> = Result<(Loc, Tok, Loc), Error>;
@@ -26,7 +25,7 @@ impl<'input> Iterator for Lexer<'input> {
     }
 }
 
-// ===============================[ tests ]=====================================
+// =============================================================================
 
 #[cfg(test)]
 mod tests {

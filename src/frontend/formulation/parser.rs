@@ -1,8 +1,6 @@
 use std::collections::BTreeSet;
 use std::fmt;
-
 use lalrpop_util::ParseError as LalrpopParseError;
-
 use super::ast::{
     AuthorHeader, BinaryOperator, BuiltinCommandArgs, BuiltinCommandArgument,
     BuiltinCommandExpression, BuiltinCommandTailPart, Chain, ChainPart, CommandContext,
@@ -27,12 +25,6 @@ use super::ast::{
 use super::grammar;
 use super::lexer::{Lexer, Spanned};
 use super::token::{LexicalError, Token};
-
-/// Concrete parse error type returned by the generated LALRPOP grammar.
-///
-/// The public parser API wraps this in [`ParseError`] so hand-written parser
-/// helpers and generated grammar failures can share one error channel.
-type LalrpopError = LalrpopParseError<usize, Token, LexicalError>;
 
 /// Error produced while parsing MathLingua formulation text.
 ///
@@ -67,171 +59,6 @@ impl fmt::Display for ParseError {
     }
 }
 
-fn format_grammar_error(error: &LalrpopError) -> String {
-    match error {
-        LalrpopParseError::InvalidToken { .. } => "invalid token".to_owned(),
-        LalrpopParseError::UnrecognizedEof { expected, .. } => {
-            format!(
-                "unexpected end of input; expected {}",
-                format_expected(expected)
-            )
-        }
-        LalrpopParseError::UnrecognizedToken {
-            token: (_, token, _),
-            expected,
-        } => {
-            format!(
-                "unexpected {}; expected {}",
-                token_description(token),
-                format_expected(expected)
-            )
-        }
-        LalrpopParseError::ExtraToken {
-            token: (_, token, _),
-        } => {
-            format!("unexpected extra {}", token_description(token))
-        }
-        LalrpopParseError::User { error } => error.to_string(),
-    }
-}
-
-fn format_expected(expected: &[String]) -> String {
-    if expected.is_empty() {
-        return "another token".to_owned();
-    }
-
-    let labels = expected
-        .iter()
-        .map(|item| expected_description(item))
-        .collect::<BTreeSet<_>>();
-    let mut labels = labels.into_iter().collect::<Vec<_>>();
-    let remaining = labels.len().saturating_sub(6);
-    labels.truncate(6);
-
-    match (labels.as_slice(), remaining) {
-        ([one], 0) => one.clone(),
-        (_, 0) => labels.join(", "),
-        _ => format!("{} or {remaining} more", labels.join(", ")),
-    }
-}
-
-fn expected_description(item: &str) -> String {
-    let item = item.trim_matches('"').replace("\\\\", "\\");
-    match item.as_str() {
-        "name" => "a name".to_owned(),
-        "placeholder" => "a placeholder like `x_`".to_owned(),
-        "magnetic_placeholder" => "a placeholder like `x__`".to_owned(),
-        "quoted_name" => "a quoted name like `\"in\"`".to_owned(),
-        "prefix_named_operator" => "a named prefix operator".to_owned(),
-        "\\" => "a command".to_owned(),
-        "$" => "an alias marker `$`".to_owned(),
-        other if other.is_empty() => "another token".to_owned(),
-        other => format!("`{other}`"),
-    }
-}
-
-fn token_description(token: &Token) -> String {
-    match token {
-        Token::Name(name) => format!("name `{name}`"),
-        Token::Decimal(number) => format!("number `{number}`"),
-        Token::Placeholder(name) => format!("placeholder `{name}_`"),
-        Token::MagneticPlaceholder(name) => format!("placeholder `{name}__`"),
-        Token::QuotedName(name) => format!("quoted name `\"{name}\"`"),
-        Token::SpecialOperator(operator) => format!("operator `{operator}`"),
-        Token::NamedOperator(name) => format!("operator `|{name}|`"),
-        Token::LeftNamedOperator(name) => format!("operator `:|{name}|`"),
-        Token::RightNamedOperator(name) => format!("operator `|{name}|:`"),
-        Token::BothNamedOperator(name) => format!("operator `:|{name}|:`"),
-        Token::PrefixNamedOperator(name) => format!("prefix operator `{name}|`"),
-        Token::PostfixNamedOperator(name) => format!("postfix operator `|{name}`"),
-        Token::BothSpecialOperator(operator)
-        | Token::LeftSpecialOperator(operator)
-        | Token::RightSpecialOperator(operator) => format!("operator `{operator}`"),
-        Token::Label(parts) => format!("label `[:{}:]`", parts.join(".")),
-        other => format!("`{}`", token_literal(other)),
-    }
-}
-
-fn token_literal(token: &Token) -> &'static str {
-    match token {
-        Token::DotLParen => "(.",
-        Token::DotRParen => ".)",
-        Token::Ellipsis => "...",
-        Token::DirectDot => "..",
-        Token::LNamedArguments => "[|",
-        Token::RNamedArguments => "|]",
-        Token::InfixCommandStart => "\\.",
-        Token::InfixCommandEnd => "./",
-        Token::InfixSpecStart => "\\:",
-        Token::InfixSpecPredicateEnd => "?:/",
-        Token::InfixSpecEnd => ":/",
-        Token::ExpressionAlias => ":=>",
-        Token::SpecOperatorAlias => ":->",
-        Token::IffSpecOperatorAlias => ":<->:",
-        Token::WritingAlias => ":~>",
-        Token::Introduce => "::=",
-        Token::Declare => ":=",
-        Token::BothPlus => ":+:",
-        Token::LeftPlus => ":+",
-        Token::RightPlus => "+:",
-        Token::BothMinus => ":-:",
-        Token::LeftMinus => ":-",
-        Token::RightMinus => "-:",
-        Token::BothStar => ":*:",
-        Token::LeftStar => ":*",
-        Token::RightStar => "*:",
-        Token::BothCaret => ":^:",
-        Token::LeftCaret => ":^",
-        Token::RightCaret => "^:",
-        Token::IsPredicate => "is?",
-        Token::Is => "is",
-        Token::Via => "via",
-        Token::MemberOf => "member_of",
-        Token::Satisfies => "satisfies",
-        Token::FunctionArrow => "=>",
-        Token::TypeArrow => "->",
-        Token::CommandStart => "\\",
-        Token::Plus => "+",
-        Token::Minus => "-",
-        Token::Star => "*",
-        Token::Slash => "/",
-        Token::Equals => "=",
-        Token::Caret => "^",
-        Token::LParen => "(",
-        Token::RParen => ")",
-        Token::LBrace => "{",
-        Token::RBrace => "}",
-        Token::LBracket => "[",
-        Token::RBracket => "]",
-        Token::Comma => ",",
-        Token::Semicolon => ";",
-        Token::OptionalColon => ":?",
-        Token::Colon => ":",
-        Token::Dot => ".",
-        Token::Pipe => "|",
-        Token::Dollar => "$",
-        Token::Question => "?",
-        Token::At => "@",
-        Token::AnonymousPlaceholder => "_",
-        Token::Name(_)
-        | Token::Decimal(_)
-        | Token::Placeholder(_)
-        | Token::MagneticPlaceholder(_)
-        | Token::QuotedName(_)
-        | Token::SpecialOperator(_)
-        | Token::NamedOperator(_)
-        | Token::LeftNamedOperator(_)
-        | Token::RightNamedOperator(_)
-        | Token::BothNamedOperator(_)
-        | Token::PrefixNamedOperator(_)
-        | Token::PostfixNamedOperator(_)
-        | Token::BothSpecialOperator(_)
-        | Token::LeftSpecialOperator(_)
-        | Token::RightSpecialOperator(_)
-        | Token::Label(_) => "token",
-    }
-}
-
 impl From<LalrpopError> for ParseError {
     /// Converts generated grammar errors into the parser's common error type.
     fn from(value: LalrpopError) -> Self {
@@ -239,7 +66,77 @@ impl From<LalrpopError> for ParseError {
     }
 }
 
-// ===============================[ scan ]=====================================
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) struct InfixSpecSplit<'a> {
+    pub left: &'a str,
+    pub body: &'a str,
+    pub predicate: bool,
+    pub right: &'a str,
+}
+
+/// Scanner state for top-level string searches.
+///
+/// The state tracks bracket nesting plus quoted/backticked regions so helpers
+/// can safely split formulation text without building a full token stream for
+/// every small dispatch decision.
+#[derive(Clone, Copy, Debug, Default)]
+pub(super) struct ScanState {
+    /// Current nesting depth inside `(...)`.
+    paren_depth: usize,
+    /// Current nesting depth inside `{...}`.
+    brace_depth: usize,
+    /// Current nesting depth inside `[...]`.
+    bracket_depth: usize,
+    /// Whether the scan is currently inside double-quoted text.
+    in_quote: bool,
+    /// Whether the scan is currently inside backtick-delimited operator text.
+    in_backtick: bool,
+}
+
+impl ScanState {
+    /// Returns whether the scanner is outside all nested syntax.
+    ///
+    /// Top-level splitters only consider separators when this returns true.
+    fn is_top_level(&self) -> bool {
+        !self.in_quote
+            && !self.in_backtick
+            && self.paren_depth == 0
+            && self.brace_depth == 0
+            && self.bracket_depth == 0
+    }
+
+    /// Advances the scanner state by one character.
+    ///
+    /// Closing delimiters use saturating subtraction so malformed intermediate
+    /// text does not panic while a later parser emits the actual syntax error.
+    fn advance(&mut self, ch: char) {
+        if self.in_quote {
+            if ch == '"' {
+                self.in_quote = false;
+            }
+            return;
+        }
+
+        if self.in_backtick {
+            if ch == '`' {
+                self.in_backtick = false;
+            }
+            return;
+        }
+
+        match ch {
+            '"' => self.in_quote = true,
+            '`' => self.in_backtick = true,
+            '(' => self.paren_depth += 1,
+            ')' => self.paren_depth = self.paren_depth.saturating_sub(1),
+            '{' => self.brace_depth += 1,
+            '}' => self.brace_depth = self.brace_depth.saturating_sub(1),
+            '[' => self.bracket_depth += 1,
+            ']' => self.bracket_depth = self.bracket_depth.saturating_sub(1),
+            _ => {}
+        }
+    }
+}
 
 /// Splits a quoted-operator specification into subject, operator, and target.
 ///
@@ -287,14 +184,6 @@ pub(super) fn split_subject_operator_name(input: &str) -> Option<(&str, &str, &s
     }
 
     None
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(super) struct InfixSpecSplit<'a> {
-    pub left: &'a str,
-    pub body: &'a str,
-    pub predicate: bool,
-    pub right: &'a str,
 }
 
 /// Splits a top-level spec-infix statement around `\:`...`:/`.
@@ -409,23 +298,6 @@ pub(super) fn find_top_level_substring(input: &str, needle: &str) -> Option<usiz
 /// Finds the first top-level `::=` declaration marker.
 pub(super) fn find_top_level_introduce(input: &str) -> Option<usize> {
     find_top_level_substring(input, "::=")
-}
-
-/// Finds the last top-level `::=` declaration marker.
-///
-/// A function declaration can name both the mapping and its output, as in
-/// `X ::= x(i_) ::= y_`. Splitting on the last marker keeps `X ::= x(i_)`
-/// together as the function form and leaves `y_` as its output placeholder.
-fn find_last_top_level_introduce(input: &str) -> Option<usize> {
-    let mut state = ScanState::default();
-    let mut result = None;
-    for (index, ch) in input.char_indices() {
-        if state.is_top_level() && input[index..].starts_with("::=") {
-            result = Some(index);
-        }
-        state.advance(ch);
-    }
-    result
 }
 
 /// Finds the first top-level `:=` definition marker.
@@ -609,72 +481,6 @@ pub(super) fn span_all(input: &str) -> Span {
     Span::new(0, input.trim().len())
 }
 
-/// Scanner state for top-level string searches.
-///
-/// The state tracks bracket nesting plus quoted/backticked regions so helpers
-/// can safely split formulation text without building a full token stream for
-/// every small dispatch decision.
-#[derive(Clone, Copy, Debug, Default)]
-pub(super) struct ScanState {
-    /// Current nesting depth inside `(...)`.
-    paren_depth: usize,
-    /// Current nesting depth inside `{...}`.
-    brace_depth: usize,
-    /// Current nesting depth inside `[...]`.
-    bracket_depth: usize,
-    /// Whether the scan is currently inside double-quoted text.
-    in_quote: bool,
-    /// Whether the scan is currently inside backtick-delimited operator text.
-    in_backtick: bool,
-}
-
-impl ScanState {
-    /// Returns whether the scanner is outside all nested syntax.
-    ///
-    /// Top-level splitters only consider separators when this returns true.
-    fn is_top_level(&self) -> bool {
-        !self.in_quote
-            && !self.in_backtick
-            && self.paren_depth == 0
-            && self.brace_depth == 0
-            && self.bracket_depth == 0
-    }
-
-    /// Advances the scanner state by one character.
-    ///
-    /// Closing delimiters use saturating subtraction so malformed intermediate
-    /// text does not panic while a later parser emits the actual syntax error.
-    fn advance(&mut self, ch: char) {
-        if self.in_quote {
-            if ch == '"' {
-                self.in_quote = false;
-            }
-            return;
-        }
-
-        if self.in_backtick {
-            if ch == '`' {
-                self.in_backtick = false;
-            }
-            return;
-        }
-
-        match ch {
-            '"' => self.in_quote = true,
-            '`' => self.in_backtick = true,
-            '(' => self.paren_depth += 1,
-            ')' => self.paren_depth = self.paren_depth.saturating_sub(1),
-            '{' => self.brace_depth += 1,
-            '}' => self.brace_depth = self.brace_depth.saturating_sub(1),
-            '[' => self.bracket_depth += 1,
-            ']' => self.bracket_depth = self.bracket_depth.saturating_sub(1),
-            _ => {}
-        }
-    }
-}
-
-// ===============================[ commands ]=====================================
-
 /// Parses a non-infix, non-refined command header.
 ///
 /// Command headers consist of a chain, optional head argument groups, optional
@@ -801,107 +607,6 @@ pub(super) fn parse_infix_spec_header(input: &str) -> Result<InfixSpecHeader, Pa
         head_args,
         tail,
         right,
-    })
-}
-
-fn parse_infix_spec_header_body(
-    input: &str,
-) -> Result<
-    (
-        Option<InfixSpecHeaderRefinement>,
-        Chain,
-        Vec<CurlyHeadingArgs>,
-        Vec<CommandHeaderTailPart>,
-    ),
-    ParseError,
-> {
-    if contains_top_level(input, "::") {
-        let refined = parse_refined_command_header(&format!("\\{}", input.trim()))?;
-        let RefinedTail::Chain(chain) = refined.refined_tail else {
-            return Err(ParseError::custom(
-                "refined spec-infix headers must refine a command chain",
-            ));
-        };
-        if !refined.paren_args.is_empty() {
-            return Err(ParseError::custom(
-                "refined spec-infix headers do not accept parenthesized arguments",
-            ));
-        }
-        return Ok((
-            Some(InfixSpecHeaderRefinement {
-                prefix_chain: refined.prefix_chain,
-                parts: refined.parts,
-            }),
-            chain,
-            refined.head_args,
-            refined.tail,
-        ));
-    }
-
-    let mut rest = input.trim();
-    let (chain_text, remaining) = split_prefix_by_delimiters(rest, &['{', ':']);
-    let chain = parse_chain(chain_text)?;
-    rest = remaining;
-
-    let (head_args, remaining) = parse_curly_heading_args(rest)?;
-    rest = remaining;
-    let (tail, remaining) = parse_command_header_tail(rest)?;
-    if !remaining.trim().is_empty() {
-        return Err(ParseError::custom(
-            "unexpected trailing text after spec-infix header body",
-        ));
-    }
-
-    Ok((None, chain, head_args, tail))
-}
-
-fn parse_infix_spec_expression_body(input: &str, predicate: bool) -> Result<InfixSpec, ParseError> {
-    if contains_top_level(input, "::") {
-        let refined = parse_refined_command_expression(&format!("\\{}", input.trim()))?;
-        let RefinedTail::Chain(chain) = refined.refined_tail else {
-            return Err(ParseError::custom(
-                "refined spec-infix expressions must refine a command chain",
-            ));
-        };
-        if !refined.paren_args.is_empty() {
-            return Err(ParseError::custom(
-                "refined spec-infix expressions do not accept parenthesized arguments",
-            ));
-        }
-        return Ok(InfixSpec {
-            span: span_all(input),
-            refinement: Some(InfixSpecExpressionRefinement {
-                prefix_chain: refined.prefix_chain,
-                parts: refined.parts,
-            }),
-            chain,
-            head_args: refined.head_args,
-            tail: refined.tail,
-            predicate,
-        });
-    }
-
-    let mut rest = input.trim();
-    let (chain_text, remaining) = split_prefix_by_delimiters(rest, &['{', ':']);
-    let chain = parse_chain(chain_text)?;
-    rest = remaining;
-
-    let (head_args, remaining) = parse_curly_expression_args(rest)?;
-    rest = remaining;
-    let (tail, remaining) = parse_command_expression_tail(rest)?;
-    if !remaining.trim().is_empty() {
-        return Err(ParseError::custom(
-            "unexpected trailing text after spec-infix expression body",
-        ));
-    }
-
-    Ok(InfixSpec {
-        span: span_all(input),
-        refinement: None,
-        chain,
-        head_args,
-        tail,
-        predicate,
     })
 }
 
@@ -1062,6 +767,1439 @@ pub(super) fn parse_refined_command_expression(
     })
 }
 
+/// Parses one part inside a refined command expression part list.
+///
+/// Expression parts use expression-valued command tails, which lets references
+/// provide concrete command arguments while keeping the same chain syntax as
+/// refined headers.
+pub(super) fn parse_refined_expression_part(
+    input: &str,
+) -> Result<RefinedExpressionPart, ParseError> {
+    let input = input.trim();
+    let (chain_text, rest) = split_prefix_by_delimiters(input, &[':']);
+    let chain = parse_chain(chain_text)?;
+    let (tail, remaining) = parse_command_expression_tail(rest)?;
+    if !remaining.trim().is_empty() {
+        return Err(ParseError::custom(
+            "unexpected trailing text after refined expression part",
+        ));
+    }
+
+    Ok(RefinedExpressionPart {
+        span: span_all(input),
+        chain,
+        tail,
+    })
+}
+
+/// Parses the target tail after a refined command's `::` separator.
+///
+/// The tail can be either a bracketed name, written as `[[name]]`, or a command
+/// chain.  The function returns both the parsed tail and the unconsumed suffix
+/// so callers can continue parsing argument groups and colon tails.
+pub(super) fn parse_refined_tail(input: &str) -> Result<(RefinedTail, &str), ParseError> {
+    let input = input.trim_start();
+    if let Some(rest) = input.strip_prefix("[[") {
+        let end = rest
+            .find("]]")
+            .ok_or_else(|| ParseError::custom("unterminated refined tail name"))?;
+        let name = parse_name_token(&rest[..end])?;
+        let consumed = input.len() - rest[end + 2..].len();
+        return Ok((
+            RefinedTail::Name {
+                span: Span::new(0, consumed),
+                name,
+            },
+            &rest[end + 2..],
+        ));
+    }
+
+    let (chain_text, rest) = split_prefix_by_delimiters(input, &['{', '(', ':']);
+    Ok((RefinedTail::Chain(parse_chain(chain_text)?), rest))
+}
+
+/// Parses consecutive `{...}` argument groups in a command header.
+///
+/// Header argument groups contain forms/declarations because command headings
+/// define arity and placeholder names, not concrete use-site expressions.
+pub(super) fn parse_curly_heading_args(
+    mut input: &str,
+) -> Result<(Vec<CurlyHeadingArgs>, &str), ParseError> {
+    let mut args = Vec::new();
+    while input.trim_start().starts_with('{') {
+        input = input.trim_start();
+        let (inside, rest) = consume_balanced_prefix(input, '{', '}')?;
+        let variadic = parse_variadic_parameter(inside)?;
+        args.push(CurlyHeadingArgs {
+            span: span_all(&input[..input.len() - rest.len()]),
+            forms: if variadic.is_some() {
+                Vec::new()
+            } else {
+                parse_form_list(inside)?
+            },
+            variadic,
+        });
+        input = rest;
+    }
+
+    Ok((args, input))
+}
+
+/// Parses consecutive `(...)` argument groups in a command header.
+///
+/// Parenthesized header groups describe invocation arguments for callable
+/// definitions.  They are optional at use sites but still part of the definition
+/// shape when present in a heading.
+pub(super) fn parse_paren_heading_args(
+    mut input: &str,
+) -> Result<(Vec<ParenHeadingArgs>, &str), ParseError> {
+    let mut args = Vec::new();
+    while input.trim_start().starts_with('(') {
+        input = input.trim_start();
+        let (inside, rest) = consume_balanced_prefix(input, '(', ')')?;
+        args.push(ParenHeadingArgs {
+            span: span_all(&input[..input.len() - rest.len()]),
+            forms: parse_paren_heading_form_list(inside)?,
+        });
+        input = rest;
+    }
+
+    Ok((args, input))
+}
+
+/// Parses colon-prefixed tail parts for command headers.
+///
+/// A tail part must include at least one `{...}` group, which prevents bare
+/// punctuation like `:to` from being accepted without the argument shape that
+/// gives the part semantic content.
+pub(super) fn parse_command_header_tail(
+    mut input: &str,
+) -> Result<(Vec<CommandHeaderTailPart>, &str), ParseError> {
+    let mut parts = Vec::new();
+    loop {
+        input = input.trim_start();
+        if !input.starts_with(':') || input.starts_with("::") {
+            break;
+        }
+
+        let (optional, tail_body) = if let Some(rest) = input.strip_prefix(":?") {
+            (true, rest)
+        } else {
+            (false, &input[1..])
+        };
+        let (chain_text, rest) = split_prefix_by_delimiters(tail_body, &['{']);
+        let chain = parse_chain(chain_text)?;
+        let (args, remaining) = parse_curly_heading_args(rest)?;
+        if args.is_empty() {
+            return Err(ParseError::custom(
+                "header tail parts require at least one `{...}` argument list",
+            ));
+        }
+
+        parts.push(CommandHeaderTailPart {
+            span: span_all(&input[..input.len() - remaining.len()]),
+            chain,
+            args,
+            optional,
+        });
+        input = remaining;
+    }
+
+    Ok((parts, input))
+}
+
+/// Parses consecutive `{...}` argument groups in a command expression.
+///
+/// Expression argument groups carry concrete expression ASTs and therefore use
+/// the expression list parser rather than the form/declaration list parser used
+/// for command headers.
+pub(super) fn parse_curly_expression_args(
+    mut input: &str,
+) -> Result<(Vec<CurlyExpressionArgs>, &str), ParseError> {
+    let mut args = Vec::new();
+    while input.trim_start().starts_with('{') {
+        input = input.trim_start();
+        let (inside, rest) = consume_balanced_prefix(input, '{', '}')?;
+        let group = &input[..input.len() - rest.len()];
+        // Collection-literal sugar: `\foo{x_ : ...}` == `\foo{{x_ : ...}}`.
+        let (expressions, rows) = match parse_collection_literal_argument(group, inside) {
+            Some(set) => (vec![set], None),
+            None => {
+                let row_texts = split_top_level(inside, ';')?;
+                let matrix = row_texts.len() > 1;
+                let parsed_rows = row_texts
+                    .into_iter()
+                    .map(parse_expression_list)
+                    .collect::<Result<Vec<_>, _>>()?;
+                let row_lengths = parsed_rows.iter().map(Vec::len).collect::<Vec<_>>();
+                (
+                    parsed_rows.into_iter().flatten().collect(),
+                    matrix.then_some(row_lengths),
+                )
+            }
+        };
+        args.push(CurlyExpressionArgs {
+            span: span_all(group),
+            expressions,
+            rows,
+        });
+        input = rest;
+    }
+
+    Ok((args, input))
+}
+
+/// Parses consecutive `(...)` argument groups in a command expression.
+///
+/// These groups represent invocation at a use site.  Semantic checking later
+/// verifies whether the referenced definition allows the supplied parenthesized
+/// arity.
+pub(super) fn parse_paren_expression_args(
+    mut input: &str,
+) -> Result<(Vec<ParenExpressionArgs>, &str), ParseError> {
+    let mut args = Vec::new();
+    while input.trim_start().starts_with('(') {
+        input = input.trim_start();
+        let (inside, rest) = consume_balanced_prefix(input, '(', ')')?;
+        args.push(ParenExpressionArgs {
+            span: span_all(&input[..input.len() - rest.len()]),
+            expressions: parse_expression_list(inside)?,
+        });
+        input = rest;
+    }
+
+    Ok((args, input))
+}
+
+/// Parses colon-prefixed tail parts for command expressions.
+///
+/// Each tail part must provide at least one `{...}` expression argument group so
+/// reference signatures retain the same required shape as their definitions.
+pub(super) fn parse_command_expression_tail(
+    mut input: &str,
+) -> Result<(Vec<CommandExpressionTailPart>, &str), ParseError> {
+    let mut parts = Vec::new();
+    loop {
+        input = input.trim_start();
+        if !input.starts_with(':') || input.starts_with("::") {
+            break;
+        }
+
+        let (optional, tail_body) = if let Some(rest) = input.strip_prefix(":?") {
+            (true, rest)
+        } else {
+            (false, &input[1..])
+        };
+        let (chain_text, rest) = split_prefix_by_delimiters(tail_body, &['{']);
+        let chain = parse_chain(chain_text)?;
+        let (args, remaining) = parse_curly_expression_args(rest)?;
+        if args.is_empty() {
+            return Err(ParseError::custom(
+                "command tail parts require at least one `{...}` argument list",
+            ));
+        }
+
+        parts.push(CommandExpressionTailPart {
+            span: span_all(&input[..input.len() - remaining.len()]),
+            chain,
+            args,
+            optional,
+        });
+        input = remaining;
+    }
+
+    Ok((parts, input))
+}
+
+/// Parses a subject/type `is` statement.
+///
+/// The `allow_refined` flag controls whether the right-hand side may use the
+/// refined command expression grammar.  This keeps ordinary definition checks
+/// stricter while theorem assumptions can reference refined definitions.
+pub(super) fn parse_is_statement(
+    input: &str,
+    allow_refined: bool,
+) -> Result<IsStatement, ParseError> {
+    let index = find_top_level_substring(input, " is ")
+        .ok_or_else(|| ParseError::custom("expected top-level ` is `"))?;
+    let subject = parse_is_subject(&input[..index])?;
+    let ty = parse_type_expression(&input[index + 4..], allow_refined)?;
+
+    Ok(IsStatement {
+        span: span_all(input),
+        subject,
+        ty,
+    })
+}
+
+/// Parses a subject/operator/name specification statement.
+///
+/// Specifications use a quoted operator between the subject and target name,
+/// for example `x "in" A`.  The quoted operator is discovered at top level so
+/// nested formulation constructs remain intact.
+pub(super) fn parse_subject_spec_statement(
+    input: &str,
+) -> Result<SubjectSpecStatement, ParseError> {
+    let (subject_text, operator, name_text) =
+        split_subject_operator_name(input).ok_or_else(|| {
+            ParseError::custom("expected specification of the form `<subject> \"op\" Name`")
+        })?;
+    let subject = parse_spec_subject(subject_text)?;
+    let name = parse_name_token(name_text)?;
+
+    Ok(SubjectSpecStatement {
+        span: span_all(input),
+        subject,
+        operator: operator.to_owned(),
+        name,
+    })
+}
+
+/// Parses a placeholder/operator/name specification used by spec aliases.
+///
+/// This mirrors [`parse_subject_spec_statement`] but requires the subject side
+/// to be placeholder syntax such as `x_` or `f_(x_)`.
+pub(super) fn parse_placeholder_spec_statement(
+    input: &str,
+) -> Result<PlaceholderSpecStatement, ParseError> {
+    let (placeholder_text, operator, name_text) =
+        split_subject_operator_name(input).ok_or_else(|| {
+            ParseError::custom("expected placeholder specification of the form `x_ \"op\" X`")
+        })?;
+    let placeholder_form = parse_placeholder_form(placeholder_text)?;
+    let name = parse_name_token(name_text)?;
+
+    Ok(PlaceholderSpecStatement {
+        span: span_all(input),
+        placeholder_form,
+        operator: operator.to_owned(),
+        name,
+    })
+}
+
+/// Parses the unified declaration statement syntax.
+///
+/// `::=` introduces additional declaration-side symbols, while top-level `:=`
+/// introduces an expression definition whose right side is checked later
+/// against the symbols declared by the left side.
+pub fn parse_declaration_statement(
+    input: &str,
+    allow_refined_type: bool,
+) -> Result<DeclarationStatement, ParseError> {
+    let input = input.trim();
+    if let Some((label, inner)) = split_labeled_formulation(input)? {
+        let mut statement = parse_declaration_statement(inner, allow_refined_type)?;
+        if statement.label.is_some() {
+            return Err(ParseError::custom(
+                "a declaration cannot have more than one label",
+            ));
+        }
+        statement.span = span_all(input);
+        statement.label = Some(label);
+        return Ok(statement);
+    }
+    match parse_standard_declaration_statement(input, allow_refined_type) {
+        Ok(statement) => return Ok(statement),
+        Err(error) => {
+            if let Some(statement) = parse_operator_pattern_definition(input) {
+                return statement;
+            }
+            return Err(error);
+        }
+    }
+}
+
+/// Parses a declaration statement that only accepts ordinary type expressions.
+#[allow(dead_code)]
+pub fn parse_ordinary_declaration_statement(
+    input: &str,
+) -> Result<DeclarationStatement, ParseError> {
+    parse_declaration_statement(input, false)
+}
+
+/// Parses a declaration statement whose `is` relation may use refined commands.
+pub fn parse_refined_declaration_statement(
+    input: &str,
+) -> Result<DeclarationStatement, ParseError> {
+    parse_declaration_statement(input, true)
+}
+
+/// Parses the type side of an `is` statement.
+///
+/// Type expressions are intentionally restricted to command expressions because
+/// MathLingua type references are command-backed definitions.  When enabled,
+/// refined command expressions are accepted before falling back to ordinary
+/// command expressions.
+pub(crate) fn parse_type_expression(
+    input: &str,
+    allow_refined: bool,
+) -> Result<TypeExpression, ParseError> {
+    let input = input.trim();
+    if input.starts_with("\\\\") {
+        return parse_builtin_type_expression(input);
+    }
+
+    if contains_top_level(input, "|->") {
+        return Err(ParseError::custom("function types use `->`, not `|->`"));
+    }
+
+    if contains_top_level(input, "->") {
+        return parse_function_type_expression(input, allow_refined).map(TypeExpression::Function);
+    }
+
+    if contains_top_level(input, "=>") {
+        return Err(ParseError::custom(
+            "function types use `->`; `=>` introduces a function literal",
+        ));
+    }
+
+    if input.starts_with('(') {
+        return parse_tuple_type_expression(input, allow_refined).map(TypeExpression::Tuple);
+    }
+
+    if input.starts_with('{') {
+        return parse_set_type_expression(input, allow_refined).map(TypeExpression::Set);
+    }
+
+    if allow_refined && contains_top_level(input, "::") {
+        return parse_refined_command_expression(input).map(TypeExpression::RefinedCommand);
+    }
+
+    let expression = parse_expression(input)?;
+    match expression.kind {
+        ExpressionKind::Command(command) => Ok(TypeExpression::Command(command)),
+        _ => Err(ParseError::custom("expected command expression for type")),
+    }
+}
+
+/// Parses the subject on the left side of an `is` statement.
+///
+/// A comma at top level indicates a list of forms/placeholders.  Otherwise the
+/// parser first attempts a single form-like subject and then falls back to an
+/// operator subject for statements about operators themselves.
+pub(super) fn parse_is_subject(input: &str) -> Result<IsSubject, ParseError> {
+    let input = input.trim();
+
+    if find_first_top_level_char(input, ',').is_some() {
+        return parse_is_subject_form_list(input).map(|forms| IsSubject {
+            span: span_all(input),
+            kind: IsSubjectKind::Forms(forms),
+        });
+    }
+
+    if let Ok(form) = parse_is_subject_form(input) {
+        return Ok(IsSubject {
+            span: span_all(input),
+            kind: IsSubjectKind::Forms(vec![form]),
+        });
+    }
+
+    let operator = parse_operator(input)?;
+    Ok(IsSubject {
+        span: span_all(input),
+        kind: IsSubjectKind::Operator(operator),
+    })
+}
+
+/// Parses the subject side of a quoted-operator specification.
+///
+/// Specification subjects accept ordinary forms when possible, with operator
+/// subjects as the fallback so definitions can describe named operators.
+pub(super) fn parse_spec_subject(input: &str) -> Result<SpecSubject, ParseError> {
+    let input = input.trim();
+    if let Ok(form) = parse_form_or_declaration(input) {
+        return Ok(SpecSubject {
+            span: span_all(input),
+            kind: SpecSubjectKind::Form(form),
+        });
+    }
+
+    let operator = parse_operator(input)?;
+    Ok(SpecSubject {
+        span: span_all(input),
+        kind: SpecSubjectKind::Operator(operator),
+    })
+}
+
+/// Parses an operator token from raw text.
+///
+/// Operators are kept as text rather than grammar tokens here because the
+/// higher-level specification syntax extracts them from quoted strings.
+pub(super) fn parse_operator(input: &str) -> Result<Operator, ParseError> {
+    let input = input.trim();
+    if !is_operator_text(input) {
+        return Err(ParseError::custom(format!(
+            "expected operator, found `{input}`"
+        )));
+    }
+
+    Ok(Operator::new(span_all(input), input))
+}
+
+/// Parses one subject form allowed on the left of an `is` statement.
+///
+/// Full forms are preferred, then placeholder forms are accepted for cases such
+/// as theorem schemata that bind placeholder-shaped subjects.
+pub(super) fn parse_is_subject_form(input: &str) -> Result<IsSubjectForm, ParseError> {
+    if let Ok(form) = parse_form_or_declaration(input) {
+        return Ok(IsSubjectForm::Form(form));
+    }
+
+    if let Ok(form) = parse_placeholder_form(input) {
+        return Ok(IsSubjectForm::PlaceholderForm(form));
+    }
+
+    parse_magnetic_placeholder_subject_form(input).map(IsSubjectForm::PlaceholderForm)
+}
+
+/// Parses a comma-separated top-level list of `is` subject forms.
+///
+/// Empty lists are rejected after splitting so callers can emit a precise
+/// subject error instead of accepting an empty subject set.
+pub(super) fn parse_is_subject_form_list(input: &str) -> Result<Vec<IsSubjectForm>, ParseError> {
+    let forms = split_top_level(input, ',')?
+        .into_iter()
+        .map(parse_is_subject_form)
+        .collect::<Result<Vec<_>, _>>()?;
+
+    if forms.is_empty() {
+        return Err(ParseError::custom("expected at least one form"));
+    }
+
+    Ok(forms)
+}
+
+/// Parses placeholder form syntax such as `x_` or `f_(x_)`.
+///
+/// Function placeholder arguments must themselves be simple placeholders.  The
+/// balanced-prefix scanner prevents commas inside nested syntax from confusing
+/// the argument list splitter.
+pub(super) fn parse_placeholder_form(input: &str) -> Result<PlaceholderForm, ParseError> {
+    let input = input.trim();
+    if let Some(open_index) = find_first_top_level_char(input, '(') {
+        let (inside, rest) = consume_balanced_prefix(&input[open_index..], '(', ')')?;
+        if !rest.trim().is_empty() {
+            return Err(ParseError::custom(
+                "unexpected trailing text after placeholder form",
+            ));
+        }
+
+        let placeholder = parse_placeholder(&input[..open_index])?;
+        let arguments = parse_placeholder_list(inside)?;
+        return Ok(PlaceholderForm::new(
+            span_all(input),
+            PlaceholderFormKind::Function {
+                placeholder,
+                arguments,
+            },
+        ));
+    }
+
+    parse_placeholder(input).map(|placeholder| {
+        PlaceholderForm::new(
+            span_all(input),
+            PlaceholderFormKind::Placeholder(placeholder),
+        )
+    })
+}
+
+/// Parses a single placeholder name ending in exactly one underscore.
+///
+/// Double-underscore markers are reserved for form declarations like `f(x__)`,
+/// so placeholder syntax explicitly rejects names ending in `__`.
+pub(super) fn parse_placeholder(input: &str) -> Result<Placeholder, ParseError> {
+    let input = input.trim();
+    if !input.ends_with('_') || input.ends_with("__") {
+        return Err(ParseError::custom(format!(
+            "expected placeholder ending with `_`, found `{input}`"
+        )));
+    }
+
+    let name = &input[..input.len() - 1];
+    if !is_name_text(name) {
+        return Err(ParseError::custom(format!(
+            "invalid placeholder name `{name}`"
+        )));
+    }
+
+    Ok(Placeholder::new(span_all(input), name))
+}
+
+/// Parses a nonempty comma-separated list of placeholders.
+///
+/// The split is top-level aware so future placeholder syntax with grouping does
+/// not accidentally create extra list entries.
+pub(super) fn parse_placeholder_list(input: &str) -> Result<Vec<Placeholder>, ParseError> {
+    let mut placeholders = Vec::new();
+    for item in split_top_level(input, ',')? {
+        placeholders.push(parse_placeholder(item)?);
+    }
+
+    if placeholders.is_empty() {
+        return Err(ParseError::custom("expected at least one placeholder"));
+    }
+
+    Ok(placeholders)
+}
+
+/// Parses a nonempty comma-separated list of forms/declarations.
+///
+/// Lists are split only on top-level commas so tuple, set, and command argument
+/// syntax can contain nested commas safely.
+pub(super) fn parse_form_list(input: &str) -> Result<Vec<FormOrDeclaration>, ParseError> {
+    let forms = split_top_level(input, ',')?
+        .into_iter()
+        .map(parse_form_or_declaration)
+        .collect::<Result<Vec<_>, _>>()?;
+    if forms.is_empty() {
+        return Err(ParseError::custom("expected at least one form"));
+    }
+    Ok(forms)
+}
+
+/// Parses a nonempty comma-separated list of expressions.
+///
+/// This is the expression-valued counterpart to [`parse_form_list`] and is used
+/// for concrete command references and invocation arguments.
+pub(super) fn parse_expression_list(input: &str) -> Result<Vec<Expression>, ParseError> {
+    let expressions = split_top_level(input, ',')?
+        .into_iter()
+        .map(parse_expression)
+        .collect::<Result<Vec<_>, _>>()?;
+    if expressions.is_empty() {
+        return Err(ParseError::custom("expected at least one expression"));
+    }
+    Ok(expressions)
+}
+
+/// Parses a dot-separated command/name chain.
+///
+/// Chains are used by commands, refined command parts, and namespaced labels.
+/// Each part may be a regular name, an operator token, or an alias reference.
+pub(super) fn parse_chain(input: &str) -> Result<Chain, ParseError> {
+    let input = input.trim();
+    let parts = split_top_level(input, '.')?
+        .into_iter()
+        .map(parse_chain_part)
+        .collect::<Result<Vec<_>, _>>()?;
+    if parts.is_empty() {
+        return Err(ParseError::custom("chains require at least one part"));
+    }
+
+    Ok(Chain {
+        span: span_all(input),
+        parts,
+    })
+}
+
+/// Parses one chain segment.
+///
+/// A leading `$` marks an alias reference, operator-only text becomes an
+/// operator segment, and all other segments must satisfy name-token rules.
+pub(super) fn parse_chain_part(input: &str) -> Result<ChainPart, ParseError> {
+    let input = input.trim();
+    if let Some(alias) = input.strip_prefix('$') {
+        return Ok(ChainPart::Alias(parse_name_token(alias)?));
+    }
+
+    if is_operator_text(input) {
+        return Ok(ChainPart::Operator(input.to_owned()));
+    }
+
+    Ok(ChainPart::Name(parse_name_token(input)?))
+}
+
+/// Parses dot-separated plain name parts.
+///
+/// This is used by label, author, and resource headings where aliases and
+/// operator chain segments are not valid.
+pub(super) fn parse_dotted_parts(input: &str) -> Result<Vec<String>, ParseError> {
+    let parts = split_top_level(input, '.')?
+        .into_iter()
+        .map(parse_name_token)
+        .collect::<Result<Vec<_>, _>>()?;
+    if parts.is_empty() {
+        return Err(ParseError::custom("expected at least one name part"));
+    }
+    Ok(parts)
+}
+
+/// Validates and returns one name token.
+///
+/// Name tokens may be backtick-wrapped operator text, which allows operator
+/// names to participate in syntax positions that otherwise require identifiers.
+pub(super) fn parse_name_token(input: &str) -> Result<String, ParseError> {
+    let input = input.trim();
+    if !is_name_text(input) {
+        return Err(ParseError::custom(format!("invalid name `{input}`")));
+    }
+
+    Ok(input.to_owned())
+}
+
+/// Parses a standalone expression.
+///
+/// This is the entry point used for theorem clauses and other places where the
+/// source must be mathematical expression syntax rather than a declaration or
+/// specification statement.
+pub fn parse_expression(input: &str) -> Result<Expression, ParseError> {
+    let input = input.trim();
+    if is_decimal_literal_text(input) || is_negative_integer_literal_text(input) {
+        return Ok(Expression::new(
+            span_all(input),
+            ExpressionKind::Name(input.to_owned()),
+        ));
+    }
+    if let Some(expression) = parse_named_function_call(input)? {
+        return Ok(expression);
+    }
+    if let Some(expression) = parse_two_dimensional_variadic_expression(input)? {
+        return Ok(expression);
+    }
+    if let Some(expression) = parse_indexed_call_expression(input)? {
+        return Ok(expression);
+    }
+    if let Some(index) = find_top_level_definition(input) {
+        let target_text = input[..index].trim();
+        let value_text = input[index + 2..].trim();
+        if !target_text.is_empty()
+            && !value_text.is_empty()
+            && let Ok(target) = parse_expression(target_text)
+            && let ExpressionKind::VariadicSlice(target) = target.kind
+        {
+            let value = parse_expression(value_text)?;
+            return Ok(Expression::new(
+                span_all(input),
+                ExpressionKind::VariadicAssignment {
+                    target,
+                    value: Box::new(value),
+                },
+            ));
+        }
+    }
+    if let Some(index) = find_top_level_substring(input, " is ") {
+        let type_text = input[index + 4..].trim();
+        if contains_top_level(type_text, "->")
+            || contains_top_level(type_text, "=>")
+            || contains_top_level(type_text, "|->")
+            || type_text.starts_with('(')
+            || type_text.starts_with('{')
+        {
+            let subject = parse_expression(&input[..index])?;
+            let ty = parse_type_expression(type_text, true)?;
+            return Ok(Expression::new(
+                span_all(input),
+                ExpressionKind::IsType {
+                    subject: Box::new(subject),
+                    ty,
+                },
+            ));
+        }
+    }
+    if input.starts_with('{') {
+        if let Ok(expression) = parse_set_expression(input) {
+            return Ok(expression);
+        }
+    }
+    if let Some(expression) = parse_set_build_expression(input) {
+        return expression;
+    }
+    if let Some(expression) = parse_builtin_command_expression(input) {
+        return expression;
+    }
+    if let Some(expression) = parse_refined_predicate_expression(input) {
+        return expression;
+    }
+    if let Some(expression) = parse_suffixed_command_expression(input) {
+        return expression;
+    }
+    if input.starts_with('\\') && !input.starts_with("\\\\") && input.contains(';') {
+        return parse_simple_command_expression_with_context(input)
+            .map(|command| Expression::new(span_all(input), ExpressionKind::Command(command)));
+    }
+    if let Some(split) = split_infix_spec_statement(input)
+        && !split.left.is_empty()
+        && !split.body.is_empty()
+        && !split.right.is_empty()
+    {
+        let left = parse_expression(split.left)?;
+        let spec = parse_infix_spec_expression_body(split.body, split.predicate)?;
+        let right = parse_expression(split.right)?;
+        return Ok(Expression::new(
+            span_all(input),
+            ExpressionKind::InfixSpecStatement {
+                left: Box::new(left),
+                spec,
+                right: Box::new(right),
+            },
+        ));
+    }
+
+    parse_input_expression(input).map_err(ParseError::from)
+}
+
+/// Parses a local expression binding of the form `<left> := <right>`.
+#[allow(dead_code)]
+pub fn parse_expression_binding(input: &str) -> Result<ExpressionBinding, ParseError> {
+    let input = input.trim();
+    let index = find_top_level_substring(input, ":=")
+        .ok_or_else(|| ParseError::custom("expected top-level `:=`"))?;
+    let left = parse_expression(input[..index].trim())?;
+    let right = parse_expression(input[index + 2..].trim())?;
+
+    Ok(ExpressionBinding {
+        span: span_all(input),
+        left,
+        right,
+    })
+}
+
+/// Parses a form or declaration used in definition-like `Declares` sections.
+///
+/// The generated grammar handles the detailed expression/form precedence here;
+/// this wrapper only adapts lexer and error types for callers.
+pub fn parse_form_or_declaration(input: &str) -> Result<FormOrDeclaration, ParseError> {
+    if let Some(form) = parse_mapping_parameter_form(input)? {
+        return Ok(form);
+    }
+    if let Some(form) = parse_variadic_function_form(input)? {
+        return Ok(form);
+    }
+    grammar::InputFormOrDeclarationParser::new()
+        .parse(Lexer::new(input))
+        .map_err(ParseError::from)
+}
+
+/// Parses either an `is` statement or a subject/operator/name specification.
+///
+/// The split is performed only at a top-level ` is ` so nested expressions such
+/// as tuples, command arguments, or quoted operators do not accidentally change
+/// which grammar branch is selected.
+pub fn parse_is_or_spec(input: &str) -> Result<IsOrSpec, ParseError> {
+    let input = input.trim();
+    if contains_top_level(input, " is ") {
+        let statement = parse_is_statement(input, false)?;
+        return Ok(IsOrSpec::Is(statement));
+    }
+
+    parse_subject_spec_statement(input).map(IsOrSpec::Spec)
+}
+
+/// Parses an `is` statement that may use refined command syntax, or a spec.
+///
+/// This variant is used in theorem-style contexts where `\(a, b)::command`
+/// references are legal.  Declaration contexts should use
+/// [`parse_declaration_statement`] instead.
+#[allow(dead_code)]
+pub fn parse_is_or_refined_statement_spec(
+    input: &str,
+) -> Result<IsOrRefinedStatementSpec, ParseError> {
+    let input = input.trim();
+    if contains_top_level(input, " is ") {
+        let statement = parse_is_statement(input, true)?;
+        return Ok(IsOrRefinedStatementSpec::Is(statement));
+    }
+
+    parse_subject_spec_statement(input).map(IsOrRefinedStatementSpec::Spec)
+}
+
+/// Splits an optional trailing ` via <form>` view off a formulation, as in the
+/// `Declares:` target `G ::= (X, *, e) is \monoid via (X, *)`.
+///
+/// The separator is located at top level so tuples and command arguments can
+/// contain the same text without being split as statement syntax.
+pub fn split_via_view(input: &str) -> (&str, Option<&str>) {
+    let input = input.trim();
+    match find_top_level_substring(input, " via ") {
+        Some(index) => (input[..index].trim(), Some(input[index + 5..].trim())),
+        None => (input, None),
+    }
+}
+
+/// Parses an `is ... via ...` statement.
+///
+/// The `via` separator is located at top level so tuples and command arguments
+/// can contain the same text without being split as statement syntax.
+pub fn parse_is_via_statement(input: &str) -> Result<IsViaStatement, ParseError> {
+    let input = input.trim();
+    let index = find_top_level_substring(input, " via ")
+        .ok_or_else(|| ParseError::custom("expected top-level ` via `"))?;
+    let statement = parse_is_statement(&input[..index], true)?;
+    let via = parse_form_or_declaration(&input[index + 5..])?;
+
+    Ok(IsViaStatement {
+        span: span_all(input),
+        is_statement: statement,
+        via,
+    })
+}
+
+/// Parses any command header form used in bracketed group headings.
+///
+/// This dispatches among ordinary commands, infix command headers, and refined
+/// command headers.  Infix command headers may include left and right operands
+/// around their `\.`...`./` command core.
+pub fn parse_command_header(input: &str) -> Result<CommandHeader, ParseError> {
+    let input = input.trim();
+    if input.starts_with("\\:") || find_top_level_substring(input, "\\:").is_some() {
+        return parse_infix_spec_header(input).map(CommandHeader::InfixSpec);
+    }
+
+    if input.starts_with("\\.") || find_top_level_substring(input, "\\.").is_some() {
+        return parse_infix_command_header(input).map(CommandHeader::Infix);
+    }
+
+    if !input.starts_with('\\') {
+        return Err(ParseError::custom("command header must start with `\\`"));
+    }
+
+    if contains_top_level(input, "::") {
+        return parse_refined_command_header(input).map(CommandHeader::Refined);
+    }
+
+    parse_simple_command_header(input).map(CommandHeader::Command)
+}
+
+/// Parses a writing alias of the form `<form> :~> <body>`.
+///
+/// The body is kept as raw text because writing aliases currently describe
+/// rendering templates rather than formulation AST nodes.
+pub fn parse_writing_alias(input: &str) -> Result<WritingAlias, ParseError> {
+    let input = input.trim();
+    let index = find_top_level_substring(input, ":~>")
+        .ok_or_else(|| ParseError::custom("expected top-level `:~>`"))?;
+    let form = parse_form_or_declaration(input[..index].trim())?;
+    let body = input[index + 3..].trim();
+    if body.is_empty() {
+        return Err(ParseError::custom("writing alias body cannot be empty"));
+    }
+
+    Ok(WritingAlias {
+        span: span_all(input),
+        form,
+        body: body.to_owned(),
+    })
+}
+
+/// Parses an expression alias of the form `<lhs> :=> <expression>`.
+///
+/// Form-based expression aliases may also use `:->` when the target expression
+/// is statement-like, such as `R(a_, b_) :-> (a_, b_) "in" R`.
+///
+/// The left-hand side may be a form declaration, ordinary command header, or
+/// infix command header.  Refined command headers are rejected here because
+/// aliases define base expression syntax rather than refinement composition.
+pub fn parse_expression_alias(input: &str) -> Result<ExpressionAlias, ParseError> {
+    let input = input.trim();
+    let (index, arrow_len) = find_top_level_substring(input, ":=>")
+        .map(|index| (index, 3))
+        .or_else(|| find_top_level_substring(input, ":->").map(|index| (index, 3)))
+        .ok_or_else(|| ParseError::custom("expected top-level `:=>`"))?;
+    let lhs_text = input[..index].trim();
+    let expression = parse_expression(input[index + arrow_len..].trim())?;
+
+    let lhs = if find_top_level_substring(lhs_text, "\\.").is_some() {
+        let header = parse_infix_command_header(lhs_text)?;
+        reject_optional_header_tails(&CommandHeader::Infix(header.clone()))?;
+        ExpressionAliasLhs::InfixCommand(header)
+    } else if lhs_text.starts_with('\\') {
+        match parse_command_header(lhs_text)? {
+            CommandHeader::Command(header) => {
+                reject_optional_header_tails(&CommandHeader::Command(header.clone()))?;
+                ExpressionAliasLhs::Command(header)
+            }
+            CommandHeader::Infix(header) => {
+                reject_optional_header_tails(&CommandHeader::Infix(header.clone()))?;
+                ExpressionAliasLhs::InfixCommand(header)
+            }
+            CommandHeader::InfixSpec(_) => {
+                return Err(ParseError::custom(
+                    "spec-infix headers are not valid expression alias lhs values",
+                ));
+            }
+            CommandHeader::Refined(_) => {
+                return Err(ParseError::custom(
+                    "refined command headers are not valid expression alias lhs values",
+                ));
+            }
+        }
+    } else if let Some(member) = parse_member_alias_lhs(lhs_text) {
+        ExpressionAliasLhs::Member(member?)
+    } else {
+        ExpressionAliasLhs::Form(parse_form_or_declaration(lhs_text)?)
+    };
+
+    Ok(ExpressionAlias {
+        span: span_all(input),
+        lhs,
+        expression,
+    })
+}
+
+/// Parses a specification-operator alias of the form
+/// `<placeholder spec> (:-> | :<->:) <target>`.
+///
+/// These aliases bridge operator-like placeholder declarations to either an
+/// `is` statement or a specification target, so both sides need bespoke parsing
+/// around the generated formulation grammar.
+pub fn parse_spec_operator_alias(input: &str) -> Result<SpecOperatorAlias, ParseError> {
+    let input = input.trim();
+    let (index, arrow, kind) = find_top_level_substring(input, ":<->:")
+        .map(|index| (index, ":<->:", SpecOperatorAliasKind::Iff))
+        .or_else(|| {
+            find_top_level_substring(input, ":->")
+                .map(|index| (index, ":->", SpecOperatorAliasKind::Implies))
+        })
+        .ok_or_else(|| ParseError::custom("expected top-level `:->` or `:<->:`"))?;
+    let placeholder_spec = parse_placeholder_spec_statement(input[..index].trim())?;
+    let target_text = input[index + arrow.len()..].trim();
+    let targets = split_top_level(target_text, ';')?
+        .into_iter()
+        .map(parse_spec_operator_alias_target)
+        .collect::<Result<Vec<_>, _>>()?;
+    let target = match targets.as_slice() {
+        [target] => target.clone(),
+        _ => SpecOperatorAliasTarget::Conjunction(targets),
+    };
+
+    Ok(SpecOperatorAlias {
+        span: span_all(input),
+        kind,
+        placeholder_spec,
+        target,
+    })
+}
+
+/// Parses a dot-separated label heading.
+///
+/// Labels intentionally accept only dotted name parts, keeping them lightweight
+/// identifiers for notes and nested structural groups.
+pub fn parse_label_header(input: &str) -> Result<LabelHeader, ParseError> {
+    let input = input.trim();
+    let parts = parse_dotted_parts(input)?;
+    Ok(LabelHeader {
+        span: span_all(input),
+        parts,
+    })
+}
+
+/// Parses one or more `(:...:)` label references (for example `(:abc:)`,
+/// `(:a, b:)`, or `(:a:), (:b:)`).
+pub fn parse_label_references(input: &str) -> Result<Vec<Label>, ParseError> {
+    let mut rest = input.trim();
+    if rest.is_empty() {
+        return Err(ParseError::custom(
+            "expected label reference of the form `(:label:)`",
+        ));
+    }
+    let mut labels = Vec::new();
+    while !rest.is_empty() {
+        if !rest.starts_with("(:") {
+            return Err(ParseError::custom(
+                "expected label reference of the form `(:label:)`",
+            ));
+        }
+        let Some(end) = rest[2..].find(":)") else {
+            return Err(ParseError::custom(
+                "unterminated label reference; expected `(:...:)`",
+            ));
+        };
+        let content = rest[2..2 + end].trim();
+        if content.is_empty() {
+            return Err(ParseError::custom("label reference cannot be empty"));
+        }
+        for item in content.split(',') {
+            let trimmed = item.trim();
+            if trimmed.is_empty() {
+                return Err(ParseError::custom("empty item in label reference list"));
+            }
+            let parts = parse_dotted_parts(trimmed)?;
+            labels.push(Label {
+                span: span_all(input),
+                parts,
+            });
+        }
+        rest = rest[2 + end + 2..].trim_start();
+        if let Some(after_comma) = rest.strip_prefix(',') {
+            rest = after_comma.trim_start();
+            if rest.is_empty() {
+                return Err(ParseError::custom("trailing comma in label references"));
+            }
+        }
+    }
+    Ok(labels)
+}
+
+/// Parses an author heading beginning with `@`.
+///
+/// The returned header stores the dotted name path without the sigil so the
+/// structural layer can use the same path representation as labels/resources.
+pub fn parse_author_header(input: &str) -> Result<AuthorHeader, ParseError> {
+    let input = input.trim();
+    let rest = input
+        .strip_prefix('@')
+        .ok_or_else(|| ParseError::custom("author headers must start with `@`"))?;
+    let parts = parse_dotted_parts(rest)?;
+    Ok(AuthorHeader {
+        span: span_all(input),
+        parts,
+    })
+}
+
+/// Parses a resource heading beginning with `$`.
+///
+/// Resource headings share dotted path validation with labels but use a
+/// different sigil to keep bibliography-style entries visually separate.
+pub fn parse_resource_header(input: &str) -> Result<ResourceHeader, ParseError> {
+    let input = input.trim();
+    let rest = input
+        .strip_prefix('$')
+        .ok_or_else(|| ParseError::custom("resource headers must start with `$`"))?;
+    let (path, page) = match rest.strip_suffix('}') {
+        Some(without_close) if without_close.rfind(":page{").is_some() => {
+            let argument_start = without_close
+                .rfind(":page{")
+                .expect("page suffix was checked above");
+            let page_text = without_close[argument_start + ":page{".len()..].trim();
+            let page = page_text.parse::<u64>().map_err(|_| {
+                ParseError::custom("resource `page` arguments must be positive integers")
+            })?;
+            if page == 0 {
+                return Err(ParseError::custom(
+                    "resource `page` arguments must be positive integers",
+                ));
+            }
+            (&without_close[..argument_start], Some(page))
+        }
+        _ => (rest, None),
+    };
+    let parts = parse_dotted_parts(path)?;
+    Ok(ResourceHeader {
+        span: span_all(input),
+        parts,
+        page,
+    })
+}
+
+/// Parses a topic heading beginning with `#`.
+///
+/// Topic headings share dotted-path validation with labels but use a `#` sigil so
+/// that `[#real.analysis]` names a documentation topic. The returned header stores
+/// the dotted name path without the sigil, matching the author/resource headers.
+pub fn parse_topic_header(input: &str) -> Result<TopicHeader, ParseError> {
+    let input = input.trim();
+    let rest = input
+        .strip_prefix('#')
+        .ok_or_else(|| ParseError::custom("topic headers must start with `#`"))?;
+    let parts = parse_dotted_parts(rest)?;
+    Ok(TopicHeader {
+        span: span_all(input),
+        parts,
+    })
+}
+
+// =============================================================================
+
+/// Concrete parse error type returned by the generated LALRPOP grammar.
+///
+/// The public parser API wraps this in [`ParseError`] so hand-written parser
+/// helpers and generated grammar failures can share one error channel.
+type LalrpopError = LalrpopParseError<usize, Token, LexicalError>;
+
+/// A per-token rewrite applied when desugaring argument shorthands.
+enum TokenEdit {
+    Keep,
+    /// Emit the token twice (used to inject a synthetic inner brace).
+    Double,
+    /// Replace the token with a fixed sequence (reusing its offsets).
+    Replace(Vec<Token>),
+    /// Drop the token.
+    Skip,
+}
+
+fn format_grammar_error(error: &LalrpopError) -> String {
+    match error {
+        LalrpopParseError::InvalidToken { .. } => "invalid token".to_owned(),
+        LalrpopParseError::UnrecognizedEof { expected, .. } => {
+            format!(
+                "unexpected end of input; expected {}",
+                format_expected(expected)
+            )
+        }
+        LalrpopParseError::UnrecognizedToken {
+            token: (_, token, _),
+            expected,
+        } => {
+            format!(
+                "unexpected {}; expected {}",
+                token_description(token),
+                format_expected(expected)
+            )
+        }
+        LalrpopParseError::ExtraToken {
+            token: (_, token, _),
+        } => {
+            format!("unexpected extra {}", token_description(token))
+        }
+        LalrpopParseError::User { error } => error.to_string(),
+    }
+}
+
+fn format_expected(expected: &[String]) -> String {
+    if expected.is_empty() {
+        return "another token".to_owned();
+    }
+
+    let labels = expected
+        .iter()
+        .map(|item| expected_description(item))
+        .collect::<BTreeSet<_>>();
+    let mut labels = labels.into_iter().collect::<Vec<_>>();
+    let remaining = labels.len().saturating_sub(6);
+    labels.truncate(6);
+
+    match (labels.as_slice(), remaining) {
+        ([one], 0) => one.clone(),
+        (_, 0) => labels.join(", "),
+        _ => format!("{} or {remaining} more", labels.join(", ")),
+    }
+}
+
+fn expected_description(item: &str) -> String {
+    let item = item.trim_matches('"').replace("\\\\", "\\");
+    match item.as_str() {
+        "name" => "a name".to_owned(),
+        "placeholder" => "a placeholder like `x_`".to_owned(),
+        "magnetic_placeholder" => "a placeholder like `x__`".to_owned(),
+        "quoted_name" => "a quoted name like `\"in\"`".to_owned(),
+        "prefix_named_operator" => "a named prefix operator".to_owned(),
+        "\\" => "a command".to_owned(),
+        "$" => "an alias marker `$`".to_owned(),
+        other if other.is_empty() => "another token".to_owned(),
+        other => format!("`{other}`"),
+    }
+}
+
+fn token_description(token: &Token) -> String {
+    match token {
+        Token::Name(name) => format!("name `{name}`"),
+        Token::Decimal(number) => format!("number `{number}`"),
+        Token::Placeholder(name) => format!("placeholder `{name}_`"),
+        Token::MagneticPlaceholder(name) => format!("placeholder `{name}__`"),
+        Token::QuotedName(name) => format!("quoted name `\"{name}\"`"),
+        Token::SpecialOperator(operator) => format!("operator `{operator}`"),
+        Token::NamedOperator(name) => format!("operator `|{name}|`"),
+        Token::LeftNamedOperator(name) => format!("operator `:|{name}|`"),
+        Token::RightNamedOperator(name) => format!("operator `|{name}|:`"),
+        Token::BothNamedOperator(name) => format!("operator `:|{name}|:`"),
+        Token::PrefixNamedOperator(name) => format!("prefix operator `{name}|`"),
+        Token::PostfixNamedOperator(name) => format!("postfix operator `|{name}`"),
+        Token::BothSpecialOperator(operator)
+        | Token::LeftSpecialOperator(operator)
+        | Token::RightSpecialOperator(operator) => format!("operator `{operator}`"),
+        Token::Label(parts) => format!("label `[:{}:]`", parts.join(".")),
+        other => format!("`{}`", token_literal(other)),
+    }
+}
+
+fn token_literal(token: &Token) -> &'static str {
+    match token {
+        Token::DotLParen => "(.",
+        Token::DotRParen => ".)",
+        Token::Ellipsis => "...",
+        Token::DirectDot => "..",
+        Token::LNamedArguments => "[|",
+        Token::RNamedArguments => "|]",
+        Token::InfixCommandStart => "\\.",
+        Token::InfixCommandEnd => "./",
+        Token::InfixSpecStart => "\\:",
+        Token::InfixSpecPredicateEnd => "?:/",
+        Token::InfixSpecEnd => ":/",
+        Token::ExpressionAlias => ":=>",
+        Token::SpecOperatorAlias => ":->",
+        Token::IffSpecOperatorAlias => ":<->:",
+        Token::WritingAlias => ":~>",
+        Token::Introduce => "::=",
+        Token::Declare => ":=",
+        Token::BothPlus => ":+:",
+        Token::LeftPlus => ":+",
+        Token::RightPlus => "+:",
+        Token::BothMinus => ":-:",
+        Token::LeftMinus => ":-",
+        Token::RightMinus => "-:",
+        Token::BothStar => ":*:",
+        Token::LeftStar => ":*",
+        Token::RightStar => "*:",
+        Token::BothCaret => ":^:",
+        Token::LeftCaret => ":^",
+        Token::RightCaret => "^:",
+        Token::IsPredicate => "is?",
+        Token::Is => "is",
+        Token::Via => "via",
+        Token::MemberOf => "member_of",
+        Token::Satisfies => "satisfies",
+        Token::FunctionArrow => "=>",
+        Token::TypeArrow => "->",
+        Token::CommandStart => "\\",
+        Token::Plus => "+",
+        Token::Minus => "-",
+        Token::Star => "*",
+        Token::Slash => "/",
+        Token::Equals => "=",
+        Token::Caret => "^",
+        Token::LParen => "(",
+        Token::RParen => ")",
+        Token::LBrace => "{",
+        Token::RBrace => "}",
+        Token::LBracket => "[",
+        Token::RBracket => "]",
+        Token::Comma => ",",
+        Token::Semicolon => ";",
+        Token::OptionalColon => ":?",
+        Token::Colon => ":",
+        Token::Dot => ".",
+        Token::Pipe => "|",
+        Token::Dollar => "$",
+        Token::Question => "?",
+        Token::At => "@",
+        Token::AnonymousPlaceholder => "_",
+        Token::Name(_)
+        | Token::Decimal(_)
+        | Token::Placeholder(_)
+        | Token::MagneticPlaceholder(_)
+        | Token::QuotedName(_)
+        | Token::SpecialOperator(_)
+        | Token::NamedOperator(_)
+        | Token::LeftNamedOperator(_)
+        | Token::RightNamedOperator(_)
+        | Token::BothNamedOperator(_)
+        | Token::PrefixNamedOperator(_)
+        | Token::PostfixNamedOperator(_)
+        | Token::BothSpecialOperator(_)
+        | Token::LeftSpecialOperator(_)
+        | Token::RightSpecialOperator(_)
+        | Token::Label(_) => "token",
+    }
+}
+
+/// Finds the last top-level `::=` declaration marker.
+///
+/// A function declaration can name both the mapping and its output, as in
+/// `X ::= x(i_) ::= y_`. Splitting on the last marker keeps `X ::= x(i_)`
+/// together as the function form and leaves `y_` as its output placeholder.
+fn find_last_top_level_introduce(input: &str) -> Option<usize> {
+    let mut state = ScanState::default();
+    let mut result = None;
+    for (index, ch) in input.char_indices() {
+        if state.is_top_level() && input[index..].starts_with("::=") {
+            result = Some(index);
+        }
+        state.advance(ch);
+    }
+    result
+}
+
+fn parse_infix_spec_header_body(
+    input: &str,
+) -> Result<
+    (
+        Option<InfixSpecHeaderRefinement>,
+        Chain,
+        Vec<CurlyHeadingArgs>,
+        Vec<CommandHeaderTailPart>,
+    ),
+    ParseError,
+> {
+    if contains_top_level(input, "::") {
+        let refined = parse_refined_command_header(&format!("\\{}", input.trim()))?;
+        let RefinedTail::Chain(chain) = refined.refined_tail else {
+            return Err(ParseError::custom(
+                "refined spec-infix headers must refine a command chain",
+            ));
+        };
+        if !refined.paren_args.is_empty() {
+            return Err(ParseError::custom(
+                "refined spec-infix headers do not accept parenthesized arguments",
+            ));
+        }
+        return Ok((
+            Some(InfixSpecHeaderRefinement {
+                prefix_chain: refined.prefix_chain,
+                parts: refined.parts,
+            }),
+            chain,
+            refined.head_args,
+            refined.tail,
+        ));
+    }
+
+    let mut rest = input.trim();
+    let (chain_text, remaining) = split_prefix_by_delimiters(rest, &['{', ':']);
+    let chain = parse_chain(chain_text)?;
+    rest = remaining;
+
+    let (head_args, remaining) = parse_curly_heading_args(rest)?;
+    rest = remaining;
+    let (tail, remaining) = parse_command_header_tail(rest)?;
+    if !remaining.trim().is_empty() {
+        return Err(ParseError::custom(
+            "unexpected trailing text after spec-infix header body",
+        ));
+    }
+
+    Ok((None, chain, head_args, tail))
+}
+
+fn parse_infix_spec_expression_body(input: &str, predicate: bool) -> Result<InfixSpec, ParseError> {
+    if contains_top_level(input, "::") {
+        let refined = parse_refined_command_expression(&format!("\\{}", input.trim()))?;
+        let RefinedTail::Chain(chain) = refined.refined_tail else {
+            return Err(ParseError::custom(
+                "refined spec-infix expressions must refine a command chain",
+            ));
+        };
+        if !refined.paren_args.is_empty() {
+            return Err(ParseError::custom(
+                "refined spec-infix expressions do not accept parenthesized arguments",
+            ));
+        }
+        return Ok(InfixSpec {
+            span: span_all(input),
+            refinement: Some(InfixSpecExpressionRefinement {
+                prefix_chain: refined.prefix_chain,
+                parts: refined.parts,
+            }),
+            chain,
+            head_args: refined.head_args,
+            tail: refined.tail,
+            predicate,
+        });
+    }
+
+    let mut rest = input.trim();
+    let (chain_text, remaining) = split_prefix_by_delimiters(rest, &['{', ':']);
+    let chain = parse_chain(chain_text)?;
+    rest = remaining;
+
+    let (head_args, remaining) = parse_curly_expression_args(rest)?;
+    rest = remaining;
+    let (tail, remaining) = parse_command_expression_tail(rest)?;
+    if !remaining.trim().is_empty() {
+        return Err(ParseError::custom(
+            "unexpected trailing text after spec-infix expression body",
+        ));
+    }
+
+    Ok(InfixSpec {
+        span: span_all(input),
+        refinement: None,
+        chain,
+        head_args,
+        tail,
+        predicate,
+    })
+}
+
 fn parse_suffixed_command_expression(input: &str) -> Option<Result<Expression, ParseError>> {
     let input = input.trim();
     if !input.starts_with('\\')
@@ -1168,84 +2306,6 @@ fn parse_command_context_argument(input: &str) -> Result<CommandContextArgument,
     }
 
     Ok(CommandContextArgument::Text(input.to_owned()))
-}
-
-/// Parses one part inside a refined command expression part list.
-///
-/// Expression parts use expression-valued command tails, which lets references
-/// provide concrete command arguments while keeping the same chain syntax as
-/// refined headers.
-pub(super) fn parse_refined_expression_part(
-    input: &str,
-) -> Result<RefinedExpressionPart, ParseError> {
-    let input = input.trim();
-    let (chain_text, rest) = split_prefix_by_delimiters(input, &[':']);
-    let chain = parse_chain(chain_text)?;
-    let (tail, remaining) = parse_command_expression_tail(rest)?;
-    if !remaining.trim().is_empty() {
-        return Err(ParseError::custom(
-            "unexpected trailing text after refined expression part",
-        ));
-    }
-
-    Ok(RefinedExpressionPart {
-        span: span_all(input),
-        chain,
-        tail,
-    })
-}
-
-/// Parses the target tail after a refined command's `::` separator.
-///
-/// The tail can be either a bracketed name, written as `[[name]]`, or a command
-/// chain.  The function returns both the parsed tail and the unconsumed suffix
-/// so callers can continue parsing argument groups and colon tails.
-pub(super) fn parse_refined_tail(input: &str) -> Result<(RefinedTail, &str), ParseError> {
-    let input = input.trim_start();
-    if let Some(rest) = input.strip_prefix("[[") {
-        let end = rest
-            .find("]]")
-            .ok_or_else(|| ParseError::custom("unterminated refined tail name"))?;
-        let name = parse_name_token(&rest[..end])?;
-        let consumed = input.len() - rest[end + 2..].len();
-        return Ok((
-            RefinedTail::Name {
-                span: Span::new(0, consumed),
-                name,
-            },
-            &rest[end + 2..],
-        ));
-    }
-
-    let (chain_text, rest) = split_prefix_by_delimiters(input, &['{', '(', ':']);
-    Ok((RefinedTail::Chain(parse_chain(chain_text)?), rest))
-}
-
-/// Parses consecutive `{...}` argument groups in a command header.
-///
-/// Header argument groups contain forms/declarations because command headings
-/// define arity and placeholder names, not concrete use-site expressions.
-pub(super) fn parse_curly_heading_args(
-    mut input: &str,
-) -> Result<(Vec<CurlyHeadingArgs>, &str), ParseError> {
-    let mut args = Vec::new();
-    while input.trim_start().starts_with('{') {
-        input = input.trim_start();
-        let (inside, rest) = consume_balanced_prefix(input, '{', '}')?;
-        let variadic = parse_variadic_parameter(inside)?;
-        args.push(CurlyHeadingArgs {
-            span: span_all(&input[..input.len() - rest.len()]),
-            forms: if variadic.is_some() {
-                Vec::new()
-            } else {
-                parse_form_list(inside)?
-            },
-            variadic,
-        });
-        input = rest;
-    }
-
-    Ok((args, input))
 }
 
 /// Parses the supported variadic header spellings. A variadic parameter must be
@@ -1422,28 +2482,6 @@ fn parse_start_pair(input: &str) -> Result<(usize, usize), ParseError> {
     Ok(starts)
 }
 
-/// Parses consecutive `(...)` argument groups in a command header.
-///
-/// Parenthesized header groups describe invocation arguments for callable
-/// definitions.  They are optional at use sites but still part of the definition
-/// shape when present in a heading.
-pub(super) fn parse_paren_heading_args(
-    mut input: &str,
-) -> Result<(Vec<ParenHeadingArgs>, &str), ParseError> {
-    let mut args = Vec::new();
-    while input.trim_start().starts_with('(') {
-        input = input.trim_start();
-        let (inside, rest) = consume_balanced_prefix(input, '(', ')')?;
-        args.push(ParenHeadingArgs {
-            span: span_all(&input[..input.len() - rest.len()]),
-            forms: parse_paren_heading_form_list(inside)?,
-        });
-        input = rest;
-    }
-
-    Ok((args, input))
-}
-
 /// Parses the parameters inside a command heading's trailing `(...)` group.
 ///
 /// Ordinary forms use bare names, but callable headings may spell their input
@@ -1496,156 +2534,12 @@ fn parse_infix_heading_operand(input: &str) -> Result<(FormOrDeclaration, bool),
     parse_form_or_declaration(input).map(|form| (form, false))
 }
 
-/// Parses colon-prefixed tail parts for command headers.
-///
-/// A tail part must include at least one `{...}` group, which prevents bare
-/// punctuation like `:to` from being accepted without the argument shape that
-/// gives the part semantic content.
-pub(super) fn parse_command_header_tail(
-    mut input: &str,
-) -> Result<(Vec<CommandHeaderTailPart>, &str), ParseError> {
-    let mut parts = Vec::new();
-    loop {
-        input = input.trim_start();
-        if !input.starts_with(':') || input.starts_with("::") {
-            break;
-        }
-
-        let (optional, tail_body) = if let Some(rest) = input.strip_prefix(":?") {
-            (true, rest)
-        } else {
-            (false, &input[1..])
-        };
-        let (chain_text, rest) = split_prefix_by_delimiters(tail_body, &['{']);
-        let chain = parse_chain(chain_text)?;
-        let (args, remaining) = parse_curly_heading_args(rest)?;
-        if args.is_empty() {
-            return Err(ParseError::custom(
-                "header tail parts require at least one `{...}` argument list",
-            ));
-        }
-
-        parts.push(CommandHeaderTailPart {
-            span: span_all(&input[..input.len() - remaining.len()]),
-            chain,
-            args,
-            optional,
-        });
-        input = remaining;
-    }
-
-    Ok((parts, input))
-}
-
-/// Parses consecutive `{...}` argument groups in a command expression.
-///
-/// Expression argument groups carry concrete expression ASTs and therefore use
-/// the expression list parser rather than the form/declaration list parser used
-/// for command headers.
-pub(super) fn parse_curly_expression_args(
-    mut input: &str,
-) -> Result<(Vec<CurlyExpressionArgs>, &str), ParseError> {
-    let mut args = Vec::new();
-    while input.trim_start().starts_with('{') {
-        input = input.trim_start();
-        let (inside, rest) = consume_balanced_prefix(input, '{', '}')?;
-        let group = &input[..input.len() - rest.len()];
-        // Collection-literal sugar: `\foo{x_ : ...}` == `\foo{{x_ : ...}}`.
-        let (expressions, rows) = match parse_collection_literal_argument(group, inside) {
-            Some(set) => (vec![set], None),
-            None => {
-                let row_texts = split_top_level(inside, ';')?;
-                let matrix = row_texts.len() > 1;
-                let parsed_rows = row_texts
-                    .into_iter()
-                    .map(parse_expression_list)
-                    .collect::<Result<Vec<_>, _>>()?;
-                let row_lengths = parsed_rows.iter().map(Vec::len).collect::<Vec<_>>();
-                (
-                    parsed_rows.into_iter().flatten().collect(),
-                    matrix.then_some(row_lengths),
-                )
-            }
-        };
-        args.push(CurlyExpressionArgs {
-            span: span_all(group),
-            expressions,
-            rows,
-        });
-        input = rest;
-    }
-
-    Ok((args, input))
-}
-
 /// If a `{...}` command-argument group (`group` includes the braces, `inside`
 /// does not) is a brace-less collection literal, parses it as a single set
 /// expression. Returns `None` when the content is not a set-builder.
 fn parse_collection_literal_argument(group: &str, inside: &str) -> Option<Expression> {
     find_set_comprehension_colon(inside)?;
     parse_set_expression(group).ok()
-}
-
-/// Parses consecutive `(...)` argument groups in a command expression.
-///
-/// These groups represent invocation at a use site.  Semantic checking later
-/// verifies whether the referenced definition allows the supplied parenthesized
-/// arity.
-pub(super) fn parse_paren_expression_args(
-    mut input: &str,
-) -> Result<(Vec<ParenExpressionArgs>, &str), ParseError> {
-    let mut args = Vec::new();
-    while input.trim_start().starts_with('(') {
-        input = input.trim_start();
-        let (inside, rest) = consume_balanced_prefix(input, '(', ')')?;
-        args.push(ParenExpressionArgs {
-            span: span_all(&input[..input.len() - rest.len()]),
-            expressions: parse_expression_list(inside)?,
-        });
-        input = rest;
-    }
-
-    Ok((args, input))
-}
-
-/// Parses colon-prefixed tail parts for command expressions.
-///
-/// Each tail part must provide at least one `{...}` expression argument group so
-/// reference signatures retain the same required shape as their definitions.
-pub(super) fn parse_command_expression_tail(
-    mut input: &str,
-) -> Result<(Vec<CommandExpressionTailPart>, &str), ParseError> {
-    let mut parts = Vec::new();
-    loop {
-        input = input.trim_start();
-        if !input.starts_with(':') || input.starts_with("::") {
-            break;
-        }
-
-        let (optional, tail_body) = if let Some(rest) = input.strip_prefix(":?") {
-            (true, rest)
-        } else {
-            (false, &input[1..])
-        };
-        let (chain_text, rest) = split_prefix_by_delimiters(tail_body, &['{']);
-        let chain = parse_chain(chain_text)?;
-        let (args, remaining) = parse_curly_expression_args(rest)?;
-        if args.is_empty() {
-            return Err(ParseError::custom(
-                "command tail parts require at least one `{...}` argument list",
-            ));
-        }
-
-        parts.push(CommandExpressionTailPart {
-            span: span_all(&input[..input.len() - remaining.len()]),
-            chain,
-            args,
-            optional,
-        });
-        input = remaining;
-    }
-
-    Ok((parts, input))
 }
 
 /// Parses consecutive `{...}` argument groups for a builtin command.
@@ -1738,106 +2632,6 @@ fn parse_builtin_command_expression(input: &str) -> Option<Result<Expression, Pa
             }),
         ))
     })())
-}
-
-// ===============================[ statements ]=====================================
-
-/// Parses a subject/type `is` statement.
-///
-/// The `allow_refined` flag controls whether the right-hand side may use the
-/// refined command expression grammar.  This keeps ordinary definition checks
-/// stricter while theorem assumptions can reference refined definitions.
-pub(super) fn parse_is_statement(
-    input: &str,
-    allow_refined: bool,
-) -> Result<IsStatement, ParseError> {
-    let index = find_top_level_substring(input, " is ")
-        .ok_or_else(|| ParseError::custom("expected top-level ` is `"))?;
-    let subject = parse_is_subject(&input[..index])?;
-    let ty = parse_type_expression(&input[index + 4..], allow_refined)?;
-
-    Ok(IsStatement {
-        span: span_all(input),
-        subject,
-        ty,
-    })
-}
-
-/// Parses a subject/operator/name specification statement.
-///
-/// Specifications use a quoted operator between the subject and target name,
-/// for example `x "in" A`.  The quoted operator is discovered at top level so
-/// nested formulation constructs remain intact.
-pub(super) fn parse_subject_spec_statement(
-    input: &str,
-) -> Result<SubjectSpecStatement, ParseError> {
-    let (subject_text, operator, name_text) =
-        split_subject_operator_name(input).ok_or_else(|| {
-            ParseError::custom("expected specification of the form `<subject> \"op\" Name`")
-        })?;
-    let subject = parse_spec_subject(subject_text)?;
-    let name = parse_name_token(name_text)?;
-
-    Ok(SubjectSpecStatement {
-        span: span_all(input),
-        subject,
-        operator: operator.to_owned(),
-        name,
-    })
-}
-
-/// Parses a placeholder/operator/name specification used by spec aliases.
-///
-/// This mirrors [`parse_subject_spec_statement`] but requires the subject side
-/// to be placeholder syntax such as `x_` or `f_(x_)`.
-pub(super) fn parse_placeholder_spec_statement(
-    input: &str,
-) -> Result<PlaceholderSpecStatement, ParseError> {
-    let (placeholder_text, operator, name_text) =
-        split_subject_operator_name(input).ok_or_else(|| {
-            ParseError::custom("expected placeholder specification of the form `x_ \"op\" X`")
-        })?;
-    let placeholder_form = parse_placeholder_form(placeholder_text)?;
-    let name = parse_name_token(name_text)?;
-
-    Ok(PlaceholderSpecStatement {
-        span: span_all(input),
-        placeholder_form,
-        operator: operator.to_owned(),
-        name,
-    })
-}
-
-/// Parses the unified declaration statement syntax.
-///
-/// `::=` introduces additional declaration-side symbols, while top-level `:=`
-/// introduces an expression definition whose right side is checked later
-/// against the symbols declared by the left side.
-pub fn parse_declaration_statement(
-    input: &str,
-    allow_refined_type: bool,
-) -> Result<DeclarationStatement, ParseError> {
-    let input = input.trim();
-    if let Some((label, inner)) = split_labeled_formulation(input)? {
-        let mut statement = parse_declaration_statement(inner, allow_refined_type)?;
-        if statement.label.is_some() {
-            return Err(ParseError::custom(
-                "a declaration cannot have more than one label",
-            ));
-        }
-        statement.span = span_all(input);
-        statement.label = Some(label);
-        return Ok(statement);
-    }
-    match parse_standard_declaration_statement(input, allow_refined_type) {
-        Ok(statement) => return Ok(statement),
-        Err(error) => {
-            if let Some(statement) = parse_operator_pattern_definition(input) {
-                return statement;
-            }
-            return Err(error);
-        }
-    }
 }
 
 fn parse_standard_declaration_statement(
@@ -2019,21 +2813,6 @@ fn operator_as_value(operator: &BinaryOperator) -> Operator {
     }
 }
 
-/// Parses a declaration statement that only accepts ordinary type expressions.
-#[allow(dead_code)]
-pub fn parse_ordinary_declaration_statement(
-    input: &str,
-) -> Result<DeclarationStatement, ParseError> {
-    parse_declaration_statement(input, false)
-}
-
-/// Parses a declaration statement whose `is` relation may use refined commands.
-pub fn parse_refined_declaration_statement(
-    input: &str,
-) -> Result<DeclarationStatement, ParseError> {
-    parse_declaration_statement(input, true)
-}
-
 fn parse_declaration_relation(
     input: &str,
     allow_refined_type: bool,
@@ -2168,54 +2947,6 @@ fn is_single_placeholder_subject(subject: &IsSubject) -> bool {
             matches!(&forms[0], IsSubjectForm::PlaceholderForm(_))
         }
         _ => false,
-    }
-}
-
-/// Parses the type side of an `is` statement.
-///
-/// Type expressions are intentionally restricted to command expressions because
-/// MathLingua type references are command-backed definitions.  When enabled,
-/// refined command expressions are accepted before falling back to ordinary
-/// command expressions.
-pub(crate) fn parse_type_expression(
-    input: &str,
-    allow_refined: bool,
-) -> Result<TypeExpression, ParseError> {
-    let input = input.trim();
-    if input.starts_with("\\\\") {
-        return parse_builtin_type_expression(input);
-    }
-
-    if contains_top_level(input, "|->") {
-        return Err(ParseError::custom("function types use `->`, not `|->`"));
-    }
-
-    if contains_top_level(input, "->") {
-        return parse_function_type_expression(input, allow_refined).map(TypeExpression::Function);
-    }
-
-    if contains_top_level(input, "=>") {
-        return Err(ParseError::custom(
-            "function types use `->`; `=>` introduces a function literal",
-        ));
-    }
-
-    if input.starts_with('(') {
-        return parse_tuple_type_expression(input, allow_refined).map(TypeExpression::Tuple);
-    }
-
-    if input.starts_with('{') {
-        return parse_set_type_expression(input, allow_refined).map(TypeExpression::Set);
-    }
-
-    if allow_refined && contains_top_level(input, "::") {
-        return parse_refined_command_expression(input).map(TypeExpression::RefinedCommand);
-    }
-
-    let expression = parse_expression(input)?;
-    match expression.kind {
-        ExpressionKind::Command(command) => Ok(TypeExpression::Command(command)),
-        _ => Err(ParseError::custom("expected command expression for type")),
     }
 }
 
@@ -2401,86 +3132,6 @@ fn parse_function_type_spec_subject(input: &str) -> Result<String, ParseError> {
     Ok(input.to_owned())
 }
 
-/// Parses the subject on the left side of an `is` statement.
-///
-/// A comma at top level indicates a list of forms/placeholders.  Otherwise the
-/// parser first attempts a single form-like subject and then falls back to an
-/// operator subject for statements about operators themselves.
-pub(super) fn parse_is_subject(input: &str) -> Result<IsSubject, ParseError> {
-    let input = input.trim();
-
-    if find_first_top_level_char(input, ',').is_some() {
-        return parse_is_subject_form_list(input).map(|forms| IsSubject {
-            span: span_all(input),
-            kind: IsSubjectKind::Forms(forms),
-        });
-    }
-
-    if let Ok(form) = parse_is_subject_form(input) {
-        return Ok(IsSubject {
-            span: span_all(input),
-            kind: IsSubjectKind::Forms(vec![form]),
-        });
-    }
-
-    let operator = parse_operator(input)?;
-    Ok(IsSubject {
-        span: span_all(input),
-        kind: IsSubjectKind::Operator(operator),
-    })
-}
-
-/// Parses the subject side of a quoted-operator specification.
-///
-/// Specification subjects accept ordinary forms when possible, with operator
-/// subjects as the fallback so definitions can describe named operators.
-pub(super) fn parse_spec_subject(input: &str) -> Result<SpecSubject, ParseError> {
-    let input = input.trim();
-    if let Ok(form) = parse_form_or_declaration(input) {
-        return Ok(SpecSubject {
-            span: span_all(input),
-            kind: SpecSubjectKind::Form(form),
-        });
-    }
-
-    let operator = parse_operator(input)?;
-    Ok(SpecSubject {
-        span: span_all(input),
-        kind: SpecSubjectKind::Operator(operator),
-    })
-}
-
-/// Parses an operator token from raw text.
-///
-/// Operators are kept as text rather than grammar tokens here because the
-/// higher-level specification syntax extracts them from quoted strings.
-pub(super) fn parse_operator(input: &str) -> Result<Operator, ParseError> {
-    let input = input.trim();
-    if !is_operator_text(input) {
-        return Err(ParseError::custom(format!(
-            "expected operator, found `{input}`"
-        )));
-    }
-
-    Ok(Operator::new(span_all(input), input))
-}
-
-/// Parses one subject form allowed on the left of an `is` statement.
-///
-/// Full forms are preferred, then placeholder forms are accepted for cases such
-/// as theorem schemata that bind placeholder-shaped subjects.
-pub(super) fn parse_is_subject_form(input: &str) -> Result<IsSubjectForm, ParseError> {
-    if let Ok(form) = parse_form_or_declaration(input) {
-        return Ok(IsSubjectForm::Form(form));
-    }
-
-    if let Ok(form) = parse_placeholder_form(input) {
-        return Ok(IsSubjectForm::PlaceholderForm(form));
-    }
-
-    parse_magnetic_placeholder_subject_form(input).map(IsSubjectForm::PlaceholderForm)
-}
-
 fn parse_magnetic_placeholder_subject_form(input: &str) -> Result<PlaceholderForm, ParseError> {
     let input = input.trim();
     if !input.ends_with("__") {
@@ -2500,296 +3151,6 @@ fn parse_magnetic_placeholder_subject_form(input: &str) -> Result<PlaceholderFor
         span_all(input),
         PlaceholderFormKind::Placeholder(Placeholder::new(span_all(input), name)),
     ))
-}
-
-/// Parses a comma-separated top-level list of `is` subject forms.
-///
-/// Empty lists are rejected after splitting so callers can emit a precise
-/// subject error instead of accepting an empty subject set.
-pub(super) fn parse_is_subject_form_list(input: &str) -> Result<Vec<IsSubjectForm>, ParseError> {
-    let forms = split_top_level(input, ',')?
-        .into_iter()
-        .map(parse_is_subject_form)
-        .collect::<Result<Vec<_>, _>>()?;
-
-    if forms.is_empty() {
-        return Err(ParseError::custom("expected at least one form"));
-    }
-
-    Ok(forms)
-}
-
-/// Parses placeholder form syntax such as `x_` or `f_(x_)`.
-///
-/// Function placeholder arguments must themselves be simple placeholders.  The
-/// balanced-prefix scanner prevents commas inside nested syntax from confusing
-/// the argument list splitter.
-pub(super) fn parse_placeholder_form(input: &str) -> Result<PlaceholderForm, ParseError> {
-    let input = input.trim();
-    if let Some(open_index) = find_first_top_level_char(input, '(') {
-        let (inside, rest) = consume_balanced_prefix(&input[open_index..], '(', ')')?;
-        if !rest.trim().is_empty() {
-            return Err(ParseError::custom(
-                "unexpected trailing text after placeholder form",
-            ));
-        }
-
-        let placeholder = parse_placeholder(&input[..open_index])?;
-        let arguments = parse_placeholder_list(inside)?;
-        return Ok(PlaceholderForm::new(
-            span_all(input),
-            PlaceholderFormKind::Function {
-                placeholder,
-                arguments,
-            },
-        ));
-    }
-
-    parse_placeholder(input).map(|placeholder| {
-        PlaceholderForm::new(
-            span_all(input),
-            PlaceholderFormKind::Placeholder(placeholder),
-        )
-    })
-}
-
-/// Parses a single placeholder name ending in exactly one underscore.
-///
-/// Double-underscore markers are reserved for form declarations like `f(x__)`,
-/// so placeholder syntax explicitly rejects names ending in `__`.
-pub(super) fn parse_placeholder(input: &str) -> Result<Placeholder, ParseError> {
-    let input = input.trim();
-    if !input.ends_with('_') || input.ends_with("__") {
-        return Err(ParseError::custom(format!(
-            "expected placeholder ending with `_`, found `{input}`"
-        )));
-    }
-
-    let name = &input[..input.len() - 1];
-    if !is_name_text(name) {
-        return Err(ParseError::custom(format!(
-            "invalid placeholder name `{name}`"
-        )));
-    }
-
-    Ok(Placeholder::new(span_all(input), name))
-}
-
-/// Parses a nonempty comma-separated list of placeholders.
-///
-/// The split is top-level aware so future placeholder syntax with grouping does
-/// not accidentally create extra list entries.
-pub(super) fn parse_placeholder_list(input: &str) -> Result<Vec<Placeholder>, ParseError> {
-    let mut placeholders = Vec::new();
-    for item in split_top_level(input, ',')? {
-        placeholders.push(parse_placeholder(item)?);
-    }
-
-    if placeholders.is_empty() {
-        return Err(ParseError::custom("expected at least one placeholder"));
-    }
-
-    Ok(placeholders)
-}
-
-// ===============================[ lists ]=====================================
-
-/// Parses a nonempty comma-separated list of forms/declarations.
-///
-/// Lists are split only on top-level commas so tuple, set, and command argument
-/// syntax can contain nested commas safely.
-pub(super) fn parse_form_list(input: &str) -> Result<Vec<FormOrDeclaration>, ParseError> {
-    let forms = split_top_level(input, ',')?
-        .into_iter()
-        .map(parse_form_or_declaration)
-        .collect::<Result<Vec<_>, _>>()?;
-    if forms.is_empty() {
-        return Err(ParseError::custom("expected at least one form"));
-    }
-    Ok(forms)
-}
-
-/// Parses a nonempty comma-separated list of expressions.
-///
-/// This is the expression-valued counterpart to [`parse_form_list`] and is used
-/// for concrete command references and invocation arguments.
-pub(super) fn parse_expression_list(input: &str) -> Result<Vec<Expression>, ParseError> {
-    let expressions = split_top_level(input, ',')?
-        .into_iter()
-        .map(parse_expression)
-        .collect::<Result<Vec<_>, _>>()?;
-    if expressions.is_empty() {
-        return Err(ParseError::custom("expected at least one expression"));
-    }
-    Ok(expressions)
-}
-
-/// Parses a dot-separated command/name chain.
-///
-/// Chains are used by commands, refined command parts, and namespaced labels.
-/// Each part may be a regular name, an operator token, or an alias reference.
-pub(super) fn parse_chain(input: &str) -> Result<Chain, ParseError> {
-    let input = input.trim();
-    let parts = split_top_level(input, '.')?
-        .into_iter()
-        .map(parse_chain_part)
-        .collect::<Result<Vec<_>, _>>()?;
-    if parts.is_empty() {
-        return Err(ParseError::custom("chains require at least one part"));
-    }
-
-    Ok(Chain {
-        span: span_all(input),
-        parts,
-    })
-}
-
-/// Parses one chain segment.
-///
-/// A leading `$` marks an alias reference, operator-only text becomes an
-/// operator segment, and all other segments must satisfy name-token rules.
-pub(super) fn parse_chain_part(input: &str) -> Result<ChainPart, ParseError> {
-    let input = input.trim();
-    if let Some(alias) = input.strip_prefix('$') {
-        return Ok(ChainPart::Alias(parse_name_token(alias)?));
-    }
-
-    if is_operator_text(input) {
-        return Ok(ChainPart::Operator(input.to_owned()));
-    }
-
-    Ok(ChainPart::Name(parse_name_token(input)?))
-}
-
-/// Parses dot-separated plain name parts.
-///
-/// This is used by label, author, and resource headings where aliases and
-/// operator chain segments are not valid.
-pub(super) fn parse_dotted_parts(input: &str) -> Result<Vec<String>, ParseError> {
-    let parts = split_top_level(input, '.')?
-        .into_iter()
-        .map(parse_name_token)
-        .collect::<Result<Vec<_>, _>>()?;
-    if parts.is_empty() {
-        return Err(ParseError::custom("expected at least one name part"));
-    }
-    Ok(parts)
-}
-
-/// Validates and returns one name token.
-///
-/// Name tokens may be backtick-wrapped operator text, which allows operator
-/// names to participate in syntax positions that otherwise require identifiers.
-pub(super) fn parse_name_token(input: &str) -> Result<String, ParseError> {
-    let input = input.trim();
-    if !is_name_text(input) {
-        return Err(ParseError::custom(format!("invalid name `{input}`")));
-    }
-
-    Ok(input.to_owned())
-}
-
-// ===============================[ entrypoints ]=====================================
-
-/// Parses a standalone expression.
-///
-/// This is the entry point used for theorem clauses and other places where the
-/// source must be mathematical expression syntax rather than a declaration or
-/// specification statement.
-pub fn parse_expression(input: &str) -> Result<Expression, ParseError> {
-    let input = input.trim();
-    if is_decimal_literal_text(input) || is_negative_integer_literal_text(input) {
-        return Ok(Expression::new(
-            span_all(input),
-            ExpressionKind::Name(input.to_owned()),
-        ));
-    }
-    if let Some(expression) = parse_named_function_call(input)? {
-        return Ok(expression);
-    }
-    if let Some(expression) = parse_two_dimensional_variadic_expression(input)? {
-        return Ok(expression);
-    }
-    if let Some(expression) = parse_indexed_call_expression(input)? {
-        return Ok(expression);
-    }
-    if let Some(index) = find_top_level_definition(input) {
-        let target_text = input[..index].trim();
-        let value_text = input[index + 2..].trim();
-        if !target_text.is_empty()
-            && !value_text.is_empty()
-            && let Ok(target) = parse_expression(target_text)
-            && let ExpressionKind::VariadicSlice(target) = target.kind
-        {
-            let value = parse_expression(value_text)?;
-            return Ok(Expression::new(
-                span_all(input),
-                ExpressionKind::VariadicAssignment {
-                    target,
-                    value: Box::new(value),
-                },
-            ));
-        }
-    }
-    if let Some(index) = find_top_level_substring(input, " is ") {
-        let type_text = input[index + 4..].trim();
-        if contains_top_level(type_text, "->")
-            || contains_top_level(type_text, "=>")
-            || contains_top_level(type_text, "|->")
-            || type_text.starts_with('(')
-            || type_text.starts_with('{')
-        {
-            let subject = parse_expression(&input[..index])?;
-            let ty = parse_type_expression(type_text, true)?;
-            return Ok(Expression::new(
-                span_all(input),
-                ExpressionKind::IsType {
-                    subject: Box::new(subject),
-                    ty,
-                },
-            ));
-        }
-    }
-    if input.starts_with('{') {
-        if let Ok(expression) = parse_set_expression(input) {
-            return Ok(expression);
-        }
-    }
-    if let Some(expression) = parse_set_build_expression(input) {
-        return expression;
-    }
-    if let Some(expression) = parse_builtin_command_expression(input) {
-        return expression;
-    }
-    if let Some(expression) = parse_refined_predicate_expression(input) {
-        return expression;
-    }
-    if let Some(expression) = parse_suffixed_command_expression(input) {
-        return expression;
-    }
-    if input.starts_with('\\') && !input.starts_with("\\\\") && input.contains(';') {
-        return parse_simple_command_expression_with_context(input)
-            .map(|command| Expression::new(span_all(input), ExpressionKind::Command(command)));
-    }
-    if let Some(split) = split_infix_spec_statement(input)
-        && !split.left.is_empty()
-        && !split.body.is_empty()
-        && !split.right.is_empty()
-    {
-        let left = parse_expression(split.left)?;
-        let spec = parse_infix_spec_expression_body(split.body, split.predicate)?;
-        let right = parse_expression(split.right)?;
-        return Ok(Expression::new(
-            span_all(input),
-            ExpressionKind::InfixSpecStatement {
-                left: Box::new(left),
-                spec,
-                right: Box::new(right),
-            },
-        ));
-    }
-
-    parse_input_expression(input).map_err(ParseError::from)
 }
 
 fn is_decimal_literal_text(input: &str) -> bool {
@@ -3055,17 +3416,6 @@ fn parse_named_function_call(input: &str) -> Result<Option<Expression>, ParseErr
 /// collection-literal and mapping-literal argument shorthands at the token level.
 fn parse_input_expression(input: &str) -> Result<Expression, LalrpopError> {
     grammar::InputExpressionParser::new().parse(desugar_command_argument_sugar(input))
-}
-
-/// A per-token rewrite applied when desugaring argument shorthands.
-enum TokenEdit {
-    Keep,
-    /// Emit the token twice (used to inject a synthetic inner brace).
-    Double,
-    /// Replace the token with a fixed sequence (reusing its offsets).
-    Replace(Vec<Token>),
-    /// Drop the token.
-    Skip,
 }
 
 /// Desugars three command shorthands at the token level, so the grammar sees the
@@ -3574,38 +3924,6 @@ fn parse_refined_predicate_expression_with_operator(
     Some(Ok(Expression::new(span_all(input), kind)))
 }
 
-/// Parses a local expression binding of the form `<left> := <right>`.
-#[allow(dead_code)]
-pub fn parse_expression_binding(input: &str) -> Result<ExpressionBinding, ParseError> {
-    let input = input.trim();
-    let index = find_top_level_substring(input, ":=")
-        .ok_or_else(|| ParseError::custom("expected top-level `:=`"))?;
-    let left = parse_expression(input[..index].trim())?;
-    let right = parse_expression(input[index + 2..].trim())?;
-
-    Ok(ExpressionBinding {
-        span: span_all(input),
-        left,
-        right,
-    })
-}
-
-/// Parses a form or declaration used in definition-like `Declares` sections.
-///
-/// The generated grammar handles the detailed expression/form precedence here;
-/// this wrapper only adapts lexer and error types for callers.
-pub fn parse_form_or_declaration(input: &str) -> Result<FormOrDeclaration, ParseError> {
-    if let Some(form) = parse_mapping_parameter_form(input)? {
-        return Ok(form);
-    }
-    if let Some(form) = parse_variadic_function_form(input)? {
-        return Ok(form);
-    }
-    grammar::InputFormOrDeclarationParser::new()
-        .parse(Lexer::new(input))
-        .map_err(ParseError::from)
-}
-
 fn parse_variadic_function_form(input: &str) -> Result<Option<FormOrDeclaration>, ParseError> {
     let input = input.trim();
     let Some(open) = find_first_top_level_char(input, '(') else {
@@ -3756,172 +4074,6 @@ fn parse_mapping_parameter_form(input: &str) -> Result<Option<FormOrDeclaration>
     )))
 }
 
-/// Parses either an `is` statement or a subject/operator/name specification.
-///
-/// The split is performed only at a top-level ` is ` so nested expressions such
-/// as tuples, command arguments, or quoted operators do not accidentally change
-/// which grammar branch is selected.
-pub fn parse_is_or_spec(input: &str) -> Result<IsOrSpec, ParseError> {
-    let input = input.trim();
-    if contains_top_level(input, " is ") {
-        let statement = parse_is_statement(input, false)?;
-        return Ok(IsOrSpec::Is(statement));
-    }
-
-    parse_subject_spec_statement(input).map(IsOrSpec::Spec)
-}
-
-/// Parses an `is` statement that may use refined command syntax, or a spec.
-///
-/// This variant is used in theorem-style contexts where `\(a, b)::command`
-/// references are legal.  Declaration contexts should use
-/// [`parse_declaration_statement`] instead.
-#[allow(dead_code)]
-pub fn parse_is_or_refined_statement_spec(
-    input: &str,
-) -> Result<IsOrRefinedStatementSpec, ParseError> {
-    let input = input.trim();
-    if contains_top_level(input, " is ") {
-        let statement = parse_is_statement(input, true)?;
-        return Ok(IsOrRefinedStatementSpec::Is(statement));
-    }
-
-    parse_subject_spec_statement(input).map(IsOrRefinedStatementSpec::Spec)
-}
-
-/// Splits an optional trailing ` via <form>` view off a formulation, as in the
-/// `Declares:` target `G ::= (X, *, e) is \monoid via (X, *)`.
-///
-/// The separator is located at top level so tuples and command arguments can
-/// contain the same text without being split as statement syntax.
-pub fn split_via_view(input: &str) -> (&str, Option<&str>) {
-    let input = input.trim();
-    match find_top_level_substring(input, " via ") {
-        Some(index) => (input[..index].trim(), Some(input[index + 5..].trim())),
-        None => (input, None),
-    }
-}
-
-/// Parses an `is ... via ...` statement.
-///
-/// The `via` separator is located at top level so tuples and command arguments
-/// can contain the same text without being split as statement syntax.
-pub fn parse_is_via_statement(input: &str) -> Result<IsViaStatement, ParseError> {
-    let input = input.trim();
-    let index = find_top_level_substring(input, " via ")
-        .ok_or_else(|| ParseError::custom("expected top-level ` via `"))?;
-    let statement = parse_is_statement(&input[..index], true)?;
-    let via = parse_form_or_declaration(&input[index + 5..])?;
-
-    Ok(IsViaStatement {
-        span: span_all(input),
-        is_statement: statement,
-        via,
-    })
-}
-
-/// Parses any command header form used in bracketed group headings.
-///
-/// This dispatches among ordinary commands, infix command headers, and refined
-/// command headers.  Infix command headers may include left and right operands
-/// around their `\.`...`./` command core.
-pub fn parse_command_header(input: &str) -> Result<CommandHeader, ParseError> {
-    let input = input.trim();
-    if input.starts_with("\\:") || find_top_level_substring(input, "\\:").is_some() {
-        return parse_infix_spec_header(input).map(CommandHeader::InfixSpec);
-    }
-
-    if input.starts_with("\\.") || find_top_level_substring(input, "\\.").is_some() {
-        return parse_infix_command_header(input).map(CommandHeader::Infix);
-    }
-
-    if !input.starts_with('\\') {
-        return Err(ParseError::custom("command header must start with `\\`"));
-    }
-
-    if contains_top_level(input, "::") {
-        return parse_refined_command_header(input).map(CommandHeader::Refined);
-    }
-
-    parse_simple_command_header(input).map(CommandHeader::Command)
-}
-
-/// Parses a writing alias of the form `<form> :~> <body>`.
-///
-/// The body is kept as raw text because writing aliases currently describe
-/// rendering templates rather than formulation AST nodes.
-pub fn parse_writing_alias(input: &str) -> Result<WritingAlias, ParseError> {
-    let input = input.trim();
-    let index = find_top_level_substring(input, ":~>")
-        .ok_or_else(|| ParseError::custom("expected top-level `:~>`"))?;
-    let form = parse_form_or_declaration(input[..index].trim())?;
-    let body = input[index + 3..].trim();
-    if body.is_empty() {
-        return Err(ParseError::custom("writing alias body cannot be empty"));
-    }
-
-    Ok(WritingAlias {
-        span: span_all(input),
-        form,
-        body: body.to_owned(),
-    })
-}
-
-/// Parses an expression alias of the form `<lhs> :=> <expression>`.
-///
-/// Form-based expression aliases may also use `:->` when the target expression
-/// is statement-like, such as `R(a_, b_) :-> (a_, b_) "in" R`.
-///
-/// The left-hand side may be a form declaration, ordinary command header, or
-/// infix command header.  Refined command headers are rejected here because
-/// aliases define base expression syntax rather than refinement composition.
-pub fn parse_expression_alias(input: &str) -> Result<ExpressionAlias, ParseError> {
-    let input = input.trim();
-    let (index, arrow_len) = find_top_level_substring(input, ":=>")
-        .map(|index| (index, 3))
-        .or_else(|| find_top_level_substring(input, ":->").map(|index| (index, 3)))
-        .ok_or_else(|| ParseError::custom("expected top-level `:=>`"))?;
-    let lhs_text = input[..index].trim();
-    let expression = parse_expression(input[index + arrow_len..].trim())?;
-
-    let lhs = if find_top_level_substring(lhs_text, "\\.").is_some() {
-        let header = parse_infix_command_header(lhs_text)?;
-        reject_optional_header_tails(&CommandHeader::Infix(header.clone()))?;
-        ExpressionAliasLhs::InfixCommand(header)
-    } else if lhs_text.starts_with('\\') {
-        match parse_command_header(lhs_text)? {
-            CommandHeader::Command(header) => {
-                reject_optional_header_tails(&CommandHeader::Command(header.clone()))?;
-                ExpressionAliasLhs::Command(header)
-            }
-            CommandHeader::Infix(header) => {
-                reject_optional_header_tails(&CommandHeader::Infix(header.clone()))?;
-                ExpressionAliasLhs::InfixCommand(header)
-            }
-            CommandHeader::InfixSpec(_) => {
-                return Err(ParseError::custom(
-                    "spec-infix headers are not valid expression alias lhs values",
-                ));
-            }
-            CommandHeader::Refined(_) => {
-                return Err(ParseError::custom(
-                    "refined command headers are not valid expression alias lhs values",
-                ));
-            }
-        }
-    } else if let Some(member) = parse_member_alias_lhs(lhs_text) {
-        ExpressionAliasLhs::Member(member?)
-    } else {
-        ExpressionAliasLhs::Form(parse_form_or_declaration(lhs_text)?)
-    };
-
-    Ok(ExpressionAlias {
-        span: span_all(input),
-        lhs,
-        expression,
-    })
-}
-
 /// Parses a member-access capability left-hand side: `x.inv` (member access) or
 /// `x.f(a_)` (member call). Returns `None` when `input` is not a member form so
 /// `parse_expression_alias` can fall back to form parsing; returns `Some(Err(_))`
@@ -3994,40 +4146,6 @@ fn command_header_has_optional_tail(header: &CommandHeader) -> bool {
     }
 }
 
-/// Parses a specification-operator alias of the form
-/// `<placeholder spec> (:-> | :<->:) <target>`.
-///
-/// These aliases bridge operator-like placeholder declarations to either an
-/// `is` statement or a specification target, so both sides need bespoke parsing
-/// around the generated formulation grammar.
-pub fn parse_spec_operator_alias(input: &str) -> Result<SpecOperatorAlias, ParseError> {
-    let input = input.trim();
-    let (index, arrow, kind) = find_top_level_substring(input, ":<->:")
-        .map(|index| (index, ":<->:", SpecOperatorAliasKind::Iff))
-        .or_else(|| {
-            find_top_level_substring(input, ":->")
-                .map(|index| (index, ":->", SpecOperatorAliasKind::Implies))
-        })
-        .ok_or_else(|| ParseError::custom("expected top-level `:->` or `:<->:`"))?;
-    let placeholder_spec = parse_placeholder_spec_statement(input[..index].trim())?;
-    let target_text = input[index + arrow.len()..].trim();
-    let targets = split_top_level(target_text, ';')?
-        .into_iter()
-        .map(parse_spec_operator_alias_target)
-        .collect::<Result<Vec<_>, _>>()?;
-    let target = match targets.as_slice() {
-        [target] => target.clone(),
-        _ => SpecOperatorAliasTarget::Conjunction(targets),
-    };
-
-    Ok(SpecOperatorAlias {
-        span: span_all(input),
-        kind,
-        placeholder_spec,
-        target,
-    })
-}
-
 /// Parses the target side of a specification-operator alias.
 ///
 /// Besides ordinary `is`/spec targets, this position can name a built-in
@@ -4060,135 +4178,7 @@ fn parse_spec_operator_alias_target(input: &str) -> Result<SpecOperatorAliasTarg
     Ok(SpecOperatorAliasTarget::IsOrSpec(Box::new(target)))
 }
 
-/// Parses a dot-separated label heading.
-///
-/// Labels intentionally accept only dotted name parts, keeping them lightweight
-/// identifiers for notes and nested structural groups.
-pub fn parse_label_header(input: &str) -> Result<LabelHeader, ParseError> {
-    let input = input.trim();
-    let parts = parse_dotted_parts(input)?;
-    Ok(LabelHeader {
-        span: span_all(input),
-        parts,
-    })
-}
-
-/// Parses one or more `(:...:)` label references (for example `(:abc:)`,
-/// `(:a, b:)`, or `(:a:), (:b:)`).
-pub fn parse_label_references(input: &str) -> Result<Vec<Label>, ParseError> {
-    let mut rest = input.trim();
-    if rest.is_empty() {
-        return Err(ParseError::custom(
-            "expected label reference of the form `(:label:)`",
-        ));
-    }
-    let mut labels = Vec::new();
-    while !rest.is_empty() {
-        if !rest.starts_with("(:") {
-            return Err(ParseError::custom(
-                "expected label reference of the form `(:label:)`",
-            ));
-        }
-        let Some(end) = rest[2..].find(":)") else {
-            return Err(ParseError::custom(
-                "unterminated label reference; expected `(:...:)`",
-            ));
-        };
-        let content = rest[2..2 + end].trim();
-        if content.is_empty() {
-            return Err(ParseError::custom("label reference cannot be empty"));
-        }
-        for item in content.split(',') {
-            let trimmed = item.trim();
-            if trimmed.is_empty() {
-                return Err(ParseError::custom("empty item in label reference list"));
-            }
-            let parts = parse_dotted_parts(trimmed)?;
-            labels.push(Label {
-                span: span_all(input),
-                parts,
-            });
-        }
-        rest = rest[2 + end + 2..].trim_start();
-        if let Some(after_comma) = rest.strip_prefix(',') {
-            rest = after_comma.trim_start();
-            if rest.is_empty() {
-                return Err(ParseError::custom("trailing comma in label references"));
-            }
-        }
-    }
-    Ok(labels)
-}
-
-/// Parses an author heading beginning with `@`.
-///
-/// The returned header stores the dotted name path without the sigil so the
-/// structural layer can use the same path representation as labels/resources.
-pub fn parse_author_header(input: &str) -> Result<AuthorHeader, ParseError> {
-    let input = input.trim();
-    let rest = input
-        .strip_prefix('@')
-        .ok_or_else(|| ParseError::custom("author headers must start with `@`"))?;
-    let parts = parse_dotted_parts(rest)?;
-    Ok(AuthorHeader {
-        span: span_all(input),
-        parts,
-    })
-}
-
-/// Parses a resource heading beginning with `$`.
-///
-/// Resource headings share dotted path validation with labels but use a
-/// different sigil to keep bibliography-style entries visually separate.
-pub fn parse_resource_header(input: &str) -> Result<ResourceHeader, ParseError> {
-    let input = input.trim();
-    let rest = input
-        .strip_prefix('$')
-        .ok_or_else(|| ParseError::custom("resource headers must start with `$`"))?;
-    let (path, page) = match rest.strip_suffix('}') {
-        Some(without_close) if without_close.rfind(":page{").is_some() => {
-            let argument_start = without_close
-                .rfind(":page{")
-                .expect("page suffix was checked above");
-            let page_text = without_close[argument_start + ":page{".len()..].trim();
-            let page = page_text.parse::<u64>().map_err(|_| {
-                ParseError::custom("resource `page` arguments must be positive integers")
-            })?;
-            if page == 0 {
-                return Err(ParseError::custom(
-                    "resource `page` arguments must be positive integers",
-                ));
-            }
-            (&without_close[..argument_start], Some(page))
-        }
-        _ => (rest, None),
-    };
-    let parts = parse_dotted_parts(path)?;
-    Ok(ResourceHeader {
-        span: span_all(input),
-        parts,
-        page,
-    })
-}
-
-/// Parses a topic heading beginning with `#`.
-///
-/// Topic headings share dotted-path validation with labels but use a `#` sigil so
-/// that `[#real.analysis]` names a documentation topic. The returned header stores
-/// the dotted name path without the sigil, matching the author/resource headers.
-pub fn parse_topic_header(input: &str) -> Result<TopicHeader, ParseError> {
-    let input = input.trim();
-    let rest = input
-        .strip_prefix('#')
-        .ok_or_else(|| ParseError::custom("topic headers must start with `#`"))?;
-    let parts = parse_dotted_parts(rest)?;
-    Ok(TopicHeader {
-        span: span_all(input),
-        parts,
-    })
-}
-
-// ===============================[ tests ]=====================================
+// =============================================================================
 
 #[cfg(test)]
 mod tests {

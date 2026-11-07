@@ -1,8 +1,6 @@
 use super::ast::{Line, Metadata};
 use crate::events::EventLog;
 
-const ORIGIN: &str = "proto_lexer";
-
 pub struct Lexer<'a> {
     lines: Vec<Line>,
     cursor: usize,
@@ -37,6 +35,10 @@ impl Iterator for Lexer<'_> {
     }
 }
 
+// =============================================================================
+
+const ORIGIN: &str = "proto_lexer";
+
 fn text_to_lines(input: &str) -> Vec<Line> {
     input
         .split('\n')
@@ -65,7 +67,7 @@ fn text_to_lines(input: &str) -> Vec<Line> {
         .collect()
 }
 
-// ===============================[ tests ]=====================================
+// =============================================================================
 
 #[cfg(test)]
 mod tests {

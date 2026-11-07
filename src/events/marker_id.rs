@@ -2,8 +2,6 @@ use std::fmt;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-static NEXT_MARKER_ID: AtomicU64 = AtomicU64::new(0);
-
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct MarkerId(String);
 
@@ -42,6 +40,10 @@ impl fmt::Display for MarkerId {
     }
 }
 
+// =============================================================================
+
+static NEXT_MARKER_ID: AtomicU64 = AtomicU64::new(0);
+
 fn format_uuid(bytes: [u8; 16]) -> String {
     let hex = bytes
         .iter()
@@ -69,7 +71,7 @@ fn format_uuid(bytes: [u8; 16]) -> String {
     )
 }
 
-// ===============================[ tests ]=====================================
+// =============================================================================
 
 #[cfg(test)]
 mod tests {

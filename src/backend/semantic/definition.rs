@@ -46,6 +46,8 @@ pub fn find_definition(
     })
 }
 
+// =============================================================================
+
 /// The signature of the command occurrence covering `offset`. Every `\` in
 /// `source` is a candidate command start; a candidate wins when its matched
 /// extent `[start, end)` contains the cursor. Ties prefer the start closest to
@@ -83,7 +85,7 @@ fn signature_at_offset(
     best.map(|(_, signature)| signature.to_string())
 }
 
-// ===============================[ tests ]=====================================
+// =============================================================================
 
 #[cfg(test)]
 mod tests {

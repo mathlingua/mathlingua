@@ -1,12 +1,6 @@
 use super::{RenderRegistry, render_formulation_latex};
 use std::collections::HashMap;
 
-#[derive(Clone, Default)]
-struct Scope {
-    name: String,
-    variables: HashMap<String, String>,
-}
-
 /// Converts MathLingua fragments embedded in prose to Markdown math while
 /// maintaining scopes declared by `<<name>>` and `<</name>>`.
 pub(in crate::backend::view) fn render_scoped_text_markdown(
@@ -27,6 +21,55 @@ pub(in crate::backend::view) fn render_scoped_text_markdown_with_labels(
         scopes: vec![Scope::default()],
     }
     .render(text)
+}
+
+pub(crate) fn markdown_code_span_len(input: &str) -> Option<usize> {
+    if !input.starts_with('`') {
+        return None;
+    }
+    let tick_count = input.bytes().take_while(|&b| b == b'`').count();
+    let ticks = &input[..tick_count];
+    let mut search_from = tick_count;
+    while let Some(pos) = input[search_from..].find(ticks) {
+        let abs_pos = search_from + pos;
+        let after = abs_pos + tick_count;
+        if input.as_bytes().get(after) != Some(&b'`') {
+            return Some(after);
+        }
+        let extra = input[after..].bytes().take_while(|&b| b == b'`').count();
+        search_from = after + extra;
+    }
+    None
+}
+
+pub(crate) fn theorem_reference_fragment(input: &str) -> Option<(&str, usize)> {
+    let (open, close) = ("{:", ":}");
+    let tail = input.strip_prefix(open)?;
+    let end = tail.find(close)?;
+    Some((&tail[..end], open.len() + end + close.len()))
+}
+
+pub(crate) fn math_fragment(input: &str, display: bool) -> Option<(&str, usize)> {
+    let (open, close) = if display {
+        ("{{.", ".}}")
+    } else {
+        ("{.", ".}")
+    };
+    let tail = input.strip_prefix(open)?;
+    // `{...`/`{{...` belong to variadic writing templates, not prose math.
+    if tail.starts_with('.') {
+        return None;
+    }
+    let end = tail.find(close)?;
+    Some((&tail[..end], open.len() + end + close.len()))
+}
+
+// =============================================================================
+
+#[derive(Clone, Default)]
+struct Scope {
+    name: String,
+    variables: HashMap<String, String>,
 }
 
 struct ScopedTextRenderer<'a> {
@@ -183,25 +226,6 @@ struct RelationModifier<'a> {
     wording: &'a str,
 }
 
-pub(crate) fn markdown_code_span_len(input: &str) -> Option<usize> {
-    if !input.starts_with('`') {
-        return None;
-    }
-    let tick_count = input.bytes().take_while(|&b| b == b'`').count();
-    let ticks = &input[..tick_count];
-    let mut search_from = tick_count;
-    while let Some(pos) = input[search_from..].find(ticks) {
-        let abs_pos = search_from + pos;
-        let after = abs_pos + tick_count;
-        if input.as_bytes().get(after) != Some(&b'`') {
-            return Some(after);
-        }
-        let extra = input[after..].bytes().take_while(|&b| b == b'`').count();
-        search_from = after + extra;
-    }
-    None
-}
-
 fn scope_marker(input: &str, closing: bool) -> Option<(&str, usize)> {
     let prefix = if closing { "<</" } else { "<<" };
     let tail = input.strip_prefix(prefix)?;
@@ -241,28 +265,6 @@ fn label_reference_fragment(input: &str) -> Option<(&str, usize)> {
         return None;
     }
     Some((body, 2 + end + 2))
-}
-
-pub(crate) fn theorem_reference_fragment(input: &str) -> Option<(&str, usize)> {
-    let (open, close) = ("{:", ":}");
-    let tail = input.strip_prefix(open)?;
-    let end = tail.find(close)?;
-    Some((&tail[..end], open.len() + end + close.len()))
-}
-
-pub(crate) fn math_fragment(input: &str, display: bool) -> Option<(&str, usize)> {
-    let (open, close) = if display {
-        ("{{.", ".}}")
-    } else {
-        ("{.", ".}")
-    };
-    let tail = input.strip_prefix(open)?;
-    // `{...`/`{{...` belong to variadic writing templates, not prose math.
-    if tail.starts_with('.') {
-        return None;
-    }
-    let end = tail.find(close)?;
-    Some((&tail[..end], open.len() + end + close.len()))
 }
 
 fn relation_modifier(input: &str) -> (Option<RelationModifier<'_>>, usize) {
@@ -333,7 +335,7 @@ fn latex_command_name(text: &str) -> String {
         .collect()
 }
 
-// ===============================[ tests ]=====================================
+// =============================================================================
 
 #[cfg(test)]
 mod tests {

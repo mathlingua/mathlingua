@@ -30,244 +30,6 @@ pub(super) fn placeholder_signature_for_header(
     placeholder_signature_for_command_header(command)
 }
 
-fn header_contains_mapping_parameters(header: &CommandHeader) -> bool {
-    let groups = match header {
-        CommandHeader::Command(command) => command_groups(command),
-        CommandHeader::Infix(command) => command
-            .head_args
-            .iter()
-            .chain(command.tail.iter().flat_map(|part| part.args.iter()))
-            .collect(),
-        CommandHeader::InfixSpec(command) => command
-            .head_args
-            .iter()
-            .chain(command.tail.iter().flat_map(|part| part.args.iter()))
-            .collect(),
-        CommandHeader::Refined(command) => command
-            .parts
-            .iter()
-            .flat_map(|part| part.tail.iter())
-            .flat_map(|part| part.args.iter())
-            .chain(command.head_args.iter())
-            .chain(command.tail.iter().flat_map(|part| part.args.iter()))
-            .collect(),
-    };
-    groups.iter().any(|group| {
-        group
-            .forms
-            .iter()
-            .any(|form| matches!(form.kind, FormOrDeclarationKind::MappingParameter { .. }))
-    })
-}
-
-fn command_groups(command: &CommandHeaderNode) -> Vec<&CurlyHeadingArgs> {
-    command
-        .head_args
-        .iter()
-        .chain(command.tail.iter().flat_map(|part| part.args.iter()))
-        .collect()
-}
-
-fn placeholder_signature_for_command_header(
-    command: &CommandHeaderNode,
-) -> Result<Option<(String, PlaceholderSignaturePattern)>, String> {
-    let groups = command_groups(command);
-    let selector_groups = groups
-        .iter()
-        .enumerate()
-        .filter(|(_, group)| {
-            group
-                .forms
-                .iter()
-                .any(|form| matches!(form.kind, FormOrDeclarationKind::MappingParameter { .. }))
-        })
-        .collect::<Vec<_>>();
-    if selector_groups.is_empty() {
-        return Ok(None);
-    }
-    if selector_groups.len() != 1 {
-        return Err(
-            "mapping-parameter placeholders may occur in exactly one curly argument group"
-                .to_owned(),
-        );
-    }
-    let (selector_group_index, selector_group) = selector_groups[0];
-    if !selector_group
-        .forms
-        .iter()
-        .all(|form| matches!(form.kind, FormOrDeclarationKind::MappingParameter { .. }))
-    {
-        return Err(
-            "a curly argument group containing mapping-parameter placeholders may contain only placeholders"
-                .to_owned(),
-        );
-    }
-
-    let mut owners = selector_group
-        .forms
-        .iter()
-        .filter_map(|form| match &form.kind {
-            FormOrDeclarationKind::MappingParameter { owner, .. } => Some(owner.as_str()),
-            _ => None,
-        });
-    let owner = owners.next().expect("selector group is nonempty");
-    if owners.any(|candidate| candidate != owner) {
-        return Err(
-            "all mapping-parameter placeholders in one group must refer to the same mapping"
-                .to_owned(),
-        );
-    }
-
-    let mapping_groups = groups
-        .iter()
-        .enumerate()
-        .filter_map(|(index, group)| {
-            let matches = group.forms.iter().filter_map(|form| match &form.kind {
-                FormOrDeclarationKind::FunctionDeclaration { name, form }
-                    if name.as_deref().unwrap_or(&form.name) == owner =>
-                {
-                    Some(form)
-                }
-                _ => None,
-            });
-            let matches = matches.collect::<Vec<_>>();
-            (!matches.is_empty()).then_some((index, matches))
-        })
-        .collect::<Vec<_>>();
-    if mapping_groups.len() != 1 || mapping_groups[0].1.len() != 1 {
-        return Err(format!(
-            "mapping-parameter placeholders for `{owner}` require exactly one other curly argument group containing `{owner}(...)`"
-        ));
-    }
-    let (mapping_group_index, mappings) = &mapping_groups[0];
-    if *mapping_group_index == selector_group_index {
-        return Err(format!(
-            "the `{owner}(...)` mapping and its parameter placeholders must be in separate curly argument groups"
-        ));
-    }
-    let mapping = mappings[0];
-    let mapping_arity =
-        if mapping.variadic_parameter.is_some() || mapping.magnetic_placeholder.is_some() {
-            MappingArity::Variadic
-        } else {
-            if mapping.placeholders.is_empty() {
-                return Err(format!(
-                    "the associated mapping `{owner}` must explicitly list its parameters"
-                ));
-            }
-            MappingArity::Exact(mapping.placeholders.len())
-        };
-
-    let mut selector_patterns = Vec::new();
-    for form in &selector_group.forms {
-        let FormOrDeclarationKind::MappingParameter { selector, .. } = &form.kind else {
-            unreachable!()
-        };
-        let pattern = match selector {
-            MappingParameterSelector::Exact { name, .. } => {
-                if let Some(parameter) = &mapping.variadic_parameter {
-                    if name != &parameter.name {
-                        return Err(format!(
-                            "`{owner}.{name}_` is not a parameter of variadic mapping `{owner}`"
-                        ));
-                    }
-                    MappingSelectorPattern::Variadic
-                } else {
-                    let Some(index) = mapping
-                        .placeholders
-                        .iter()
-                        .position(|parameter| parameter.name == *name)
-                    else {
-                        return Err(format!("`{owner}.{name}_` is not a parameter of `{owner}`"));
-                    };
-                    MappingSelectorPattern::Exact(index + 1)
-                }
-            }
-            MappingParameterSelector::Arbitrary { name, .. } => {
-                if mapping
-                    .placeholders
-                    .iter()
-                    .any(|parameter| parameter.name == *name)
-                    || mapping
-                        .variadic_parameter
-                        .as_ref()
-                        .is_some_and(|parameter| parameter.name == *name)
-                {
-                    return Err(format!(
-                        "`{owner}.{name}?_` uses the name of an existing mapping parameter; omit `?` for an exact parameter or choose a fresh name"
-                    ));
-                }
-                MappingSelectorPattern::Arbitrary
-            }
-            MappingParameterSelector::Variadic {
-                name, outer_index, ..
-            } => {
-                let Some(parameter) = &mapping.variadic_parameter else {
-                    return Err(format!(
-                        "variadic selector `{owner}.{name}_[...]` requires a ranged variadic mapping parameter"
-                    ));
-                };
-                if name != &parameter.name || outer_index != &parameter.index {
-                    return Err(format!(
-                        "variadic selector `{owner}.{name}_[{outer_index}_[...]]` does not match mapping parameter `{}_[{}_:= {}...{}]`",
-                        parameter.name, parameter.index, parameter.start, parameter.length
-                    ));
-                }
-                MappingSelectorPattern::Variadic
-            }
-        };
-        selector_patterns.push(pattern);
-    }
-
-    let mapping_text = match mapping_arity {
-        MappingArity::Exact(count) => format!("_({count})"),
-        MappingArity::Variadic => "_(*)".to_owned(),
-    };
-    let selector_text = selector_patterns
-        .iter()
-        .map(|selector| match selector {
-            MappingSelectorPattern::Exact(index) => format!("#{index}"),
-            MappingSelectorPattern::Arbitrary => "#?".to_owned(),
-            MappingSelectorPattern::Variadic => "#*".to_owned(),
-        })
-        .collect::<Vec<_>>()
-        .join(", ");
-
-    let mut group_index = 0;
-    let mut signature = format!("\\{}", format_chain(&command.chain));
-    for _ in &command.head_args {
-        if group_index == *mapping_group_index {
-            signature.push_str(&format!("{{{mapping_text}}}"));
-        } else if group_index == selector_group_index {
-            signature.push_str(&format!("{{{selector_text}}}"));
-        }
-        group_index += 1;
-    }
-    for part in &command.tail {
-        signature.push(':');
-        signature.push_str(&format_chain(&part.chain));
-        for _ in &part.args {
-            if group_index == *mapping_group_index {
-                signature.push_str(&format!("{{{mapping_text}}}"));
-            } else if group_index == selector_group_index {
-                signature.push_str(&format!("{{{selector_text}}}"));
-            }
-            group_index += 1;
-        }
-    }
-
-    let mut general_signature = format!("\\{}", format_chain(&command.chain));
-    add_header_tail(&mut general_signature, &mut Vec::new(), &command.tail);
-    Ok(Some((
-        signature,
-        PlaceholderSignaturePattern {
-            general_signature,
-            mapping_arity,
-            selectors: selector_patterns,
-        },
-    )))
-}
-
 pub(super) fn shapes_for_header(header: &CommandHeader) -> Vec<HeaderShape> {
     match header {
         CommandHeader::Command(command) => shapes_for_command_header_node(command),
@@ -466,33 +228,6 @@ pub(super) fn shapes_for_infix_spec_header(spec: &InfixSpecHeader) -> Vec<Header
             }
         })
         .collect()
-}
-
-fn refined_command_header_for_infix_spec(spec: &InfixSpecHeader) -> Option<RefinedCommandHeader> {
-    let refinement = spec.refinement.as_ref()?;
-    Some(RefinedCommandHeader {
-        span: spec.span,
-        prefix_chain: refinement.prefix_chain.clone(),
-        parts: refinement.parts.clone(),
-        refined_tail: RefinedTail::Chain(spec.chain.clone()),
-        head_args: spec.head_args.clone(),
-        tail: spec.tail.clone(),
-        paren_args: Vec::new(),
-    })
-}
-
-fn wrap_refined_infix_spec_shape(mut shape: SignatureShape) -> SignatureShape {
-    shape.signature = wrap_refined_infix_spec_key(&shape.signature);
-    shape.fallback_shapes = shape
-        .fallback_shapes
-        .into_iter()
-        .map(wrap_refined_infix_spec_shape)
-        .collect();
-    shape
-}
-
-fn wrap_refined_infix_spec_key(key: &str) -> String {
-    format!("\\:{}:/", key.strip_prefix('\\').unwrap_or(key))
 }
 
 pub(super) fn shape_for_refined_command_header(command: &RefinedCommandHeader) -> SignatureShape {
@@ -737,59 +472,6 @@ pub(super) fn placeholder_invocation_for_command_expression(
     })
 }
 
-fn mapping_parameter_names(expression: &Expression) -> Option<Vec<String>> {
-    let mut names = Vec::new();
-    if collect_mapping_parameter_names(expression, &mut names) {
-        Some(names)
-    } else {
-        None
-    }
-}
-
-fn collect_mapping_parameter_names(expression: &Expression, names: &mut Vec<String>) -> bool {
-    match &expression.kind {
-        ExpressionKind::Name(name) | ExpressionKind::InferredName(name) => {
-            names.push(name.clone());
-            true
-        }
-        ExpressionKind::Tuple(elements) => elements.iter().all(|element| match element {
-            TupleExpressionElement::Expression(expression) => {
-                collect_mapping_parameter_names(expression, names)
-            }
-            TupleExpressionElement::Operator(_) => false,
-        }),
-        ExpressionKind::Grouped { expression, .. }
-        | ExpressionKind::Labeled { expression, .. }
-        | ExpressionKind::IsType {
-            subject: expression,
-            ..
-        }
-        | ExpressionKind::IsBuiltinPredicate {
-            subject: expression,
-            ..
-        }
-        | ExpressionKind::IsPredicate {
-            subject: expression,
-            ..
-        } => collect_mapping_parameter_names(expression, names),
-        ExpressionKind::SpecStatement(statement) | ExpressionKind::SpecPredicate(statement) => {
-            collect_mapping_parameter_names(&statement.subject, names)
-        }
-        ExpressionKind::SpecStatementExpr { subject, .. } => {
-            collect_mapping_parameter_names(subject, names)
-        }
-        _ => false,
-    }
-}
-
-fn expression_parameter_name(expression: &Expression) -> Option<String> {
-    match &expression.kind {
-        ExpressionKind::Name(name) | ExpressionKind::InferredName(name) => Some(name.clone()),
-        ExpressionKind::Grouped { expression, .. } => expression_parameter_name(expression),
-        _ => None,
-    }
-}
-
 pub(super) fn shape_for_infix_command(command: &InfixCommand) -> SignatureShape {
     let mut signature = format!("\\.{}", format_chain(&command.chain));
     let mut arg_groups = Vec::new();
@@ -818,19 +500,6 @@ pub(super) fn shape_for_infix_spec(spec: &InfixSpec) -> SignatureShape {
         arg_groups,
         fallback_shapes: Vec::new(),
     }
-}
-
-fn refined_command_expression_for_infix_spec(spec: &InfixSpec) -> Option<RefinedCommandExpression> {
-    let refinement = spec.refinement.as_ref()?;
-    Some(RefinedCommandExpression {
-        span: spec.span,
-        prefix_chain: refinement.prefix_chain.clone(),
-        parts: refinement.parts.clone(),
-        refined_tail: RefinedTail::Chain(spec.chain.clone()),
-        head_args: spec.head_args.clone(),
-        tail: spec.tail.clone(),
-        paren_args: Vec::new(),
-    })
 }
 
 pub(super) fn shape_for_refined_command_expression(
@@ -958,6 +627,71 @@ pub(super) fn add_expression_paren_groups(
     }
 }
 
+pub(super) fn add_header_tail(
+    signature: &mut String,
+    arg_groups: &mut Vec<ArgGroupShape>,
+    tail: &[CommandHeaderTailPart],
+) {
+    for part in tail {
+        signature.push(':');
+        signature.push_str(&format_chain(&part.chain));
+        add_heading_curly_groups(arg_groups, &part.args);
+    }
+}
+
+pub(super) fn add_expression_tail(
+    signature: &mut String,
+    arg_groups: &mut Vec<ArgGroupShape>,
+    tail: &[CommandExpressionTailPart],
+) {
+    for part in tail {
+        signature.push(':');
+        signature.push_str(&format_chain(&part.chain));
+        add_expression_curly_groups(arg_groups, &part.args);
+    }
+}
+
+pub(super) fn format_chain(chain: &Chain) -> String {
+    chain
+        .parts
+        .iter()
+        .map(format_chain_part)
+        .collect::<Vec<_>>()
+        .join(".")
+}
+
+pub(super) fn format_chain_part(part: &ChainPart) -> String {
+    match part {
+        ChainPart::Name(name) => name.clone(),
+        ChainPart::Alias(name) => format!("${name}"),
+        ChainPart::Operator(operator) => operator.clone(),
+    }
+}
+
+pub(super) fn format_refined_tail(tail: &RefinedTail) -> String {
+    match tail {
+        RefinedTail::Chain(chain) => format_chain(chain),
+        RefinedTail::Name { name, .. } => name.clone(),
+    }
+}
+
+pub(super) fn format_arg_groups(groups: &[ArgGroupShape]) -> String {
+    if groups.is_empty() {
+        return "none".to_string();
+    }
+
+    groups
+        .iter()
+        .map(|group| match group.delimiter {
+            ArgDelimiter::Curly => format!("{{{}}}", format_arg_count(&group.count)),
+            ArgDelimiter::Paren => format!("({})", format_arg_count(&group.count)),
+        })
+        .collect::<Vec<_>>()
+        .join("")
+}
+
+// =============================================================================
+
 #[derive(Clone, Debug, Default)]
 struct HeaderVariant {
     signature_suffix: String,
@@ -965,6 +699,337 @@ struct HeaderVariant {
     arg_groups: Vec<ArgGroupShape>,
     parameters: Vec<String>,
     hidden_parameters: Vec<String>,
+}
+
+fn header_contains_mapping_parameters(header: &CommandHeader) -> bool {
+    let groups = match header {
+        CommandHeader::Command(command) => command_groups(command),
+        CommandHeader::Infix(command) => command
+            .head_args
+            .iter()
+            .chain(command.tail.iter().flat_map(|part| part.args.iter()))
+            .collect(),
+        CommandHeader::InfixSpec(command) => command
+            .head_args
+            .iter()
+            .chain(command.tail.iter().flat_map(|part| part.args.iter()))
+            .collect(),
+        CommandHeader::Refined(command) => command
+            .parts
+            .iter()
+            .flat_map(|part| part.tail.iter())
+            .flat_map(|part| part.args.iter())
+            .chain(command.head_args.iter())
+            .chain(command.tail.iter().flat_map(|part| part.args.iter()))
+            .collect(),
+    };
+    groups.iter().any(|group| {
+        group
+            .forms
+            .iter()
+            .any(|form| matches!(form.kind, FormOrDeclarationKind::MappingParameter { .. }))
+    })
+}
+
+fn command_groups(command: &CommandHeaderNode) -> Vec<&CurlyHeadingArgs> {
+    command
+        .head_args
+        .iter()
+        .chain(command.tail.iter().flat_map(|part| part.args.iter()))
+        .collect()
+}
+
+fn placeholder_signature_for_command_header(
+    command: &CommandHeaderNode,
+) -> Result<Option<(String, PlaceholderSignaturePattern)>, String> {
+    let groups = command_groups(command);
+    let selector_groups = groups
+        .iter()
+        .enumerate()
+        .filter(|(_, group)| {
+            group
+                .forms
+                .iter()
+                .any(|form| matches!(form.kind, FormOrDeclarationKind::MappingParameter { .. }))
+        })
+        .collect::<Vec<_>>();
+    if selector_groups.is_empty() {
+        return Ok(None);
+    }
+    if selector_groups.len() != 1 {
+        return Err(
+            "mapping-parameter placeholders may occur in exactly one curly argument group"
+                .to_owned(),
+        );
+    }
+    let (selector_group_index, selector_group) = selector_groups[0];
+    if !selector_group
+        .forms
+        .iter()
+        .all(|form| matches!(form.kind, FormOrDeclarationKind::MappingParameter { .. }))
+    {
+        return Err(
+            "a curly argument group containing mapping-parameter placeholders may contain only placeholders"
+                .to_owned(),
+        );
+    }
+
+    let mut owners = selector_group
+        .forms
+        .iter()
+        .filter_map(|form| match &form.kind {
+            FormOrDeclarationKind::MappingParameter { owner, .. } => Some(owner.as_str()),
+            _ => None,
+        });
+    let owner = owners.next().expect("selector group is nonempty");
+    if owners.any(|candidate| candidate != owner) {
+        return Err(
+            "all mapping-parameter placeholders in one group must refer to the same mapping"
+                .to_owned(),
+        );
+    }
+
+    let mapping_groups = groups
+        .iter()
+        .enumerate()
+        .filter_map(|(index, group)| {
+            let matches = group.forms.iter().filter_map(|form| match &form.kind {
+                FormOrDeclarationKind::FunctionDeclaration { name, form }
+                    if name.as_deref().unwrap_or(&form.name) == owner =>
+                {
+                    Some(form)
+                }
+                _ => None,
+            });
+            let matches = matches.collect::<Vec<_>>();
+            (!matches.is_empty()).then_some((index, matches))
+        })
+        .collect::<Vec<_>>();
+    if mapping_groups.len() != 1 || mapping_groups[0].1.len() != 1 {
+        return Err(format!(
+            "mapping-parameter placeholders for `{owner}` require exactly one other curly argument group containing `{owner}(...)`"
+        ));
+    }
+    let (mapping_group_index, mappings) = &mapping_groups[0];
+    if *mapping_group_index == selector_group_index {
+        return Err(format!(
+            "the `{owner}(...)` mapping and its parameter placeholders must be in separate curly argument groups"
+        ));
+    }
+    let mapping = mappings[0];
+    let mapping_arity =
+        if mapping.variadic_parameter.is_some() || mapping.magnetic_placeholder.is_some() {
+            MappingArity::Variadic
+        } else {
+            if mapping.placeholders.is_empty() {
+                return Err(format!(
+                    "the associated mapping `{owner}` must explicitly list its parameters"
+                ));
+            }
+            MappingArity::Exact(mapping.placeholders.len())
+        };
+
+    let mut selector_patterns = Vec::new();
+    for form in &selector_group.forms {
+        let FormOrDeclarationKind::MappingParameter { selector, .. } = &form.kind else {
+            unreachable!()
+        };
+        let pattern = match selector {
+            MappingParameterSelector::Exact { name, .. } => {
+                if let Some(parameter) = &mapping.variadic_parameter {
+                    if name != &parameter.name {
+                        return Err(format!(
+                            "`{owner}.{name}_` is not a parameter of variadic mapping `{owner}`"
+                        ));
+                    }
+                    MappingSelectorPattern::Variadic
+                } else {
+                    let Some(index) = mapping
+                        .placeholders
+                        .iter()
+                        .position(|parameter| parameter.name == *name)
+                    else {
+                        return Err(format!("`{owner}.{name}_` is not a parameter of `{owner}`"));
+                    };
+                    MappingSelectorPattern::Exact(index + 1)
+                }
+            }
+            MappingParameterSelector::Arbitrary { name, .. } => {
+                if mapping
+                    .placeholders
+                    .iter()
+                    .any(|parameter| parameter.name == *name)
+                    || mapping
+                        .variadic_parameter
+                        .as_ref()
+                        .is_some_and(|parameter| parameter.name == *name)
+                {
+                    return Err(format!(
+                        "`{owner}.{name}?_` uses the name of an existing mapping parameter; omit `?` for an exact parameter or choose a fresh name"
+                    ));
+                }
+                MappingSelectorPattern::Arbitrary
+            }
+            MappingParameterSelector::Variadic {
+                name, outer_index, ..
+            } => {
+                let Some(parameter) = &mapping.variadic_parameter else {
+                    return Err(format!(
+                        "variadic selector `{owner}.{name}_[...]` requires a ranged variadic mapping parameter"
+                    ));
+                };
+                if name != &parameter.name || outer_index != &parameter.index {
+                    return Err(format!(
+                        "variadic selector `{owner}.{name}_[{outer_index}_[...]]` does not match mapping parameter `{}_[{}_:= {}...{}]`",
+                        parameter.name, parameter.index, parameter.start, parameter.length
+                    ));
+                }
+                MappingSelectorPattern::Variadic
+            }
+        };
+        selector_patterns.push(pattern);
+    }
+
+    let mapping_text = match mapping_arity {
+        MappingArity::Exact(count) => format!("_({count})"),
+        MappingArity::Variadic => "_(*)".to_owned(),
+    };
+    let selector_text = selector_patterns
+        .iter()
+        .map(|selector| match selector {
+            MappingSelectorPattern::Exact(index) => format!("#{index}"),
+            MappingSelectorPattern::Arbitrary => "#?".to_owned(),
+            MappingSelectorPattern::Variadic => "#*".to_owned(),
+        })
+        .collect::<Vec<_>>()
+        .join(", ");
+
+    let mut group_index = 0;
+    let mut signature = format!("\\{}", format_chain(&command.chain));
+    for _ in &command.head_args {
+        if group_index == *mapping_group_index {
+            signature.push_str(&format!("{{{mapping_text}}}"));
+        } else if group_index == selector_group_index {
+            signature.push_str(&format!("{{{selector_text}}}"));
+        }
+        group_index += 1;
+    }
+    for part in &command.tail {
+        signature.push(':');
+        signature.push_str(&format_chain(&part.chain));
+        for _ in &part.args {
+            if group_index == *mapping_group_index {
+                signature.push_str(&format!("{{{mapping_text}}}"));
+            } else if group_index == selector_group_index {
+                signature.push_str(&format!("{{{selector_text}}}"));
+            }
+            group_index += 1;
+        }
+    }
+
+    let mut general_signature = format!("\\{}", format_chain(&command.chain));
+    add_header_tail(&mut general_signature, &mut Vec::new(), &command.tail);
+    Ok(Some((
+        signature,
+        PlaceholderSignaturePattern {
+            general_signature,
+            mapping_arity,
+            selectors: selector_patterns,
+        },
+    )))
+}
+
+fn refined_command_header_for_infix_spec(spec: &InfixSpecHeader) -> Option<RefinedCommandHeader> {
+    let refinement = spec.refinement.as_ref()?;
+    Some(RefinedCommandHeader {
+        span: spec.span,
+        prefix_chain: refinement.prefix_chain.clone(),
+        parts: refinement.parts.clone(),
+        refined_tail: RefinedTail::Chain(spec.chain.clone()),
+        head_args: spec.head_args.clone(),
+        tail: spec.tail.clone(),
+        paren_args: Vec::new(),
+    })
+}
+
+fn wrap_refined_infix_spec_shape(mut shape: SignatureShape) -> SignatureShape {
+    shape.signature = wrap_refined_infix_spec_key(&shape.signature);
+    shape.fallback_shapes = shape
+        .fallback_shapes
+        .into_iter()
+        .map(wrap_refined_infix_spec_shape)
+        .collect();
+    shape
+}
+
+fn wrap_refined_infix_spec_key(key: &str) -> String {
+    format!("\\:{}:/", key.strip_prefix('\\').unwrap_or(key))
+}
+
+fn mapping_parameter_names(expression: &Expression) -> Option<Vec<String>> {
+    let mut names = Vec::new();
+    if collect_mapping_parameter_names(expression, &mut names) {
+        Some(names)
+    } else {
+        None
+    }
+}
+
+fn collect_mapping_parameter_names(expression: &Expression, names: &mut Vec<String>) -> bool {
+    match &expression.kind {
+        ExpressionKind::Name(name) | ExpressionKind::InferredName(name) => {
+            names.push(name.clone());
+            true
+        }
+        ExpressionKind::Tuple(elements) => elements.iter().all(|element| match element {
+            TupleExpressionElement::Expression(expression) => {
+                collect_mapping_parameter_names(expression, names)
+            }
+            TupleExpressionElement::Operator(_) => false,
+        }),
+        ExpressionKind::Grouped { expression, .. }
+        | ExpressionKind::Labeled { expression, .. }
+        | ExpressionKind::IsType {
+            subject: expression,
+            ..
+        }
+        | ExpressionKind::IsBuiltinPredicate {
+            subject: expression,
+            ..
+        }
+        | ExpressionKind::IsPredicate {
+            subject: expression,
+            ..
+        } => collect_mapping_parameter_names(expression, names),
+        ExpressionKind::SpecStatement(statement) | ExpressionKind::SpecPredicate(statement) => {
+            collect_mapping_parameter_names(&statement.subject, names)
+        }
+        ExpressionKind::SpecStatementExpr { subject, .. } => {
+            collect_mapping_parameter_names(subject, names)
+        }
+        _ => false,
+    }
+}
+
+fn expression_parameter_name(expression: &Expression) -> Option<String> {
+    match &expression.kind {
+        ExpressionKind::Name(name) | ExpressionKind::InferredName(name) => Some(name.clone()),
+        ExpressionKind::Grouped { expression, .. } => expression_parameter_name(expression),
+        _ => None,
+    }
+}
+
+fn refined_command_expression_for_infix_spec(spec: &InfixSpec) -> Option<RefinedCommandExpression> {
+    let refinement = spec.refinement.as_ref()?;
+    Some(RefinedCommandExpression {
+        span: spec.span,
+        prefix_chain: refinement.prefix_chain.clone(),
+        parts: refinement.parts.clone(),
+        refined_tail: RefinedTail::Chain(spec.chain.clone()),
+        head_args: spec.head_args.clone(),
+        tail: spec.tail.clone(),
+        paren_args: Vec::new(),
+    })
 }
 
 fn header_tail_variants(tail: &[CommandHeaderTailPart]) -> Vec<HeaderVariant> {
@@ -1320,69 +1385,6 @@ fn key_for_placeholder_form(form: &PlaceholderForm) -> String {
                 .join(",")
         ),
     }
-}
-
-pub(super) fn add_header_tail(
-    signature: &mut String,
-    arg_groups: &mut Vec<ArgGroupShape>,
-    tail: &[CommandHeaderTailPart],
-) {
-    for part in tail {
-        signature.push(':');
-        signature.push_str(&format_chain(&part.chain));
-        add_heading_curly_groups(arg_groups, &part.args);
-    }
-}
-
-pub(super) fn add_expression_tail(
-    signature: &mut String,
-    arg_groups: &mut Vec<ArgGroupShape>,
-    tail: &[CommandExpressionTailPart],
-) {
-    for part in tail {
-        signature.push(':');
-        signature.push_str(&format_chain(&part.chain));
-        add_expression_curly_groups(arg_groups, &part.args);
-    }
-}
-
-pub(super) fn format_chain(chain: &Chain) -> String {
-    chain
-        .parts
-        .iter()
-        .map(format_chain_part)
-        .collect::<Vec<_>>()
-        .join(".")
-}
-
-pub(super) fn format_chain_part(part: &ChainPart) -> String {
-    match part {
-        ChainPart::Name(name) => name.clone(),
-        ChainPart::Alias(name) => format!("${name}"),
-        ChainPart::Operator(operator) => operator.clone(),
-    }
-}
-
-pub(super) fn format_refined_tail(tail: &RefinedTail) -> String {
-    match tail {
-        RefinedTail::Chain(chain) => format_chain(chain),
-        RefinedTail::Name { name, .. } => name.clone(),
-    }
-}
-
-pub(super) fn format_arg_groups(groups: &[ArgGroupShape]) -> String {
-    if groups.is_empty() {
-        return "none".to_string();
-    }
-
-    groups
-        .iter()
-        .map(|group| match group.delimiter {
-            ArgDelimiter::Curly => format!("{{{}}}", format_arg_count(&group.count)),
-            ArgDelimiter::Paren => format!("({})", format_arg_count(&group.count)),
-        })
-        .collect::<Vec<_>>()
-        .join("")
 }
 
 fn format_arg_count(count: &ArgCount) -> String {

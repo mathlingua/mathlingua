@@ -1,5 +1,4 @@
 use std::path::PathBuf;
-
 use super::{
     EventLocation, Level, MarkerEvent, MarkerId, MarkerPhase, MessageEvent, MessageStatus,
 };
@@ -182,7 +181,7 @@ impl Event {
     }
 }
 
-// ===============================[ tests ]=====================================
+// =============================================================================
 
 #[cfg(test)]
 mod tests {

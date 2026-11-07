@@ -3,12 +3,6 @@ use std::io::{self, Write};
 use std::thread;
 use std::time::Duration;
 
-const ORIGIN: &str = "mlg_whte_rbt_obj";
-const LINE_DELAY: Duration = Duration::from_millis(700);
-const LONG_DELAY: Duration = Duration::from_millis(1000);
-const TYPE_DELAY: Duration = Duration::from_millis(100);
-const MAGIC_WORD_DELAY: Duration = Duration::from_millis(50);
-
 pub struct WhteRbtObjResult {
     pub event_log: EventLog,
     pub successful: bool,
@@ -33,6 +27,18 @@ pub fn whte_rbt_obj(listener: Option<Box<dyn EventLogListener>>) -> WhteRbtObjRe
         successful,
     }
 }
+
+// =============================================================================
+
+const ORIGIN: &str = "mlg_whte_rbt_obj";
+
+const LINE_DELAY: Duration = Duration::from_millis(700);
+
+const LONG_DELAY: Duration = Duration::from_millis(1000);
+
+const TYPE_DELAY: Duration = Duration::from_millis(100);
+
+const MAGIC_WORD_DELAY: Duration = Duration::from_millis(50);
 
 fn run_whte_rbt_obj() -> io::Result<()> {
     let mut stdout = io::stdout().lock();

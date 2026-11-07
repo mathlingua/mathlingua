@@ -23,27 +23,6 @@ pub(crate) const CONTENT_DIR: &str = "content";
 /// directory title.
 pub(crate) const PREFACE_FILE: &str = "_preface_.mlg";
 
-pub(crate) struct SourceCollection {
-    root: PathBuf,
-    source_files: Vec<PathBuf>,
-    source_file_view_metadata: BTreeMap<PathBuf, SourceFileViewMetadata>,
-    source_directory_view_metadata: Vec<(PathBuf, SourceFileViewMetadata)>,
-    #[cfg(test)]
-    toc_files: Vec<PathBuf>,
-    preface_files: Vec<(PathBuf, PathBuf)>,
-    parsed_files: Vec<ParsedSourceFile>,
-    parsed_preface_files: Vec<ParsedSourceFile>,
-    loaded_source_files: BTreeMap<PathBuf, LoadedProtoSource>,
-    proto_groups: BTreeMap<PathBuf, Vec<ProtoGroup>>,
-    view_type_info: CollectionTypeInfo,
-}
-
-struct LoadedProtoSource {
-    source: String,
-    groups: Vec<ProtoGroup>,
-    events: Vec<Event>,
-}
-
 pub(crate) enum SourceFileFilter {
     All,
     Only(BTreeSet<PathBuf>),
@@ -333,6 +312,103 @@ pub(crate) fn collection_source_files(
     resolve_collection_source_files(root, event_log, origin).source_files
 }
 
+pub(crate) fn find_collection_root(start: &Path) -> Option<PathBuf> {
+    start
+        .ancestors()
+        .find(|directory| directory.join(CONFIG_FILE).is_file())
+        .map(Path::to_path_buf)
+}
+
+// =============================================================================
+
+struct LoadedProtoSource {
+    source: String,
+    groups: Vec<ProtoGroup>,
+    events: Vec<Event>,
+}
+
+#[derive(Default)]
+struct SourceFileDiscovery {
+    source_files: Vec<PathBuf>,
+    view_metadata: BTreeMap<PathBuf, SourceFileViewMetadata>,
+    directory_metadata: Vec<(PathBuf, SourceFileViewMetadata)>,
+    toc_files: Vec<PathBuf>,
+    /// `(directory, preface file)` pairs for directories with a `_preface_.mlg`.
+    preface_files: Vec<(PathBuf, PathBuf)>,
+    seen_source_files: BTreeSet<PathBuf>,
+    seen_directories: BTreeSet<PathBuf>,
+    seen_toc_files: BTreeSet<PathBuf>,
+}
+
+impl SourceFileDiscovery {
+    fn add_preface_file(&mut self, directory: PathBuf, preface: PathBuf) {
+        self.preface_files
+            .push((normalize_path(&directory), normalize_path(&preface)));
+    }
+
+    fn add_source_file(&mut self, path: PathBuf, metadata: SourceFileViewMetadata) {
+        let normalized = normalize_path(&path);
+        if self.seen_source_files.insert(normalized.clone()) {
+            self.source_files.push(normalized.clone());
+        }
+        self.view_metadata.insert(normalized, metadata);
+    }
+
+    fn add_toc_file(&mut self, path: PathBuf) {
+        let normalized = normalize_path(&path);
+        if self.seen_toc_files.insert(normalized.clone()) {
+            self.toc_files.push(normalized);
+        }
+    }
+
+    fn add_directory(&mut self, path: PathBuf, metadata: SourceFileViewMetadata) {
+        let normalized = normalize_path(&path);
+        if self.seen_directories.insert(normalized.clone()) {
+            self.directory_metadata.push((normalized, metadata));
+            return;
+        }
+
+        if let Some((_, existing_metadata)) = self
+            .directory_metadata
+            .iter_mut()
+            .find(|(existing_path, _)| existing_path == &normalized)
+        {
+            *existing_metadata = metadata;
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+enum DirectoryChild {
+    Directory(PathBuf),
+    SourceFile(PathBuf),
+    PrefaceFile(PathBuf),
+    TocFile(PathBuf),
+    Other,
+}
+
+impl DirectoryChild {
+    fn name(&self) -> String {
+        match self {
+            DirectoryChild::Directory(path) | DirectoryChild::SourceFile(path) => path
+                .file_name()
+                .and_then(|name| name.to_str())
+                .unwrap_or("<unknown>")
+                .to_string(),
+            DirectoryChild::PrefaceFile(_) => PREFACE_FILE.to_string(),
+            DirectoryChild::TocFile(_) => "toc".to_string(),
+            DirectoryChild::Other => "<unknown>".to_string(),
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+struct TocEntry {
+    name: String,
+    row: usize,
+    view_metadata: SourceFileViewMetadata,
+}
+
 fn resolve_collection_source_files(
     root: &Path,
     event_log: &mut EventLog,
@@ -568,13 +644,6 @@ fn resolve_filter_source_files(
     files.into_iter().collect()
 }
 
-pub(crate) fn find_collection_root(start: &Path) -> Option<PathBuf> {
-    start
-        .ancestors()
-        .find(|directory| directory.join(CONFIG_FILE).is_file())
-        .map(Path::to_path_buf)
-}
-
 fn resolve_input_path(
     root: &Path,
     path: &Path,
@@ -735,66 +804,6 @@ fn collect_filter_directory_source_files(
     }
 }
 
-#[derive(Default)]
-struct SourceFileDiscovery {
-    source_files: Vec<PathBuf>,
-    view_metadata: BTreeMap<PathBuf, SourceFileViewMetadata>,
-    directory_metadata: Vec<(PathBuf, SourceFileViewMetadata)>,
-    toc_files: Vec<PathBuf>,
-    /// `(directory, preface file)` pairs for directories with a `_preface_.mlg`.
-    preface_files: Vec<(PathBuf, PathBuf)>,
-    seen_source_files: BTreeSet<PathBuf>,
-    seen_directories: BTreeSet<PathBuf>,
-    seen_toc_files: BTreeSet<PathBuf>,
-}
-
-impl SourceFileDiscovery {
-    fn add_preface_file(&mut self, directory: PathBuf, preface: PathBuf) {
-        self.preface_files
-            .push((normalize_path(&directory), normalize_path(&preface)));
-    }
-
-    fn add_source_file(&mut self, path: PathBuf, metadata: SourceFileViewMetadata) {
-        let normalized = normalize_path(&path);
-        if self.seen_source_files.insert(normalized.clone()) {
-            self.source_files.push(normalized.clone());
-        }
-        self.view_metadata.insert(normalized, metadata);
-    }
-
-    fn add_toc_file(&mut self, path: PathBuf) {
-        let normalized = normalize_path(&path);
-        if self.seen_toc_files.insert(normalized.clone()) {
-            self.toc_files.push(normalized);
-        }
-    }
-
-    fn add_directory(&mut self, path: PathBuf, metadata: SourceFileViewMetadata) {
-        let normalized = normalize_path(&path);
-        if self.seen_directories.insert(normalized.clone()) {
-            self.directory_metadata.push((normalized, metadata));
-            return;
-        }
-
-        if let Some((_, existing_metadata)) = self
-            .directory_metadata
-            .iter_mut()
-            .find(|(existing_path, _)| existing_path == &normalized)
-        {
-            *existing_metadata = metadata;
-        }
-    }
-}
-
-#[derive(Clone, Debug)]
-enum DirectoryChild {
-    Directory(PathBuf),
-    SourceFile(PathBuf),
-    PrefaceFile(PathBuf),
-    TocFile(PathBuf),
-    Other,
-}
-
 fn directory_children(entries: Vec<fs::DirEntry>) -> Vec<DirectoryChild> {
     entries
         .into_iter()
@@ -938,13 +947,6 @@ fn direct_toc_children_by_name(children: &[DirectoryChild]) -> BTreeMap<String, 
         .collect()
 }
 
-#[derive(Clone, Debug)]
-struct TocEntry {
-    name: String,
-    row: usize,
-    view_metadata: SourceFileViewMetadata,
-}
-
 fn parse_toc_entries(toc_path: &Path, event_log: &mut EventLog, origin: &str) -> Vec<TocEntry> {
     let contents = match fs::read_to_string(toc_path) {
         Ok(contents) => contents,
@@ -1040,21 +1042,6 @@ fn merged_child_metadata(
     }
 }
 
-impl DirectoryChild {
-    fn name(&self) -> String {
-        match self {
-            DirectoryChild::Directory(path) | DirectoryChild::SourceFile(path) => path
-                .file_name()
-                .and_then(|name| name.to_str())
-                .unwrap_or("<unknown>")
-                .to_string(),
-            DirectoryChild::PrefaceFile(_) => PREFACE_FILE.to_string(),
-            DirectoryChild::TocFile(_) => "toc".to_string(),
-            DirectoryChild::Other => "<unknown>".to_string(),
-        }
-    }
-}
-
 fn directory_child_order(left: &DirectoryChild, right: &DirectoryChild) -> std::cmp::Ordering {
     directory_child_sort_key(left).cmp(&directory_child_sort_key(right))
 }
@@ -1117,7 +1104,22 @@ fn event_file_path(event: &Event) -> Option<&Path> {
         })
 }
 
-// ===============================[ tests ]=====================================
+// =============================================================================
+
+pub(crate) struct SourceCollection {
+    root: PathBuf,
+    source_files: Vec<PathBuf>,
+    source_file_view_metadata: BTreeMap<PathBuf, SourceFileViewMetadata>,
+    source_directory_view_metadata: Vec<(PathBuf, SourceFileViewMetadata)>,
+    #[cfg(test)]
+    toc_files: Vec<PathBuf>,
+    preface_files: Vec<(PathBuf, PathBuf)>,
+    parsed_files: Vec<ParsedSourceFile>,
+    parsed_preface_files: Vec<ParsedSourceFile>,
+    loaded_source_files: BTreeMap<PathBuf, LoadedProtoSource>,
+    proto_groups: BTreeMap<PathBuf, Vec<ProtoGroup>>,
+    view_type_info: CollectionTypeInfo,
+}
 
 #[cfg(test)]
 mod tests {

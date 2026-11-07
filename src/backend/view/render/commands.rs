@@ -1,5 +1,16 @@
 use super::*;
 
+#[derive(Clone, Debug)]
+pub(super) struct CalledTemplate {
+    pub(super) latex: String,
+}
+
+#[derive(Clone, Debug)]
+pub(super) struct TypeTemplate {
+    pub(super) latex: String,
+    pub(super) includes_subject: bool,
+}
+
 pub(crate) fn render_command_expression(
     command: &CommandExpression,
     registry: &RenderRegistry,
@@ -131,50 +142,6 @@ pub(super) fn render_infix_spec_expression(
     )
 }
 
-fn render_infix_spec_refinement_part(
-    spec: &InfixSpec,
-    part: &RefinedExpressionPart,
-    left: &Expression,
-    right: &Expression,
-    registry: &RenderRegistry,
-) -> String {
-    let mut single = spec.clone();
-    if let Some(refinement) = &mut single.refinement {
-        refinement.parts = vec![part.clone()];
-    }
-    let signature = infix_spec_signature(&single);
-    if let Some(render) = registry.commands.get(&signature) {
-        let substitutions = infix_spec_substitutions(left, &single, right, render, registry);
-        return command_reference_latex(&signature, render.render_called(&substitutions), registry);
-    }
-
-    let mut type_prefix = "\\".to_owned();
-    if let Some(prefix) = spec
-        .refinement
-        .as_ref()
-        .and_then(|refinement| refinement.prefix_chain.as_ref())
-    {
-        type_prefix.push_str(&format_chain(prefix));
-        type_prefix.push_str("::");
-    }
-    type_prefix.push_str(&format_chain(&part.chain));
-    add_expression_tail_signature(&mut type_prefix, &part.tail);
-    type_prefix.push_str("::");
-    if let Some((refined_signature, render)) = registry
-        .commands
-        .iter()
-        .find(|(candidate, _)| candidate.starts_with(&type_prefix))
-    {
-        return command_reference_latex(
-            refined_signature,
-            render.render_called(&HashMap::new()),
-            registry,
-        );
-    }
-
-    render_called_template(&format_chain(&part.chain), &HashMap::new())
-}
-
 pub(super) fn render_refined_command_called(
     command: &RefinedCommandExpression,
     registry: &RenderRegistry,
@@ -236,34 +203,6 @@ pub(super) fn render_dynamic_refined_command_called(
     command_references_latex(&sig_refs, latex, registry)
 }
 
-fn dynamic_refined_part_signature(
-    command: &RefinedCommandExpression,
-    part: &RefinedExpressionPart,
-    base_signature: &str,
-) -> String {
-    let mut signature = "\\".to_owned();
-    if let Some(prefix) = &command.prefix_chain {
-        signature.push_str(&format_chain(prefix));
-        signature.push_str("::");
-    }
-    signature.push_str(&format_chain(&part.chain));
-    add_expression_tail_signature(&mut signature, &part.tail);
-    signature.push_str("::");
-    signature.push_str(base_signature.strip_prefix('\\').unwrap_or(base_signature));
-    signature
-}
-
-#[derive(Clone, Debug)]
-pub(super) struct CalledTemplate {
-    pub(super) latex: String,
-}
-
-#[derive(Clone, Debug)]
-pub(super) struct TypeTemplate {
-    pub(super) latex: String,
-    pub(super) includes_subject: bool,
-}
-
 pub(super) fn command_type_template(
     command: &CommandExpression,
     subject_latex: Option<String>,
@@ -290,117 +229,6 @@ pub(super) fn command_type_template(
         ),
         includes_subject: subject_latex.is_some() && written_includes_subject,
     })
-}
-
-fn written_contains_subject_placeholder(written: &str, render: &CommandRender) -> bool {
-    render
-        .subject_variable
-        .as_ref()
-        .is_some_and(|name| template_contains_placeholder(written, name))
-}
-
-/// Selects the same mapping-parameter overload as semantic validation. The
-/// render registry is intentionally lightweight, so candidates are ranked from
-/// their canonical encoded signatures (`_(n)`, `#n`, `#?`, and `#*`).
-fn resolved_command_render<'a>(
-    command: &CommandExpression,
-    registry: &'a RenderRegistry,
-) -> Option<(&'a str, &'a CommandRender)> {
-    let ordinary = command_expression_signature(command);
-    let Some((actual, general, arity, positions)) =
-        crate::backend::semantic::mapping_parameter_invocation_signatures(command)
-    else {
-        return registry
-            .commands
-            .get_key_value(&ordinary)
-            .map(|(signature, render)| (signature.as_str(), render));
-    };
-
-    if let Some((signature, render)) = registry.commands.get_key_value(&actual) {
-        return Some((signature.as_str(), render));
-    }
-    let mut candidates = registry
-        .commands
-        .iter()
-        .filter_map(|(signature, render)| {
-            mapping_parameter_render_rank(signature, &general, arity, &positions)
-                .map(|rank| (rank, signature.as_str(), render))
-        })
-        .collect::<Vec<_>>();
-    candidates.sort_by(|left, right| right.0.cmp(&left.0));
-    if let Some((best_rank, signature, render)) = candidates.first().copied()
-        && !candidates
-            .iter()
-            .skip(1)
-            .any(|(rank, _, _)| *rank == best_rank)
-    {
-        return Some((signature, render));
-    }
-    registry
-        .commands
-        .get_key_value(&general)
-        .map(|(signature, render)| (signature.as_str(), render))
-}
-
-fn mapping_parameter_render_rank(
-    signature: &str,
-    general: &str,
-    actual_arity: usize,
-    actual_positions: &[usize],
-) -> Option<(u8, u8)> {
-    if mapping_parameter_general_signature(signature)? != general {
-        return None;
-    }
-    let arity_start = signature.find("{_(")? + 3;
-    let arity_end = signature[arity_start..].find(")}")? + arity_start;
-    let arity_rank = match &signature[arity_start..arity_end] {
-        "*" => 1,
-        text if text.parse::<usize>().ok() == Some(actual_arity) => 2,
-        _ => return None,
-    };
-    let selector_start = signature.find("{#")? + 1;
-    let selector_end = signature[selector_start..].find('}')? + selector_start;
-    let selectors = signature[selector_start..selector_end]
-        .split(',')
-        .map(str::trim)
-        .collect::<Vec<_>>();
-    let selector_rank = if selectors.as_slice() == ["#*"] {
-        1
-    } else {
-        if selectors.len() != actual_positions.len() {
-            return None;
-        }
-        let mut rank = 3;
-        for (selector, actual) in selectors.iter().zip(actual_positions) {
-            if *selector == "#?" {
-                rank = rank.min(2);
-            } else if selector.strip_prefix('#')?.parse::<usize>().ok()? != *actual {
-                return None;
-            }
-        }
-        rank
-    };
-    Some((arity_rank, selector_rank))
-}
-
-fn mapping_parameter_general_signature(signature: &str) -> Option<String> {
-    let mut general = String::new();
-    let mut rest = signature;
-    let mut removed = 0;
-    while let Some(start) = rest.find('{') {
-        general.push_str(&rest[..start]);
-        let suffix = &rest[start..];
-        if suffix.starts_with("{_(") || suffix.starts_with("{#") {
-            let end = suffix.find('}')?;
-            rest = &suffix[end + 1..];
-            removed += 1;
-        } else {
-            general.push('{');
-            rest = &suffix[1..];
-        }
-    }
-    general.push_str(rest);
-    (removed == 2).then_some(general)
 }
 
 pub(super) fn refined_command_called_template(
@@ -468,19 +296,6 @@ pub(super) fn prepend_refinement_prefix(base_latex: String, refinements: Vec<Str
     }
 }
 
-fn refinement_list(refinements: &[String]) -> Option<String> {
-    let list = match refinements {
-        [] => return None,
-        [only] => only.clone(),
-        [left, right] => format!("{left}\\textrm{{ and }}{right}"),
-        _ => {
-            let (last, head) = refinements.split_last().expect("refinements are nonempty");
-            format!("{}\\textrm{{, and }}{}", head.join("\\textrm{, }"), last)
-        }
-    };
-    Some(list)
-}
-
 pub(super) fn command_substitutions(
     command: &CommandExpression,
     render: &CommandRender,
@@ -534,62 +349,6 @@ pub(super) fn command_substitutions(
     substitutions
 }
 
-fn command_mapping_literal_rhs(command: &CommandExpression) -> Option<&Expression> {
-    command
-        .head_args
-        .iter()
-        .chain(command.tail.iter().flat_map(|part| part.args.iter()))
-        .flat_map(|args| args.expressions.iter())
-        .find_map(|expression| match &expression.kind {
-            ExpressionKind::Mapping { rhs, .. } => Some(rhs.as_ref()),
-            _ => None,
-        })
-}
-
-fn append_command_context_suffix(
-    latex: String,
-    context: Option<&CommandContext>,
-    registry: &RenderRegistry,
-) -> String {
-    let Some(context) = context else {
-        return latex;
-    };
-
-    let arguments = context
-        .arguments
-        .iter()
-        .map(|argument| render_command_context_argument(argument, registry))
-        .filter(|argument| !argument.is_empty())
-        .collect::<Vec<_>>();
-
-    if arguments.is_empty() {
-        return latex;
-    }
-
-    let label = match context.kind {
-        CommandContextKind::Using => "using",
-        CommandContextKind::Given => "given",
-    };
-
-    format!("{latex} \\textrm{{ {label} }} {}", arguments.join("; "))
-}
-
-fn render_command_context_argument(
-    argument: &CommandContextArgument,
-    registry: &RenderRegistry,
-) -> String {
-    match argument {
-        CommandContextArgument::Assignment { value, .. } => render_expression(value, registry),
-        CommandContextArgument::Declaration(statement) => {
-            render_declaration_statement(statement, registry)
-        }
-        CommandContextArgument::Expression(expression) => render_expression(expression, registry),
-        CommandContextArgument::Text(text) => {
-            format!("\\textrm{{{}}}", escape_latex_text(text.trim()))
-        }
-    }
-}
-
 pub(super) fn infix_command_substitutions(
     left: &Expression,
     command: &InfixCommand,
@@ -602,102 +361,6 @@ pub(super) fn infix_command_substitutions(
         infix_argument_values(left, &command.head_args, &command.tail, right, registry),
         expression_curly_group_values(&command.head_args, &command.tail, registry),
     )
-}
-
-fn render_parameter_substitutions(
-    render: &CommandRender,
-    values: Vec<String>,
-    groups: Vec<RenderedArgumentGroup>,
-) -> HashMap<String, String> {
-    let variadic_values = render
-        .variadic_parameters
-        .iter()
-        .filter_map(|(parameter, group_index)| {
-            groups
-                .get(*group_index)
-                .cloned()
-                .map(|values| (parameter.name.clone(), (parameter, values)))
-        })
-        .collect::<HashMap<_, _>>();
-
-    let mut substitutions = HashMap::new();
-    let mut value_index = 0usize;
-    for name in &render.parameters {
-        if let Some((parameter, variadic)) = variadic_values.get(name) {
-            value_index += variadic.values.len();
-            insert_parameter_substitution(&mut substitutions, name, variadic.values.join(", "));
-            insert_variadic_substitution(&mut substitutions, name, &variadic.values);
-            if let (Some(dimensions), Some(rows)) = (&parameter.dimensions, &variadic.rows) {
-                let columns = rows.first().copied().unwrap_or(0);
-                insert_variadic_2d_substitution(&mut substitutions, name, &variadic.values, rows);
-                if let Some(length) = &dimensions.row_length {
-                    insert_parameter_substitution(
-                        &mut substitutions,
-                        length,
-                        rows.len().to_string(),
-                    );
-                }
-                if let Some(length) = &dimensions.column_length {
-                    insert_parameter_substitution(
-                        &mut substitutions,
-                        length,
-                        columns.to_string(),
-                    );
-                }
-                for (offset, value) in variadic.values.iter().enumerate() {
-                    if columns == 0 {
-                        continue;
-                    }
-                    let row = dimensions.row_start + offset / columns;
-                    let column = dimensions.column_start + offset % columns;
-                    insert_parameter_substitution(
-                        &mut substitutions,
-                        &format!("{name}[{row},{column}]"),
-                        value.clone(),
-                    );
-                }
-            } else {
-                if let Some(length) = &parameter.length {
-                    insert_parameter_substitution(
-                        &mut substitutions,
-                        length,
-                        variadic.values.len().to_string(),
-                    );
-                    if let Some(last) = variadic.values.last() {
-                        insert_parameter_substitution(
-                            &mut substitutions,
-                            &format!("{}[{length}]", parameter.name),
-                            last.clone(),
-                        );
-                    }
-                }
-                for (offset, value) in variadic.values.iter().enumerate() {
-                    let starts = if parameter.index.is_some() {
-                        vec![parameter.start]
-                    } else {
-                        vec![0, 1]
-                    };
-                    for start in starts {
-                        insert_parameter_substitution(
-                            &mut substitutions,
-                            &format!("{}[{}]", parameter.name, start + offset),
-                            value.clone(),
-                        );
-                    }
-                }
-            }
-        } else if let Some(value) = values.get(value_index) {
-            insert_parameter_substitution(&mut substitutions, name, value.clone());
-            value_index += 1;
-        }
-    }
-    substitutions
-}
-
-#[derive(Clone, Debug)]
-struct RenderedArgumentGroup {
-    values: Vec<String>,
-    rows: Option<Vec<usize>>,
 }
 
 pub(super) fn infix_spec_substitutions(
@@ -790,77 +453,6 @@ pub(super) fn command_header_substitutions(
     }
 
     substitutions
-}
-
-fn command_header_variadic_parameters(header: &CommandHeader) -> Vec<&VariadicParameter> {
-    fn collect<'a>(groups: &'a [CurlyHeadingArgs], out: &mut Vec<&'a VariadicParameter>) {
-        out.extend(groups.iter().filter_map(|group| group.variadic.as_ref()));
-    }
-    fn collect_tail<'a>(parts: &'a [CommandHeaderTailPart], out: &mut Vec<&'a VariadicParameter>) {
-        for part in parts {
-            collect(&part.args, out);
-        }
-    }
-
-    let mut result = Vec::new();
-    match header {
-        CommandHeader::Command(command) => {
-            collect(&command.head_args, &mut result);
-            collect_tail(&command.tail, &mut result);
-        }
-        CommandHeader::Infix(command) => {
-            collect(&command.head_args, &mut result);
-            collect_tail(&command.tail, &mut result);
-        }
-        CommandHeader::InfixSpec(spec) => {
-            if let Some(refinement) = &spec.refinement {
-                for part in &refinement.parts {
-                    collect_tail(&part.tail, &mut result);
-                }
-            }
-            collect(&spec.head_args, &mut result);
-            collect_tail(&spec.tail, &mut result);
-        }
-        CommandHeader::Refined(command) => {
-            for part in &command.parts {
-                collect_tail(&part.tail, &mut result);
-            }
-            collect(&command.head_args, &mut result);
-            collect_tail(&command.tail, &mut result);
-        }
-    }
-    result
-}
-
-/// Whether a header parameter is a *named destructuring* — `H ::= (X', *', e')`,
-/// `g ::= f(x_)`, or `S ::= {x_ : …}` — as opposed to a plain name or an
-/// anonymous form.
-fn is_named_destructuring(form: &FormOrDeclaration) -> bool {
-    matches!(
-        &form.kind,
-        FormOrDeclarationKind::FunctionDeclaration { name: Some(_), .. }
-            | FormOrDeclarationKind::TupleDeclaration { name: Some(_), .. }
-            | FormOrDeclarationKind::SetDeclaration { name: Some(_), .. }
-    )
-}
-
-/// Renders a header parameter for use *inside a title*: a named destructuring
-/// collapses to just its name (`H`) so the title stays readable — the full
-/// destructuring is surfaced separately by [`command_header_parameter_destructurings`].
-/// Every other form renders in full.
-fn render_form_or_declaration_head(form: &FormOrDeclaration, registry: &RenderRegistry) -> String {
-    match &form.kind {
-        FormOrDeclarationKind::FunctionDeclaration {
-            name: Some(name), ..
-        }
-        | FormOrDeclarationKind::TupleDeclaration {
-            name: Some(name), ..
-        }
-        | FormOrDeclarationKind::SetDeclaration {
-            name: Some(name), ..
-        } => escape_math_identifier(name, registry),
-        _ => render_form_or_declaration(form, registry),
-    }
 }
 
 /// The full `name ::= …` rendering of each named-destructuring header parameter,
@@ -1029,6 +621,446 @@ pub(super) fn command_argument_values(
         .collect()
 }
 
+pub(super) fn infix_argument_values(
+    left: &Expression,
+    head_args: &[CurlyExpressionArgs],
+    tail: &[CommandExpressionTailPart],
+    right: &Expression,
+    registry: &RenderRegistry,
+) -> Vec<String> {
+    std::iter::once(render_expression(left, registry))
+        .chain(
+            head_args
+                .iter()
+                .flat_map(|args| args.expressions.iter())
+                .map(|expression| render_expression(expression, registry)),
+        )
+        .chain(expression_tail_argument_values(tail, registry))
+        .chain(std::iter::once(render_expression(right, registry)))
+        .collect()
+}
+
+pub(super) fn expression_tail_argument_values(
+    tail: &[CommandExpressionTailPart],
+    registry: &RenderRegistry,
+) -> Vec<String> {
+    tail.iter()
+        .flat_map(|part| part.args.iter())
+        .flat_map(|args| args.expressions.iter())
+        .map(|expression| render_expression(expression, registry))
+        .collect()
+}
+
+// =============================================================================
+
+#[derive(Clone, Debug)]
+struct RenderedArgumentGroup {
+    values: Vec<String>,
+    rows: Option<Vec<usize>>,
+}
+
+fn render_infix_spec_refinement_part(
+    spec: &InfixSpec,
+    part: &RefinedExpressionPart,
+    left: &Expression,
+    right: &Expression,
+    registry: &RenderRegistry,
+) -> String {
+    let mut single = spec.clone();
+    if let Some(refinement) = &mut single.refinement {
+        refinement.parts = vec![part.clone()];
+    }
+    let signature = infix_spec_signature(&single);
+    if let Some(render) = registry.commands.get(&signature) {
+        let substitutions = infix_spec_substitutions(left, &single, right, render, registry);
+        return command_reference_latex(&signature, render.render_called(&substitutions), registry);
+    }
+
+    let mut type_prefix = "\\".to_owned();
+    if let Some(prefix) = spec
+        .refinement
+        .as_ref()
+        .and_then(|refinement| refinement.prefix_chain.as_ref())
+    {
+        type_prefix.push_str(&format_chain(prefix));
+        type_prefix.push_str("::");
+    }
+    type_prefix.push_str(&format_chain(&part.chain));
+    add_expression_tail_signature(&mut type_prefix, &part.tail);
+    type_prefix.push_str("::");
+    if let Some((refined_signature, render)) = registry
+        .commands
+        .iter()
+        .find(|(candidate, _)| candidate.starts_with(&type_prefix))
+    {
+        return command_reference_latex(
+            refined_signature,
+            render.render_called(&HashMap::new()),
+            registry,
+        );
+    }
+
+    render_called_template(&format_chain(&part.chain), &HashMap::new())
+}
+
+fn dynamic_refined_part_signature(
+    command: &RefinedCommandExpression,
+    part: &RefinedExpressionPart,
+    base_signature: &str,
+) -> String {
+    let mut signature = "\\".to_owned();
+    if let Some(prefix) = &command.prefix_chain {
+        signature.push_str(&format_chain(prefix));
+        signature.push_str("::");
+    }
+    signature.push_str(&format_chain(&part.chain));
+    add_expression_tail_signature(&mut signature, &part.tail);
+    signature.push_str("::");
+    signature.push_str(base_signature.strip_prefix('\\').unwrap_or(base_signature));
+    signature
+}
+
+fn written_contains_subject_placeholder(written: &str, render: &CommandRender) -> bool {
+    render
+        .subject_variable
+        .as_ref()
+        .is_some_and(|name| template_contains_placeholder(written, name))
+}
+
+/// Selects the same mapping-parameter overload as semantic validation. The
+/// render registry is intentionally lightweight, so candidates are ranked from
+/// their canonical encoded signatures (`_(n)`, `#n`, `#?`, and `#*`).
+fn resolved_command_render<'a>(
+    command: &CommandExpression,
+    registry: &'a RenderRegistry,
+) -> Option<(&'a str, &'a CommandRender)> {
+    let ordinary = command_expression_signature(command);
+    let Some((actual, general, arity, positions)) =
+        crate::backend::semantic::mapping_parameter_invocation_signatures(command)
+    else {
+        return registry
+            .commands
+            .get_key_value(&ordinary)
+            .map(|(signature, render)| (signature.as_str(), render));
+    };
+
+    if let Some((signature, render)) = registry.commands.get_key_value(&actual) {
+        return Some((signature.as_str(), render));
+    }
+    let mut candidates = registry
+        .commands
+        .iter()
+        .filter_map(|(signature, render)| {
+            mapping_parameter_render_rank(signature, &general, arity, &positions)
+                .map(|rank| (rank, signature.as_str(), render))
+        })
+        .collect::<Vec<_>>();
+    candidates.sort_by(|left, right| right.0.cmp(&left.0));
+    if let Some((best_rank, signature, render)) = candidates.first().copied()
+        && !candidates
+            .iter()
+            .skip(1)
+            .any(|(rank, _, _)| *rank == best_rank)
+    {
+        return Some((signature, render));
+    }
+    registry
+        .commands
+        .get_key_value(&general)
+        .map(|(signature, render)| (signature.as_str(), render))
+}
+
+fn mapping_parameter_render_rank(
+    signature: &str,
+    general: &str,
+    actual_arity: usize,
+    actual_positions: &[usize],
+) -> Option<(u8, u8)> {
+    if mapping_parameter_general_signature(signature)? != general {
+        return None;
+    }
+    let arity_start = signature.find("{_(")? + 3;
+    let arity_end = signature[arity_start..].find(")}")? + arity_start;
+    let arity_rank = match &signature[arity_start..arity_end] {
+        "*" => 1,
+        text if text.parse::<usize>().ok() == Some(actual_arity) => 2,
+        _ => return None,
+    };
+    let selector_start = signature.find("{#")? + 1;
+    let selector_end = signature[selector_start..].find('}')? + selector_start;
+    let selectors = signature[selector_start..selector_end]
+        .split(',')
+        .map(str::trim)
+        .collect::<Vec<_>>();
+    let selector_rank = if selectors.as_slice() == ["#*"] {
+        1
+    } else {
+        if selectors.len() != actual_positions.len() {
+            return None;
+        }
+        let mut rank = 3;
+        for (selector, actual) in selectors.iter().zip(actual_positions) {
+            if *selector == "#?" {
+                rank = rank.min(2);
+            } else if selector.strip_prefix('#')?.parse::<usize>().ok()? != *actual {
+                return None;
+            }
+        }
+        rank
+    };
+    Some((arity_rank, selector_rank))
+}
+
+fn mapping_parameter_general_signature(signature: &str) -> Option<String> {
+    let mut general = String::new();
+    let mut rest = signature;
+    let mut removed = 0;
+    while let Some(start) = rest.find('{') {
+        general.push_str(&rest[..start]);
+        let suffix = &rest[start..];
+        if suffix.starts_with("{_(") || suffix.starts_with("{#") {
+            let end = suffix.find('}')?;
+            rest = &suffix[end + 1..];
+            removed += 1;
+        } else {
+            general.push('{');
+            rest = &suffix[1..];
+        }
+    }
+    general.push_str(rest);
+    (removed == 2).then_some(general)
+}
+
+fn refinement_list(refinements: &[String]) -> Option<String> {
+    let list = match refinements {
+        [] => return None,
+        [only] => only.clone(),
+        [left, right] => format!("{left}\\textrm{{ and }}{right}"),
+        _ => {
+            let (last, head) = refinements.split_last().expect("refinements are nonempty");
+            format!("{}\\textrm{{, and }}{}", head.join("\\textrm{, }"), last)
+        }
+    };
+    Some(list)
+}
+
+fn command_mapping_literal_rhs(command: &CommandExpression) -> Option<&Expression> {
+    command
+        .head_args
+        .iter()
+        .chain(command.tail.iter().flat_map(|part| part.args.iter()))
+        .flat_map(|args| args.expressions.iter())
+        .find_map(|expression| match &expression.kind {
+            ExpressionKind::Mapping { rhs, .. } => Some(rhs.as_ref()),
+            _ => None,
+        })
+}
+
+fn append_command_context_suffix(
+    latex: String,
+    context: Option<&CommandContext>,
+    registry: &RenderRegistry,
+) -> String {
+    let Some(context) = context else {
+        return latex;
+    };
+
+    let arguments = context
+        .arguments
+        .iter()
+        .map(|argument| render_command_context_argument(argument, registry))
+        .filter(|argument| !argument.is_empty())
+        .collect::<Vec<_>>();
+
+    if arguments.is_empty() {
+        return latex;
+    }
+
+    let label = match context.kind {
+        CommandContextKind::Using => "using",
+        CommandContextKind::Given => "given",
+    };
+
+    format!("{latex} \\textrm{{ {label} }} {}", arguments.join("; "))
+}
+
+fn render_command_context_argument(
+    argument: &CommandContextArgument,
+    registry: &RenderRegistry,
+) -> String {
+    match argument {
+        CommandContextArgument::Assignment { value, .. } => render_expression(value, registry),
+        CommandContextArgument::Declaration(statement) => {
+            render_declaration_statement(statement, registry)
+        }
+        CommandContextArgument::Expression(expression) => render_expression(expression, registry),
+        CommandContextArgument::Text(text) => {
+            format!("\\textrm{{{}}}", escape_latex_text(text.trim()))
+        }
+    }
+}
+
+fn render_parameter_substitutions(
+    render: &CommandRender,
+    values: Vec<String>,
+    groups: Vec<RenderedArgumentGroup>,
+) -> HashMap<String, String> {
+    let variadic_values = render
+        .variadic_parameters
+        .iter()
+        .filter_map(|(parameter, group_index)| {
+            groups
+                .get(*group_index)
+                .cloned()
+                .map(|values| (parameter.name.clone(), (parameter, values)))
+        })
+        .collect::<HashMap<_, _>>();
+
+    let mut substitutions = HashMap::new();
+    let mut value_index = 0usize;
+    for name in &render.parameters {
+        if let Some((parameter, variadic)) = variadic_values.get(name) {
+            value_index += variadic.values.len();
+            insert_parameter_substitution(&mut substitutions, name, variadic.values.join(", "));
+            insert_variadic_substitution(&mut substitutions, name, &variadic.values);
+            if let (Some(dimensions), Some(rows)) = (&parameter.dimensions, &variadic.rows) {
+                let columns = rows.first().copied().unwrap_or(0);
+                insert_variadic_2d_substitution(&mut substitutions, name, &variadic.values, rows);
+                if let Some(length) = &dimensions.row_length {
+                    insert_parameter_substitution(
+                        &mut substitutions,
+                        length,
+                        rows.len().to_string(),
+                    );
+                }
+                if let Some(length) = &dimensions.column_length {
+                    insert_parameter_substitution(
+                        &mut substitutions,
+                        length,
+                        columns.to_string(),
+                    );
+                }
+                for (offset, value) in variadic.values.iter().enumerate() {
+                    if columns == 0 {
+                        continue;
+                    }
+                    let row = dimensions.row_start + offset / columns;
+                    let column = dimensions.column_start + offset % columns;
+                    insert_parameter_substitution(
+                        &mut substitutions,
+                        &format!("{name}[{row},{column}]"),
+                        value.clone(),
+                    );
+                }
+            } else {
+                if let Some(length) = &parameter.length {
+                    insert_parameter_substitution(
+                        &mut substitutions,
+                        length,
+                        variadic.values.len().to_string(),
+                    );
+                    if let Some(last) = variadic.values.last() {
+                        insert_parameter_substitution(
+                            &mut substitutions,
+                            &format!("{}[{length}]", parameter.name),
+                            last.clone(),
+                        );
+                    }
+                }
+                for (offset, value) in variadic.values.iter().enumerate() {
+                    let starts = if parameter.index.is_some() {
+                        vec![parameter.start]
+                    } else {
+                        vec![0, 1]
+                    };
+                    for start in starts {
+                        insert_parameter_substitution(
+                            &mut substitutions,
+                            &format!("{}[{}]", parameter.name, start + offset),
+                            value.clone(),
+                        );
+                    }
+                }
+            }
+        } else if let Some(value) = values.get(value_index) {
+            insert_parameter_substitution(&mut substitutions, name, value.clone());
+            value_index += 1;
+        }
+    }
+    substitutions
+}
+
+fn command_header_variadic_parameters(header: &CommandHeader) -> Vec<&VariadicParameter> {
+    fn collect<'a>(groups: &'a [CurlyHeadingArgs], out: &mut Vec<&'a VariadicParameter>) {
+        out.extend(groups.iter().filter_map(|group| group.variadic.as_ref()));
+    }
+    fn collect_tail<'a>(parts: &'a [CommandHeaderTailPart], out: &mut Vec<&'a VariadicParameter>) {
+        for part in parts {
+            collect(&part.args, out);
+        }
+    }
+
+    let mut result = Vec::new();
+    match header {
+        CommandHeader::Command(command) => {
+            collect(&command.head_args, &mut result);
+            collect_tail(&command.tail, &mut result);
+        }
+        CommandHeader::Infix(command) => {
+            collect(&command.head_args, &mut result);
+            collect_tail(&command.tail, &mut result);
+        }
+        CommandHeader::InfixSpec(spec) => {
+            if let Some(refinement) = &spec.refinement {
+                for part in &refinement.parts {
+                    collect_tail(&part.tail, &mut result);
+                }
+            }
+            collect(&spec.head_args, &mut result);
+            collect_tail(&spec.tail, &mut result);
+        }
+        CommandHeader::Refined(command) => {
+            for part in &command.parts {
+                collect_tail(&part.tail, &mut result);
+            }
+            collect(&command.head_args, &mut result);
+            collect_tail(&command.tail, &mut result);
+        }
+    }
+    result
+}
+
+/// Whether a header parameter is a *named destructuring* — `H ::= (X', *', e')`,
+/// `g ::= f(x_)`, or `S ::= {x_ : …}` — as opposed to a plain name or an
+/// anonymous form.
+fn is_named_destructuring(form: &FormOrDeclaration) -> bool {
+    matches!(
+        &form.kind,
+        FormOrDeclarationKind::FunctionDeclaration { name: Some(_), .. }
+            | FormOrDeclarationKind::TupleDeclaration { name: Some(_), .. }
+            | FormOrDeclarationKind::SetDeclaration { name: Some(_), .. }
+    )
+}
+
+/// Renders a header parameter for use *inside a title*: a named destructuring
+/// collapses to just its name (`H`) so the title stays readable — the full
+/// destructuring is surfaced separately by [`command_header_parameter_destructurings`].
+/// Every other form renders in full.
+fn render_form_or_declaration_head(form: &FormOrDeclaration, registry: &RenderRegistry) -> String {
+    match &form.kind {
+        FormOrDeclarationKind::FunctionDeclaration {
+            name: Some(name), ..
+        }
+        | FormOrDeclarationKind::TupleDeclaration {
+            name: Some(name), ..
+        }
+        | FormOrDeclarationKind::SetDeclaration {
+            name: Some(name), ..
+        } => escape_math_identifier(name, registry),
+        _ => render_form_or_declaration(form, registry),
+    }
+}
+
 fn command_argument_group_values(
     command: &CommandExpression,
     registry: &RenderRegistry,
@@ -1062,35 +1094,5 @@ fn expression_curly_group_values(
                 .collect(),
             rows: args.rows.clone(),
         })
-        .collect()
-}
-
-pub(super) fn infix_argument_values(
-    left: &Expression,
-    head_args: &[CurlyExpressionArgs],
-    tail: &[CommandExpressionTailPart],
-    right: &Expression,
-    registry: &RenderRegistry,
-) -> Vec<String> {
-    std::iter::once(render_expression(left, registry))
-        .chain(
-            head_args
-                .iter()
-                .flat_map(|args| args.expressions.iter())
-                .map(|expression| render_expression(expression, registry)),
-        )
-        .chain(expression_tail_argument_values(tail, registry))
-        .chain(std::iter::once(render_expression(right, registry)))
-        .collect()
-}
-
-pub(super) fn expression_tail_argument_values(
-    tail: &[CommandExpressionTailPart],
-    registry: &RenderRegistry,
-) -> Vec<String> {
-    tail.iter()
-        .flat_map(|part| part.args.iter())
-        .flat_map(|args| args.expressions.iter())
-        .map(|expression| render_expression(expression, registry))
         .collect()
 }

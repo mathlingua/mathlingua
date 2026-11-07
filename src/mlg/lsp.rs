@@ -121,6 +121,8 @@ pub fn lsp() -> LspResult {
     LspResult { successful: true }
 }
 
+// =============================================================================
+
 struct ServerState {
     workspace_root: Option<PathBuf>,
     last_diagnostic_files: HashSet<Url>,
@@ -585,15 +587,16 @@ struct PendingCheck {
     file: PathBuf,
 }
 
+/// The widest expression column a hover will pad to. Beyond this the type moves
+/// to its own line rather than pushing the popup off the side of the editor.
+const MAX_EXPRESSION_COLUMN: usize = 56;
+
+const CHECK_PROGRESS_TITLE: &str = "mlg check";
+
 fn is_trailing_blank_or_comment(line: &str) -> bool {
     let trimmed = line.trim_start();
     trimmed.is_empty() || trimmed.starts_with("--")
 }
-
-/// The widest expression column a hover will pad to. Beyond this the type moves
-/// to its own line rather than pushing the popup off the side of the editor.
-const MAX_EXPRESSION_COLUMN: usize = 56;
-const CHECK_PROGRESS_TITLE: &str = "mlg check";
 
 /// Renders a line's entries as a hover popup: one row per expression, indented
 /// under the expression that contains it, with its resolved types alongside.
@@ -915,7 +918,7 @@ fn position_from(line: Option<usize>, column: Option<usize>) -> Position {
     Position { line, character }
 }
 
-// ===============================[ tests ]=====================================
+// =============================================================================
 
 #[cfg(test)]
 mod tests {

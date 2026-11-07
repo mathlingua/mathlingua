@@ -1,15 +1,12 @@
 use crate::events::{Event, EventLog};
 use std::fs;
 use std::path::{Path, PathBuf};
-
 pub(crate) mod formulation;
 pub(crate) mod proto;
 pub(crate) mod structural;
-
 pub use formulation::ast::*;
 pub use structural::ast::*;
 pub use structural::parse_document;
-
 pub(crate) use formulation::{
     parse_command_header, parse_expression, parse_form_or_declaration, parse_is_via_statement,
     parse_refined_declaration_statement, parse_topic_header,
@@ -139,30 +136,6 @@ pub(crate) fn top_level_group_id(group: &ProtoGroup) -> Option<String> {
         .and_then(section_quoted_text)
 }
 
-fn top_level_item_id(group: &ProtoGroup) -> TopLevelItemId {
-    let id_section = group.sections.iter().find(|section| section.label == "Id");
-
-    TopLevelItemId {
-        value: id_section.and_then(section_quoted_text),
-        group_row: group.metadata.row,
-        id_row: id_section.map(|section| section.metadata.row),
-    }
-}
-
-fn section_quoted_text(section: &ProtoSection) -> Option<String> {
-    if let Some(text) = section.inline_argument.as_deref() {
-        return strip_quoted_text(text);
-    }
-
-    section
-        .arguments
-        .iter()
-        .find_map(|argument| match argument {
-            ProtoArgument::Text(text) => strip_quoted_text(&text.text),
-            _ => None,
-        })
-}
-
 pub(crate) fn strip_quoted_text(input: &str) -> Option<String> {
     let input = input.trim();
     if input.starts_with("\"\"\"") {
@@ -199,7 +172,33 @@ pub(crate) fn unescape_quoted_text(input: &str) -> String {
     result
 }
 
-// ===============================[ tests ]=====================================
+// =============================================================================
+
+fn top_level_item_id(group: &ProtoGroup) -> TopLevelItemId {
+    let id_section = group.sections.iter().find(|section| section.label == "Id");
+
+    TopLevelItemId {
+        value: id_section.and_then(section_quoted_text),
+        group_row: group.metadata.row,
+        id_row: id_section.map(|section| section.metadata.row),
+    }
+}
+
+fn section_quoted_text(section: &ProtoSection) -> Option<String> {
+    if let Some(text) = section.inline_argument.as_deref() {
+        return strip_quoted_text(text);
+    }
+
+    section
+        .arguments
+        .iter()
+        .find_map(|argument| match argument {
+            ProtoArgument::Text(text) => strip_quoted_text(&text.text),
+            _ => None,
+        })
+}
+
+// =============================================================================
 
 #[cfg(test)]
 mod tests {

@@ -140,38 +140,6 @@ pub(in crate::backend::semantic) fn walk_expression(
     }
 }
 
-fn walk_set_target(target: &SetTarget, visit: &mut impl FnMut(&SignatureShape)) {
-    match &target.kind {
-        SetTargetKind::Name(_) | SetTargetKind::PlaceholderForm(_) => {}
-        SetTargetKind::Expression { expression, .. } => walk_expression(expression, visit),
-        SetTargetKind::Alias { target, .. } | SetTargetKind::Introduction { target, .. } => {
-            walk_set_target(target, visit)
-        }
-        SetTargetKind::Function { arguments, .. } => {
-            for argument in arguments {
-                walk_set_target(argument, visit);
-            }
-        }
-        SetTargetKind::Tuple(elements) => {
-            for element in elements {
-                if let SetTargetElement::Target(target) = element {
-                    walk_set_target(target, visit);
-                }
-            }
-        }
-    }
-}
-
-fn walk_set_predicate(predicate: &SetPredicate, visit: &mut impl FnMut(&SignatureShape)) {
-    match predicate {
-        SetPredicate::Expression(expression) => walk_expression(expression, visit),
-        SetPredicate::Definition { target, value, .. } => {
-            walk_set_target(target, visit);
-            walk_expression(value, visit);
-        }
-    }
-}
-
 pub(in crate::backend::semantic) fn walk_command_expression_arguments(
     command: &CommandExpression,
     visit: &mut impl FnMut(&SignatureShape),
@@ -284,6 +252,40 @@ pub(in crate::backend::semantic) fn walk_refined_command_expression_arguments(
     for args in &command.paren_args {
         for expression in &args.expressions {
             walk_expression(expression, visit);
+        }
+    }
+}
+
+// =============================================================================
+
+fn walk_set_target(target: &SetTarget, visit: &mut impl FnMut(&SignatureShape)) {
+    match &target.kind {
+        SetTargetKind::Name(_) | SetTargetKind::PlaceholderForm(_) => {}
+        SetTargetKind::Expression { expression, .. } => walk_expression(expression, visit),
+        SetTargetKind::Alias { target, .. } | SetTargetKind::Introduction { target, .. } => {
+            walk_set_target(target, visit)
+        }
+        SetTargetKind::Function { arguments, .. } => {
+            for argument in arguments {
+                walk_set_target(argument, visit);
+            }
+        }
+        SetTargetKind::Tuple(elements) => {
+            for element in elements {
+                if let SetTargetElement::Target(target) = element {
+                    walk_set_target(target, visit);
+                }
+            }
+        }
+    }
+}
+
+fn walk_set_predicate(predicate: &SetPredicate, visit: &mut impl FnMut(&SignatureShape)) {
+    match predicate {
+        SetPredicate::Expression(expression) => walk_expression(expression, visit),
+        SetPredicate::Definition { target, value, .. } => {
+            walk_set_target(target, visit);
+            walk_expression(value, visit);
         }
     }
 }

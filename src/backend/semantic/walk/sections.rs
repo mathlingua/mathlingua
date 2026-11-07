@@ -1,5 +1,24 @@
 use super::*;
 
+pub(in crate::backend::semantic) trait ClauseSection {
+    /// Returns the clauses contained by the section.
+    fn clauses(&self) -> &[Clause];
+}
+
+impl ClauseSection for WhenSection {
+    /// Returns the clauses in a `when:` section.
+    fn clauses(&self) -> &[Clause] {
+        &self.arguments
+    }
+}
+
+impl ClauseSection for SatisfiesSection {
+    /// Returns the clauses in a `satisfies:` section.
+    fn clauses(&self) -> &[Clause] {
+        &self.arguments
+    }
+}
+
 pub(in crate::backend::semantic) fn walk_optional_is_or_specs(
     section: &Option<UsingSection>,
     visit: &mut impl FnMut(&SignatureShape),
@@ -21,25 +40,6 @@ pub(in crate::backend::semantic) fn walk_optional_clauses<T>(
         for clause in section.clauses() {
             walk_clause(clause, visit);
         }
-    }
-}
-
-pub(in crate::backend::semantic) trait ClauseSection {
-    /// Returns the clauses contained by the section.
-    fn clauses(&self) -> &[Clause];
-}
-
-impl ClauseSection for WhenSection {
-    /// Returns the clauses in a `when:` section.
-    fn clauses(&self) -> &[Clause] {
-        &self.arguments
-    }
-}
-
-impl ClauseSection for SatisfiesSection {
-    /// Returns the clauses in a `satisfies:` section.
-    fn clauses(&self) -> &[Clause] {
-        &self.arguments
     }
 }
 
@@ -137,6 +137,21 @@ pub(in crate::backend::semantic) fn walk_alias_kind(
     }
 }
 
+pub(in crate::backend::semantic) fn walk_specify_item(
+    item: &SpecifyItem,
+    visit: &mut impl FnMut(&SignatureShape),
+) {
+    let group = match item {
+        SpecifyItem::Decimal(group)
+        | SpecifyItem::ZeroOrPositiveInt(group)
+        | SpecifyItem::PositiveInt(group)
+        | SpecifyItem::Int(group) => group,
+    };
+    walk_type_expression(&group.is_.argument, visit);
+}
+
+// =============================================================================
+
 /// Walks the reduction target of a spec-operator capability (`x_ "in" X :-> …`)
 /// so that command references in the target — for example the `\group.element:of`
 /// in `x_ is \group.element:of{G}` — are reference-validated like any other use.
@@ -157,17 +172,4 @@ fn walk_spec_operator_alias_target(
         SpecOperatorAliasTarget::MemberOf(expression) => walk_expression(expression, visit),
         SpecOperatorAliasTarget::PlaceholderSpec(_) | SpecOperatorAliasTarget::Builtin(_) => {}
     }
-}
-
-pub(in crate::backend::semantic) fn walk_specify_item(
-    item: &SpecifyItem,
-    visit: &mut impl FnMut(&SignatureShape),
-) {
-    let group = match item {
-        SpecifyItem::Decimal(group)
-        | SpecifyItem::ZeroOrPositiveInt(group)
-        | SpecifyItem::PositiveInt(group)
-        | SpecifyItem::Int(group) => group,
-    };
-    walk_type_expression(&group.is_.argument, visit);
 }

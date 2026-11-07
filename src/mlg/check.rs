@@ -10,8 +10,6 @@ use serde_json::{Value, json};
 use crate::backend::view::RenderRegistry;
 use std::path::{Path, PathBuf};
 
-const ORIGIN: &str = "mlg_check";
-
 pub struct CheckResult {
     pub event_log: EventLog,
     pub successful: bool,
@@ -27,6 +25,61 @@ pub struct CheckResult {
 pub(super) struct CheckSummary {
     pub files_checked: usize,
     pub marker_range: MarkerRange,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CheckDiagnosticsReport {
+    pub schema_version: u32,
+    pub command: String,
+    pub successful: bool,
+    pub files_checked: usize,
+    pub issue_count: usize,
+    pub diagnostics: Vec<CheckDiagnostic>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CheckDiagnostic {
+    pub level: String,
+    pub message: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub origin: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub location: Option<CheckDiagnosticLocation>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CheckDiagnosticLocation {
+    pub kind: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub path: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub absolute_path: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub span: Option<CheckDiagnosticSpan>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CheckDiagnosticSpan {
+    pub start: CheckDiagnosticPosition,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub end: Option<CheckDiagnosticPosition>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CheckDiagnosticPosition {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub line: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub column: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub offset: Option<usize>,
 }
 
 pub fn check(
@@ -94,169 +147,6 @@ pub fn check_collecting_type_info(
         type_info,
         render_registry,
     }
-}
-
-// ===============================[ tests ]=====================================
-
-#[cfg(test)]
-pub(super) fn check_in(cwd: &Path, paths: &[PathBuf], event_log: &mut EventLog) -> CheckSummary {
-    check_in_collecting_type_info(cwd, paths, event_log, None).0
-}
-
-fn check_in_collecting_type_info(
-    cwd: &Path,
-    paths: &[PathBuf],
-    event_log: &mut EventLog,
-    type_info_for: Option<&Path>,
-) -> (CheckSummary, DocumentTypeInfo, RenderRegistry) {
-    let begin = event_log.begin_marker("check_in", Some(ORIGIN));
-    let starting_event_count = event_log.events().len();
-
-    event_log.system_debug(
-        Some(ORIGIN),
-        format!("Checking {} explicit path(s)", paths.len()),
-    );
-
-    format_before_checking(cwd, event_log);
-
-    let mut collection = SourceCollection::load(cwd, event_log, ORIGIN);
-    let diagnostic_filter = collection.diagnostic_filter(cwd, paths, event_log, ORIGIN);
-    let files_checked = diagnostic_filter.selected_file_count(&collection);
-
-    let type_info =
-        collection.run_check_passes_filtered(event_log, ORIGIN, &diagnostic_filter, type_info_for);
-
-    let all_parsed: Vec<_> = collection.all_parsed_files().cloned().collect();
-    let render_registry = crate::backend::view::build_render_registry(&all_parsed);
-
-    if !has_blocking_user_issues_since(event_log, starting_event_count) {
-        crate::backend::view::check_collection_latex(
-            &collection,
-            &render_registry,
-            &diagnostic_filter,
-            event_log,
-            ORIGIN,
-        );
-    }
-
-    let has_new_blocking_user_issues =
-        has_blocking_user_issues_since(event_log, starting_event_count);
-    let new_user_issue_count = user_issue_count_since(event_log, starting_event_count);
-
-    if has_new_blocking_user_issues {
-        event_log.user_log(
-            Some(ORIGIN),
-            format!("Found {}.", format_issue_count(new_user_issue_count)),
-        );
-    } else {
-        event_log.user_log(Some(ORIGIN), render_check_success(files_checked));
-    }
-
-    let end = event_log.end_marker(&begin, Some(ORIGIN));
-
-    (
-        CheckSummary {
-            files_checked,
-            marker_range: MarkerRange::new(begin, end),
-        },
-        type_info,
-        render_registry,
-    )
-}
-
-/// Run `mlg format` over the collection before checking it, unless the config
-/// turns that off with `"formatOnCheck": false`.
-///
-/// Formatting rewrites the very files about to be parsed, so it has to happen
-/// before the collection is loaded — a check of the pre-format source would
-/// report positions that no longer exist by the time the user looks at them.
-///
-/// Whole-collection, like `mlg format` itself: even a check narrowed to a few
-/// paths reads the whole collection to resolve them, and formatting only the
-/// named files would leave the collection in a half-formatted state that
-/// depends on which paths were last checked.
-///
-/// Outside a collection there is no config and no root to format, so this is a
-/// no-op — `mlg check` still works on loose files.
-fn format_before_checking(cwd: &Path, event_log: &mut EventLog) {
-    let start = cwd.canonicalize().unwrap_or_else(|_| cwd.to_path_buf());
-    let Some(root) = find_collection_root(&start) else {
-        return;
-    };
-    if !load_config(&root).format_on_check() {
-        return;
-    }
-
-    // Silent when nothing changed: the interesting news is the check result,
-    // and a "Nothing to format" on every run would bury it.
-    match format_collection(&root, event_log, ORIGIN) {
-        Some(0) | None => {}
-        Some(1) => event_log.user_log(Some(ORIGIN), "Formatted 1 file"),
-        Some(count) => event_log.user_log(Some(ORIGIN), format!("Formatted {count} files")),
-    }
-}
-
-fn render_check_success(files_checked: usize) -> String {
-    if files_checked == 1 {
-        "Checked 1 file".to_string()
-    } else {
-        format!("Checked {files_checked} files")
-    }
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CheckDiagnosticsReport {
-    pub schema_version: u32,
-    pub command: String,
-    pub successful: bool,
-    pub files_checked: usize,
-    pub issue_count: usize,
-    pub diagnostics: Vec<CheckDiagnostic>,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CheckDiagnostic {
-    pub level: String,
-    pub message: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub origin: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub location: Option<CheckDiagnosticLocation>,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CheckDiagnosticLocation {
-    pub kind: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub path: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub absolute_path: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub span: Option<CheckDiagnosticSpan>,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CheckDiagnosticSpan {
-    pub start: CheckDiagnosticPosition,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub end: Option<CheckDiagnosticPosition>,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CheckDiagnosticPosition {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub line: Option<usize>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub column: Option<usize>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub offset: Option<usize>,
 }
 
 pub fn check_diagnostics_report(result: &CheckResult, cwd: &Path) -> CheckDiagnosticsReport {
@@ -402,6 +292,111 @@ pub fn check_diagnostics_schema() -> Value {
     })
 }
 
+// =============================================================================
+
+const ORIGIN: &str = "mlg_check";
+
+fn check_in_collecting_type_info(
+    cwd: &Path,
+    paths: &[PathBuf],
+    event_log: &mut EventLog,
+    type_info_for: Option<&Path>,
+) -> (CheckSummary, DocumentTypeInfo, RenderRegistry) {
+    let begin = event_log.begin_marker("check_in", Some(ORIGIN));
+    let starting_event_count = event_log.events().len();
+
+    event_log.system_debug(
+        Some(ORIGIN),
+        format!("Checking {} explicit path(s)", paths.len()),
+    );
+
+    format_before_checking(cwd, event_log);
+
+    let mut collection = SourceCollection::load(cwd, event_log, ORIGIN);
+    let diagnostic_filter = collection.diagnostic_filter(cwd, paths, event_log, ORIGIN);
+    let files_checked = diagnostic_filter.selected_file_count(&collection);
+
+    let type_info =
+        collection.run_check_passes_filtered(event_log, ORIGIN, &diagnostic_filter, type_info_for);
+
+    let all_parsed: Vec<_> = collection.all_parsed_files().cloned().collect();
+    let render_registry = crate::backend::view::build_render_registry(&all_parsed);
+
+    if !has_blocking_user_issues_since(event_log, starting_event_count) {
+        crate::backend::view::check_collection_latex(
+            &collection,
+            &render_registry,
+            &diagnostic_filter,
+            event_log,
+            ORIGIN,
+        );
+    }
+
+    let has_new_blocking_user_issues =
+        has_blocking_user_issues_since(event_log, starting_event_count);
+    let new_user_issue_count = user_issue_count_since(event_log, starting_event_count);
+
+    if has_new_blocking_user_issues {
+        event_log.user_log(
+            Some(ORIGIN),
+            format!("Found {}.", format_issue_count(new_user_issue_count)),
+        );
+    } else {
+        event_log.user_log(Some(ORIGIN), render_check_success(files_checked));
+    }
+
+    let end = event_log.end_marker(&begin, Some(ORIGIN));
+
+    (
+        CheckSummary {
+            files_checked,
+            marker_range: MarkerRange::new(begin, end),
+        },
+        type_info,
+        render_registry,
+    )
+}
+
+/// Run `mlg format` over the collection before checking it, unless the config
+/// turns that off with `"formatOnCheck": false`.
+///
+/// Formatting rewrites the very files about to be parsed, so it has to happen
+/// before the collection is loaded — a check of the pre-format source would
+/// report positions that no longer exist by the time the user looks at them.
+///
+/// Whole-collection, like `mlg format` itself: even a check narrowed to a few
+/// paths reads the whole collection to resolve them, and formatting only the
+/// named files would leave the collection in a half-formatted state that
+/// depends on which paths were last checked.
+///
+/// Outside a collection there is no config and no root to format, so this is a
+/// no-op — `mlg check` still works on loose files.
+fn format_before_checking(cwd: &Path, event_log: &mut EventLog) {
+    let start = cwd.canonicalize().unwrap_or_else(|_| cwd.to_path_buf());
+    let Some(root) = find_collection_root(&start) else {
+        return;
+    };
+    if !load_config(&root).format_on_check() {
+        return;
+    }
+
+    // Silent when nothing changed: the interesting news is the check result,
+    // and a "Nothing to format" on every run would bury it.
+    match format_collection(&root, event_log, ORIGIN) {
+        Some(0) | None => {}
+        Some(1) => event_log.user_log(Some(ORIGIN), "Formatted 1 file"),
+        Some(count) => event_log.user_log(Some(ORIGIN), format!("Formatted {count} files")),
+    }
+}
+
+fn render_check_success(files_checked: usize) -> String {
+    if files_checked == 1 {
+        "Checked 1 file".to_string()
+    } else {
+        format!("Checked {files_checked} files")
+    }
+}
+
 fn diagnostic_level(level: Level) -> &'static str {
     match level {
         Level::Log => "log",
@@ -490,7 +485,12 @@ fn format_issue_count(issue_count: usize) -> String {
     }
 }
 
-// ===============================[ tests ]=====================================
+// =============================================================================
+
+#[cfg(test)]
+pub(super) fn check_in(cwd: &Path, paths: &[PathBuf], event_log: &mut EventLog) -> CheckSummary {
+    check_in_collecting_type_info(cwd, paths, event_log, None).0
+}
 
 #[cfg(test)]
 mod tests {

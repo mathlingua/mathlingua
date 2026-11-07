@@ -1,5 +1,40 @@
 use super::*;
 
+/// The parenthesis handling a placeholder asks for around its substituted value.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) enum ParenModifier {
+    /// `X?` — the value is substituted exactly as it was rendered.
+    Keep,
+    /// `X+?` — the value is wrapped in exactly one pair of parentheses, unless it
+    /// is a single atom that needs none.
+    Ensure,
+    /// `X-?` — every pair of parentheses wrapping the value is removed.
+    Strip,
+}
+
+/// A `NAME?`, `NAME+?`, or `NAME-?` placeholder found in a template.
+pub(super) struct TemplatePlaceholder {
+    /// The substitution key, which never includes the `+`/`-` modifier.
+    pub(super) name: String,
+    pub(super) modifier: ParenModifier,
+    /// Optional variadic prefix/postfix/infix notation following the `?`.
+    variadic_notation: Option<VariadicNotation>,
+    matrix_notation: Option<MatrixNotation>,
+    /// Index just past the closing `?` or its variadic `{...}` suffix.
+    pub(super) end: usize,
+}
+
+/// What a name-like run of characters starting at `start` turned out to be.
+pub(super) enum PlaceholderScan {
+    /// A complete placeholder.
+    Placeholder(TemplatePlaceholder),
+    /// A name not followed by `?`, so it is literal text ending at `end`.
+    ///
+    /// A `+` or `-` after the name is left for the caller to re-read as ordinary
+    /// text, so `A-B` and `A - B` keep rendering as they always have.
+    LiteralName { end: usize },
+}
+
 pub(super) fn render_called_template(
     template: &str,
     substitutions: &HashMap<String, String>,
@@ -75,119 +110,6 @@ pub(super) fn render_called_display_template(template: &str) -> String {
     flush_called_display_segment(&mut result, &mut segment, in_math);
 
     result
-}
-
-fn flush_called_segment(
-    result: &mut String,
-    segment: &mut String,
-    in_math: bool,
-    substitutions: &HashMap<String, String>,
-) {
-    if segment.is_empty() {
-        return;
-    }
-
-    if in_math {
-        result.push_str(&substitute_math_template(segment, substitutions));
-    } else {
-        result.push_str(&substitute_called_text_segment(segment, substitutions));
-    }
-    segment.clear();
-}
-
-fn flush_called_display_segment(result: &mut String, segment: &mut String, in_math: bool) {
-    if segment.is_empty() {
-        return;
-    }
-
-    if in_math {
-        result.push_str(&render_written_display_template(segment));
-    } else {
-        result.push_str(&substitute_called_display_text_segment(segment));
-    }
-    segment.clear();
-}
-
-fn substitute_called_text_segment(
-    segment: &str,
-    substitutions: &HashMap<String, String>,
-) -> String {
-    let mut result = String::new();
-    let mut text = String::new();
-    let chars = segment.chars().collect::<Vec<_>>();
-    let mut index = 0;
-
-    while index < chars.len() {
-        match scan_placeholder(&chars, index) {
-            Some(PlaceholderScan::Placeholder(placeholder)) => {
-                if let Some(value) = lookup_substitution(substitutions, &placeholder.name) {
-                    flush_called_text(&mut result, &mut text);
-                    result.push_str(&render_template_placeholder(
-                        value,
-                        &placeholder,
-                        substitutions,
-                    ));
-                } else {
-                    text.push_str(&render_template_placeholder_name(&placeholder.name));
-                    text.push_str(&placeholder_notation_source(&placeholder));
-                }
-                index = placeholder.end;
-            }
-            Some(PlaceholderScan::LiteralName { end }) => {
-                text.extend(chars[index..end].iter());
-                index = end;
-            }
-            None => {
-                text.push(chars[index]);
-                index += 1;
-            }
-        }
-    }
-
-    flush_called_text(&mut result, &mut text);
-
-    result
-}
-
-fn substitute_called_display_text_segment(segment: &str) -> String {
-    let mut result = String::new();
-    let mut text = String::new();
-    let chars = segment.chars().collect::<Vec<_>>();
-    let mut index = 0;
-
-    while index < chars.len() {
-        match scan_placeholder(&chars, index) {
-            // With no value to substitute there is nothing to parenthesize, so a
-            // modifier shows the same bare name that `X?` does.
-            Some(PlaceholderScan::Placeholder(placeholder)) => {
-                flush_called_text(&mut result, &mut text);
-                result.push_str(&render_template_placeholder_name(&placeholder.name));
-                result.push_str(&placeholder_notation_source(&placeholder));
-                index = placeholder.end;
-            }
-            Some(PlaceholderScan::LiteralName { end }) => {
-                text.extend(chars[index..end].iter());
-                index = end;
-            }
-            None => {
-                text.push(chars[index]);
-                index += 1;
-            }
-        }
-    }
-
-    flush_called_text(&mut result, &mut text);
-
-    result
-}
-
-fn flush_called_text(result: &mut String, text: &mut String) {
-    if text.is_empty() {
-        return;
-    }
-
-    result.push_str(&format!("\\textrm{{{}}}", escape_latex_text(text)));
-    text.clear();
 }
 
 pub(super) fn insert_parameter_substitution(
@@ -309,6 +231,393 @@ pub(crate) fn render_written_display_template(template: &str) -> String {
     result
 }
 
+/// Whether a `called:`/`written:` template still renders to content for the given
+/// substitutions.
+///
+/// A template that is, at the top level, a single `@[vars]{…}` conditional with no
+/// `:{…}` fallback is treated as **absent** when its variables are unbound — the
+/// block "does not exist", so rendering falls back (`written:` → `called:`). This
+/// only fires when the conditional spans the whole template: a template with any
+/// other content (a prefix, a fallback branch, a second block) always renders.
+pub(super) fn template_is_present(template: &str, substitutions: &HashMap<String, String>) -> bool {
+    let chars = template.trim().chars().collect::<Vec<_>>();
+    let Some(conditional) = parse_template_conditional(&chars, 0) else {
+        return true;
+    };
+    let spans_whole_template = conditional.end == chars.len();
+    let variables_unbound = !conditional
+        .variables
+        .iter()
+        .all(|variable| lookup_substitution(substitutions, variable).is_some());
+    !(spans_whole_template && conditional.when_absent.is_none() && variables_unbound)
+}
+
+pub(super) fn template_contains_placeholder(template: &str, name: &str) -> bool {
+    let trimmed = name.trim_end_matches('_');
+    [
+        format!("{name}?"),
+        format!("{name}+?"),
+        format!("{name}-?"),
+        format!("{trimmed}?"),
+        format!("{trimmed}+?"),
+        format!("{trimmed}-?"),
+        format!("{trimmed}_?"),
+        format!("{trimmed}_+?"),
+        format!("{trimmed}_-?"),
+    ]
+    .iter()
+    .any(|needle| template.contains(needle.as_str()))
+}
+
+/// Reads the placeholder, if any, that starts at `start`.
+///
+/// Returns `None` when `start` does not begin a name, leaving the caller to treat
+/// the character as ordinary text.
+pub(super) fn scan_placeholder(chars: &[char], start: usize) -> Option<PlaceholderScan> {
+    if !is_placeholder_start(*chars.get(start)?) {
+        return None;
+    }
+
+    let mut index = start + 1;
+    while index < chars.len() && is_placeholder_continue(chars[index]) {
+        index += 1;
+    }
+    let name_end = index;
+
+    let modifier = match chars.get(index) {
+        Some('+') => ParenModifier::Ensure,
+        Some('-') => ParenModifier::Strip,
+        _ => ParenModifier::Keep,
+    };
+    if modifier != ParenModifier::Keep {
+        index += 1;
+    }
+
+    if chars.get(index) != Some(&'?') {
+        return Some(PlaceholderScan::LiteralName { end: name_end });
+    }
+
+    let mut end = index + 1;
+    let matrix_notation = parse_matrix_notation(chars, end).map(|(notation, after)| {
+        end = after;
+        notation
+    });
+    let variadic_notation = if matrix_notation.is_none() {
+        parse_variadic_notation(chars, end).map(|(notation, after)| {
+            end = after;
+            notation
+        })
+    } else {
+        None
+    };
+
+    Some(PlaceholderScan::Placeholder(TemplatePlaceholder {
+        name: chars[start..name_end].iter().collect(),
+        modifier,
+        variadic_notation,
+        matrix_notation,
+        end,
+    }))
+}
+
+pub(super) fn insert_variadic_substitution(
+    substitutions: &mut HashMap<String, String>,
+    name: &str,
+    values: &[String],
+) {
+    let count = values.len().to_string();
+    substitutions.insert(format!("{VARIADIC_COUNT_PREFIX}{name}"), count.clone());
+    if let Some(stripped) = name.strip_suffix('_') {
+        if !stripped.is_empty() {
+            substitutions.insert(format!("{VARIADIC_COUNT_PREFIX}{stripped}"), count.clone());
+        }
+    } else {
+        substitutions.insert(format!("{VARIADIC_COUNT_PREFIX}{name}_"), count.clone());
+    }
+    for (index, value) in values.iter().enumerate() {
+        substitutions.insert(
+            format!("{VARIADIC_ELEMENT_PREFIX}{name}:{index}"),
+            value.clone(),
+        );
+        if let Some(stripped) = name.strip_suffix('_') {
+            if !stripped.is_empty() {
+                substitutions.insert(
+                    format!("{VARIADIC_ELEMENT_PREFIX}{stripped}:{index}"),
+                    value.clone(),
+                );
+            }
+        } else {
+            substitutions.insert(
+                format!("{VARIADIC_ELEMENT_PREFIX}{name}_:{index}"),
+                value.clone(),
+            );
+        }
+    }
+}
+
+pub(super) fn insert_variadic_2d_substitution(
+    substitutions: &mut HashMap<String, String>,
+    name: &str,
+    values: &[String],
+    row_lengths: &[usize],
+) {
+    let rows_str = row_lengths.len().to_string();
+    substitutions.insert(format!("{VARIADIC_2D_ROWS_PREFIX}{name}"), rows_str.clone());
+    if let Some(stripped) = name.strip_suffix('_') {
+        if !stripped.is_empty() {
+            substitutions.insert(format!("{VARIADIC_2D_ROWS_PREFIX}{stripped}"), rows_str);
+        }
+    } else {
+        substitutions.insert(format!("{VARIADIC_2D_ROWS_PREFIX}{name}_"), rows_str);
+    }
+    let columns = row_lengths.first().copied().unwrap_or(0);
+    let cols_str = columns.to_string();
+    substitutions.insert(format!("{VARIADIC_2D_COLUMNS_PREFIX}{name}"), cols_str.clone());
+    if let Some(stripped) = name.strip_suffix('_') {
+        if !stripped.is_empty() {
+            substitutions.insert(format!("{VARIADIC_2D_COLUMNS_PREFIX}{stripped}"), cols_str);
+        }
+    } else {
+        substitutions.insert(format!("{VARIADIC_2D_COLUMNS_PREFIX}{name}_"), cols_str);
+    }
+    for (row, length) in row_lengths.iter().enumerate() {
+        let len_str = length.to_string();
+        substitutions.insert(
+            format!("{VARIADIC_2D_ROW_LENGTH_PREFIX}{name}:{row}"),
+            len_str.clone(),
+        );
+        if let Some(stripped) = name.strip_suffix('_') {
+            if !stripped.is_empty() {
+                substitutions.insert(
+                    format!("{VARIADIC_2D_ROW_LENGTH_PREFIX}{stripped}:{row}"),
+                    len_str,
+                );
+            }
+        } else {
+            substitutions.insert(
+                format!("{VARIADIC_2D_ROW_LENGTH_PREFIX}{name}_:{row}"),
+                len_str,
+            );
+        }
+    }
+    for (index, value) in values.iter().enumerate() {
+        substitutions.insert(
+            format!("{VARIADIC_2D_ELEMENT_PREFIX}{name}:{index}"),
+            value.clone(),
+        );
+        if let Some(stripped) = name.strip_suffix('_') {
+            if !stripped.is_empty() {
+                substitutions.insert(
+                    format!("{VARIADIC_2D_ELEMENT_PREFIX}{stripped}:{index}"),
+                    value.clone(),
+                );
+            }
+        } else {
+            substitutions.insert(
+                format!("{VARIADIC_2D_ELEMENT_PREFIX}{name}_:{index}"),
+                value.clone(),
+            );
+        }
+    }
+}
+
+/// Applies a placeholder's parenthesis modifier to an already-rendered value.
+pub(super) fn apply_paren_modifier(value: &str, modifier: ParenModifier) -> String {
+    match modifier {
+        ParenModifier::Keep => value.to_string(),
+        ParenModifier::Strip => strip_wrapping_parens(value).to_string(),
+        ParenModifier::Ensure => {
+            // Stripping first is what keeps `(1 + 2)` from becoming `((1 + 2))`:
+            // the value is reduced to its bare form and then wrapped exactly once.
+            let stripped = strip_wrapping_parens(value);
+            if is_atomic_latex(stripped) {
+                stripped.to_string()
+            } else {
+                format!("{LEFT_PAREN}{stripped}{RIGHT_PAREN}")
+            }
+        }
+    }
+}
+
+pub(super) fn is_placeholder_start(ch: char) -> bool {
+    ch.is_ascii_alphabetic() || ch == '_'
+}
+
+pub(super) fn is_placeholder_continue(ch: char) -> bool {
+    ch.is_ascii_alphanumeric() || ch == '_' || ch == '.'
+}
+
+// =============================================================================
+
+#[derive(Clone, Debug)]
+struct TemplateConditional {
+    variables: Vec<String>,
+    when_present: String,
+    when_absent: Option<String>,
+    end: usize,
+}
+
+#[derive(Clone, Debug)]
+enum VariadicNotation {
+    Postfix(String),
+    Prefix(String),
+    Infix(String),
+}
+
+impl VariadicNotation {
+    fn source(&self) -> String {
+        match self {
+            Self::Postfix(text) => format!("{{...{text}}}"),
+            Self::Prefix(text) => format!("{{{text}...}}"),
+            Self::Infix(text) => format!("{{...{text}...}}"),
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+struct MatrixNotation {
+    row_prefix: String,
+    row_suffix: String,
+    elements: VariadicNotation,
+    source: String,
+}
+
+impl MatrixNotation {
+    fn source(&self) -> String {
+        self.source.clone()
+    }
+}
+
+const VARIADIC_COUNT_PREFIX: &str = "\0mlg:variadic:count:";
+
+const VARIADIC_ELEMENT_PREFIX: &str = "\0mlg:variadic:element:";
+
+const VARIADIC_2D_ROWS_PREFIX: &str = "\0mlg:variadic2d:rows:";
+
+const VARIADIC_2D_COLUMNS_PREFIX: &str = "\0mlg:variadic2d:columns:";
+
+const VARIADIC_2D_ROW_LENGTH_PREFIX: &str = "\0mlg:variadic2d:row-length:";
+
+const VARIADIC_2D_ELEMENT_PREFIX: &str = "\0mlg:variadic2d:element:";
+
+/// The LaTeX parentheses this renderer emits and recognizes for grouping.
+const LEFT_PAREN: &str = "\\left(";
+
+const RIGHT_PAREN: &str = "\\right)";
+
+fn flush_called_segment(
+    result: &mut String,
+    segment: &mut String,
+    in_math: bool,
+    substitutions: &HashMap<String, String>,
+) {
+    if segment.is_empty() {
+        return;
+    }
+
+    if in_math {
+        result.push_str(&substitute_math_template(segment, substitutions));
+    } else {
+        result.push_str(&substitute_called_text_segment(segment, substitutions));
+    }
+    segment.clear();
+}
+
+fn flush_called_display_segment(result: &mut String, segment: &mut String, in_math: bool) {
+    if segment.is_empty() {
+        return;
+    }
+
+    if in_math {
+        result.push_str(&render_written_display_template(segment));
+    } else {
+        result.push_str(&substitute_called_display_text_segment(segment));
+    }
+    segment.clear();
+}
+
+fn substitute_called_text_segment(
+    segment: &str,
+    substitutions: &HashMap<String, String>,
+) -> String {
+    let mut result = String::new();
+    let mut text = String::new();
+    let chars = segment.chars().collect::<Vec<_>>();
+    let mut index = 0;
+
+    while index < chars.len() {
+        match scan_placeholder(&chars, index) {
+            Some(PlaceholderScan::Placeholder(placeholder)) => {
+                if let Some(value) = lookup_substitution(substitutions, &placeholder.name) {
+                    flush_called_text(&mut result, &mut text);
+                    result.push_str(&render_template_placeholder(
+                        value,
+                        &placeholder,
+                        substitutions,
+                    ));
+                } else {
+                    text.push_str(&render_template_placeholder_name(&placeholder.name));
+                    text.push_str(&placeholder_notation_source(&placeholder));
+                }
+                index = placeholder.end;
+            }
+            Some(PlaceholderScan::LiteralName { end }) => {
+                text.extend(chars[index..end].iter());
+                index = end;
+            }
+            None => {
+                text.push(chars[index]);
+                index += 1;
+            }
+        }
+    }
+
+    flush_called_text(&mut result, &mut text);
+
+    result
+}
+
+fn substitute_called_display_text_segment(segment: &str) -> String {
+    let mut result = String::new();
+    let mut text = String::new();
+    let chars = segment.chars().collect::<Vec<_>>();
+    let mut index = 0;
+
+    while index < chars.len() {
+        match scan_placeholder(&chars, index) {
+            // With no value to substitute there is nothing to parenthesize, so a
+            // modifier shows the same bare name that `X?` does.
+            Some(PlaceholderScan::Placeholder(placeholder)) => {
+                flush_called_text(&mut result, &mut text);
+                result.push_str(&render_template_placeholder_name(&placeholder.name));
+                result.push_str(&placeholder_notation_source(&placeholder));
+                index = placeholder.end;
+            }
+            Some(PlaceholderScan::LiteralName { end }) => {
+                text.extend(chars[index..end].iter());
+                index = end;
+            }
+            None => {
+                text.push(chars[index]);
+                index += 1;
+            }
+        }
+    }
+
+    flush_called_text(&mut result, &mut text);
+
+    result
+}
+
+fn flush_called_text(result: &mut String, text: &mut String) {
+    if text.is_empty() {
+        return;
+    }
+
+    result.push_str(&format!("\\textrm{{{}}}", escape_latex_text(text)));
+    text.clear();
+}
+
 fn render_template_placeholder_name(name: &str) -> String {
     let registry = RenderRegistry::default();
     let trimmed = name.trim_end_matches('_');
@@ -317,14 +626,6 @@ fn render_template_placeholder_name(name: &str) -> String {
     } else {
         escape_math_identifier(trimmed, &registry)
     }
-}
-
-#[derive(Clone, Debug)]
-struct TemplateConditional {
-    variables: Vec<String>,
-    when_present: String,
-    when_absent: Option<String>,
-    end: usize,
 }
 
 fn parse_template_conditional(chars: &[char], start: usize) -> Option<TemplateConditional> {
@@ -425,161 +726,6 @@ fn selected_conditional_branch<'a>(
     } else {
         conditional.when_absent.as_deref()
     }
-}
-
-/// Whether a `called:`/`written:` template still renders to content for the given
-/// substitutions.
-///
-/// A template that is, at the top level, a single `@[vars]{…}` conditional with no
-/// `:{…}` fallback is treated as **absent** when its variables are unbound — the
-/// block "does not exist", so rendering falls back (`written:` → `called:`). This
-/// only fires when the conditional spans the whole template: a template with any
-/// other content (a prefix, a fallback branch, a second block) always renders.
-pub(super) fn template_is_present(template: &str, substitutions: &HashMap<String, String>) -> bool {
-    let chars = template.trim().chars().collect::<Vec<_>>();
-    let Some(conditional) = parse_template_conditional(&chars, 0) else {
-        return true;
-    };
-    let spans_whole_template = conditional.end == chars.len();
-    let variables_unbound = !conditional
-        .variables
-        .iter()
-        .all(|variable| lookup_substitution(substitutions, variable).is_some());
-    !(spans_whole_template && conditional.when_absent.is_none() && variables_unbound)
-}
-
-pub(super) fn template_contains_placeholder(template: &str, name: &str) -> bool {
-    let trimmed = name.trim_end_matches('_');
-    [
-        format!("{name}?"),
-        format!("{name}+?"),
-        format!("{name}-?"),
-        format!("{trimmed}?"),
-        format!("{trimmed}+?"),
-        format!("{trimmed}-?"),
-        format!("{trimmed}_?"),
-        format!("{trimmed}_+?"),
-        format!("{trimmed}_-?"),
-    ]
-    .iter()
-    .any(|needle| template.contains(needle.as_str()))
-}
-
-/// The parenthesis handling a placeholder asks for around its substituted value.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(super) enum ParenModifier {
-    /// `X?` — the value is substituted exactly as it was rendered.
-    Keep,
-    /// `X+?` — the value is wrapped in exactly one pair of parentheses, unless it
-    /// is a single atom that needs none.
-    Ensure,
-    /// `X-?` — every pair of parentheses wrapping the value is removed.
-    Strip,
-}
-
-/// A `NAME?`, `NAME+?`, or `NAME-?` placeholder found in a template.
-pub(super) struct TemplatePlaceholder {
-    /// The substitution key, which never includes the `+`/`-` modifier.
-    pub(super) name: String,
-    pub(super) modifier: ParenModifier,
-    /// Optional variadic prefix/postfix/infix notation following the `?`.
-    variadic_notation: Option<VariadicNotation>,
-    matrix_notation: Option<MatrixNotation>,
-    /// Index just past the closing `?` or its variadic `{...}` suffix.
-    pub(super) end: usize,
-}
-
-#[derive(Clone, Debug)]
-enum VariadicNotation {
-    Postfix(String),
-    Prefix(String),
-    Infix(String),
-}
-
-impl VariadicNotation {
-    fn source(&self) -> String {
-        match self {
-            Self::Postfix(text) => format!("{{...{text}}}"),
-            Self::Prefix(text) => format!("{{{text}...}}"),
-            Self::Infix(text) => format!("{{...{text}...}}"),
-        }
-    }
-}
-
-#[derive(Clone, Debug)]
-struct MatrixNotation {
-    row_prefix: String,
-    row_suffix: String,
-    elements: VariadicNotation,
-    source: String,
-}
-
-impl MatrixNotation {
-    fn source(&self) -> String {
-        self.source.clone()
-    }
-}
-
-/// What a name-like run of characters starting at `start` turned out to be.
-pub(super) enum PlaceholderScan {
-    /// A complete placeholder.
-    Placeholder(TemplatePlaceholder),
-    /// A name not followed by `?`, so it is literal text ending at `end`.
-    ///
-    /// A `+` or `-` after the name is left for the caller to re-read as ordinary
-    /// text, so `A-B` and `A - B` keep rendering as they always have.
-    LiteralName { end: usize },
-}
-
-/// Reads the placeholder, if any, that starts at `start`.
-///
-/// Returns `None` when `start` does not begin a name, leaving the caller to treat
-/// the character as ordinary text.
-pub(super) fn scan_placeholder(chars: &[char], start: usize) -> Option<PlaceholderScan> {
-    if !is_placeholder_start(*chars.get(start)?) {
-        return None;
-    }
-
-    let mut index = start + 1;
-    while index < chars.len() && is_placeholder_continue(chars[index]) {
-        index += 1;
-    }
-    let name_end = index;
-
-    let modifier = match chars.get(index) {
-        Some('+') => ParenModifier::Ensure,
-        Some('-') => ParenModifier::Strip,
-        _ => ParenModifier::Keep,
-    };
-    if modifier != ParenModifier::Keep {
-        index += 1;
-    }
-
-    if chars.get(index) != Some(&'?') {
-        return Some(PlaceholderScan::LiteralName { end: name_end });
-    }
-
-    let mut end = index + 1;
-    let matrix_notation = parse_matrix_notation(chars, end).map(|(notation, after)| {
-        end = after;
-        notation
-    });
-    let variadic_notation = if matrix_notation.is_none() {
-        parse_variadic_notation(chars, end).map(|(notation, after)| {
-            end = after;
-            notation
-        })
-    } else {
-        None
-    };
-
-    Some(PlaceholderScan::Placeholder(TemplatePlaceholder {
-        name: chars[start..name_end].iter().collect(),
-        modifier,
-        variadic_notation,
-        matrix_notation,
-        end,
-    }))
 }
 
 fn parse_matrix_notation(chars: &[char], open: usize) -> Option<(MatrixNotation, usize)> {
@@ -703,114 +849,6 @@ fn render_variadic_notation(values: &[&str], notation: &VariadicNotation) -> Str
             .map(|value| format!("{prefix}{value}"))
             .collect::<String>(),
         VariadicNotation::Infix(infix) => values.join(infix),
-    }
-}
-
-const VARIADIC_COUNT_PREFIX: &str = "\0mlg:variadic:count:";
-const VARIADIC_ELEMENT_PREFIX: &str = "\0mlg:variadic:element:";
-const VARIADIC_2D_ROWS_PREFIX: &str = "\0mlg:variadic2d:rows:";
-const VARIADIC_2D_COLUMNS_PREFIX: &str = "\0mlg:variadic2d:columns:";
-const VARIADIC_2D_ROW_LENGTH_PREFIX: &str = "\0mlg:variadic2d:row-length:";
-const VARIADIC_2D_ELEMENT_PREFIX: &str = "\0mlg:variadic2d:element:";
-
-pub(super) fn insert_variadic_substitution(
-    substitutions: &mut HashMap<String, String>,
-    name: &str,
-    values: &[String],
-) {
-    let count = values.len().to_string();
-    substitutions.insert(format!("{VARIADIC_COUNT_PREFIX}{name}"), count.clone());
-    if let Some(stripped) = name.strip_suffix('_') {
-        if !stripped.is_empty() {
-            substitutions.insert(format!("{VARIADIC_COUNT_PREFIX}{stripped}"), count.clone());
-        }
-    } else {
-        substitutions.insert(format!("{VARIADIC_COUNT_PREFIX}{name}_"), count.clone());
-    }
-    for (index, value) in values.iter().enumerate() {
-        substitutions.insert(
-            format!("{VARIADIC_ELEMENT_PREFIX}{name}:{index}"),
-            value.clone(),
-        );
-        if let Some(stripped) = name.strip_suffix('_') {
-            if !stripped.is_empty() {
-                substitutions.insert(
-                    format!("{VARIADIC_ELEMENT_PREFIX}{stripped}:{index}"),
-                    value.clone(),
-                );
-            }
-        } else {
-            substitutions.insert(
-                format!("{VARIADIC_ELEMENT_PREFIX}{name}_:{index}"),
-                value.clone(),
-            );
-        }
-    }
-}
-
-pub(super) fn insert_variadic_2d_substitution(
-    substitutions: &mut HashMap<String, String>,
-    name: &str,
-    values: &[String],
-    row_lengths: &[usize],
-) {
-    let rows_str = row_lengths.len().to_string();
-    substitutions.insert(format!("{VARIADIC_2D_ROWS_PREFIX}{name}"), rows_str.clone());
-    if let Some(stripped) = name.strip_suffix('_') {
-        if !stripped.is_empty() {
-            substitutions.insert(format!("{VARIADIC_2D_ROWS_PREFIX}{stripped}"), rows_str);
-        }
-    } else {
-        substitutions.insert(format!("{VARIADIC_2D_ROWS_PREFIX}{name}_"), rows_str);
-    }
-    let columns = row_lengths.first().copied().unwrap_or(0);
-    let cols_str = columns.to_string();
-    substitutions.insert(format!("{VARIADIC_2D_COLUMNS_PREFIX}{name}"), cols_str.clone());
-    if let Some(stripped) = name.strip_suffix('_') {
-        if !stripped.is_empty() {
-            substitutions.insert(format!("{VARIADIC_2D_COLUMNS_PREFIX}{stripped}"), cols_str);
-        }
-    } else {
-        substitutions.insert(format!("{VARIADIC_2D_COLUMNS_PREFIX}{name}_"), cols_str);
-    }
-    for (row, length) in row_lengths.iter().enumerate() {
-        let len_str = length.to_string();
-        substitutions.insert(
-            format!("{VARIADIC_2D_ROW_LENGTH_PREFIX}{name}:{row}"),
-            len_str.clone(),
-        );
-        if let Some(stripped) = name.strip_suffix('_') {
-            if !stripped.is_empty() {
-                substitutions.insert(
-                    format!("{VARIADIC_2D_ROW_LENGTH_PREFIX}{stripped}:{row}"),
-                    len_str,
-                );
-            }
-        } else {
-            substitutions.insert(
-                format!("{VARIADIC_2D_ROW_LENGTH_PREFIX}{name}_:{row}"),
-                len_str,
-            );
-        }
-    }
-    for (index, value) in values.iter().enumerate() {
-        substitutions.insert(
-            format!("{VARIADIC_2D_ELEMENT_PREFIX}{name}:{index}"),
-            value.clone(),
-        );
-        if let Some(stripped) = name.strip_suffix('_') {
-            if !stripped.is_empty() {
-                substitutions.insert(
-                    format!("{VARIADIC_2D_ELEMENT_PREFIX}{stripped}:{index}"),
-                    value.clone(),
-                );
-            }
-        } else {
-            substitutions.insert(
-                format!("{VARIADIC_2D_ELEMENT_PREFIX}{name}_:{index}"),
-                value.clone(),
-            );
-        }
     }
 }
 
@@ -950,28 +988,6 @@ fn variadic_substitution_values<'a>(
                 .map(String::as_str)
         })
         .collect()
-}
-
-/// The LaTeX parentheses this renderer emits and recognizes for grouping.
-const LEFT_PAREN: &str = "\\left(";
-const RIGHT_PAREN: &str = "\\right)";
-
-/// Applies a placeholder's parenthesis modifier to an already-rendered value.
-pub(super) fn apply_paren_modifier(value: &str, modifier: ParenModifier) -> String {
-    match modifier {
-        ParenModifier::Keep => value.to_string(),
-        ParenModifier::Strip => strip_wrapping_parens(value).to_string(),
-        ParenModifier::Ensure => {
-            // Stripping first is what keeps `(1 + 2)` from becoming `((1 + 2))`:
-            // the value is reduced to its bare form and then wrapped exactly once.
-            let stripped = strip_wrapping_parens(value);
-            if is_atomic_latex(stripped) {
-                stripped.to_string()
-            } else {
-                format!("{LEFT_PAREN}{stripped}{RIGHT_PAREN}")
-            }
-        }
-    }
 }
 
 /// Removes every pair of parentheses that wraps the whole of `text`.
@@ -1145,12 +1161,4 @@ fn escaped_unit_len(rest: &str) -> usize {
     }
 
     first.len_utf8() + chars.next().map_or(0, char::len_utf8)
-}
-
-pub(super) fn is_placeholder_start(ch: char) -> bool {
-    ch.is_ascii_alphabetic() || ch == '_'
-}
-
-pub(super) fn is_placeholder_continue(ch: char) -> bool {
-    ch.is_ascii_alphanumeric() || ch == '_' || ch == '.'
 }

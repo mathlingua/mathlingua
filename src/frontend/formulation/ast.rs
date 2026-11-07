@@ -10,8 +10,6 @@ impl Span {
     }
 }
 
-// ===============================[ aliases ]=====================================
-
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct WritingAlias {
     pub span: Span,
@@ -102,8 +100,6 @@ pub struct TopicHeader {
     pub span: Span,
     pub parts: Vec<String>,
 }
-
-// ===============================[ command expressions ]=====================================
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Chain {
@@ -288,8 +284,6 @@ pub enum FunctionTypeSpecKind {
     },
 }
 
-// ===============================[ command headers ]=====================================
-
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CurlyHeadingArgs {
     pub span: Span,
@@ -423,8 +417,6 @@ pub struct RefinedCommandExpression {
     pub tail: Vec<CommandExpressionTailPart>,
     pub paren_args: Vec<ParenExpressionArgs>,
 }
-
-// ===============================[ expression ]=====================================
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Expression {
@@ -730,8 +722,6 @@ pub struct IndexedCall {
     pub indices: Vec<Expression>,
 }
 
-// ===============================[ forms ]=====================================
-
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FormOrDeclaration {
     pub span: Span,
@@ -890,8 +880,6 @@ pub enum PlaceholderFormKind {
     },
 }
 
-// ===============================[ operators ]=====================================
-
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Operator {
     pub span: Span,
@@ -957,8 +945,6 @@ pub enum NamedOperatorKind {
     RightColon,
     BothColon,
 }
-
-// ===============================[ statements ]=====================================
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SpecStatement {

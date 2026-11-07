@@ -5,8 +5,6 @@ use crate::mlg::util::no_errors_since;
 use serde::Serialize;
 use std::path::Path;
 
-const ORIGIN: &str = "mlg_structure";
-
 pub struct StructureResult {
     pub event_log: EventLog,
     pub collection_view: Option<CollectionView>,
@@ -151,6 +149,10 @@ pub fn build_structure_report(view: &CollectionView) -> StructureReport {
         files,
     }
 }
+
+// =============================================================================
+
+const ORIGIN: &str = "mlg_structure";
 
 fn print_text_structure(report: &StructureReport) {
     println!("Collection: {}", report.title);

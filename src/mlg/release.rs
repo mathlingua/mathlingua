@@ -12,30 +12,9 @@ use std::io;
 use std::path::Path;
 use std::process::Command;
 
-const ORIGIN: &str = "mlg_release";
-const METADATA_DIR: &str = "metadata";
-const ITEMS_DIR: &str = "items";
-const COLLECTION_FILE: &str = "collection.json";
-
 pub struct ReleaseResult {
     pub event_log: EventLog,
     pub successful: bool,
-}
-
-/// One entry in `metadata/collection.json`, appended per release.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-struct CollectionEntry {
-    version: u64,
-    version_control_sha256: String,
-    summary: String,
-}
-
-/// One entry in `metadata/items/<id>.json`, appended when an item is (re)versioned.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-struct ItemEntry {
-    version: u64,
-    sha256: String,
-    repo_version: u64,
 }
 
 pub fn release(
@@ -59,6 +38,78 @@ pub fn release(
         successful,
     }
 }
+
+// =============================================================================
+
+const ORIGIN: &str = "mlg_release";
+
+const METADATA_DIR: &str = "metadata";
+
+const ITEMS_DIR: &str = "items";
+
+const COLLECTION_FILE: &str = "collection.json";
+
+/// One entry in `metadata/collection.json`, appended per release.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+struct CollectionEntry {
+    version: u64,
+    version_control_sha256: String,
+    summary: String,
+}
+
+/// One entry in `metadata/items/<id>.json`, appended when an item is (re)versioned.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+struct ItemEntry {
+    version: u64,
+    sha256: String,
+    repo_version: u64,
+}
+
+/// A per-item diff for `mlg release --diff`: the line-level changes from an
+/// item's previous released contents to its current contents. Each item's source
+/// slice already begins with its heading and ends with its `Id:`, so the diff is
+/// self-identifying and needs no separate label.
+type ItemDiff = Vec<(char, String)>;
+
+/// One updated item, as shown in the release report.
+struct UpdatedItem {
+    kind: String,
+    label: String,
+    previous_version: Option<u64>,
+    new_version: u64,
+    /// `true` when the item's own contents changed; `false` when it is only
+    /// re-versioned because a definition that uses it changed (propagation).
+    content_changed: bool,
+}
+
+/// Page-content kinds whose body text is previewed instead of a bracket heading.
+const PAGE_KINDS: [&str; 4] = ["Title", "SectionTitle", "SubsectionTitle", "Text"];
+
+/// The order top-level kinds are grouped in the release report. Kinds not listed
+/// here sort after these, alphabetically.
+const KIND_ORDER: [&str; 19] = [
+    "Defines",
+    "Realizes",
+    "Declares",
+    "States",
+    "Refines",
+    "Disambiguates",
+    "Axiom",
+    "Theorem",
+    "Conjecture",
+    "Relation",
+    "Equivalent",
+    "Topic",
+    "Title",
+    "SectionTitle",
+    "SubsectionTitle",
+    "Text",
+    "Person",
+    "Resource",
+    "Specify",
+];
+
+const PREVIEW_MAX: usize = 50;
 
 fn release_in(
     cwd: &Path,
@@ -190,12 +241,6 @@ fn release_in(
     Ok(())
 }
 
-/// A per-item diff for `mlg release --diff`: the line-level changes from an
-/// item's previous released contents to its current contents. Each item's source
-/// slice already begins with its heading and ends with its `Id:`, so the diff is
-/// self-identifying and needs no separate label.
-type ItemDiff = Vec<(char, String)>;
-
 /// Build a diff for every item whose contents changed this release, comparing
 /// its current source against its source at the previous release's commit, in
 /// collection order.
@@ -303,46 +348,6 @@ fn format_diff_section(diffs: &[ItemDiff]) -> String {
     }
     section
 }
-
-/// One updated item, as shown in the release report.
-struct UpdatedItem {
-    kind: String,
-    label: String,
-    previous_version: Option<u64>,
-    new_version: u64,
-    /// `true` when the item's own contents changed; `false` when it is only
-    /// re-versioned because a definition that uses it changed (propagation).
-    content_changed: bool,
-}
-
-/// Page-content kinds whose body text is previewed instead of a bracket heading.
-const PAGE_KINDS: [&str; 4] = ["Title", "SectionTitle", "SubsectionTitle", "Text"];
-
-/// The order top-level kinds are grouped in the release report. Kinds not listed
-/// here sort after these, alphabetically.
-const KIND_ORDER: [&str; 19] = [
-    "Defines",
-    "Realizes",
-    "Declares",
-    "States",
-    "Refines",
-    "Disambiguates",
-    "Axiom",
-    "Theorem",
-    "Conjecture",
-    "Relation",
-    "Equivalent",
-    "Topic",
-    "Title",
-    "SectionTitle",
-    "SubsectionTitle",
-    "Text",
-    "Person",
-    "Resource",
-    "Specify",
-];
-
-const PREVIEW_MAX: usize = 50;
 
 /// How an item is labelled in the report: its bracket heading if it has one, a
 /// truncated preview of its text for page content, else its id.
@@ -698,7 +703,7 @@ fn sha256_hex(content: &str) -> String {
         .collect()
 }
 
-// ===============================[ tests ]=====================================
+// =============================================================================
 
 #[cfg(test)]
 mod tests {

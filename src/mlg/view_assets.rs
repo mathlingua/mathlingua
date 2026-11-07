@@ -4,13 +4,6 @@ use std::fs;
 use std::io;
 use std::path::Path;
 
-const BASE_HREF_MARKER: &str = "__MLG_BASE_HREF__";
-const VIEW_CONFIG_MARKER: &str = "__MLG_RUNTIME_CONFIG_JSON__";
-
-#[derive(RustEmbed)]
-#[folder = "web/dist/"]
-struct ViewerAssets;
-
 pub(super) struct ViewerPageConfig<'a> {
     pub base_href: &'a str,
     pub route_base_path: &'a str,
@@ -84,6 +77,16 @@ pub(super) fn copy_embedded_viewer(destination: &Path, index: &[u8]) -> io::Resu
     fs::write(destination.join("index.html"), index)
 }
 
+// =============================================================================
+
+const BASE_HREF_MARKER: &str = "__MLG_BASE_HREF__";
+
+const VIEW_CONFIG_MARKER: &str = "__MLG_RUNTIME_CONFIG_JSON__";
+
+#[derive(RustEmbed)]
+#[folder = "web/dist/"]
+struct ViewerAssets;
+
 fn escape_html_attribute(value: &str) -> String {
     value
         .replace('&', "&amp;")
@@ -92,7 +95,7 @@ fn escape_html_attribute(value: &str) -> String {
         .replace('>', "&gt;")
 }
 
-// ===============================[ tests ]=====================================
+// =============================================================================
 
 #[cfg(test)]
 mod tests {

@@ -131,6 +131,30 @@ pub(crate) fn build_collection_view_with_cached_proto_groups(
     })
 }
 
+pub fn build_single_group_view(
+    group: ProtoGroup,
+    source: String,
+    type_info: Option<&DocumentTypeInfo>,
+    registry: &RenderRegistry,
+) -> GroupView {
+    let id = top_level_group_id(&group).unwrap_or_default();
+    group_view(group, source, type_info, registry, id)
+}
+
+// =============================================================================
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum SectionContext {
+    Default,
+    Documented,
+}
+
+#[derive(Clone, Copy)]
+enum DocumentedRenderKind {
+    Called,
+    Written,
+}
+
 /// Renders each directory's optional `_preface_.mlg` into view items, keyed by
 /// the directory's collection-relative path, paired with the raw source string.
 fn build_directory_prefaces(
@@ -307,16 +331,6 @@ fn description_page_group(source_id: &str, text: String, registry: &RenderRegist
         source: String::new(),
         sections: Vec::new(),
     }
-}
-
-pub fn build_single_group_view(
-    group: ProtoGroup,
-    source: String,
-    type_info: Option<&DocumentTypeInfo>,
-    registry: &RenderRegistry,
-) -> GroupView {
-    let id = top_level_group_id(&group).unwrap_or_default();
-    group_view(group, source, type_info, registry, id)
 }
 
 fn group_view(
@@ -737,12 +751,6 @@ fn person_body_text(
         .filter(|text| !text.trim().is_empty())
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum SectionContext {
-    Default,
-    Documented,
-}
-
 fn section_view(
     section: ProtoSection,
     type_info: Option<&DocumentTypeInfo>,
@@ -779,12 +787,6 @@ fn section_view(
             .map(|argument| argument_view(argument, type_info, registry, &label, render_kind))
             .collect(),
     }
-}
-
-#[derive(Clone, Copy)]
-enum DocumentedRenderKind {
-    Called,
-    Written,
 }
 
 fn documented_render_kind(label: &str) -> Option<DocumentedRenderKind> {
@@ -1099,7 +1101,7 @@ fn split_labeled_formulation(text: &str) -> Option<(Option<String>, Option<Strin
     Some((Some(label.to_string()), None, inner.trim()))
 }
 
-// ===============================[ tests ]=====================================
+// =============================================================================
 
 #[cfg(test)]
 mod tests {

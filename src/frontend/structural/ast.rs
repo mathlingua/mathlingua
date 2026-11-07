@@ -4,8 +4,6 @@ use crate::frontend::formulation::ast::{
     ResourceHeader, SpecOperatorAlias, TopicHeader, TypeExpression, WritingAlias,
 };
 
-// ===============================[ repeated ]=====================================
-
 macro_rules! impl_repeated_items {
     ($name:ident) => {
         impl<T> std::ops::Deref for $name<T> {
@@ -123,8 +121,6 @@ impl<T> TryFrom<ZeroOrMore<T>> for OneOrMore<T> {
 
 impl_repeated_items!(OneOrMore);
 
-// ===============================[ sections ]=====================================
-
 macro_rules! argument_section {
     ($name:ident, $ty:ty) => {
         #[derive(Clone, Debug, PartialEq, Eq)]
@@ -214,38 +210,6 @@ pub struct ExtendsClause<'a> {
     pub via: Option<&'a FormOrDeclaration>,
 }
 
-/// The types a `Declares` group extends, from either spelling.
-///
-/// `Declares: X is \foo` and `Declares: X` with `extends: X is \foo` mean the same
-/// thing, so every consumer works from this normalized list rather than from one
-/// spelling or the other. Writing both is rejected while parsing, so at most one
-/// source contributes.
-pub fn extends_clauses<'a>(
-    declares: &'a DeclaresSection,
-    extends: Option<&'a ExtendsSection>,
-) -> Vec<ExtendsClause<'a>> {
-    if let Some(extends) = extends {
-        return extends
-            .arguments
-            .iter()
-            .map(|item| ExtendsClause {
-                statement: &item.statement,
-                via: item.via.as_ref(),
-            })
-            .collect();
-    }
-
-    match &declares.argument {
-        DeclaresTarget::Declaration(statement) if statement.relation.is_some() => {
-            vec![ExtendsClause {
-                statement,
-                via: declares.via.as_ref(),
-            }]
-        }
-        _ => Vec::new(),
-    }
-}
-
 /// One endpoint of a top-level `Relation:` (`between:`/`and:` or `from:`/`to:`).
 /// A relationship may connect declared concepts, documentation topics, or
 /// definitions, in any combination, so each endpoint is either an ordinary
@@ -278,117 +242,215 @@ pub struct DeclaresSection {
 }
 
 arguments_section!(UsingSection, DeclarationStatement);
+
 arguments_section!(WhenSection, Clause);
+
 arguments_section!(ExtendsSection, ExtendsItem);
+
 arguments_section!(DeclaresSpecifiesSection, IsOrViaItem);
+
 arguments_section!(DefinesSpecifiesSection, IsOrViaItem);
+
 argument_section!(RealizesSection, DeclarationStatement);
+
 arguments_section!(SatisfiesSection, Clause);
+
 arguments_section!(RequiresSection, RequiresItem);
+
 arguments_section!(EnablesSection, EnablesItem);
+
 arguments_section!(JustificationSection, HaveGroup);
+
 arguments_section!(ForSection, Label);
+
 arguments_section!(DocumentedSection, DocumentedItem);
+
 arguments_section!(AliasesSection, AliasItem);
+
 arguments_section!(ReferencesSection, ReferenceItem);
+
 arguments_section!(ReferenceEntrySection, ResourceHeader);
+
 arguments_section!(MetadataSection, MetadataItem);
+
 argument_section!(DefinesSection, DeclarationStatement);
+
 arguments_section!(ExpressesSection, Clause);
+
 argument_section!(RefinesSection, DeclarationStatement);
+
 argument_section!(RefinesSpecifiesSection, DeclarationStatement);
+
 arguments_section!(ThatSection, Clause);
+
 arguments_section!(EquivalentToSection, Expression);
+
 // The `Axiom:`/`Theorem:`/`Conjecture:` head sections take no argument; a
 // result's name lives in `Documented:` `called:` (as for definitions).
 arguments_section!(GivenSection, DeclarationStatement);
+
 arguments_section!(WhereSection, Clause);
+
 arguments_section!(ThenSection, Clause);
+
 arguments_section!(IffSection, Clause);
+
 arguments_section!(HaveSection, Clause);
+
 arguments_section!(AssertingSection, Clause);
+
 arguments_section!(HaveBySection, Expression);
+
 arguments_section!(BecauseSection, BecauseItem);
+
 argument_section!(AliasSection, AliasKind);
+
 arguments_section!(WrittenSection, WrittenText);
+
 argument_section!(CapabilitySection, AliasKind);
+
 argument_section!(DefinitionSection, DefinitionRequirement);
+
 argument_section!(FromSection, DeclarationStatement);
+
 argument_section!(CastAsSection, ExpressionBinding);
+
 argument_section!(ViewAsSection, DeclarationStatement);
+
 argument_section!(ViewSignifiesSection, Clause);
+
 // Top-level `Relation:` item sections.
 zero_or_more_arguments_section!(RelationSection, OpenText);
+
 argument_section!(RelationBetweenSection, RelationSubject);
+
 argument_section!(RelationAndSection, RelationSubject);
+
 argument_section!(RelationFromSection, RelationSubject);
+
 argument_section!(RelationToSection, RelationSubject);
+
 argument_section!(RelationSpecifiesSection, RelationSpecifies);
+
 // Top-level `Topic:` item sections. References (`within:`/`to:`) are quoted text
 // so a `#topic` or a bare `\signature` reads as a reference, never a usage.
 // (`TopicRelated*` is distinct from the `related:` documentation item below.)
 zero_or_more_arguments_section!(TopicSection, OpenText);
+
 argument_section!(TopicWithinSection, OpenText);
+
 arguments_section!(TopicRelatedToSection, OpenText);
+
 argument_section!(TopicRelatedSpecifiesSection, OpenText);
+
 arguments_section!(TopicRelatedSection, TopicRelatedItem);
+
 arguments_section!(CalledSection, CalledText);
+
 arguments_section!(AdjectiveSection, AdjectiveText);
+
 argument_section!(WritingSection, MappingWritingTarget);
+
 // An item-level `Writing:` section (after `Aliases:`). Each entry is a
 // double-quoted `"name :~> body"` alias that overrides, for this item only, how
 // the named identifier is rendered by the collection-wide `Writing:` group.
 arguments_section!(ItemWritingSection, WritingAlias);
-arguments_section!(AsSection, WritingText);
-argument_section!(OverviewSection, OpenText);
-argument_section!(DescriptionSection, OpenText);
-arguments_section!(RelatedSection, OpenText);
-zero_or_more_arguments_section!(DiscovererSection, OpenText);
-zero_or_more_arguments_section!(BySection, OpenText);
-argument_section!(ProofSection, OpenText);
-argument_section!(IdSection, OpenText);
-argument_section!(VersionSection, OpenText);
-arguments_section!(SpecifySection, SpecifyItem);
-argument_section!(NumericSpecificationIsSection, TypeExpression);
-arguments_section!(PersonSection, OpenText);
-argument_section!(BiographySection, OpenText);
-arguments_section!(ResourceSection, ResourceItem);
-argument_section!(ResourceTitleSection, OpenText);
-arguments_section!(ResourceAuthorSection, OpenText);
-argument_section!(ResourceOffsetSection, OpenText);
-argument_section!(ResourceUrlSection, OpenText);
-argument_section!(ResourceHomepageSection, OpenText);
-argument_section!(ResourceTypeSection, OpenText);
-argument_section!(ResourceEditionSection, OpenText);
-argument_section!(ResourceEditorSection, OpenText);
-argument_section!(ResourceInstitutionSection, OpenText);
-argument_section!(ResourceJournalSection, OpenText);
-argument_section!(ResourcePublisherSection, OpenText);
-argument_section!(ResourceVolumeSection, OpenText);
-argument_section!(ResourceMonthSection, OpenText);
-argument_section!(ResourceYearSection, OpenText);
-argument_section!(ResourceDescriptionSection, OpenText);
-argument_section!(NotSection, Box<Clause>);
-arguments_section!(AllOfSection, Clause);
-arguments_section!(EquivalentlySection, Clause);
-arguments_section!(AnyOfSection, Clause);
-arguments_section!(OneOfSection, Clause);
-arguments_section!(ExistsSection, BindingOrSpec);
-arguments_section!(SuchThatSection, Clause);
-arguments_section!(ExistsUniqueSection, BindingOrSpec);
-arguments_section!(ForAllSection, BindingOrSpec);
-arguments_section!(LetSection, BindingOrSpec);
-arguments_section!(IfSection, Clause);
-arguments_section!(ElseIfSection, Clause);
-arguments_section!(ElseSection, Clause);
-argument_section!(TitleSection, OpenText);
-argument_section!(SectionTitleSection, OpenText);
-argument_section!(SubsectionTitleSection, OpenText);
-argument_section!(TextSection, OpenText);
-arguments_section!(TopLevelWritingSection, WritingAlias);
-zero_or_more_arguments_section!(ExampleSection, ExampleItem);
 
-// ===============================[ items ]=====================================
+arguments_section!(AsSection, WritingText);
+
+argument_section!(OverviewSection, OpenText);
+
+argument_section!(DescriptionSection, OpenText);
+
+arguments_section!(RelatedSection, OpenText);
+
+zero_or_more_arguments_section!(DiscovererSection, OpenText);
+
+zero_or_more_arguments_section!(BySection, OpenText);
+
+argument_section!(ProofSection, OpenText);
+
+argument_section!(IdSection, OpenText);
+
+argument_section!(VersionSection, OpenText);
+
+arguments_section!(SpecifySection, SpecifyItem);
+
+argument_section!(NumericSpecificationIsSection, TypeExpression);
+
+arguments_section!(PersonSection, OpenText);
+
+argument_section!(BiographySection, OpenText);
+
+arguments_section!(ResourceSection, ResourceItem);
+
+argument_section!(ResourceTitleSection, OpenText);
+
+arguments_section!(ResourceAuthorSection, OpenText);
+
+argument_section!(ResourceOffsetSection, OpenText);
+
+argument_section!(ResourceUrlSection, OpenText);
+
+argument_section!(ResourceHomepageSection, OpenText);
+
+argument_section!(ResourceTypeSection, OpenText);
+
+argument_section!(ResourceEditionSection, OpenText);
+
+argument_section!(ResourceEditorSection, OpenText);
+
+argument_section!(ResourceInstitutionSection, OpenText);
+
+argument_section!(ResourceJournalSection, OpenText);
+
+argument_section!(ResourcePublisherSection, OpenText);
+
+argument_section!(ResourceVolumeSection, OpenText);
+
+argument_section!(ResourceMonthSection, OpenText);
+
+argument_section!(ResourceYearSection, OpenText);
+
+argument_section!(ResourceDescriptionSection, OpenText);
+
+argument_section!(NotSection, Box<Clause>);
+
+arguments_section!(AllOfSection, Clause);
+
+arguments_section!(EquivalentlySection, Clause);
+
+arguments_section!(AnyOfSection, Clause);
+
+arguments_section!(OneOfSection, Clause);
+
+arguments_section!(ExistsSection, BindingOrSpec);
+
+arguments_section!(SuchThatSection, Clause);
+
+arguments_section!(ExistsUniqueSection, BindingOrSpec);
+
+arguments_section!(ForAllSection, BindingOrSpec);
+
+arguments_section!(LetSection, BindingOrSpec);
+
+arguments_section!(IfSection, Clause);
+
+arguments_section!(ElseIfSection, Clause);
+
+arguments_section!(ElseSection, Clause);
+
+argument_section!(TitleSection, OpenText);
+
+argument_section!(SectionTitleSection, OpenText);
+
+argument_section!(SubsectionTitleSection, OpenText);
+
+argument_section!(TextSection, OpenText);
+
+arguments_section!(TopLevelWritingSection, WritingAlias);
+
+zero_or_more_arguments_section!(ExampleSection, ExampleItem);
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Document {
@@ -566,8 +628,6 @@ pub enum ResourceItem {
     Description(ResourceDescriptionGroup),
 }
 
-// ===============================[ definition groups ]=====================================
-
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TitleGroup {
     pub title: TitleSection,
@@ -613,6 +673,7 @@ pub struct DisambiguatesBranch {
 }
 
 argument_section!(DisambiguatesToSection, Expression);
+
 argument_section!(DisambiguatesElseSection, Expression);
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -872,8 +933,6 @@ pub struct TopicRelatedItem {
     pub specifies: TopicRelatedSpecifiesSection,
 }
 
-// ===============================[ clause groups ]=====================================
-
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct NotGroup {
     pub heading: Option<LabelHeader>,
@@ -981,8 +1040,6 @@ pub struct PiecewiseElseIf {
     pub else_if: ElseIfSection,
     pub then: ThenSection,
 }
-
-// ===============================[ support groups ]=====================================
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AliasGroup {
@@ -1097,8 +1154,6 @@ pub struct SpecifyGroup {
     pub specify: SpecifySection,
 }
 
-// ===============================[ metadata resource groups ]=====================================
-
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct NumericSpecificationGroup {
     pub is_: NumericSpecificationIsSection,
@@ -1190,4 +1245,36 @@ pub struct ResourceYearGroup {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ResourceDescriptionGroup {
     pub description: ResourceDescriptionSection,
+}
+
+/// The types a `Declares` group extends, from either spelling.
+///
+/// `Declares: X is \foo` and `Declares: X` with `extends: X is \foo` mean the same
+/// thing, so every consumer works from this normalized list rather than from one
+/// spelling or the other. Writing both is rejected while parsing, so at most one
+/// source contributes.
+pub fn extends_clauses<'a>(
+    declares: &'a DeclaresSection,
+    extends: Option<&'a ExtendsSection>,
+) -> Vec<ExtendsClause<'a>> {
+    if let Some(extends) = extends {
+        return extends
+            .arguments
+            .iter()
+            .map(|item| ExtendsClause {
+                statement: &item.statement,
+                via: item.via.as_ref(),
+            })
+            .collect();
+    }
+
+    match &declares.argument {
+        DeclaresTarget::Declaration(statement) if statement.relation.is_some() => {
+            vec![ExtendsClause {
+                statement,
+                via: declares.via.as_ref(),
+            }]
+        }
+        _ => Vec::new(),
+    }
 }

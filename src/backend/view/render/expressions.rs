@@ -281,6 +281,402 @@ pub(crate) fn render_expression(expression: &Expression, registry: &RenderRegist
     }
 }
 
+pub(super) fn render_variadic_slice(slice: &VariadicSlice, registry: &RenderRegistry) -> String {
+    render_variadic_slice_with(slice, registry, false, str::to_owned)
+}
+
+pub(super) fn render_variadic_parameter(
+    parameter: &VariadicParameter,
+    registry: &RenderRegistry,
+) -> String {
+    if let Some(dimensions) = &parameter.dimensions {
+        return render_variadic_slice(
+            &VariadicSlice {
+                span: parameter.span,
+                name: parameter.name.clone(),
+                start: None,
+                index: None,
+                end: None,
+                dimensions: Some(VariadicSliceDimensions {
+                    rows: VariadicSliceAxis::Range {
+                        start: dimensions.row_start.to_string(),
+                        index: Some(dimensions.row_index.clone()),
+                        end: dimensions
+                            .row_length
+                            .clone()
+                            .unwrap_or_else(|| ".".to_owned()),
+                    },
+                    columns: VariadicSliceAxis::Range {
+                        start: dimensions.column_start.to_string(),
+                        index: Some(dimensions.column_index.clone()),
+                        end: dimensions
+                            .column_length
+                            .clone()
+                            .unwrap_or_else(|| ".".to_owned()),
+                    },
+                }),
+            },
+            registry,
+        );
+    }
+    render_variadic_slice(
+        &VariadicSlice {
+            span: parameter.span,
+            name: parameter.name.clone(),
+            start: Some(if parameter.index.is_some() {
+                parameter.start
+            } else {
+                1
+            }),
+            index: parameter.index.clone(),
+            end: Some(parameter.length.clone().unwrap_or_else(|| ".".to_owned())),
+            dimensions: None,
+        },
+        registry,
+    )
+}
+
+/// Returns the symbolic rows used when a 2D header parameter is substituted
+/// into its own documented template. Unlike a concrete invocation, the
+/// symbolic expansion has one-cell ellipsis rows between its indexed rows.
+pub(super) fn render_variadic_parameter_matrix_elements(
+    parameter: &VariadicParameter,
+    registry: &RenderRegistry,
+) -> Option<Vec<Vec<String>>> {
+    let dimensions = parameter.dimensions.as_ref()?;
+    let slice = VariadicSlice {
+        span: parameter.span,
+        name: parameter.name.clone(),
+        start: None,
+        index: None,
+        end: None,
+        dimensions: Some(VariadicSliceDimensions {
+            rows: VariadicSliceAxis::Range {
+                start: dimensions.row_start.to_string(),
+                index: Some(dimensions.row_index.clone()),
+                end: dimensions
+                    .row_length
+                    .clone()
+                    .unwrap_or_else(|| ".".to_owned()),
+            },
+            columns: VariadicSliceAxis::Range {
+                start: dimensions.column_start.to_string(),
+                index: Some(dimensions.column_index.clone()),
+                end: dimensions
+                    .column_length
+                    .clone()
+                    .unwrap_or_else(|| ".".to_owned()),
+            },
+        }),
+    };
+
+    let mut rows = vec![Vec::new()];
+    for part in render_variadic_slice_parts(&slice, registry) {
+        match part {
+            VariadicRenderPart::Element(value) => rows.last_mut()?.push(value),
+            VariadicRenderPart::Ellipsis => rows.last_mut()?.push("\\ldots".to_owned()),
+            VariadicRenderPart::RowBreak => rows.push(Vec::new()),
+        }
+    }
+    Some(rows)
+}
+
+pub(super) fn render_variadic_parameter_elements(
+    parameter: &VariadicParameter,
+    registry: &RenderRegistry,
+) -> Vec<String> {
+    if let Some(dimensions) = &parameter.dimensions {
+        let name = escape_math_identifier(&parameter.name, registry);
+        let rows = dimensions.row_length.as_deref().unwrap_or(".");
+        let columns = dimensions.column_length.as_deref().unwrap_or(".");
+        return vec![format!(
+            "{name}_{{{},{}}}, \\ldots, {name}_{{{},{}}}",
+            dimensions.row_start,
+            dimensions.column_start,
+            escape_math_identifier(rows, registry),
+            escape_math_identifier(columns, registry)
+        )];
+    }
+    let name = escape_math_identifier(&parameter.name, registry);
+    let start = if parameter.index.is_some() {
+        parameter.start
+    } else {
+        1
+    };
+    let mut elements = vec![format!("{name}_{{{start}}}"), "\\ldots".to_owned()];
+    if let Some(index) = &parameter.index {
+        elements.push(format!(
+            "{name}_{{{}}}",
+            escape_math_identifier(index, registry)
+        ));
+        elements.push("\\ldots".to_owned());
+    }
+    let end = parameter.length.as_deref().unwrap_or(".");
+    elements.push(format!(
+        "{name}_{{{}}}",
+        escape_math_identifier(end, registry)
+    ));
+    elements
+}
+
+pub(crate) fn render_builtin_command_expression(
+    command: &BuiltinCommandExpression,
+    registry: &RenderRegistry,
+) -> String {
+    let command_name = format_chain(&command.chain);
+    if command_name == "map" {
+        return render_variadic_map(command, registry)
+            .unwrap_or_else(|| "\\operatorname{map}".to_string());
+    }
+    if matches!(command_name.as_str(), "leftReduce" | "rightReduce") {
+        return render_variadic_reduce(command, registry)
+            .unwrap_or_else(|| format!("\\operatorname{{{command_name}}}"));
+    }
+
+    let head = render_builtin_arguments(&command.head_args, registry);
+    let tail = |name: &str| {
+        command
+            .tail
+            .iter()
+            .filter(|tail| format_chain(&tail.chain) == name)
+            .flat_map(|tail| render_builtin_arguments(&tail.args, registry))
+            .collect::<Vec<_>>()
+    };
+
+    match command_name.as_str() {
+        "not" => format!(
+            "\\neg {}",
+            head.first()
+                .cloned()
+                .unwrap_or_else(|| "\\cdots".to_owned())
+        ),
+        "and" | "allOf" => head.join(" \\textrm{ and } "),
+        "or" | "anyOf" => head.join(" \\textrm{ or } "),
+        "oneOf" => format!("\\textrm{{one of }} {}", head.join(", ")),
+        "exists" => render_builtin_quantifier("\\exists", &head, &tail("suchThat")),
+        "existsUnique" => render_builtin_quantifier("\\exists!", &head, &tail("suchThat")),
+        "forAll" | "forall" => {
+            let where_ = tail("where");
+            let then = tail("then");
+            let mut rendered = render_builtin_quantifier("\\forall", &head, &where_);
+            if !then.is_empty() {
+                rendered.push_str(" \\textrm{ then } ");
+                rendered.push_str(&then.join(" \\textrm{ and } "));
+            }
+            rendered
+        }
+        "if" => {
+            let then = tail("then");
+            let mut rendered = format!("\\textrm{{if }} {}", head.join(" \\textrm{ and } "));
+            if !then.is_empty() {
+                rendered.push_str(" \\textrm{ then } ");
+                rendered.push_str(&then.join(" \\textrm{ and } "));
+            }
+            rendered
+        }
+        "have" => {
+            let iff = tail("iff");
+            format!(
+                "{} \\Longleftrightarrow {}",
+                head.join(" \\textrm{ and } "),
+                iff.join(" \\textrm{ and } ")
+            )
+        }
+        "let" => {
+            let where_ = tail("where");
+            let then = tail("then");
+            let mut rendered = format!("\\textrm{{let }} {}", head.join("; "));
+            if !where_.is_empty() {
+                rendered.push_str(" \\textrm{ where } ");
+                rendered.push_str(&where_.join(" \\textrm{ and } "));
+            }
+            if !then.is_empty() {
+                rendered.push_str(" \\textrm{ then } ");
+                rendered.push_str(&then.join(" \\textrm{ and } "));
+            }
+            rendered
+        }
+        "piecewise" => {
+            let if_ = tail("if");
+            let then = tail("then");
+            let else_ = tail("else");
+            let mut rendered = head.join(" \\textrm{ and } ");
+            if !if_.is_empty() {
+                if !rendered.is_empty() {
+                    rendered.push(' ');
+                }
+                rendered.push_str("\\textrm{if } ");
+                rendered.push_str(&if_.join(" \\textrm{ and } "));
+            }
+            if !then.is_empty() {
+                rendered.push_str(" \\textrm{ then } ");
+                rendered.push_str(&then.join(" \\textrm{ and } "));
+            }
+            if !else_.is_empty() {
+                rendered.push_str(" \\textrm{ else } ");
+                rendered.push_str(&else_.join(" \\textrm{ and } "));
+            }
+            rendered
+        }
+        other => format!(
+            "\\operatorname{{{}}}\\left({}\\right)",
+            escape_latex_math(other),
+            head.join("; ")
+        ),
+    }
+}
+
+pub(super) fn render_infix_spec_like(spec: &InfixSpec, registry: &RenderRegistry) -> String {
+    render_command_like(&spec.chain, registry)
+}
+
+pub(super) fn render_set_expression(set: &SetExpression, registry: &RenderRegistry) -> String {
+    let target = render_set_target(&set.target, registry);
+    let spec = set
+        .specs
+        .iter()
+        .map(|spec| render_expression(spec, registry))
+        .collect::<Vec<_>>()
+        .join(";\\, ");
+
+    match &set.predicate {
+        Some(predicate) => format!(
+            "\\left\\{{ {target} \\: : \\: {spec} \\: | \\: {} \\right\\}}",
+            render_set_predicate(predicate, registry)
+        ),
+        None => format!("\\left\\{{ {target} \\: : \\: {spec} \\right\\}}"),
+    }
+}
+
+pub(super) fn render_set_target(target: &SetTarget, registry: &RenderRegistry) -> String {
+    match &target.kind {
+        SetTargetKind::Name(name) => escape_math_identifier(name, registry),
+        SetTargetKind::PlaceholderForm(form) => render_placeholder_form(form, registry),
+        SetTargetKind::Expression { expression, .. } => render_expression(expression, registry),
+        SetTargetKind::Alias { name, target } => {
+            format!(
+                "{} := {}",
+                escape_math_identifier(name, registry),
+                render_set_target(target, registry)
+            )
+        }
+        SetTargetKind::Introduction { name, target } => {
+            format!(
+                "{} ::= {}",
+                escape_math_identifier(name, registry),
+                render_set_target(target, registry)
+            )
+        }
+        SetTargetKind::Function { name, arguments } => {
+            let arguments = arguments
+                .iter()
+                .map(|target| render_set_target(target, registry))
+                .collect::<Vec<_>>()
+                .join(", ");
+            format!("{}({arguments})", escape_math_identifier(name, registry))
+        }
+        SetTargetKind::Tuple(elements) => {
+            let elements = elements
+                .iter()
+                .map(|element| match element {
+                    SetTargetElement::Target(target) => render_set_target(target, registry),
+                    SetTargetElement::Operator(operator) => render_operator_text(&operator.text),
+                })
+                .collect::<Vec<_>>()
+                .join(", ");
+            format!("\\left({elements}\\right)")
+        }
+    }
+}
+
+pub(super) fn render_spec_statement(
+    statement: &SpecStatement,
+    registry: &RenderRegistry,
+) -> String {
+    let operator = render_quoted_operator(&statement.operator);
+    let target = escape_math_identifier(&statement.name, registry);
+    render_subject_relation(&statement.subject, &operator, &target, registry)
+}
+
+pub(super) fn render_simple_set_spec_latex(
+    text: &str,
+    registry: &RenderRegistry,
+) -> Option<String> {
+    let trimmed = text.trim();
+    let inner = trimmed.strip_prefix('{')?.strip_suffix('}')?;
+    let (head, predicate) = match split_once_top_level(inner, '|') {
+        Some((head, predicate)) => (head, Some(predicate)),
+        None => (inner, None),
+    };
+    let (target, spec) = split_once_top_level(head, ':')?;
+    let target = target.trim();
+    let spec = spec.trim();
+    if target.is_empty() || spec.is_empty() {
+        return None;
+    }
+
+    let target = render_latex_fragment(target, registry);
+    let spec = render_latex_fragment(spec, registry);
+
+    match predicate.map(str::trim).filter(|value| !value.is_empty()) {
+        Some(predicate) => Some(format!(
+            "\\left\\{{ {target} \\: : \\: {spec} \\: | \\: {} \\right\\}}",
+            render_latex_fragment(predicate, registry)
+        )),
+        None => Some(format!("\\left\\{{ {target} \\: : \\: {spec} \\right\\}}")),
+    }
+}
+
+pub(super) fn render_latex_fragment(text: &str, registry: &RenderRegistry) -> String {
+    render_parsed_formulation_latex(text, registry)
+        .unwrap_or_else(|| escape_latex_math(text.trim()))
+}
+
+pub(super) fn split_once_top_level(input: &str, delimiter: char) -> Option<(&str, &str)> {
+    let mut paren_depth = 0usize;
+    let mut brace_depth = 0usize;
+    let mut bracket_depth = 0usize;
+    let mut in_quote = false;
+
+    for (index, ch) in input.char_indices() {
+        match ch {
+            '"' => in_quote = !in_quote,
+            '(' if !in_quote => paren_depth += 1,
+            ')' if !in_quote => paren_depth = paren_depth.saturating_sub(1),
+            '{' if !in_quote => brace_depth += 1,
+            '}' if !in_quote => brace_depth = brace_depth.saturating_sub(1),
+            '[' if !in_quote => bracket_depth += 1,
+            ']' if !in_quote => bracket_depth = bracket_depth.saturating_sub(1),
+            _ if ch == delimiter
+                && !in_quote
+                && paren_depth == 0
+                && brace_depth == 0
+                && bracket_depth == 0 =>
+            {
+                let after_delimiter = index + ch.len_utf8();
+                return Some((&input[..index], &input[after_delimiter..]));
+            }
+            _ => {}
+        }
+    }
+
+    None
+}
+
+// =============================================================================
+
+#[derive(Clone)]
+enum VariadicRenderPart {
+    Element(String),
+    Ellipsis,
+    RowBreak,
+}
+
+enum VariadicRenderOperand {
+    Scalar(String),
+    Slice(Vec<VariadicRenderPart>),
+}
+
 fn render_documented_mapping_call(
     name: &str,
     arguments: &[Expression],
@@ -320,18 +716,6 @@ fn render_documented_mapping_call(
         );
     }
     Some(substitute_math_template(template, &substitutions))
-}
-
-#[derive(Clone)]
-enum VariadicRenderPart {
-    Element(String),
-    Ellipsis,
-    RowBreak,
-}
-
-enum VariadicRenderOperand {
-    Scalar(String),
-    Slice(Vec<VariadicRenderPart>),
 }
 
 fn direct_variadic_slice(expression: &Expression) -> Option<&VariadicSlice> {
@@ -592,251 +976,6 @@ fn render_variadic_axis_parts(
     }
 }
 
-pub(super) fn render_variadic_slice(slice: &VariadicSlice, registry: &RenderRegistry) -> String {
-    render_variadic_slice_with(slice, registry, false, str::to_owned)
-}
-
-pub(super) fn render_variadic_parameter(
-    parameter: &VariadicParameter,
-    registry: &RenderRegistry,
-) -> String {
-    if let Some(dimensions) = &parameter.dimensions {
-        return render_variadic_slice(
-            &VariadicSlice {
-                span: parameter.span,
-                name: parameter.name.clone(),
-                start: None,
-                index: None,
-                end: None,
-                dimensions: Some(VariadicSliceDimensions {
-                    rows: VariadicSliceAxis::Range {
-                        start: dimensions.row_start.to_string(),
-                        index: Some(dimensions.row_index.clone()),
-                        end: dimensions
-                            .row_length
-                            .clone()
-                            .unwrap_or_else(|| ".".to_owned()),
-                    },
-                    columns: VariadicSliceAxis::Range {
-                        start: dimensions.column_start.to_string(),
-                        index: Some(dimensions.column_index.clone()),
-                        end: dimensions
-                            .column_length
-                            .clone()
-                            .unwrap_or_else(|| ".".to_owned()),
-                    },
-                }),
-            },
-            registry,
-        );
-    }
-    render_variadic_slice(
-        &VariadicSlice {
-            span: parameter.span,
-            name: parameter.name.clone(),
-            start: Some(if parameter.index.is_some() {
-                parameter.start
-            } else {
-                1
-            }),
-            index: parameter.index.clone(),
-            end: Some(parameter.length.clone().unwrap_or_else(|| ".".to_owned())),
-            dimensions: None,
-        },
-        registry,
-    )
-}
-
-/// Returns the symbolic rows used when a 2D header parameter is substituted
-/// into its own documented template. Unlike a concrete invocation, the
-/// symbolic expansion has one-cell ellipsis rows between its indexed rows.
-pub(super) fn render_variadic_parameter_matrix_elements(
-    parameter: &VariadicParameter,
-    registry: &RenderRegistry,
-) -> Option<Vec<Vec<String>>> {
-    let dimensions = parameter.dimensions.as_ref()?;
-    let slice = VariadicSlice {
-        span: parameter.span,
-        name: parameter.name.clone(),
-        start: None,
-        index: None,
-        end: None,
-        dimensions: Some(VariadicSliceDimensions {
-            rows: VariadicSliceAxis::Range {
-                start: dimensions.row_start.to_string(),
-                index: Some(dimensions.row_index.clone()),
-                end: dimensions
-                    .row_length
-                    .clone()
-                    .unwrap_or_else(|| ".".to_owned()),
-            },
-            columns: VariadicSliceAxis::Range {
-                start: dimensions.column_start.to_string(),
-                index: Some(dimensions.column_index.clone()),
-                end: dimensions
-                    .column_length
-                    .clone()
-                    .unwrap_or_else(|| ".".to_owned()),
-            },
-        }),
-    };
-
-    let mut rows = vec![Vec::new()];
-    for part in render_variadic_slice_parts(&slice, registry) {
-        match part {
-            VariadicRenderPart::Element(value) => rows.last_mut()?.push(value),
-            VariadicRenderPart::Ellipsis => rows.last_mut()?.push("\\ldots".to_owned()),
-            VariadicRenderPart::RowBreak => rows.push(Vec::new()),
-        }
-    }
-    Some(rows)
-}
-
-pub(super) fn render_variadic_parameter_elements(
-    parameter: &VariadicParameter,
-    registry: &RenderRegistry,
-) -> Vec<String> {
-    if let Some(dimensions) = &parameter.dimensions {
-        let name = escape_math_identifier(&parameter.name, registry);
-        let rows = dimensions.row_length.as_deref().unwrap_or(".");
-        let columns = dimensions.column_length.as_deref().unwrap_or(".");
-        return vec![format!(
-            "{name}_{{{},{}}}, \\ldots, {name}_{{{},{}}}",
-            dimensions.row_start,
-            dimensions.column_start,
-            escape_math_identifier(rows, registry),
-            escape_math_identifier(columns, registry)
-        )];
-    }
-    let name = escape_math_identifier(&parameter.name, registry);
-    let start = if parameter.index.is_some() {
-        parameter.start
-    } else {
-        1
-    };
-    let mut elements = vec![format!("{name}_{{{start}}}"), "\\ldots".to_owned()];
-    if let Some(index) = &parameter.index {
-        elements.push(format!(
-            "{name}_{{{}}}",
-            escape_math_identifier(index, registry)
-        ));
-        elements.push("\\ldots".to_owned());
-    }
-    let end = parameter.length.as_deref().unwrap_or(".");
-    elements.push(format!(
-        "{name}_{{{}}}",
-        escape_math_identifier(end, registry)
-    ));
-    elements
-}
-
-pub(crate) fn render_builtin_command_expression(
-    command: &BuiltinCommandExpression,
-    registry: &RenderRegistry,
-) -> String {
-    let command_name = format_chain(&command.chain);
-    if command_name == "map" {
-        return render_variadic_map(command, registry)
-            .unwrap_or_else(|| "\\operatorname{map}".to_string());
-    }
-    if matches!(command_name.as_str(), "leftReduce" | "rightReduce") {
-        return render_variadic_reduce(command, registry)
-            .unwrap_or_else(|| format!("\\operatorname{{{command_name}}}"));
-    }
-
-    let head = render_builtin_arguments(&command.head_args, registry);
-    let tail = |name: &str| {
-        command
-            .tail
-            .iter()
-            .filter(|tail| format_chain(&tail.chain) == name)
-            .flat_map(|tail| render_builtin_arguments(&tail.args, registry))
-            .collect::<Vec<_>>()
-    };
-
-    match command_name.as_str() {
-        "not" => format!(
-            "\\neg {}",
-            head.first()
-                .cloned()
-                .unwrap_or_else(|| "\\cdots".to_owned())
-        ),
-        "and" | "allOf" => head.join(" \\textrm{ and } "),
-        "or" | "anyOf" => head.join(" \\textrm{ or } "),
-        "oneOf" => format!("\\textrm{{one of }} {}", head.join(", ")),
-        "exists" => render_builtin_quantifier("\\exists", &head, &tail("suchThat")),
-        "existsUnique" => render_builtin_quantifier("\\exists!", &head, &tail("suchThat")),
-        "forAll" | "forall" => {
-            let where_ = tail("where");
-            let then = tail("then");
-            let mut rendered = render_builtin_quantifier("\\forall", &head, &where_);
-            if !then.is_empty() {
-                rendered.push_str(" \\textrm{ then } ");
-                rendered.push_str(&then.join(" \\textrm{ and } "));
-            }
-            rendered
-        }
-        "if" => {
-            let then = tail("then");
-            let mut rendered = format!("\\textrm{{if }} {}", head.join(" \\textrm{ and } "));
-            if !then.is_empty() {
-                rendered.push_str(" \\textrm{ then } ");
-                rendered.push_str(&then.join(" \\textrm{ and } "));
-            }
-            rendered
-        }
-        "have" => {
-            let iff = tail("iff");
-            format!(
-                "{} \\Longleftrightarrow {}",
-                head.join(" \\textrm{ and } "),
-                iff.join(" \\textrm{ and } ")
-            )
-        }
-        "let" => {
-            let where_ = tail("where");
-            let then = tail("then");
-            let mut rendered = format!("\\textrm{{let }} {}", head.join("; "));
-            if !where_.is_empty() {
-                rendered.push_str(" \\textrm{ where } ");
-                rendered.push_str(&where_.join(" \\textrm{ and } "));
-            }
-            if !then.is_empty() {
-                rendered.push_str(" \\textrm{ then } ");
-                rendered.push_str(&then.join(" \\textrm{ and } "));
-            }
-            rendered
-        }
-        "piecewise" => {
-            let if_ = tail("if");
-            let then = tail("then");
-            let else_ = tail("else");
-            let mut rendered = head.join(" \\textrm{ and } ");
-            if !if_.is_empty() {
-                if !rendered.is_empty() {
-                    rendered.push(' ');
-                }
-                rendered.push_str("\\textrm{if } ");
-                rendered.push_str(&if_.join(" \\textrm{ and } "));
-            }
-            if !then.is_empty() {
-                rendered.push_str(" \\textrm{ then } ");
-                rendered.push_str(&then.join(" \\textrm{ and } "));
-            }
-            if !else_.is_empty() {
-                rendered.push_str(" \\textrm{ else } ");
-                rendered.push_str(&else_.join(" \\textrm{ and } "));
-            }
-            rendered
-        }
-        other => format!(
-            "\\operatorname{{{}}}\\left({}\\right)",
-            escape_latex_math(other),
-            head.join("; ")
-        ),
-    }
-}
-
 fn render_variadic_map(
     command: &BuiltinCommandExpression,
     registry: &RenderRegistry,
@@ -1032,69 +1171,6 @@ fn render_provided_member(
     Some(substitute_math_template(&render.written, &substitutions))
 }
 
-pub(super) fn render_infix_spec_like(spec: &InfixSpec, registry: &RenderRegistry) -> String {
-    render_command_like(&spec.chain, registry)
-}
-
-pub(super) fn render_set_expression(set: &SetExpression, registry: &RenderRegistry) -> String {
-    let target = render_set_target(&set.target, registry);
-    let spec = set
-        .specs
-        .iter()
-        .map(|spec| render_expression(spec, registry))
-        .collect::<Vec<_>>()
-        .join(";\\, ");
-
-    match &set.predicate {
-        Some(predicate) => format!(
-            "\\left\\{{ {target} \\: : \\: {spec} \\: | \\: {} \\right\\}}",
-            render_set_predicate(predicate, registry)
-        ),
-        None => format!("\\left\\{{ {target} \\: : \\: {spec} \\right\\}}"),
-    }
-}
-
-pub(super) fn render_set_target(target: &SetTarget, registry: &RenderRegistry) -> String {
-    match &target.kind {
-        SetTargetKind::Name(name) => escape_math_identifier(name, registry),
-        SetTargetKind::PlaceholderForm(form) => render_placeholder_form(form, registry),
-        SetTargetKind::Expression { expression, .. } => render_expression(expression, registry),
-        SetTargetKind::Alias { name, target } => {
-            format!(
-                "{} := {}",
-                escape_math_identifier(name, registry),
-                render_set_target(target, registry)
-            )
-        }
-        SetTargetKind::Introduction { name, target } => {
-            format!(
-                "{} ::= {}",
-                escape_math_identifier(name, registry),
-                render_set_target(target, registry)
-            )
-        }
-        SetTargetKind::Function { name, arguments } => {
-            let arguments = arguments
-                .iter()
-                .map(|target| render_set_target(target, registry))
-                .collect::<Vec<_>>()
-                .join(", ");
-            format!("{}({arguments})", escape_math_identifier(name, registry))
-        }
-        SetTargetKind::Tuple(elements) => {
-            let elements = elements
-                .iter()
-                .map(|element| match element {
-                    SetTargetElement::Target(target) => render_set_target(target, registry),
-                    SetTargetElement::Operator(operator) => render_operator_text(&operator.text),
-                })
-                .collect::<Vec<_>>()
-                .join(", ");
-            format!("\\left({elements}\\right)")
-        }
-    }
-}
-
 fn render_set_predicate(predicate: &SetPredicate, registry: &RenderRegistry) -> String {
     match predicate {
         SetPredicate::Expression(expression) => render_expression(expression, registry),
@@ -1104,78 +1180,4 @@ fn render_set_predicate(predicate: &SetPredicate, registry: &RenderRegistry) -> 
             render_expression(value, registry)
         ),
     }
-}
-
-pub(super) fn render_spec_statement(
-    statement: &SpecStatement,
-    registry: &RenderRegistry,
-) -> String {
-    let operator = render_quoted_operator(&statement.operator);
-    let target = escape_math_identifier(&statement.name, registry);
-    render_subject_relation(&statement.subject, &operator, &target, registry)
-}
-
-pub(super) fn render_simple_set_spec_latex(
-    text: &str,
-    registry: &RenderRegistry,
-) -> Option<String> {
-    let trimmed = text.trim();
-    let inner = trimmed.strip_prefix('{')?.strip_suffix('}')?;
-    let (head, predicate) = match split_once_top_level(inner, '|') {
-        Some((head, predicate)) => (head, Some(predicate)),
-        None => (inner, None),
-    };
-    let (target, spec) = split_once_top_level(head, ':')?;
-    let target = target.trim();
-    let spec = spec.trim();
-    if target.is_empty() || spec.is_empty() {
-        return None;
-    }
-
-    let target = render_latex_fragment(target, registry);
-    let spec = render_latex_fragment(spec, registry);
-
-    match predicate.map(str::trim).filter(|value| !value.is_empty()) {
-        Some(predicate) => Some(format!(
-            "\\left\\{{ {target} \\: : \\: {spec} \\: | \\: {} \\right\\}}",
-            render_latex_fragment(predicate, registry)
-        )),
-        None => Some(format!("\\left\\{{ {target} \\: : \\: {spec} \\right\\}}")),
-    }
-}
-
-pub(super) fn render_latex_fragment(text: &str, registry: &RenderRegistry) -> String {
-    render_parsed_formulation_latex(text, registry)
-        .unwrap_or_else(|| escape_latex_math(text.trim()))
-}
-
-pub(super) fn split_once_top_level(input: &str, delimiter: char) -> Option<(&str, &str)> {
-    let mut paren_depth = 0usize;
-    let mut brace_depth = 0usize;
-    let mut bracket_depth = 0usize;
-    let mut in_quote = false;
-
-    for (index, ch) in input.char_indices() {
-        match ch {
-            '"' => in_quote = !in_quote,
-            '(' if !in_quote => paren_depth += 1,
-            ')' if !in_quote => paren_depth = paren_depth.saturating_sub(1),
-            '{' if !in_quote => brace_depth += 1,
-            '}' if !in_quote => brace_depth = brace_depth.saturating_sub(1),
-            '[' if !in_quote => bracket_depth += 1,
-            ']' if !in_quote => bracket_depth = bracket_depth.saturating_sub(1),
-            _ if ch == delimiter
-                && !in_quote
-                && paren_depth == 0
-                && brace_depth == 0
-                && bracket_depth == 0 =>
-            {
-                let after_delimiter = index + ch.len_utf8();
-                return Some((&input[..index], &input[after_delimiter..]));
-            }
-            _ => {}
-        }
-    }
-
-    None
 }

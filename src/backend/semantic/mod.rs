@@ -1,11 +1,7 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-
 use crate::events::{EventLocation, EventLog, EventPosition, EventSpan, Level};
 use crate::frontend::*;
-
-const ORIGIN: &str = "semantic_check";
-
 mod check;
 mod definition;
 mod locator;
@@ -17,7 +13,6 @@ mod types;
 mod uses;
 mod validation;
 mod walk;
-
 pub use check::{
     check_documents, check_documents_collecting_all_type_info,
     check_documents_collecting_type_info,
@@ -28,7 +23,6 @@ pub use rename::{
 };
 pub use typeinfo::{CollectionTypeInfo, DocumentTypeInfo, TypeEntry};
 pub(crate) use uses::{collect_definition_locations, command_occurrences};
-
 use locator::*;
 use shapes::*;
 use typecheck::*;
@@ -63,3 +57,7 @@ pub(crate) fn mapping_parameter_invocation_signatures(
         )
     })
 }
+
+// =============================================================================
+
+const ORIGIN: &str = "semantic_check";

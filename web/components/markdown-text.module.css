@@ -100,7 +100,7 @@
   padding-left: 1.35rem;
 }
 
-.markdown code {
+.markdown :not(pre) > code {
   padding: 0.06rem 0.2rem;
   border-radius: var(--radius-code);
   background: var(--surface-alt);
@@ -116,8 +116,11 @@
 }
 
 .markdownPre code,
-.markdown > pre code {
+.markdown > pre code,
+.markdownMlgCode code,
+.markdownMlgCode pre code {
   padding: 0;
+  border-radius: 0;
   background: transparent;
   font-size: calc(1rem * var(--viewer-font-scale, 1));
   line-height: 1.55;
@@ -149,6 +152,11 @@
 }
 
 .markdownMlgCode pre code {
+  display: block;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
   font-family: inherit;
   font-size: inherit;
   line-height: inherit;

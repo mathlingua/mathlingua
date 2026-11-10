@@ -36,8 +36,10 @@ export function MathLinguaSource({
   const lines = source.length > 0 ? source.split("\n") : [""];
 
   return (
-    <pre className={className ? `${styles.source} ${className}` : styles.source}>
-      <code>
+    <pre
+      className={className ? `${styles.source} ${className}` : styles.source}
+    >
+      <code className={styles.code}>
         {lines.map((line, lineIndex) => {
           const lineTokens = tokenizeLine(line);
 

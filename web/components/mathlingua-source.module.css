@@ -19,8 +19,21 @@
   white-space: pre;
 }
 
+.source code,
+.code {
+  display: block;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+}
+
 .line {
   min-height: 1.55em;
+  background: transparent;
 }
 
 .plain {

@@ -114,7 +114,7 @@ function MarkdownBlock({
       }
       return (
         <pre className={styles.markdownPre}>
-          <code>{block.text}</code>
+          <code>{decodeHtmlEntities(block.text)}</code>
         </pre>
       );
     case "math":
@@ -300,7 +300,9 @@ function parseInline(text: string): ReactNode[] {
       const end = text.indexOf("`", index + 1);
       if (end !== -1) {
         nodes.push(
-          <code key={nodes.length}>{text.slice(index + 1, end)}</code>,
+          <code key={nodes.length}>
+            {decodeHtmlEntities(text.slice(index + 1, end))}
+          </code>,
         );
         index = end + 1;
         continue;
@@ -350,7 +352,7 @@ function parseInline(text: string): ReactNode[] {
     }
 
     const next = nextSpecialIndex(text, index + 1);
-    nodes.push(text.slice(index, next));
+    nodes.push(decodeHtmlEntities(text.slice(index, next)));
     index = next;
   }
 
@@ -459,4 +461,126 @@ function isMathLinguaLanguage(language: string | null): boolean {
 
 function normalizeNewlines(text: string): string {
   return text.replace(/\r\n?/g, "\n");
+}
+
+const NAMED_ENTITIES: Record<string, string> = {
+  lt: "<",
+  gt: ">",
+  amp: "&",
+  quot: '"',
+  apos: "'",
+  tilde: "~",
+  nbsp: "\u00A0",
+  cent: "¢",
+  pound: "£",
+  yen: "¥",
+  euro: "€",
+  copy: "©",
+  reg: "®",
+  sect: "§",
+  deg: "°",
+  plusmn: "±",
+  times: "×",
+  divide: "÷",
+  micro: "µ",
+  para: "¶",
+  middot: "·",
+  ndash: "–",
+  mdash: "—",
+  lsquo: "‘",
+  rsquo: "’",
+  sbquo: "‚",
+  ldquo: "“",
+  rdquo: "”",
+  bdquo: "„",
+  dagger: "†",
+  Dagger: "‡",
+  bull: "•",
+  hellip: "…",
+  permil: "‰",
+  prime: "′",
+  Prime: "″",
+  larr: "←",
+  uarr: "↑",
+  rarr: "→",
+  darr: "↓",
+  harr: "↔",
+  forall: "∀",
+  part: "∂",
+  exist: "∃",
+  empty: "∅",
+  nabla: "∇",
+  isin: "∈",
+  notin: "∉",
+  ni: "∋",
+  prod: "∏",
+  sum: "∑",
+  minus: "−",
+  radic: "√",
+  prop: "∝",
+  infin: "∞",
+  ang: "∠",
+  and: "∧",
+  or: "∨",
+  cap: "∩",
+  cup: "∪",
+  int: "∫",
+  there4: "∴",
+  sim: "∼",
+  cong: "≅",
+  asymp: "≈",
+  ne: "≠",
+  equiv: "≡",
+  le: "≤",
+  ge: "≥",
+  sub: "⊂",
+  sup: "⊃",
+  nsub: "⊄",
+  sube: "⊆",
+  supe: "⊇",
+  oplus: "⊕",
+  otimes: "⊗",
+  perp: "⊥",
+  sdot: "⋅",
+};
+
+/**
+ * Decodes HTML character entities and numeric escape codes, including
+ * decimal entities with or without `#` (e.g. `&#126;` and `&126;`),
+ * hexadecimal entities (e.g. `&#x7e;` and `&x7E;`), and named entities.
+ */
+export function decodeHtmlEntities(text: string): string {
+  return text.replace(
+    /&(?:#([0-9]+)|#x([0-9a-fA-F]+)|([0-9]+)|x([0-9a-fA-F]+)|([a-zA-Z]+));/g,
+    (match, decWithHash, hexWithHash, decNoHash, hexNoHash, named) => {
+      const decStr = decWithHash ?? decNoHash;
+      if (decStr !== undefined) {
+        const code = parseInt(decStr, 10);
+        if (!isNaN(code) && code > 0 && code <= 0x10ffff) {
+          try {
+            return String.fromCodePoint(code);
+          } catch {
+            return match;
+          }
+        }
+        return match;
+      }
+      const hexStr = hexWithHash ?? hexNoHash;
+      if (hexStr !== undefined) {
+        const code = parseInt(hexStr, 16);
+        if (!isNaN(code) && code > 0 && code <= 0x10ffff) {
+          try {
+            return String.fromCodePoint(code);
+          } catch {
+            return match;
+          }
+        }
+        return match;
+      }
+      if (named !== undefined) {
+        return NAMED_ENTITIES[named] ?? match;
+      }
+      return match;
+    },
+  );
 }

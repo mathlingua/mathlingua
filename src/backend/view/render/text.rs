@@ -15,12 +15,13 @@ pub(in crate::backend::view) fn render_scoped_text_markdown_with_labels(
     registry: &RenderRegistry,
     label_links: &HashMap<String, String>,
 ) -> String {
-    ScopedTextRenderer {
+    let rendered = ScopedTextRenderer {
         registry,
         label_links,
         scopes: vec![Scope::default()],
     }
-    .render(text)
+    .render(text);
+    decode_html_entities(&rendered)
 }
 
 pub(crate) fn markdown_code_span_len(input: &str) -> Option<usize> {
@@ -335,6 +336,201 @@ fn latex_command_name(text: &str) -> String {
         .collect()
 }
 
+pub(in crate::backend::view) fn decode_html_entities(text: &str) -> String {
+    let mut output = String::with_capacity(text.len());
+    let mut index = 0;
+
+    while index < text.len() {
+        let rest = &text[index..];
+
+        // Skip display math blocks: $$\n ... \n$$
+        if rest.starts_with("$$\n") {
+            if let Some(end) = rest[3..].find("\n$$") {
+                let block_len = 3 + end + 3;
+                output.push_str(&rest[..block_len]);
+                index += block_len;
+                continue;
+            }
+        }
+
+        // Skip inline math spans: $ ... $
+        if rest.starts_with('$')
+            && !rest.starts_with("$$")
+            && (index == 0 || text.as_bytes().get(index - 1) != Some(&b'\\'))
+        {
+            if let Some(close_idx) = find_unescaped_char(&rest[1..], '$') {
+                let span_len = 1 + close_idx + 1;
+                output.push_str(&rest[..span_len]);
+                index += span_len;
+                continue;
+            }
+        }
+
+        // Check for HTML entity starting with '&'
+        if rest.starts_with('&') {
+            if let Some((entity_str, entity_len)) = parse_html_entity(rest) {
+                output.push_str(&entity_str);
+                index += entity_len;
+                continue;
+            }
+        }
+
+        let ch = rest.chars().next().expect("non-empty remainder");
+        output.push(ch);
+        index += ch.len_utf8();
+    }
+
+    output
+}
+
+fn find_unescaped_char(text: &str, target: char) -> Option<usize> {
+    let mut escaped = false;
+    for (i, c) in text.char_indices() {
+        if escaped {
+            escaped = false;
+        } else if c == '\\' {
+            escaped = true;
+        } else if c == target {
+            return Some(i);
+        }
+    }
+    None
+}
+
+fn parse_html_entity(input: &str) -> Option<(String, usize)> {
+    if !input.starts_with('&') {
+        return None;
+    }
+    let rest = &input[1..];
+    let semi_pos = rest.find(';')?;
+    if semi_pos == 0 || semi_pos > 31 {
+        return None;
+    }
+    let body = &rest[..semi_pos];
+    if body.chars().any(|c| c.is_whitespace() || c == '&' || c == '<' || c == '>') {
+        return None;
+    }
+
+    let decoded = decode_entity_body(body)?;
+    Some((decoded, 1 + semi_pos + 1))
+}
+
+fn decode_entity_body(body: &str) -> Option<String> {
+    if let Some(dec_body) = body.strip_prefix('#') {
+        if let Some(hex_body) = dec_body.strip_prefix('x').or_else(|| dec_body.strip_prefix('X')) {
+            if !hex_body.is_empty() && hex_body.chars().all(|c| c.is_ascii_hexdigit()) {
+                let code = u32::from_str_radix(hex_body, 16).ok()?;
+                return char::from_u32(code).map(|c| c.to_string());
+            }
+            return None;
+        }
+        if !dec_body.is_empty() && dec_body.chars().all(|c| c.is_ascii_digit()) {
+            let code = dec_body.parse::<u32>().ok()?;
+            return char::from_u32(code).map(|c| c.to_string());
+        }
+        return None;
+    }
+
+    // Decimal entity without '#' (e.g. `&126;`)
+    if !body.is_empty() && body.chars().all(|c| c.is_ascii_digit()) {
+        let code = body.parse::<u32>().ok()?;
+        return char::from_u32(code).map(|c| c.to_string());
+    }
+
+    // Hex entity without '#' (e.g. `&x7e;` or `&X7E;`)
+    if let Some(hex_body) = body.strip_prefix('x').or_else(|| body.strip_prefix('X')) {
+        if !hex_body.is_empty() && hex_body.chars().all(|c| c.is_ascii_hexdigit()) {
+            let code = u32::from_str_radix(hex_body, 16).ok()?;
+            return char::from_u32(code).map(|c| c.to_string());
+        }
+        return None;
+    }
+
+    // Named entities
+    let decoded = match body {
+        "lt" => "<",
+        "gt" => ">",
+        "amp" => "&",
+        "quot" => "\"",
+        "apos" => "'",
+        "tilde" => "~",
+        "nbsp" => "\u{00a0}",
+        "cent" => "¢",
+        "pound" => "£",
+        "yen" => "¥",
+        "euro" => "€",
+        "copy" => "©",
+        "reg" => "®",
+        "sect" => "§",
+        "deg" => "°",
+        "plusmn" => "±",
+        "times" => "×",
+        "divide" => "÷",
+        "micro" => "µ",
+        "para" => "¶",
+        "middot" => "·",
+        "ndash" => "–",
+        "mdash" => "—",
+        "lsquo" => "‘",
+        "rsquo" => "’",
+        "sbquo" => "‚",
+        "ldquo" => "“",
+        "rdquo" => "”",
+        "bdquo" => "„",
+        "dagger" => "†",
+        "Dagger" => "‡",
+        "bull" => "•",
+        "hellip" => "…",
+        "permil" => "‰",
+        "prime" => "′",
+        "Prime" => "″",
+        "larr" => "←",
+        "uarr" => "↑",
+        "rarr" => "→",
+        "darr" => "↓",
+        "harr" => "↔",
+        "forall" => "∀",
+        "part" => "∂",
+        "exist" => "∃",
+        "empty" => "∅",
+        "nabla" => "∇",
+        "isin" => "∈",
+        "notin" => "∉",
+        "ni" => "∋",
+        "prod" => "∏",
+        "sum" => "∑",
+        "minus" => "−",
+        "radic" => "√",
+        "prop" => "∝",
+        "infin" => "∞",
+        "ang" => "∠",
+        "and" => "∧",
+        "or" => "∨",
+        "cap" => "∩",
+        "cup" => "∪",
+        "int" => "∫",
+        "there4" => "∴",
+        "sim" => "∼",
+        "cong" => "≅",
+        "asymp" => "≈",
+        "ne" => "≠",
+        "equiv" => "≡",
+        "le" => "≤",
+        "ge" => "≥",
+        "sub" => "⊂",
+        "sup" => "⊃",
+        "nsub" => "⊄",
+        "sube" => "⊆",
+        "supe" => "⊇",
+        "oplus" => "⊕",
+        "otimes" => "⊗",
+        "perp" => "⊥",
+        "sdot" => "⋅",
+        _ => return None,
+    };
+    Some(decoded.to_string())
+}
+
 // =============================================================================
 
 #[cfg(test)]
@@ -410,6 +606,48 @@ mod tests {
         assert_eq!(
             render_scoped_text_markdown_with_labels(text_with_refs, &RenderRegistry::default(), &links),
             r#"See *first quote* [1] and *second quote* [3] and [[2](https://example.com/book.pdf)]."#
+        );
+    }
+
+    #[test]
+    fn decodes_html_entities_and_escapes_in_prose() {
+        assert_eq!(
+            decode_html_entities("Tilde: &126; and &#126; and &tilde;"),
+            "Tilde: ~ and ~ and ~"
+        );
+        assert_eq!(
+            decode_html_entities("Braces: &#123;. and .&#125;"),
+            "Braces: {. and .}"
+        );
+        assert_eq!(
+            decode_html_entities("Quotes and colon: &#39;&#39; and [&#58;label&#58;]"),
+            "Quotes and colon: '' and [:label:]"
+        );
+        assert_eq!(
+            decode_html_entities("Angles: &lt;&lt;name&gt;&gt; and &lt;&lt;/name&gt;&gt;"),
+            "Angles: <<name>> and <</name>>"
+        );
+        assert_eq!(
+            decode_html_entities("Hex: &#x7e; and &x7E;"),
+            "Hex: ~ and ~"
+        );
+        assert_eq!(
+            decode_html_entities("Preserves AT&T and &unknown; and unclosed &126"),
+            "Preserves AT&T and &unknown; and unclosed &126"
+        );
+        assert_eq!(
+            decode_html_entities("Preserves math: $a &lt; b$ and $$\n\\begin{matrix} 1 & 2 \\end{matrix}\n$$"),
+            "Preserves math: $a &lt; b$ and $$\n\\begin{matrix} 1 & 2 \\end{matrix}\n$$"
+        );
+    }
+
+    #[test]
+    fn renders_escaped_delimiters_without_activating_fragments() {
+        let text = "Inline MathLingua opens with &#123;. and closes with .&#125;. For example, let {. x is \\real .}. Use &126;.";
+        let rendered = render_scoped_text_markdown(text, &RenderRegistry::default());
+        assert_eq!(
+            rendered,
+            "Inline MathLingua opens with {. and closes with .}. For example, let $x \\textrm{ is } \\backslashreal$. Use ~."
         );
     }
 }

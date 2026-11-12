@@ -221,8 +221,8 @@ supported spellings are case-sensitive and fall into three families:
 - Builtin types: `\\type`, `\\statement`, `\\expression`,
   `\\specification`, and `\\anything`.
 - Builtin statement commands: `\\not`, `\\and`, `\\allOf`, `\\or`,
-  `\\anyOf`, `\\oneOf`, `\\exists`, `\\existsUnique`, `\\forAll` (with
-  alias `\\forall`), `\\if`, `\\have`, `\\let`, and `\\piecewise`.
+  `\\anyOf`, `\\oneOf`, `\\exists`, `\\existsUnique`, `\\forAll`, `\\if`,
+  `\\have`, `\\let`, and `\\piecewise`.
 - Variadic expression commands: `\\map`, `\\leftReduce`, and
   `\\rightReduce`.
 
@@ -1125,12 +1125,12 @@ For example, a `let:` clause can introduce a member for use in its body:
 
 The formulation language also provides builtin *command* forms used inline in
 a statement position: `\\not`, `\\and`/`\\allOf`, `\\or`/`\\anyOf`,
-`\\oneOf`, `\\exists`, `\\existsUnique`, `\\forAll`/`\\forall`, `\\if`,
+`\\oneOf`, `\\exists`, `\\existsUnique`, `\\forAll`, `\\if`,
 `\\have`, `\\let`, and `\\piecewise`. Arguments use braces and are separated
 by semicolons; the accepted tails are:
 
 - `\\exists` and `\\existsUnique`: optional `:suchThat{...}`
-- `\\forAll`/`\\forall` and `\\let`: optional `:where{...}` and required
+- `\\forAll` and `\\let`: optional `:where{...}` and required
   `:then{...}`
 - `\\if`: optional `:then{...}`
 - `\\have`: required `:iff{...}`

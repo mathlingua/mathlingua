@@ -455,7 +455,7 @@ pub(crate) fn render_builtin_command_expression(
         "oneOf" => format!("\\textrm{{one of }} {}", head.join(", ")),
         "exists" => render_builtin_quantifier("\\exists", &head, &tail("suchThat")),
         "existsUnique" => render_builtin_quantifier("\\exists!", &head, &tail("suchThat")),
-        "forAll" | "forall" => {
+        "forAll" => {
             let where_ = tail("where");
             let then = tail("then");
             let mut rendered = render_builtin_quantifier("\\forall", &head, &where_);

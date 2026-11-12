@@ -112,7 +112,7 @@ A concise high-level reference for the Mathlingua language. For in-depth specifi
 | Builtin Types | `\\type`, `\\statement`, `\\expression`, `\\specification`, `\\anything` | Language primitive types for classification and constraints |
 | Builtin Capability Target | `\\abstract` | Placeholder target for abstract specification capabilities in `:->` or `:<->:` |
 | Builtin Connectives | `\\not{P}`, `\\and{...}`, `\\or{...}`, `\\oneOf{...}` | Formulation-level logical connectives (also `\\allOf`, `\\anyOf`) |
-| Builtin Quantifiers | `\\forAll{...}:then{...}`, `\\exists{...}`, `\\let{...}` | Formulation-level quantifiers (`\\forAll`/`\\forall`, `\\exists`, `\\existsUnique`, `\\let`) |
+| Builtin Quantifiers | `\\forAll{...}:then{...}`, `\\exists{...}`, `\\let{...}` | Formulation-level quantifiers (`\\forAll`, `\\exists`, `\\existsUnique`, `\\let`) |
 | Builtin Conditionals | `\\if{...}:then{...}`, `\\have{...}:iff{...}`, `\\piecewise{}` | Formulation-level conditional statements (`\\if`, `\\have`, `\\piecewise`) |
 | Builtin Variadic Commands | `\\map{...}:to{...}`, `\\leftReduce{...}:on{...}` | Pointwise slice mapping (`\\map`) and reductions (`\\leftReduce`, `\\rightReduce`) |
 | <a id="prose-delimiters-and-citations"></a>**Prose Delimiters and Citations** | | |

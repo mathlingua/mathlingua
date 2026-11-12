@@ -7888,7 +7888,7 @@ Text:
     Id: "f1a2b3c4-4444-4a22-8333-444444444444"
 
     [\foo]
-    Defines: X := {x_ : x_ is \set | \\forall{y is \set}:then{y is? \set}} is \set
+    Defines: X := {x_ : x_ is \set | \\forAll{y is \set}:then{y is? \set}} is \set
     Documented:
     . called: "foo"
     . written: "X?"
@@ -7902,6 +7902,50 @@ Text:
 
         assert_eq!(result.files_checked, 1);
         assert_checked_cleanly(&event_log, "Checked 1 file");
+    }
+
+    #[test]
+    fn check_rejects_removed_forall_command_alias() {
+        let temp_dir = TestDir::new();
+        let root = temp_dir.path();
+        let content = root.join("content");
+        fs::create_dir(&content).unwrap();
+        fs::write(root.join("mlg.json"), default_config_contents()).unwrap();
+        write_mlg_fixture(
+            &content.join("forall-removed.mlg"),
+            r#"[\set]
+    Declares: S
+    Documented:
+    . called: "set"
+    Id: "f1a2b3c4-4444-4a22-8333-444444444444"
+
+    [\foo]
+    Defines: X := {x_ : x_ is \set | \\forall{y is \set}:then{y is? \set}} is \set
+    Documented:
+    . called: "foo"
+    . written: "X?"
+    Id: "b165f407-283d-4d1b-815f-9200da352065"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(root, &[], &mut event_log);
+
+        assert_eq!(result.files_checked, 1);
+        assert!(event_log.has_errors());
+        let messages = event_log
+            .events()
+            .iter()
+            .filter_map(Event::as_message)
+            .map(|event| event.message.clone())
+            .collect::<Vec<_>>();
+        assert!(
+            messages
+                .iter()
+                .any(|msg| msg.contains("Unknown builtin clause command `\\\\forall`")),
+            "expected error for \\forall, got: {messages:?}"
+        );
     }
 
     #[test]

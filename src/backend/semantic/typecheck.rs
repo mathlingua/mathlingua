@@ -9667,7 +9667,7 @@ fn check_builtin_command_expression(
             }
             check_builtin_tail_names(command, &["suchThat"], path, locator, event_log);
         }
-        "forAll" | "forall" => {
+        "forAll" => {
             let mut child = context.clone();
             assume_builtin_binding_arguments(
                 command,
@@ -17548,7 +17548,6 @@ fn key_is_builtin_clause_command(key: &str) -> bool {
         "\\\\exists",
         "\\\\existsUnique",
         "\\\\forAll",
-        "\\\\forall",
         "\\\\if",
         "\\\\have",
         "\\\\let",

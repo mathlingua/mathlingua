@@ -5555,7 +5555,7 @@ mod tests {
     #[test]
     fn parses_builtin_clause_commands_inside_set_predicates() {
         let expression =
-            parse_expression(r#"{x_ : x_ is \set | \\forall{y is \set}:then{y is? \set}}"#)
+            parse_expression(r#"{x_ : x_ is \set | \\forAll{y is \set}:then{y is? \set}}"#)
                 .expect("expected set expression with builtin predicate");
 
         match expression.kind {
@@ -5564,7 +5564,7 @@ mod tests {
                     ExpressionKind::BuiltinCommand(command) => {
                         assert!(matches!(
                             command.chain.parts[0],
-                            ChainPart::Name(ref name) if name == "forall"
+                            ChainPart::Name(ref name) if name == "forAll"
                         ));
                         assert_eq!(command.head_args.len(), 1);
                         assert_eq!(command.tail.len(), 1);

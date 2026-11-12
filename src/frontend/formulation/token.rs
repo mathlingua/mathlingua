@@ -139,7 +139,7 @@ pub enum Token {
     Is,
     #[token("via")]
     Via,
-    #[token("member_of")]
+    #[token("memberOf")]
     MemberOf,
     #[token("satisfies")]
     Satisfies,

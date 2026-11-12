@@ -146,7 +146,7 @@ Placeholders are used in forms and declarations. Magnetic placeholders are used
 for function-like forms that bind one placeholder with special rendering
 behavior, such as `f(x__)`.
 
-The exact spellings `is`, `is?`, `via`, `member_of`, and `satisfies` are
+The exact spellings `is`, `is?`, `via`, `memberOf`, and `satisfies` are
 reserved by the lexer-driven formulation parser. The former `is_not?` predicate
 is not supported; write `\\not{x is? \set}` for a negated type predicate.
 
@@ -255,7 +255,7 @@ The expression precedence, from lowest to highest, is:
 
 1. function literal `=>` (right-associative)
 2. spec and predicate forms (`is`, `is?`, quoted `"op"` specs, infix specs
-   `\:...:/`, `member_of`, `satisfies`, spec literals)
+   `\:...:/`, `memberOf`, `satisfies`, spec literals)
 3. infix commands `\.name./`
 4. equality (`=`, `!=`) and special binary operators
 5. addition and subtraction
@@ -682,7 +682,7 @@ form or declaration.
 - **Inferred parameters** are command arguments written `X?`: the first
   occurrence introduces `X` with the type its position requires; later uses are
   the plain name.
-- **`member_of`** (`x member_of X`) is the builtin collection-membership form,
+- **`memberOf`** (`x memberOf X`) is the builtin collection-membership form,
   and **`satisfies`** applies a spec literal to a subject.
 - A command may carry a **context suffix** `#using{...}` or `#given{...}`
   supplying that command's `using:`/`given:` values inline.
@@ -1775,7 +1775,7 @@ required type's described element pattern and element types. This structural
 check applies only to literals; named values continue to require ordinary type
 facts.
 
-For a builder without a condition, `x member_of {x_ : specs}` is equivalent to
+For a builder without a condition, `x memberOf {x_ : specs}` is equivalent to
 the listed specifications after binding `x_` to `x`. For a conditioned builder,
 membership implies both the specifications and the `|` condition, while the
 reverse direction requires the checker to establish all of them. If the
@@ -2024,7 +2024,7 @@ Requires:
 . capability: x_ "in" X :-> \\abstract
 Enables:
 . from: Y ::= {y__ : ...}
-  capability: x_ "in" X :<->: x_ member_of Y
+  capability: x_ "in" X :<->: x_ memberOf Y
 Documented:
 . called: "set"
 ```
@@ -2032,12 +2032,12 @@ Documented:
 If a value is introduced as `A := \set@{x_ : x_ is \real}`, the checker
 records the literal for `A`. When it later reduces `a "in" A`, the `from:`
 capability substitutes the source subject `Y` with `A`, producing
-`a member_of A`. The existing `member_of` reducer then reads the built literal
+`a memberOf A`. The existing `memberOf` reducer then reads the built literal
 and can establish `a is \real`.
 
 An ordinary non-`from:` capability on an opaque target does not read a built
-literal through `member_of`. For example, `Declares: X` with
-`capability: x_ "in" X :<->: x_ member_of X` does not make
+literal through `memberOf`. For example, `Declares: X` with
+`capability: x_ "in" X :<->: x_ memberOf X` does not make
 `\set@{...}` expose the literal's element facts. Use a structural target such as
 `Declares: X ::= {x__ : ...}` or an explicit `from:` capability for that.
 

@@ -46,7 +46,7 @@ The formulation subsystem does not have one single root grammar. It exposes seve
 - **`parse_writing_alias`** — `<form-or-declaration> :~> <raw body>`.
 - **`parse_expression_alias`** — `<lhs> (:=> or :->) <expression>`.
 - **`parse_spec_operator_alias`** — `<placeholder-spec> (:-> or :<->:) <targets>`,
-  where each semicolon-separated target is an is-or-spec, `member_of`, a
+  where each semicolon-separated target is an is-or-spec, `memberOf`, a
   placeholder-spec, or a builtin.
 - **`parse_label_header`** — dotted label header text.
 - **`parse_author_header`** — `@` followed by dotted parts.
@@ -228,7 +228,7 @@ The lexer has dedicated tokens for:
 - `is`
 - `is?`
 - `via`
-- `member_of`
+- `memberOf`
 - `satisfies`
 - `::=`
 - `:=`
@@ -281,7 +281,7 @@ From lowest precedence to highest:
 
 1. function literal `=>` (right-associative)
 2. spec and predicate forms (`is`, `is?`, quoted `"op"` specs and
-   predicates, infix specs `\:...:/`, `member_of`, `satisfies`, spec literals)
+   predicates, infix specs `\:...:/`, `memberOf`, `satisfies`, spec literals)
 3. infix command `\.name./`
 4. equality `=` (and `!=`) and special binary operators such as `<`, `>`
 5. additive `+ -`
@@ -320,7 +320,7 @@ SpecOrPredicateExpression ::=
   | InfixCommandExpression QuotedName CommandExpression
   | InfixCommandExpression "is" PredicateTypeExpression
   | InfixCommandExpression "is?" (CommandExpression | BuiltinTypeExpression)
-  | InfixCommandExpression "member_of" InfixCommandExpression
+  | InfixCommandExpression "memberOf" InfixCommandExpression
   | InfixCommandExpression "satisfies" InfixCommandExpression
   | "_" "is" PredicateTypeExpression
   | "_" QuotedName (Name | CommandExpression)
@@ -392,7 +392,7 @@ The lower (spec/predicate) precedence level includes, besides `is`/`is?`:
   `?:/` predicate form.
 - **Quoted-operator specs and predicates** `<a> "op" <b>`, `<a> "op"? <b>`, and
   `<a> "op" <command>`.
-- **`member_of`** and **`satisfies`** expressions.
+- **`memberOf`** and **`satisfies`** expressions.
 - **Spec literals** with an anonymous `_` subject: `_ is T`, `_ "op" name`,
   `_ "op" \cmd` (values of type `\\specification`).
 - **`BuiltinCommandExpression`** — the value form `\\chain{arg; arg}:tail{...}`
@@ -1009,7 +1009,7 @@ SpecOperatorAliasTarget ::= IsOrRefinedStatementSpec
                           | MemberOfExpression
                           | PlaceholderSpecStatement
                           | "\\" "\\" RawChain
-MemberOfExpression ::= InfixCommandExpression "member_of" InfixCommandExpression
+MemberOfExpression ::= InfixCommandExpression "memberOf" InfixCommandExpression
 PlaceholderSpecStatement ::= PlaceholderForm TopLevelQuotedOperator Name
 ```
 
@@ -1230,7 +1230,7 @@ SpecOrPredicateExpression ::=
   | InfixCommandExpression QuotedName CommandExpression
   | InfixCommandExpression "is" PredicateTypeExpression
   | InfixCommandExpression "is?" (CommandExpression | BuiltinTypeExpression)
-  | InfixCommandExpression "member_of" InfixCommandExpression
+  | InfixCommandExpression "memberOf" InfixCommandExpression
   | InfixCommandExpression "satisfies" InfixCommandExpression
   | "_" "is" PredicateTypeExpression
   | "_" QuotedName (Name | CommandExpression)
@@ -1455,7 +1455,7 @@ SpecOperatorAliasTarget ::= IsOrSpec
                           | MemberOfExpression
                           | PlaceholderSpecStatement
                           | "\\" "\\" RawChain
-MemberOfExpression ::= InfixCommandExpression "member_of" InfixCommandExpression
+MemberOfExpression ::= InfixCommandExpression "memberOf" InfixCommandExpression
 
 DottedParts ::= Name ("." Name)*
 LabelHeader ::= DottedParts

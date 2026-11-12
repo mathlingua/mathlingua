@@ -5469,7 +5469,7 @@ Documented:
 Declares: X
 Enables:
 . from: Y ::= {y__ : ...}
-  capability: x_ "in" X :-> x_ member_of Y
+  capability: x_ "in" X :-> x_ memberOf Y
 . from: P ::= {(p_, q_) : ...}
   as: f(p_) := q_
 . view:

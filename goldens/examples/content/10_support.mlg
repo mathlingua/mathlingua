@@ -37,7 +37,7 @@ Enables:
 . capability: x_ "in" G :-> x_ is \element:of{X}
   written: "x_? \in G?"
 . from: Y ::= {y__ : ...}
-  capability: x_ "in" G :-> x_ member_of Y
+  capability: x_ "in" G :-> x_ memberOf Y
 . view:
   as: S := \unit.set is \set
 Documented:

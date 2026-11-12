@@ -108,7 +108,7 @@ instantiation. Representative examples are:
 | `f is (_ is \real) -> (_ is \integer)` | `FunctionType("f", [IsSpec("\real", "\real")], IsSpec("\integer", "\integer"), false)` |
 | `x "in" X` | `Spec("x", "in", "X")` |
 | `H \:subgroup:/ G` | `InfixSpec("H", "\:subgroup:/", [], "G")` |
-| `x member_of X` | `MemberOf("x", "X")` |
+| `x memberOf X` | `MemberOf("x", "X")` |
 
 `Spec` preserves the quoted operator because its meaning is supplied by the
 target's enabled specification rules. `MemberOf` represents the built-in
@@ -881,7 +881,7 @@ function MATERIALIZE_SPEC_AND_MEMBERSHIP_FACTS(
 ```
 
 The loop also processes newly appended `Spec` and `MemberOf` facts, so a chain
-such as `x "in" A -> x member_of B -> x is \element:of{B}` reaches its final
+such as `x "in" A -> x memberOf B -> x is \element:of{B}` reaches its final
 type fact. Both `known` and `reduction_seen` are needed: the former avoids adding
 duplicate work, while the latter stops cycles within one recursive reduction.
 The original context is unchanged.

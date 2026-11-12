@@ -314,7 +314,7 @@ function tokenKindForWord(word: string): TokenKind {
     return "placeholder";
   }
 
-  if (["is", "via", "in", "not"].includes(word)) {
+  if (["is", "via", "in", "not", "memberOf"].includes(word)) {
     return "keyword";
   }
 

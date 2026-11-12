@@ -45,7 +45,7 @@ extern {
         "right_special_operator" => Token::RightSpecialOperator(<String>),
         "is?" => Token::IsPredicate,
         "is" => Token::Is,
-        "member_of" => Token::MemberOf,
+        "memberOf" => Token::MemberOf,
         "satisfies" => Token::Satisfies,
         "=>" => Token::FunctionArrow,
         "->" => Token::TypeArrow,
@@ -1082,7 +1082,7 @@ SpecOrPredicateExpression: ast::Expression = {
             ty,
         },
     ),
-    <l:@L> <subject:InfixCommandExpression> "member_of" <collection:InfixCommandExpression> <r:@R> => ast::Expression::new(
+    <l:@L> <subject:InfixCommandExpression> "memberOf" <collection:InfixCommandExpression> <r:@R> => ast::Expression::new(
         Span::new(l, r),
         ExpressionKind::MemberOf {
             subject: Box::new(subject),

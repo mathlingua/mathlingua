@@ -2036,7 +2036,7 @@ fn token_literal(token: &Token) -> &'static str {
         Token::IsPredicate => "is?",
         Token::Is => "is",
         Token::Via => "via",
-        Token::MemberOf => "member_of",
+        Token::MemberOf => "memberOf",
         Token::Satisfies => "satisfies",
         Token::FunctionArrow => "=>",
         Token::TypeArrow => "->",
@@ -5585,7 +5585,7 @@ mod tests {
     fn parses_collection_form_declarations_and_member_of_expressions() {
         let form = parse_form_or_declaration("X ::= {x__ : ...}")
             .expect("expected collection form declaration");
-        let expression = parse_expression("x member_of X").expect("expected member_of expression");
+        let expression = parse_expression("x memberOf X").expect("expected memberOf expression");
 
         match form.kind {
             FormOrDeclarationKind::SetDeclaration { name, form } => {
@@ -5611,7 +5611,7 @@ mod tests {
                 assert!(matches!(subject.kind, ExpressionKind::Name(ref name) if name == "x"));
                 assert!(matches!(collection.kind, ExpressionKind::Name(ref name) if name == "X"));
             }
-            other => panic!("expected member_of expression, got {other:?}"),
+            other => panic!("expected memberOf expression, got {other:?}"),
         }
     }
 

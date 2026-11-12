@@ -1691,8 +1691,8 @@ Collection targets:
   may have any arity and are treated as a tuple.
 - `Defines: X ::= {x_ : ...}` describes a collection shape accepting a single
   value, where that value may itself have any expression shape.
-- `member_of` is a keyword used by enabled membership capabilities.
-- `x member_of X` is valid only when `X` is a collection literal or has a
+- `memberOf` is a keyword used by enabled membership capabilities.
+- `x memberOf X` is valid only when `X` is a collection literal or has a
   collection literal attached by an explicit build.
 - `\set@{x_ : x_ is \real}` builds a collection literal at the described type.
 - `A := {x_ : x_ is \real | x_ > 2} is \set` binds the literal to `A` as a set.
@@ -1930,7 +1930,7 @@ Types can now separate definitional requirements from additional capabilities.
 - When reducing a `from: ... capability:` rule, the source subject from the
   `from:` declaration is substituted with the actual target value.
 - Ordinary non-`from:` capabilities on opaque targets no longer read cast
-  literals through `member_of`; literal-backed membership requires a structural
+  literals through `memberOf`; literal-backed membership requires a structural
   target or an explicit `from:` capability.
 - `from: ... as:` records and validates an expression binding that describes
   how to view the cast source as the described form.

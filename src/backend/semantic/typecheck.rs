@@ -22799,7 +22799,7 @@ fn key_for_expression(expression: &Expression) -> String {
             subject,
             collection,
         } => format!(
-            "{} member_of {}",
+            "{} memberOf {}",
             key_for_expression(subject),
             key_for_expression(collection)
         ),
@@ -23964,7 +23964,7 @@ fn format_fact(fact: &TypeFact) -> String {
         TypeFact::MemberOf {
             subject,
             collection,
-        } => format!("{subject} member_of {collection}"),
+        } => format!("{subject} memberOf {collection}"),
         TypeFact::FunctionType {
             subject,
             inputs,

@@ -2447,7 +2447,7 @@ then:
     . capability: x_ "in" X :-> \\abstract
     Enables:
     . from: Y ::= {y__ : ...}
-      capability: x_ "in" X :<->: x_ member_of Y
+      capability: x_ "in" X :<->: x_ memberOf Y
     Documented:
     . called: "set"
 
@@ -3112,7 +3112,7 @@ then:
     . capability: x_ "in" X :-> \\abstract
     Enables:
     . from: Y ::= {y__ : ...}
-      capability: x_ "in" X :<->: x_ member_of Y
+      capability: x_ "in" X :<->: x_ memberOf Y
     Documented:
     . called: "set"
 
@@ -3662,8 +3662,8 @@ then:
     fn check_requires_defines_to_state_its_type() {
         // A `Defines:` value must state the type it defines — either `... is <type>`
         // or a top-level `\ty@value` build. A bare `X := {…}` is rejected even though
-        // the `member_of` capability would let the collection literal infer `\set`.
-        let set = "[\\set]\nDeclares: X\nRequires:\n. capability: x_ \"in\" X :-> \\\\abstract\nEnables:\n. from: Y ::= {y__ : ...}\n  capability: x_ \"in\" X :-> x_ member_of Y\nDocumented:\n. called: \"set\"\n\n";
+        // the `memberOf` capability would let the collection literal infer `\set`.
+        let set = "[\\set]\nDeclares: X\nRequires:\n. capability: x_ \"in\" X :-> \\\\abstract\nEnables:\n. from: Y ::= {y__ : ...}\n  capability: x_ \"in\" X :-> x_ memberOf Y\nDocumented:\n. called: \"set\"\n\n";
 
         let accepted = [
             // Explicit `is`.
@@ -6520,7 +6520,7 @@ Requires:
 . capability: x_ "in" X :-> \\abstract
 Enables:
 . from: Y ::= {y__ : ...}
-  capability: x_ "in" X :-> x_ member_of Y
+  capability: x_ "in" X :-> x_ memberOf Y
 Documented:
 . called: "set"
 
@@ -7389,7 +7389,7 @@ Text:
             r#"[\set]
     Declares: X ::= {x__ : ...}
     Enables:
-    . capability: x_ "in" X :<->: x_ member_of X
+    . capability: x_ "in" X :<->: x_ memberOf X
     Documented:
     . called: "set"
 
@@ -10706,7 +10706,7 @@ Text:
     . written: "\operatorname{set}"
 
     Theorem:
-    where: x member_of X
+    where: x memberOf X
     then: x = x
     "#,
         )
@@ -11139,7 +11139,7 @@ Text:
     [\set]
     Declares: X ::= {x__ : ...}
     Enables:
-    . capability: x_ "in" X :-> x_ member_of X
+    . capability: x_ "in" X :-> x_ memberOf X
     Documented:
     . written: "\operatorname{set}"
 
@@ -11203,7 +11203,7 @@ Text:
     . capability: x_ "in" X :-> \\abstract
     Enables:
     . from: Y ::= {y__ : ...}
-      capability: x_ "in" X :-> x_ member_of Y
+      capability: x_ "in" X :-> x_ memberOf Y
     Documented:
     . called: "set"
 
@@ -11267,7 +11267,7 @@ Text:
     [\set]
     Declares: X ::= {x__ : ...}
     Enables:
-    . capability: x_ "in" X :-> x_ member_of X
+    . capability: x_ "in" X :-> x_ memberOf X
     Documented:
     . written: "\operatorname{set}"
 
@@ -11320,7 +11320,7 @@ Text:
     [\set]
     Declares: X ::= {x__ : ...}
     Enables:
-    . capability: x_ "in" X :-> x_ member_of X
+    . capability: x_ "in" X :-> x_ memberOf X
     Documented:
     . written: "\operatorname{set}"
 
@@ -11573,7 +11573,7 @@ Text:
     [\set]
     Declares: X ::= {x__ : ...}
     Enables:
-    . capability: x_ "in" X :-> x_ member_of X
+    . capability: x_ "in" X :-> x_ memberOf X
     Documented:
     . written: "\operatorname{set}"
 
@@ -11623,7 +11623,7 @@ Text:
     [\set]
     Declares: X ::= {x__ : ...}
     Enables:
-    . capability: x_ "in" X :-> x_ member_of X
+    . capability: x_ "in" X :-> x_ memberOf X
     Documented:
     . written: "\operatorname{set}"
 
@@ -11684,7 +11684,7 @@ Text:
     [\set]
     Declares: X ::= {x__ : ...}
     Enables:
-    . capability: x_ "in" X :-> x_ member_of X
+    . capability: x_ "in" X :-> x_ memberOf X
     Documented:
     . written: "\operatorname{set}"
 
@@ -11735,7 +11735,7 @@ Text:
     . capability: x_ "in" X :-> \\abstract
     Enables:
     . from: Y ::= {y__ : ...}
-      capability: x_ "in" X :-> x_ member_of Y
+      capability: x_ "in" X :-> x_ memberOf Y
     Documented:
     . written: "\operatorname{set}"
 
@@ -12080,7 +12080,7 @@ Text:
 [\set]
 Declares: X ::= {x__ : ...}
 Enables:
-. capability: x_ "in" X :-> x_ member_of X
+. capability: x_ "in" X :-> x_ memberOf X
 Documented:
 . called: "set"
 
@@ -12150,7 +12150,7 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
     [\set]
     Declares: X ::= {x__ : ...}
     Enables:
-    . capability: x_ "in" X :-> x_ member_of X
+    . capability: x_ "in" X :-> x_ memberOf X
     Documented:
     . called: "set"
 
@@ -12407,7 +12407,7 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
             r#"[\set]
     Declares: X
     Requires:
-    . capability: x_ "in" X :-> x_ member_of X
+    . capability: x_ "in" X :-> x_ memberOf X
     Documented:
     . written: "\operatorname{set}"
 
@@ -12518,7 +12518,7 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
             r#"[\set]
     Declares: X ::= {x__ : ...}
     Enables:
-    . capability: x_ "in" X :-> x_ member_of X
+    . capability: x_ "in" X :-> x_ memberOf X
     Documented:
     . written: "\operatorname{set}"
 

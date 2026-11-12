@@ -38,7 +38,7 @@ const styledOperators = [
 const keywords = new Map([
   ["is", "is"],
   ["via", "via"],
-  ["member_of", "member_of"],
+  ["memberOf", "memberOf"],
 ]);
 
 /** Renders raw MathLingua fallback text with lightweight mathematical styling. */
@@ -94,7 +94,7 @@ function renderToken(token: InlineToken, index: number) {
       return (
         <span
           className={
-            token.text === "member_of"
+            token.text === "memberOf"
               ? `${styles.keyword} ${styles.memberOf}`
               : styles.keyword
           }

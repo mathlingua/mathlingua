@@ -938,7 +938,7 @@ PrimaryExpression: ast::Expression = {
     ),
     <l:@L> <command:CommandExpression> "@" <value:PrimaryExpression> <r:@R> => ast::Expression::new(
         Span::new(l, r),
-        ExpressionKind::Build {
+        ExpressionKind::Coercion {
             ty: ast::TypeExpression::Command(command),
             value: Box::new(value),
         },

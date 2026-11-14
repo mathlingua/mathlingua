@@ -261,16 +261,16 @@ Because these are tokenized before ordinary names, exact spellings like `is` and
 `is?` predicate with the builtin statement command, as in
 `\\not{x is? \set}`.
 
-### Build expressions
+### Coercion expressions
 
-A build applies a command type to a value:
+A coercion applies a command type to a value:
 
 - `<command-type> @ <value>`, e.g. `\set@{...}`,
   `\rational@k`.
 
 `@` binds the command type on the left to the primary expression on the
 right. A
-build is also how a `Defines:` value may state its type without `is`
+coercion is also how a `Defines:` value may state its type without `is`
 (`X := \set@{...}` is sugar for `... is \set`).
 
 ## Expression Grammar
@@ -371,7 +371,7 @@ PrimaryExpression ::=
   | BuiltinCommandExpression
   | MemberCall            -- Name "." Name "(" args ")" | Command ".." Name "(" args ")"
   | MemberAccess          -- Name "." Name | Command ".." Name
-  | Build                 -- CommandExpression "@" PrimaryExpression
+  | Coercion              -- CommandExpression "@" PrimaryExpression
   | InferredName          -- Name "?"
   | MagneticPlaceholder   -- x__
   | Placeholder           -- x_
@@ -381,7 +381,7 @@ PrimaryExpression ::=
 This reference does not spell out every production in full. `parse_expression`
 also performs top-level scans before invoking the generated grammar for refined
 predicates and spec-infix expressions, structural literal types, set expressions
-whose targets use the full expression language, collection builds, contextual
+whose targets use the full expression language, collection coercions, contextual
 commands, and variadic assignments.
 
 The lower (spec/predicate) precedence level includes, besides `is`/`is?`:
@@ -402,7 +402,7 @@ The lower (spec/predicate) precedence level includes, besides `is`/`is?`:
 
 Command arguments also support surface sugar: a bare collection literal
 `\foo{x_ : ...}` is read as `\foo{{x_ : ...}}`, and there are function-literal and
-build-function-literal argument forms.
+coercion-function-literal argument forms.
 
 ### Atomic forms
 

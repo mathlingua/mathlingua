@@ -281,10 +281,10 @@ pub(crate) fn render_expression(expression: &Expression, registry: &RenderRegist
                 registry,
             ),
         },
-        ExpressionKind::Build { ty, value } => format!(
+        ExpressionKind::Coercion { ty, value } => format!(
             "{}{}{}",
             render_type_expression(ty, registry),
-            // The build marker is authoring syntax, not mathematical
+            // The coercion marker is authoring syntax, not mathematical
             // notation. Use an explicit LaTeX space so it remains visible
             // between ordinary math atoms such as `set` and a set literal.
             "\\,",

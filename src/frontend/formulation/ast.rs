@@ -561,8 +561,8 @@ pub enum ExpressionKind {
         subject: Box<Expression>,
         ty: TypeExpression,
     },
-    /// `\cmd@<value>` casts/builds a value to type `\cmd`.
-    Build {
+    /// `\cmd@<value>` coerces a value to type `\cmd`.
+    Coercion {
         ty: TypeExpression,
         value: Box<Expression>,
     },

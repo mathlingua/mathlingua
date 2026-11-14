@@ -765,7 +765,7 @@ fn collect_collection_body(
     };
     let body = match &definition.kind {
         ExpressionKind::Set(set) => Some(set),
-        _ => cast_expression_set_literal(definition),
+        _ => coercion_expression_set_literal(definition),
     };
     if let Some(body) = body {
         registry
@@ -967,7 +967,7 @@ fn declaration_has_collection_literal(statement: &DeclarationStatement) -> bool 
     ) || statement
         .definition
         .as_ref()
-        .and_then(cast_expression_set_literal)
+        .and_then(coercion_expression_set_literal)
         .is_some()
 }
 
@@ -1141,7 +1141,7 @@ fn sub_expressions(expression: &Expression) -> Vec<&Expression> {
         | ExpressionKind::IsBuiltinPredicate { subject, .. }
         | ExpressionKind::IsNotBuiltinPredicate { subject, .. }
         | ExpressionKind::IsType { subject, .. } => vec![subject.as_ref()],
-        ExpressionKind::Build { value, .. } => vec![value.as_ref()],
+        ExpressionKind::Coercion { value, .. } => vec![value.as_ref()],
         ExpressionKind::MemberOf {
             subject,
             collection,
@@ -6355,7 +6355,7 @@ fn collect_expression_referenced_labels(expression: &Expression, labels: &mut BT
             collect_expression_referenced_labels(subject, labels);
             collect_type_referenced_labels(ty, labels);
         }
-        ExpressionKind::Build { ty, value, .. } => {
+        ExpressionKind::Coercion { ty, value, .. } => {
             collect_type_referenced_labels(ty, labels);
             collect_expression_referenced_labels(value, labels);
         }
@@ -7572,7 +7572,7 @@ fn validate_defines_target_symbol_specifications(
                     locator.locate_symbol(&symbol),
                     format!(
                         "`Defines:` target `{symbol}` must state its type: use `... is <type>` \
-                         or a top-level `\\...@...` build (e.g. `\\set@{{...}}`)"
+                         or a top-level `\\...@...` coercion (e.g. `\\set@{{...}}`)"
                     ),
                 );
             }
@@ -8139,7 +8139,7 @@ fn collect_declaration_statement_covered_symbols(
 }
 
 /// Whether a definition explicitly states the type of its subject: via an `is`/spec
-/// relation, or a top-level `\ty@value` build.
+/// relation, or a top-level `\ty@value` coercion.
 fn declaration_states_type(statement: &DeclarationStatement) -> bool {
     statement.relation.is_some()
         || matches!(
@@ -8147,7 +8147,7 @@ fn declaration_states_type(statement: &DeclarationStatement) -> bool {
                 .definition
                 .as_ref()
                 .map(|definition| &definition.kind),
-            Some(ExpressionKind::Build { .. })
+            Some(ExpressionKind::Coercion { .. })
         )
 }
 
@@ -8914,7 +8914,7 @@ fn collect_expression_names(expression: &Expression, names: &mut BTreeSet<String
             collect_expression_names(subject, names);
             collect_type_expression_names(ty, names);
         }
-        ExpressionKind::Build { ty, value, .. } => {
+        ExpressionKind::Coercion { ty, value, .. } => {
             collect_type_expression_names(ty, names);
             collect_expression_names(value, names);
         }
@@ -10543,7 +10543,7 @@ fn declare_inferred_parameters_in_expression(
                 expression, context, path, locator, registry, event_log,
             );
         }
-        ExpressionKind::Build {
+        ExpressionKind::Coercion {
             value: expression,
             ty,
             ..
@@ -10849,7 +10849,7 @@ fn register_declaration_collection_literal(
     if let Some(literal) = statement
         .definition
         .as_ref()
-        .and_then(cast_expression_set_literal)
+        .and_then(coercion_expression_set_literal)
     {
         for subject in declaration_subject_keys(statement) {
             context.add_collection_literal(subject, literal.clone());
@@ -10862,7 +10862,7 @@ fn register_expression_collection_literal(expression: &Expression, context: &mut
         ExpressionKind::Set(set) => {
             context.add_collection_literal(key_for_expression(expression), set.clone());
         }
-        ExpressionKind::Build {
+        ExpressionKind::Coercion {
             value: expression, ..
         } => {
             if let ExpressionKind::Set(set) = &expression.kind {
@@ -10873,8 +10873,8 @@ fn register_expression_collection_literal(expression: &Expression, context: &mut
     }
 }
 
-fn cast_expression_set_literal(expression: &Expression) -> Option<&SetExpression> {
-    let ExpressionKind::Build {
+fn coercion_expression_set_literal(expression: &Expression) -> Option<&SetExpression> {
+    let ExpressionKind::Coercion {
         value: expression, ..
     } = &expression.kind
     else {
@@ -11891,10 +11891,10 @@ fn check_expression(
                 );
             }
         }
-        ExpressionKind::Build { ty, value } => {
+        ExpressionKind::Coercion { ty, value } => {
             check_expression(value, context, path, locator, registry, event_log);
             check_type_expression(ty, context, path, locator, registry, event_log);
-            check_build_expression(value, ty, context, path, locator, registry, event_log);
+            check_coercion_expression(value, ty, context, path, locator, registry, event_log);
         }
     }
 }
@@ -12045,7 +12045,7 @@ fn check_matching_variadic_slices(
 }
 
 /// Checks `\ty@value`.
-fn check_build_expression(
+fn check_coercion_expression(
     value: &Expression,
     ty: &TypeExpression,
     context: &TypeContext,
@@ -12068,7 +12068,7 @@ fn check_build_expression(
         event_log,
         path,
         cast_expression_position(value, context, locator),
-        format!("Could not build `{}`", format_build_expression(ty, value)),
+        format!("Could not coerce `{}`", format_coercion_expression(ty, value)),
     );
 }
 
@@ -12236,7 +12236,7 @@ fn add_cast_expression_facts(expression: &Expression, context: &mut TypeContext)
                 add_cast_expression_facts(expression, context);
             }
         }
-        ExpressionKind::Build { ty, value, .. } => {
+        ExpressionKind::Coercion { ty, value, .. } => {
             add_cast_expression_facts(value, context);
             add_cast_type_expression_facts(ty, context);
             register_expression_collection_literal(value, context);
@@ -13181,7 +13181,7 @@ fn direct_component_access_expression(
         child.add_substitution(left.clone(), right.clone());
         if let Ok(expression) = crate::frontend::formulation::parse_expression(&right) {
             add_cast_expression_facts(&expression, &mut child);
-            if let Some(literal) = cast_expression_set_literal(&expression) {
+            if let Some(literal) = coercion_expression_set_literal(&expression) {
                 child.add_collection_literal(left, literal.clone());
             } else if let ExpressionKind::Set(literal) = expression.kind {
                 child.add_collection_literal(left, literal);
@@ -14007,7 +14007,7 @@ fn effective_key_for_expression_inner(
         } => {
             effective_key_for_binary_expression(left, operator, right, context, registry, resolving)
         }
-        ExpressionKind::Build {
+        ExpressionKind::Coercion {
             value: expression, ..
         } => Some(effective_key_for_expression_inner(
             expression, context, registry, resolving,
@@ -15306,7 +15306,7 @@ fn collect_defined_expression_names(expression: &Expression, names: &mut Vec<Str
             collect_defined_expression_names(subject, names);
             collect_defined_type_expression_names(ty, names);
         }
-        ExpressionKind::Build { ty, value, .. } => {
+        ExpressionKind::Coercion { ty, value, .. } => {
             collect_defined_type_expression_names(ty, names);
             collect_defined_expression_names(value, names);
         }
@@ -15615,7 +15615,7 @@ fn declare_declaration_collection_literal_target(
     if let Some(literal) = statement
         .definition
         .as_ref()
-        .and_then(cast_expression_set_literal)
+        .and_then(coercion_expression_set_literal)
     {
         declare_set_target(&literal.target, context);
     }
@@ -20274,11 +20274,11 @@ fn assume_fact_expression(
             check_type_expression(ty, context, path, locator, registry, event_log);
             declare_names_from_expression(subject, context);
         }
-        ExpressionKind::Build { value, ty } => {
+        ExpressionKind::Coercion { value, ty } => {
             check_type_expression(ty, context, path, locator, registry, event_log);
             declare_names_from_expression(value, context);
             register_expression_collection_literal(value, context);
-            check_build_expression(value, ty, context, path, locator, registry, event_log);
+            check_coercion_expression(value, ty, context, path, locator, registry, event_log);
         }
         ExpressionKind::SpecStatement(statement) => {
             check_name(&statement.name, context, path, locator, event_log);
@@ -20628,7 +20628,7 @@ fn declare_names_from_expression(expression: &Expression, context: &mut TypeCont
             declare_names_from_expression(subject, context);
             declare_names_from_type_expression(ty, context);
         }
-        ExpressionKind::Build { ty, value, .. } => {
+        ExpressionKind::Coercion { ty, value, .. } => {
             declare_names_from_type_expression(ty, context);
             declare_names_from_expression(value, context);
         }
@@ -20886,7 +20886,7 @@ fn substitute_expression(
                 ty: substitute_type_expression(ty, substitutions),
             }
         }
-        ExpressionKind::Build { value, ty } => ExpressionKind::Build {
+        ExpressionKind::Coercion { value, ty } => ExpressionKind::Coercion {
             value: boxed(value),
             ty: substitute_type_expression(ty, substitutions),
         },
@@ -21454,7 +21454,7 @@ fn facts_from_declaration_statement_in_context(
 
 fn facts_from_declaration_cast_definition(statement: &DeclarationStatement) -> Vec<TypeFact> {
     let Some(Expression {
-        kind: ExpressionKind::Build { ty, .. },
+        kind: ExpressionKind::Coercion { ty, .. },
         ..
     }) = &statement.definition
     else {
@@ -21471,7 +21471,7 @@ fn facts_from_declaration_cast_definition_in_context(
     context: &TypeContext,
 ) -> Vec<TypeFact> {
     let Some(Expression {
-        kind: ExpressionKind::Build { ty, .. },
+        kind: ExpressionKind::Coercion { ty, .. },
         ..
     }) = &statement.definition
     else {
@@ -21792,7 +21792,7 @@ fn fact_from_expression(expression: &Expression) -> Option<TypeFact> {
             key_for_expression(subject),
             command,
         )),
-        ExpressionKind::Build {
+        ExpressionKind::Coercion {
             value: expression,
             ty,
             ..
@@ -21884,7 +21884,7 @@ fn fact_from_expression_in_context(
                 &active_command,
             ))
         }
-        ExpressionKind::Build {
+        ExpressionKind::Coercion {
             value: expression,
             ty,
             ..
@@ -22852,7 +22852,7 @@ fn key_for_expression(expression: &Expression) -> String {
                 .map(|(key, _)| key)
                 .unwrap_or_else(|| key_for_non_command_type_expression(ty))
         ),
-        ExpressionKind::Build { ty, value } => format_build_expression(ty, value),
+        ExpressionKind::Coercion { ty, value } => format_coercion_expression(ty, value),
     }
 }
 
@@ -22906,7 +22906,7 @@ fn key_for_subset_call(subset: &SubsetCall) -> String {
     }
 }
 
-fn format_build_expression(ty: &TypeExpression, value: &Expression) -> String {
+fn format_coercion_expression(ty: &TypeExpression, value: &Expression) -> String {
     format!(
         "{}{}{}",
         key_for_type_expression(ty)

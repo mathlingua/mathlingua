@@ -3759,11 +3759,11 @@ then:
     }
 
     #[test]
-    fn check_rejects_an_unbuildable_command_build_literal() {
-        // A build must be establishable by construction; here `n` is an expression, so
-        // `\set@n` cannot build a set and is reported.
+    fn check_rejects_an_uncoercible_command_coercion_literal() {
+        // A coercion must be establishable by construction; here `n` is an expression, so
+        // `\set@n` cannot coerce to a set and is reported.
         let temp_dir = TestDir::new();
-        let file = temp_dir.path().join("bad-build.mlg");
+        let file = temp_dir.path().join("bad-coercion.mlg");
 
         write_mlg_fixture(
             &file,
@@ -3784,7 +3784,7 @@ then:
         let mut event_log = EventLog::new();
         check_in(
             temp_dir.path(),
-            &[PathBuf::from("bad-build.mlg")],
+            &[PathBuf::from("bad-coercion.mlg")],
             &mut event_log,
         );
 
@@ -3792,10 +3792,10 @@ then:
             event_log.events().iter().any(|event| {
                 event.as_message().is_some_and(|message| {
                     message.level == Level::Error
-                        && message.message.contains("Could not build `\\set@n`")
+                        && message.message.contains("Could not coerce `\\set@n`")
                 })
             }),
-            "expected an unbuildable-literal error, got: {:#?}",
+            "expected an uncoercible-literal error, got: {:#?}",
             user_events(&event_log)
         );
     }

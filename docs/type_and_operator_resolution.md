@@ -400,7 +400,7 @@ function EFFECTIVE_KEY_INNER(
             EFFECTIVE_BINARY_TARGET(left, operator, right, context, registry,
                                     resolving)
 
-        Build(_, value) =>
+        Coercion(_, value) =>
             Some(EFFECTIVE_KEY_INNER(value, context, registry, resolving))
 
         otherwise => None

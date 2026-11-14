@@ -1554,11 +1554,11 @@ assigns its subject, and a destructuring subject counts as assigned once
 `specifies:` supplies each of its components.
 
 A `Defines` value **must state its type** — either `... is <type>` or a
-top-level build `\<type>@<value>`:
+top-level coercion `\<type>@<value>`:
 
 ```text
 ` `Defines:` target `X` must state its type: use `... is <type>` or a
-  top-level `\...@...` build (e.g. `\set@{...}`) `
+  top-level `\...@...` coercion (e.g. `\set@{...}`) `
 ```
 
 A bare `X := {…}` is rejected even when the type is inferable. A declaration
@@ -1619,12 +1619,12 @@ Application](#operators-as-application) for the distinct paths. If none apply, `
 (or `Could not resolve operator \`{symbol}\` from {source}`). Member access
 reports `Could not resolve member \`{name}\` for \`{owner}\``.
 
-### 13. Capabilities, requirements, and casts/builds
+### 13. Capabilities, requirements, and coercions
 
 `Requires:`/`Enables:` capability aliases are validated: a provided spec
 operator's target must be the described item; a `Required definition` must
-reference a `Defines:` entry and establish its stated fact. Build expressions
-`\<type>@<value>` are checked (`Could not build \`{expression}\``). Type
+reference a `Defines:` entry and establish its stated fact. Coercion expressions
+`\<type>@<value>` are checked (`Could not coerce \`{expression}\``). Type
 predicates, function-type specs, and `is` type arguments are checked
 (`Could not establish predicate ...`, `Could not establish requirement ... for
 function ...`, `\`{name}\` is not a known type`).
@@ -2056,9 +2056,9 @@ lets the checker use facts about `q_` from the source literal as facts about
 `F(p_)`; for example it can establish `F(a) is \set` when the source literal
 supports that substitution.
 
-### Build Expressions (`\type@value`)
+### Coercion Expressions (`\type@value`)
 
-An expression may build a value at a stated type using a command type followed
+An expression may coerce a value to a stated type using a command type followed
 by `@` and the value. It succeeds when the value already has that type, reaches
 it through type extension, or has an applicable `Enables:` `view:`.
 
@@ -2067,10 +2067,10 @@ X := \set@{x_ : x_ is \real}
 n := \rational@k
 ```
 
-This is also a way to state a `Defines:` value's type without `is` — a top-level build such as
+This is also a way to state a `Defines:` value's type without `is` — a top-level coercion such as
 `X := \set@{...}` is sugar for `... is \set` (see the target-symbol check
-above). A build whose value cannot be viewed at the requested type reports
-`Could not build \`{expression}\``.
+above). A coercion whose value cannot be viewed at the requested type reports
+`Could not coerce \`{expression}\``.
 
 ### View Groups
 
@@ -2120,7 +2120,7 @@ can continue reducing through that definition. When the right-hand side is any
 other expression, the checker knows only the introduced view symbol's advertised
 type; it does not equate downstream facts with the expression.
 
-Views are used for resolved command requirements and builds, but not to choose
+Views are used for resolved command requirements and coercions, but not to choose
 an overloaded operator or a `Disambiguates:` branch.
 
 ## Operators as Application

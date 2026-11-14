@@ -1501,7 +1501,7 @@ pub fn parse_expression(input: &str) -> Result<Expression, ParseError> {
             return Ok(expression);
         }
     }
-    if let Some(expression) = parse_set_build_expression(input) {
+    if let Some(expression) = parse_set_coercion_expression(input) {
         return expression;
     }
     if let Some(expression) = parse_builtin_command_expression(input) {
@@ -3424,9 +3424,9 @@ fn parse_input_expression(input: &str) -> Result<Expression, LalrpopError> {
 /// - Function literal: `\foo[lhs]{rhs}` → `\foo{(lhs) => rhs}`. A `[` after a `Name`
 ///   (a command chain) whose matching `]` is immediately followed by `{` is that
 ///   sugar (no other construct has this shape).
-/// - Build function literal: `\cmd@[lhs]{rhs}` → `\cmd@((lhs) => rhs)`. Same shape
-///   as the mapping literal but after the `@` build marker, so the literal is grouped
-///   in parens (a build argument) rather than braces (a command argument).
+/// - Coercion function literal: `\cmd@[lhs]{rhs}` → `\cmd@((lhs) => rhs)`. Same shape
+///   as the mapping literal but after the `@` coercion marker, so the literal is grouped
+///   in parens (a coercion argument) rather than braces (a command argument).
 ///
 /// Standalone sets, `A = {x_ : ...}`, ordinary `{a, b}` lists, already-explicit
 /// forms, and `X[i]` subset calls are all left untouched.
@@ -3502,8 +3502,8 @@ fn desugar_command_argument_sugar(input: &str) -> Vec<Spanned<Token, usize, Lexi
                 edits[close + 1] = TokenEdit::Skip; // drop the `{` after `]`
                 changed = true;
             }
-            // Build function-literal sugar: `\cmd@[lhs]{rhs}` → `\cmd@((lhs) => rhs)`.
-            // The `[` follows the build marker
+            // Coercion function-literal sugar: `\cmd@[lhs]{rhs}` → `\cmd@((lhs) => rhs)`.
+            // The `[` follows the coercion marker
             // (rather than a command chain), and the literal is grouped in parens.
             Token::LBracket
                 if index > 0
@@ -3662,11 +3662,11 @@ fn parse_set_expression_at_colon(
     ))
 }
 
-/// Parses a build whose value is a collection literal through the handwritten
+/// Parses a coercion whose value is a collection literal through the handwritten
 /// collection parser. This permits the member target to use the full expression
 /// language even though declaration-shaped set targets in the generated grammar
 /// are intentionally narrower.
-fn parse_set_build_expression(input: &str) -> Option<Result<Expression, ParseError>> {
+fn parse_set_coercion_expression(input: &str) -> Option<Result<Expression, ParseError>> {
     let at = find_first_top_level_char(input, '@')?;
     let type_text = input[..at].trim();
     let value_text = input[at + 1..].trim_start();
@@ -3686,14 +3686,14 @@ fn parse_set_build_expression(input: &str) -> Option<Result<Expression, ParseErr
             ExpressionKind::Command(command) => TypeExpression::Command(command),
             _ => {
                 return Err(ParseError::custom(
-                    "a collection build requires a command type",
+                    "a collection coercion requires a command type",
                 ));
             }
         };
         let value = parse_set_expression(value_text)?;
         Ok(Expression::new(
             span_all(input),
-            ExpressionKind::Build {
+            ExpressionKind::Coercion {
                 ty,
                 value: Box::new(value),
             },
@@ -5428,7 +5428,7 @@ mod tests {
                 .expect("expected collection with an expression target");
 
         match expression.kind {
-            ExpressionKind::Build { value, .. } => match value.kind {
+            ExpressionKind::Coercion { value, .. } => match value.kind {
                 ExpressionKind::Set(set) => match set.target.kind {
                     SetTargetKind::Expression {
                         expression,
@@ -5441,13 +5441,13 @@ mod tests {
                 },
                 other => panic!("expected set value, got {other:?}"),
             },
-            other => panic!("expected build expression, got {other:?}"),
+            other => panic!("expected coercion expression, got {other:?}"),
         }
 
         let arithmetic = parse_expression(r#"\set@{x_ + 1 : x_ "in" X}"#)
             .expect("expected arbitrary expression target");
-        let ExpressionKind::Build { value, .. } = arithmetic.kind else {
-            panic!("expected build expression");
+        let ExpressionKind::Coercion { value, .. } = arithmetic.kind else {
+            panic!("expected coercion expression");
         };
         let ExpressionKind::Set(set) = value.kind else {
             panic!("expected set value");
@@ -5485,17 +5485,17 @@ mod tests {
     }
 
     #[test]
-    fn parses_build_with_semicolon_separated_set_specs() {
-        // A set builder reached through the grammar (here as a `\ty@…` build value)
+    fn parses_coercion_with_semicolon_separated_set_specs() {
+        // A set builder reached through the grammar (here as a `\ty@…` coercion value)
         // accepts `;` spec separators just like a standalone `{…}` set does.
         let expression = parse_expression(r#"\set@{(a_, b_) : a_ "in" A; b_ "in" B}"#)
-            .expect("expected build with `;`-separated set specs");
+            .expect("expected coercion with `;`-separated set specs");
         match expression.kind {
-            ExpressionKind::Build { value, .. } => match value.kind {
+            ExpressionKind::Coercion { value, .. } => match value.kind {
                 ExpressionKind::Set(set) => assert_eq!(set.specs.len(), 2),
                 other => panic!("expected set value, got {other:?}"),
             },
-            other => panic!("expected build expression, got {other:?}"),
+            other => panic!("expected coercion expression, got {other:?}"),
         }
     }
 
@@ -5616,69 +5616,69 @@ mod tests {
     }
 
     #[test]
-    fn parses_build_casts_and_rejects_removed_hard_builds() {
-        let build = parse_expression(r#"\set@{x_ : x_ is \real}"#).expect("expected build");
-        match build.kind {
-            ExpressionKind::Build { ty, value } => {
+    fn parses_coercion_casts_and_rejects_removed_hard_builds() {
+        let coercion = parse_expression(r#"\set@{x_ : x_ is \real}"#).expect("expected coercion");
+        match coercion.kind {
+            ExpressionKind::Coercion { ty, value } => {
                 assert!(matches!(value.kind, ExpressionKind::Set(_)));
                 assert!(matches!(ty, TypeExpression::Command(_)));
             }
-            other => panic!("expected build, got {other:?}"),
+            other => panic!("expected coercion, got {other:?}"),
         }
 
         parse_expression(r#"\set@!n"#).expect_err("`@!` is no longer supported");
     }
 
     #[test]
-    fn parses_command_build_expressions() {
-        // `\cmd@<literal>` builds a value of type `\cmd` from a literal.
-        let tuple = parse_expression(r#"\group@(a, b, c)"#).expect("expected build expression");
+    fn parses_command_coercion_expressions() {
+        // `\cmd@<literal>` coerces a value to type `\cmd` from a literal.
+        let tuple = parse_expression(r#"\group@(a, b, c)"#).expect("expected coercion expression");
         match tuple.kind {
-            ExpressionKind::Build { ty, value, .. } => {
+            ExpressionKind::Coercion { ty, value, .. } => {
                 assert!(matches!(ty, TypeExpression::Command(_)));
                 assert!(matches!(value.kind, ExpressionKind::Tuple(_)));
             }
-            other => panic!("expected build expression, got {other:?}"),
+            other => panic!("expected coercion expression, got {other:?}"),
         }
 
         // The value may be any (parenthesized) expression: `\real@2`, `\real@(...)`.
         assert!(matches!(
-            parse_expression(r#"\real@2"#).expect("atom build").kind,
-            ExpressionKind::Build { .. }
+            parse_expression(r#"\real@2"#).expect("atom coercion").kind,
+            ExpressionKind::Coercion { .. }
         ));
         assert!(matches!(
             parse_expression(r#"\real@(a^2 + 2 * \pi + \sin(2))"#)
-                .expect("expression build")
+                .expect("expression coercion")
                 .kind,
-            ExpressionKind::Build { .. }
+            ExpressionKind::Coercion { .. }
         ));
 
-        // A grouped mapping literal is a valid build argument.
+        // A grouped mapping literal is a valid coercion argument.
         let mapping = parse_expression(r#"\function@((x_ is \real) => x_^2 + 1)"#)
-            .expect("expected build-with-mapping expression");
+            .expect("expected coercion-with-mapping expression");
         match mapping.kind {
-            ExpressionKind::Build { value, .. } => {
+            ExpressionKind::Coercion { value, .. } => {
                 assert!(matches!(value.kind, ExpressionKind::Grouped { .. }));
             }
-            other => panic!("expected build expression, got {other:?}"),
+            other => panic!("expected coercion expression, got {other:?}"),
         }
 
-        // `@` binds tighter than `+`: a build is an atom.
-        let nested = parse_expression(r#"\group@(a, b, c) + 1"#).expect("expected build then add");
+        // `@` binds tighter than `+`: a coercion is an atom.
+        let nested = parse_expression(r#"\group@(a, b, c) + 1"#).expect("expected coercion then add");
         assert!(matches!(nested.kind, ExpressionKind::Binary { .. }));
 
         // Function-literal sugar: `\cmd@[lhs]{rhs}` == `\cmd@((lhs) => rhs)`, i.e. a
-        // build whose value is a grouped mapping literal.
+        // coercion whose value is a grouped mapping literal.
         let sugar = parse_expression(r#"\function@[x_ is \real]{x_^2 + 1}"#)
-            .expect("expected sugared build expression");
+            .expect("expected sugared coercion expression");
         match sugar.kind {
-            ExpressionKind::Build { value, .. } => match value.kind {
+            ExpressionKind::Coercion { value, .. } => match value.kind {
                 ExpressionKind::Grouped { expression, .. } => {
                     assert!(matches!(expression.kind, ExpressionKind::Mapping { .. }));
                 }
                 other => panic!("expected grouped mapping value, got {other:?}"),
             },
-            other => panic!("expected build expression, got {other:?}"),
+            other => panic!("expected coercion expression, got {other:?}"),
         }
     }
 
@@ -6594,9 +6594,9 @@ mod tests {
     }
 
     #[test]
-    fn declarations_state_type_with_is_or_infer_it_or_build_a_value() {
+    fn declarations_state_type_with_is_or_infer_it_or_coerce_a_value() {
         // Symbols are introduced with `is` (there is no `as`); the declared type may
-        // be stated, left to inference, or the value may be an inline `@`-build.
+        // be stated, left to inference, or the value may be an inline `@`-coercion.
         let with_is = parse_ordinary_declaration_statement(r#"X := \pi + 1 is \real"#)
             .expect("`is` states the declared type");
         assert!(matches!(with_is.relation, Some(DeclarationRelation::Is(_))));
@@ -6606,12 +6606,12 @@ mod tests {
         assert!(inferred.relation.is_none());
         assert!(inferred.definition.is_some());
 
-        // An `@`-build is a perfectly good declaration value (it introduces no symbol).
-        let build = parse_ordinary_declaration_statement(r#"X := \real@2"#)
-            .expect("a build value is allowed in a declaration");
+        // An `@`-coercion is a perfectly good declaration value (it introduces no symbol).
+        let coercion = parse_ordinary_declaration_statement(r#"X := \real@2"#)
+            .expect("a coercion value is allowed in a declaration");
         assert!(matches!(
-            build.definition.as_ref().map(|expression| &expression.kind),
-            Some(ExpressionKind::Build { .. })
+            coercion.definition.as_ref().map(|expression| &expression.kind),
+            Some(ExpressionKind::Coercion { .. })
         ));
 
         // `as` no longer exists.

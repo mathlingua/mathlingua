@@ -93,7 +93,7 @@ A concise high-level reference for the Mathlingua language. For in-depth specifi
 | Infix Spec | `a \:subset:/ b` | Infix specification statement |
 | Infix Spec Query | `a \:subset?:/ b` | Boolean predicate testing an infix specification |
 | Adjective Refinement | `\(nonempty)::set` | Modifies a command type with a refined adjective constraint |
-| Build / Cast | `\set@{...}` | Applies a command type constructor or cast to a raw value |
+| Coercion | `\set@{...}` | Coerces a raw value to a command type |
 | Function Literal | `(x_) => x_ + 1` | Anonymous lambda/mapping literal from inputs to an expression |
 | Function Type | `(_ is \real) -> (_ is \real)` | Type signature for functions mapping domain to codomain |
 | Expression Alias | `f(x_) :=> x + x` | Expression or operator alias mapping a form to an expression reduction |

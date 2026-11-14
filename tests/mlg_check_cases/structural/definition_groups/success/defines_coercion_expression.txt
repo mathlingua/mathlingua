@@ -1,5 +1,5 @@
 == begin:description ==
-Accepts a Defines assignment whose build expression states the type of its value.
+Accepts a Defines assignment whose coercion expression states the type of its value.
 == end:description ==
 == begin:input ==
 [\set]

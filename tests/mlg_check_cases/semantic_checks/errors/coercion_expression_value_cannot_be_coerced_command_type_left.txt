@@ -1,5 +1,5 @@
 == begin:description ==
-Rejects a build expression whose value cannot be built as the command type on its left.
+Rejects a coercion expression whose value cannot be coerced as the command type on its left.
 == end:description ==
 == begin:input ==
 [\set]
@@ -14,5 +14,5 @@ given: n is \\expression
 then: \set@n is? \set
 == end:input ==
 == begin:output ==
-error: Could not build `\set@n`
+error: Could not coerce `\set@n`
 == end:output ==

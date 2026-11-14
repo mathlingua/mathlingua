@@ -525,7 +525,11 @@ TupleExpressionElement: TupleExpressionElement = {
 
 FunctionNamedExpressionElementLhs: ast::FunctionNamedExpressionElementLhs = {
     <name:Name> => ast::FunctionNamedExpressionElementLhs::Name(name),
+    <name:Name> "?" => ast::FunctionNamedExpressionElementLhs::Name(format!("{name}?")),
+    <placeholder:Placeholder> => ast::FunctionNamedExpressionElementLhs::Name(placeholder.name),
+    <placeholder:MagneticPlaceholder> => ast::FunctionNamedExpressionElementLhs::Name(placeholder.name),
     <subset:SubsetNameCall> => ast::FunctionNamedExpressionElementLhs::SubsetCall(subset),
+    "..." => ast::FunctionNamedExpressionElementLhs::Name("...".to_string()),
 };
 
 FunctionNamedExpressionElementList: Vec<ast::FunctionNamedExpressionElement> = {

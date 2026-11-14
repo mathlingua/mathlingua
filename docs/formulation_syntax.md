@@ -437,7 +437,7 @@ FunctionExpression ::=
     Name "(" Expression ("," Expression)* ")"
   | Name "[|" NamedFunctionElement ("," NamedFunctionElement)* "|]"
 
-NamedFunctionElement ::= NamedFunctionLhs (":=" | "=") SpecOrPredicateExpression
+NamedFunctionElement ::= NamedFunctionLhs ":=" SpecOrPredicateExpression
 NamedFunctionLhs ::= Name | InferredParameterName | SubsetNameCall
                    | RangedMappingSelector | "..."
 InferredParameterName ::= Name "?_"
@@ -449,8 +449,8 @@ Examples:
 
 - `f(x, y)`
 - `map[| key := x, value := y |]`
-- `f[|x1?_ = 1, x2?_ = 2, ... = 0|]`
-- `f[|x_[i_[1...m]] = 1, ... = 0|]`
+- `f[|x1?_ := 1, x2?_ := 2, ... := 0|]`
+- `f[|x_[i_[1...m]] := 1, ... := 0|]`
 
 #### Tuple expressions
 
@@ -1297,7 +1297,7 @@ MemberExpression ::= MemberOwnerExpression "." Name ("(" ExpressionList ")")?
                    | CommandExpression ".." Name ("(" ExpressionList ")")?
 MemberOwnerExpression ::= Name | GroupedExpression
 
-FunctionNamedExpressionElement ::= FunctionNamedExpressionElementLhs (":=" | "=") SpecOrPredicateExpression
+FunctionNamedExpressionElement ::= FunctionNamedExpressionElementLhs ":=" SpecOrPredicateExpression
 FunctionNamedExpressionElementLhs ::= Name | InferredParameterName | SubsetNameCall
                                     | RangedMappingSelector | "..."
 InferredParameterName ::= Name "?_"

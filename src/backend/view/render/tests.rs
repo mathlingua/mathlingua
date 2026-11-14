@@ -1720,3 +1720,25 @@ Documented:
         Some(r#"S(n)"#.to_string())
     );
 }
+
+#[test]
+fn renders_named_function_calls_with_vertical_bar_and_subscripts() {
+    let registry = registry_for(
+        r#"[\real]
+Defines: x is \real
+"#,
+    );
+
+    assert_eq!(
+        render_formulation_latex(r#"f[| x_ := a, y_ := b |]"#, &registry),
+        Some(r#"\left. f \right |_{x := a, y := b}"#.to_string())
+    );
+    assert_eq!(
+        render_formulation_latex(r#"f[| x_ := 0 |]"#, &registry),
+        Some(r#"\left. f \right |_{x := 0}"#.to_string())
+    );
+    assert_eq!(
+        render_formulation_latex(r#"f[| value := x, index := n |]"#, &registry),
+        Some(r#"\left. f \right |_{value := x, index := n}"#.to_string())
+    );
+}

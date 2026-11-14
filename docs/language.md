@@ -204,7 +204,7 @@ Expressions cover ordinary mathematical formulas.
 x + y
 f(x, y)
 f[| key := x, value := y |]
-f[|x1?_ = 1, x2?_ = 2, ... = 0|]
+f[|x1?_ := 1, x2?_ := 2, ... := 0|]
 (x, y)
 {x_ : x_ "in" A | x_ = y}
 F[A]
@@ -245,11 +245,12 @@ Unknown builtin statement or variadic commands are semantic errors. The former
 `\\given`, `\\opaque`, `\\coercion`, and `\\encoding` spellings are not
 supported.
 
-A named mapping call accepts both the legacy `:=` assignment spelling and `=`.
-The catch-all slot `... = value` supplies the value for parameters not named by
+A named mapping call accepts `:=` for arguments.
+The catch-all slot `... := value` supplies the value for parameters not named by
 an earlier element. A call may also name a ranged subset, for example
-`f[|x_[i_[1...m]] = 1, ... = 0|]`. Omitting the catch-all represents a partial
-application, such as `f[|x1?_ = 1|]`.
+`f[|x_[i_[1...m]] := 1, ... := 0|]`. Omitting the catch-all represents a partial
+application, such as `f[|x1?_ := 1|]`. The call renders as a vertical bar with
+subscripts (`\left. f \right |_{x := a, y := b}`).
 
 The expression precedence, from lowest to highest, is:
 

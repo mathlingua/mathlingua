@@ -3340,10 +3340,10 @@ fn parse_index_name(input: &str) -> Result<String, ParseError> {
     parse_name_token(input).or_else(|_| parse_placeholder(input).map(|value| value.name))
 }
 
-/// Parses a named mapping invocation. In addition to the legacy `:=` spelling,
-/// mapping parameters use `=` (for example `f[|x_ = 1, ... = 0|]`). The left
-/// side is deliberately retained as source text when it is a ranged selector;
-/// it identifies a parameter slot and is not an expression in its own right.
+/// Parses a named mapping invocation. Mapping parameters use `:=` (for example
+/// `f[|x_ := 1, ... := 0|]`). The left side is deliberately retained as source
+/// text when it is a ranged selector; it identifies a parameter slot and is
+/// not an expression in its own right.
 fn parse_named_function_call(input: &str) -> Result<Option<Expression>, ParseError> {
     let Some(open) = find_top_level_substring(input, "[|") else {
         return Ok(None);
@@ -3359,13 +3359,9 @@ fn parse_named_function_call(input: &str) -> Result<Option<Expression>, ParseErr
     let body = &input[open + 2..input.len() - 2];
     let mut elements = Vec::new();
     for item in split_top_level(body, ',')? {
-        let (assignment, marker_len) = if let Some(index) = find_top_level_definition(item) {
-            (index, 2)
-        } else if let Some(index) = find_first_top_level_char(item, '=') {
-            (index, 1)
-        } else {
-            return Err(ParseError::custom("expected `=` in named mapping argument"));
-        };
+        let assignment = find_top_level_definition(item)
+            .ok_or_else(|| ParseError::custom("expected `:=` in named mapping argument"))?;
+        let marker_len = 2;
         let lhs_text = item[..assignment].trim();
         let rhs_text = item[assignment + marker_len..].trim();
         if lhs_text.is_empty() || rhs_text.is_empty() {
@@ -5161,8 +5157,8 @@ mod tests {
     }
 
     #[test]
-    fn parses_named_mapping_arguments_with_equals_and_defaults() {
-        let expression = parse_expression("f[|x1?_ = 1, x_[i_[1...m]] = 1, ... = 0|]")
+    fn parses_named_mapping_arguments_with_definition_operator_and_defaults() {
+        let expression = parse_expression("f[|x1?_ := 1, x_[i_[1...m]] := 1, ... := 0|]")
             .expect("named mapping call");
         let ExpressionKind::FunctionNamedCall { name, elements } = expression.kind else {
             panic!("expected named mapping call");
@@ -5181,6 +5177,10 @@ mod tests {
             &elements[2].lhs,
             FunctionNamedExpressionElementLhs::Name(name) if name == "..."
         ));
+
+        // '=' must not be accepted in named mapping arguments
+        assert!(parse_expression("f[| x_ = 0 |]").is_err());
+        assert!(parse_expression("f[| value = x, index = n |]").is_err());
     }
 
     #[test]

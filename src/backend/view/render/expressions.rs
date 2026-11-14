@@ -27,12 +27,24 @@ pub(crate) fn render_expression(expression: &Expression, registry: &RenderRegist
             format!("{}({})", escape_math_identifier(name, registry), args)
         }
         ExpressionKind::FunctionNamedCall { name, elements } => {
+            let target = escape_math_identifier(name, registry);
             let args = elements
                 .iter()
-                .map(|element| render_expression(&element.expression, registry))
+                .map(|element| {
+                    let lhs = match &element.lhs {
+                        FunctionNamedExpressionElementLhs::Name(name) => {
+                            escape_math_identifier(name, registry)
+                        }
+                        FunctionNamedExpressionElementLhs::SubsetCall(subset) => {
+                            render_subset_call(subset, registry)
+                        }
+                    };
+                    let rhs = render_expression(&element.expression, registry);
+                    format!("{lhs} := {rhs}")
+                })
                 .collect::<Vec<_>>()
                 .join(", ");
-            format!("{}({})", escape_math_identifier(name, registry), args)
+            format!("\\left. {target} \\right |_{{{args}}}")
         }
         ExpressionKind::MemberCall {
             owner,

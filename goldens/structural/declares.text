@@ -39,7 +39,7 @@ Aliases:
 References:
 . $book.plus
 Metadata:
-. id: "desc-1"
+. version: "1.0"
 
 [\structure.connection]
 Declares: T

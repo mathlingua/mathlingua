@@ -383,7 +383,6 @@ The `because:` section accepts text (`"..."`) or clauses.
 
 Used inside `Metadata:`.
 
-- **`id`** — `IdGroup`, heading: none. Sections: `id: OpenText`
 - **`version`** — `VersionGroup`, heading: none. Sections: `version: OpenText`
 
 ### Specify items
@@ -615,7 +614,6 @@ DocumentedItemUnion ::=
 
 ```union
 MetadataItemUnion ::=
-    | IdGroup
     | VersionGroup
 ```
 

@@ -370,8 +370,6 @@ zero_or_more_arguments_section!(BySection, OpenText);
 
 argument_section!(ProofSection, OpenText);
 
-argument_section!(IdSection, OpenText);
-
 argument_section!(VersionSection, OpenText);
 
 arguments_section!(SpecifySection, SpecifyItem);
@@ -597,7 +595,6 @@ pub enum DocumentedItem {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum MetadataItem {
-    Id(IdGroup),
     Version(VersionGroup),
 }
 
@@ -1137,11 +1134,6 @@ pub struct RelatedGroup {
 pub struct DiscovererGroup {
     pub heading: Option<LabelHeader>,
     pub discoverer: DiscovererSection,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct IdGroup {
-    pub id: IdSection,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

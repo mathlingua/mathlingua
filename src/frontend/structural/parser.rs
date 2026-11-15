@@ -1838,7 +1838,6 @@ pub(super) fn parse_metadata_item_group(
     tracker: &mut EventLog,
 ) -> Option<MetadataItem> {
     match first_section_label(group)? {
-        "id" => parse_id(group, tracker).map(MetadataItem::Id),
         "version" => parse_version(group, tracker).map(MetadataItem::Version),
         other => {
             tracker.user_error_at_row(
@@ -1936,23 +1935,6 @@ pub(super) fn parse_clause_group(group: &ProtoGroup, tracker: &mut EventLog) -> 
             None
         }
     }
-}
-
-/// Parses an `id:` metadata group.
-///
-/// Metadata groups do not accept headings because their meaning is determined
-/// entirely by the nested section label.
-pub(in crate::frontend::structural::parser) fn parse_id(
-    group: &ProtoGroup,
-    tracker: &mut EventLog,
-) -> Option<IdGroup> {
-    ensure_no_heading(group, tracker)?;
-    let sections = identify_sections("id", &group.sections, tracker, &["id"])?;
-    Some(IdGroup {
-        id: IdSection {
-            argument: parse_required_open_text(section(&sections, "id")?, "id", tracker)?,
-        },
-    })
 }
 
 /// Parses a `version:` metadata group.
@@ -5058,7 +5040,7 @@ Aliases:
 References:
 . $book.plus
 Metadata:
-. id: "desc-1"
+. version: "0.9"
 
 [\structure.connection]
 Declares: T
@@ -5242,7 +5224,7 @@ that:
                         .as_ref()
                         .expect("expected metadata")
                         .arguments[0],
-                    MetadataItem::Id(_)
+                    MetadataItem::Version(_)
                 ));
             }
             other => panic!("expected declares group, got {other:?}"),
@@ -6431,7 +6413,7 @@ Aliases:
 References:
 . $elements
 Metadata:
-. id: "desc-1"
+. version: "1.0"
 
 [\statement]
 States:
@@ -7144,7 +7126,7 @@ Aliases:
 References:
 . $axiom.ref
 Metadata:
-. id: "ax-1"
+. version: "1.0"
 
 Theorem:
 then:

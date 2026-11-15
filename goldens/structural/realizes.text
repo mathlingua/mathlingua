@@ -32,7 +32,7 @@ Aliases:
 References:
 . $book.naturals
 Metadata:
-. id: "meta"
+. version: "1.0"
 Id: "declares-abstract"
 
 [\von.neumann.naturals]
@@ -77,5 +77,5 @@ Aliases:
 References:
 . $book.naturals
 Metadata:
-. id: "meta"
+. version: "1.0"
 Id: "realizes"

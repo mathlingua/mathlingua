@@ -519,7 +519,7 @@ fn item_starters(section: &str) -> Option<&'static [&'static str]> {
         "Requires" => &["capability", "definition"],
         "Justification" => &["for", "have"],
         "References" => &["for"],
-        "Metadata" => &["id", "version"],
+        "Metadata" => &["version"],
         "Aliases" => &["alias"],
         "Specify" => &["decimal", "zeroOrPositiveInt", "positiveInt", "int"],
         _ => return None,

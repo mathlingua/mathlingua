@@ -1,5 +1,5 @@
 == begin:description ==
-Accepts one release identifier in a Metadata section.
+Rejects an id group within Metadata.
 == end:description ==
 == begin:input ==
 [\item]
@@ -10,4 +10,5 @@ Metadata:
 . id: "item"
 == end:input ==
 == begin:output ==
+error: Unexpected metadata group `id`
 == end:output ==

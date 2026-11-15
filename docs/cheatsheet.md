@@ -69,7 +69,7 @@ A concise high-level reference for the Mathlingua language. For in-depth specifi
 | `Aliases:` | `Aliases:` | Alternative notation aliases (`:=>`, `:->`, `:<->:`) |
 | `References:` | `References:` | Citations to external resources (`$resource` or `. [label]: $resource`) |
 | `Proof:` | `Proof: "..."` | Informal or formal proof body for a theorem |
-| `Metadata:` | `Metadata:` | Versioning and tracking metadata (`id:`, `version:`) |
+| `Metadata:` | `Metadata:` | Versioning metadata (`version:`) |
 | `Id:` | `Id: "uuid"` | Unique UUID identifier for any top-level item |
 | <a id="headings-and-headers"></a>**Headings and Headers** | | |
 | Command Heading | `[\function:on{A}:to{B}]` | Identifies group by full command pattern with inputs |

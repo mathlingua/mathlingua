@@ -1222,7 +1222,7 @@ facts are used. Its `have:` must restate that formulation, an unmatched label is
 checked inline as usual, and every `Justification:` entry must reference a
 defined label.
 
-`Aliases:` accepts `alias:` groups. `Metadata:` accepts `id:` and `version:`.
+`Aliases:` accepts `alias:` groups. `Metadata:` accepts `version:`.
 `References:` contains item-wide resource references such as `$book.chapter` (the
 quoted form `"$book.chapter"` is accepted too), as well as label-specific
 `for:`/`entry:` groups:

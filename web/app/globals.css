@@ -422,11 +422,11 @@ html[data-spacing="spacious"] {
 html[data-theme="journal"] {
   color-scheme: light;
   --font-body:
-    "EB Garamond", "Cinzel", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    "EB Garamond", "Cinzel", "Iowan Old Style", "Palatino Linotype", Palatino,
+    Georgia, serif;
   --font-display:
     "Cinzel", "Playfair Display", Baskerville, "Iowan Old Style", Georgia, serif;
-  --font-ui:
-    "Cinzel", "Gill Sans", "Avenir Next Condensed", sans-serif;
+  --font-ui: "Cinzel", "Gill Sans", "Avenir Next Condensed", sans-serif;
   --page-bg: #3d2318;
   --surface: #fcf8ee;
   --surface-alt: #f4ebd7;
@@ -437,28 +437,11 @@ html[data-theme="journal"] {
   --line-strong: #8a6718;
   --accent: #8b1e28;
   --accent-soft: #eedbb0;
-  --shadow:
-    0 1px 0 rgba(255, 230, 160, 0.4),
-    0 10px 25px rgba(25, 12, 6, 0.45);
+  --shadow: 0 1px 0 rgba(255, 230, 160, 0.4), 0 10px 25px rgba(25, 12, 6, 0.45);
   --chrome-bg: #3d2318;
-  --card-bg:
-    radial-gradient(circle at 12% 10%, rgba(255, 250, 230, 0.4), transparent 30%),
-    radial-gradient(circle at 88% 90%, rgba(180, 150, 110, 0.15), transparent 35%),
-    #fcf8ee;
-  --definition-bg:
-    linear-gradient(
-      180deg,
-      rgba(40, 22, 12, 0.08) 0%,
-      rgba(40, 22, 12, 0.03) 22%,
-      rgba(255, 252, 245, 0.25) 100%
-    ),
-    #ebddc4;
-  --definition-shadow:
-    inset 0 4px 10px rgba(35, 18, 10, 0.16),
-    inset 0 1.5px 3px rgba(35, 18, 10, 0.22),
-    inset 0 0 16px rgba(35, 18, 10, 0.08),
-    inset 0 -1px 0 rgba(255, 252, 242, 0.5),
-    0 1px 0 rgba(255, 255, 255, 0.75);
+  --card-bg: #fcf8ee;
+  --definition-bg: #ebddc4;
+  --definition-shadow: 0 1px 3px rgba(35, 18, 10, 0.12);
   --control-shadow: 0 2px 4px rgba(25, 12, 6, 0.35);
   --syntax-comment: #7b705e;
   --syntax-command: #8b1e28;
@@ -494,11 +477,11 @@ html[data-theme="journal"] {
 html[data-theme="journal-dark"] {
   color-scheme: dark;
   --font-body:
-    "EB Garamond", "Cinzel", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    "EB Garamond", "Cinzel", "Iowan Old Style", "Palatino Linotype", Palatino,
+    Georgia, serif;
   --font-display:
     "Cinzel", "Playfair Display", Baskerville, "Iowan Old Style", Georgia, serif;
-  --font-ui:
-    "Cinzel", "Gill Sans", "Avenir Next Condensed", sans-serif;
+  --font-ui: "Cinzel", "Gill Sans", "Avenir Next Condensed", sans-serif;
   --page-bg: #24150e;
   --surface: #24150e;
   --surface-alt: #1d0f09;
@@ -511,23 +494,9 @@ html[data-theme="journal-dark"] {
   --accent-soft: #3d2114;
   --shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
   --chrome-bg: #24150e;
-  --card-bg:
-    radial-gradient(circle at 14% 12%, rgba(212, 175, 55, 0.05), transparent 28%),
-    #24150e;
-  --definition-bg:
-    linear-gradient(
-      180deg,
-      rgba(0, 0, 0, 0.45) 0%,
-      rgba(0, 0, 0, 0.15) 24%,
-      rgba(184, 147, 59, 0.03) 100%
-    ),
-    #150904;
-  --definition-shadow:
-    inset 0 4px 12px rgba(0, 0, 0, 0.75),
-    inset 0 1.5px 3px rgba(0, 0, 0, 0.85),
-    inset 0 0 18px rgba(0, 0, 0, 0.45),
-    inset 0 -1px 0 rgba(184, 147, 59, 0.12),
-    0 1px 0 rgba(184, 147, 59, 0.18);
+  --card-bg: #24150e;
+  --definition-bg: #150904;
+  --definition-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
   --control-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
   --syntax-comment: #8c7b68;
   --syntax-command: #d94b59;
@@ -1478,68 +1447,14 @@ html[data-theme="lcd-dark"] body::after {
   opacity: 0.24;
 }
 
-html[data-theme="journal"] body {
-  background:
-    radial-gradient(ellipse at 30% 20%, rgba(85, 45, 30, 0.45) 0%, transparent 60%),
-    radial-gradient(ellipse at 80% 80%, rgba(30, 15, 10, 0.7) 0%, transparent 70%),
-    linear-gradient(135deg, #3d2318 0%, #24140e 50%, #160a06 100%),
-    var(--page-bg);
-}
-
-html[data-theme="journal"] body::after {
-  content: "";
-  position: fixed;
-  z-index: 1000;
-  inset: 0;
-  pointer-events: none;
-  background:
-    radial-gradient(
-      circle at 20% 30%,
-      rgba(212, 175, 55, 0.05) 0 0.6px,
-      transparent 0.9px
-    ),
-    radial-gradient(
-      circle at 75% 70%,
-      rgba(40, 20, 10, 0.1) 0 0.7px,
-      transparent 1px
-    );
-  background-size:
-    19px 23px,
-    31px 37px;
-  mix-blend-mode: multiply;
-  opacity: 0.6;
-}
-
+html[data-theme="journal"] body,
 html[data-theme="journal-dark"] body {
-  background:
-    radial-gradient(ellipse at 30% 20%, rgba(60, 30, 20, 0.4) 0%, transparent 60%),
-    radial-gradient(ellipse at 80% 80%, rgba(15, 7, 4, 0.85) 0%, transparent 70%),
-    linear-gradient(135deg, #24150e 0%, #170b07 50%, #0d0503 100%),
-    var(--page-bg);
+  background: var(--page-bg);
 }
 
+html[data-theme="journal"] body::after,
 html[data-theme="journal-dark"] body::after {
-  content: "";
-  position: fixed;
-  z-index: 1000;
-  inset: 0;
-  pointer-events: none;
-  background:
-    radial-gradient(
-      circle at 25% 35%,
-      rgba(212, 175, 55, 0.04) 0 0.6px,
-      transparent 0.9px
-    ),
-    radial-gradient(
-      circle at 80% 65%,
-      rgba(0, 0, 0, 0.3) 0 0.7px,
-      transparent 1px
-    );
-  background-size:
-    21px 25px,
-    33px 39px;
-  mix-blend-mode: screen;
-  opacity: 0.25;
+  display: none;
 }
 
 a {

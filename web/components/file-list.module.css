@@ -591,9 +591,7 @@
 
 :global(html[data-theme^="journal"]) .pageSourceSheet {
   border: 1.5px solid var(--line);
-  box-shadow: 
-    0 1px 0 rgba(255, 230, 160, 0.4),
-    0 8px 24px rgba(20, 10, 5, 0.25);
+  box-shadow: 0 4px 14px rgba(20, 10, 5, 0.18);
 }
 
 :global(html[data-theme^="manuscript"]) .iconToggle:hover {
@@ -1188,23 +1186,14 @@
 }
 
 :global(html[data-theme^="journal"]) .readerLayout {
-  background:
-    linear-gradient(
-      90deg,
-      rgba(36, 20, 14, 0.08) 0%,
-      transparent 1.5rem,
-      transparent calc(100% - 1.5rem),
-      rgba(36, 20, 14, 0.08) 100%
-    ),
-    var(--surface);
+  background: var(--surface);
 }
 
 :global(html[data-theme^="journal"]) .outlinePanel {
-  background:
-    linear-gradient(180deg, rgba(244, 235, 215, 0.5) 0%, rgba(235, 224, 200, 0.5) 100%),
-    var(--surface);
-  border-right: 1.5px solid rgba(197, 155, 39, 0.4);
-  box-shadow: inset -6px 0 12px -4px rgba(45, 25, 15, 0.12);
+  z-index: 2;
+  background: var(--surface-alt);
+  border-right: 1.5px solid var(--line);
+  box-shadow: 4px 0 14px rgba(25, 12, 6, 0.15);
 }
 
 :global(html[data-theme^="journal"]) .outlineLinkActive {
@@ -1225,18 +1214,7 @@
 }
 
 :global(html[data-theme^="journal"]) .documentStream {
-  background:
-    radial-gradient(
-      circle at 50% 8%,
-      rgba(255, 248, 225, 0.4),
-      transparent 32rem
-    ),
-    radial-gradient(
-      circle at 94% 86%,
-      rgba(100, 60, 25, 0.05),
-      transparent 25rem
-    ),
-    transparent;
+  background: var(--surface);
 }
 
 :global(html[data-theme^="journal"]) .breadcrumbLink,
@@ -1318,9 +1296,7 @@
 }
 
 :global(html[data-theme="journal"]) .definitionTrail [class*="cardFace"] {
-  box-shadow:
-    0 1px 0 rgba(255, 230, 160, 0.35),
-    0 4px 12px rgba(20, 10, 5, 0.18);
+  box-shadow: 0 4px 12px rgba(20, 10, 5, 0.18);
 }
 
 :global(html[data-theme="journal-dark"]) .definitionTrail {
@@ -1341,29 +1317,18 @@
 }
 
 :global(html[data-theme="journal-dark"]) .definitionTrail [class*="cardFace"] {
-  box-shadow:
-    0 1px 0 rgba(184, 147, 59, 0.15),
-    0 4px 14px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
 }
 
 :global(html[data-theme="journal-dark"]) .readerLayout {
-  background:
-    linear-gradient(
-      90deg,
-      rgba(0, 0, 0, 0.35) 0%,
-      transparent 1.5rem,
-      transparent calc(100% - 1.5rem),
-      rgba(0, 0, 0, 0.35) 100%
-    ),
-    var(--surface);
+  background: var(--surface);
 }
 
 :global(html[data-theme="journal-dark"]) .outlinePanel {
-  background:
-    linear-gradient(180deg, rgba(29, 15, 9, 0.8) 0%, rgba(20, 10, 6, 0.8) 100%),
-    var(--surface);
-  border-right: 1.5px solid rgba(140, 110, 38, 0.35);
-  box-shadow: inset -6px 0 14px -4px rgba(0, 0, 0, 0.4);
+  z-index: 2;
+  background: var(--surface-alt);
+  border-right: 1.5px solid var(--line);
+  box-shadow: 4px 0 16px rgba(0, 0, 0, 0.4);
 }
 
 :global(html[data-theme="journal-dark"]) .outlineLinkActive {
@@ -1372,14 +1337,7 @@
 }
 
 :global(html[data-theme="journal-dark"]) .documentStream {
-  background:
-    radial-gradient(
-      circle at 50% 8%,
-      rgba(212, 175, 55, 0.04),
-      transparent 32rem
-    ),
-    radial-gradient(circle at 94% 86%, rgba(0, 0, 0, 0.3), transparent 25rem),
-    transparent;
+  background: var(--surface);
 }
 
 :global(html[data-theme^="field-guide"]) .readerLayout {

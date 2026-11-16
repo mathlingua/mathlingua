@@ -437,9 +437,7 @@
 
 :global(html[data-theme^="journal"]) .cardFace {
   border: 1.5px solid var(--line);
-  box-shadow:
-    0 1px 0 rgba(255, 230, 160, 0.4),
-    0 8px 24px rgba(20, 10, 5, 0.25);
+  box-shadow: 0 4px 14px rgba(25, 12, 6, 0.15);
 }
 
 :global(html[data-theme^="journal"]) .header {
@@ -472,7 +470,8 @@
 }
 
 :global(html[data-theme="journal-dark"]) .cardFace {
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55);
+  border: 1.5px solid rgba(140, 110, 38, 0.4);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
 }
 
 :global(html[data-theme^="field-guide"]) .cardFace {

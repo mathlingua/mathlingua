@@ -229,12 +229,18 @@ export function FileList({
   const currentPrefaceSource = !isDivider
     ? ""
     : selectedNode.directory === ""
-      ? (collectionPrefaceSource ||
-         collectionPreface?.map((item) => item.source).filter(Boolean).join("\n\n\n") ||
-         "")
-      : (currentDirectoryView?.preface_source ||
-         currentDirectoryView?.preface?.map((item) => item.source).filter(Boolean).join("\n\n\n") ||
-         "");
+      ? collectionPrefaceSource ||
+        collectionPreface
+          ?.map((item) => item.source)
+          .filter(Boolean)
+          .join("\n\n\n") ||
+        ""
+      : currentDirectoryView?.preface_source ||
+        currentDirectoryView?.preface
+          ?.map((item) => item.source)
+          .filter(Boolean)
+          .join("\n\n\n") ||
+        "";
 
   const pageSource = isDivider ? currentPrefaceSource : fileSource;
 
@@ -527,7 +533,8 @@ export function FileList({
                     const anchorId = makeGroupAnchor(item, fallbackKey);
                     const trail = definitionTrails[anchorId] ?? [];
                     const itemKey =
-                      item.id || `${selectedFile.path}-${item.kind}-${itemIndex}`;
+                      item.id ||
+                      `${selectedFile.path}-${item.kind}-${itemIndex}`;
 
                     if (item.page) {
                       return (
@@ -612,7 +619,9 @@ export function FileList({
                   <div className={styles.pageSourceSheet}>
                     <MathLinguaSource
                       className={styles.pageSourceCode}
-                      onReferenceClick={(key) => handleReferenceClick("page-source", key)}
+                      onReferenceClick={(key) =>
+                        handleReferenceClick("page-source", key)
+                      }
                       source={pageSource}
                     />
                   </div>
@@ -736,50 +745,50 @@ function GroupStack({
           onReferenceClick(anchorId, referenceKey)
         }
       >
-      {trail.length > 0 ? (
-        <div className={styles.definitionTrail}>
-          <button
-            aria-label="Close all definitions"
-            className={styles.definitionTrailClose}
-            onClick={() => onCloseDefinitionTrail(anchorId)}
-            title="Close all definitions"
-            type="button"
-          >
-            <DefinitionTrailCloseIcon />
-          </button>
-          {trail.map((referenceKey, trailIndex) => {
-            const definition =
-              definitionIndex.get(referenceKey)?.group ??
-              loadedDefinitions?.[referenceKey];
+        {trail.length > 0 ? (
+          <div className={styles.definitionTrail}>
+            <button
+              aria-label="Close all definitions"
+              className={styles.definitionTrailClose}
+              onClick={() => onCloseDefinitionTrail(anchorId)}
+              title="Close all definitions"
+              type="button"
+            >
+              <DefinitionTrailCloseIcon />
+            </button>
+            {trail.map((referenceKey, trailIndex) => {
+              const definition =
+                definitionIndex.get(referenceKey)?.group ??
+                loadedDefinitions?.[referenceKey];
 
-            if (!definition) {
+              if (!definition) {
+                return (
+                  <LoadingDefinition key={`${referenceKey}-${trailIndex}`} />
+                );
+              }
+
               return (
-                <LoadingDefinition key={`${referenceKey}-${trailIndex}`} />
+                <div
+                  className={styles.definitionTrailItem}
+                  key={`${referenceKey}-${trailIndex}`}
+                >
+                  <GroupCard
+                    anchorId={`${makeGroupAnchor(
+                      definition,
+                      `${anchorId}-definition-${trailIndex}`,
+                    )}-definition-${trailIndex}`}
+                    group={definition}
+                    showTypes={showTypes}
+                    onClose={() => onCloseDefinition(anchorId, trailIndex)}
+                    onReferenceClick={(nextReferenceKey) =>
+                      onReferenceClick(anchorId, nextReferenceKey)
+                    }
+                  />
+                </div>
               );
-            }
-
-            return (
-              <div
-                className={styles.definitionTrailItem}
-                key={`${referenceKey}-${trailIndex}`}
-              >
-                <GroupCard
-                  anchorId={`${makeGroupAnchor(
-                    definition,
-                    `${anchorId}-definition-${trailIndex}`,
-                  )}-definition-${trailIndex}`}
-                  group={definition}
-                  showTypes={showTypes}
-                  onClose={() => onCloseDefinition(anchorId, trailIndex)}
-                  onReferenceClick={(nextReferenceKey) =>
-                    onReferenceClick(anchorId, nextReferenceKey)
-                  }
-                />
-              </div>
-            );
-          })}
-        </div>
-      ) : null}
+            })}
+          </div>
+        ) : null}
       </GroupCard>
     </div>
   );
@@ -861,20 +870,37 @@ function PageLoadingState() {
       role="status"
     >
       <div aria-hidden="true" className={styles.skeletonTextBlock}>
+        <span
+          className={`${styles.skeletonLine} ${styles.skeletonLineHeading}`}
+        />
+        <span className={`${styles.skeletonLine} ${styles.skeletonLineFull}`} />
         <span className={`${styles.skeletonLine} ${styles.skeletonLineLong}`} />
+        <span
+          className={`${styles.skeletonLine} ${styles.skeletonLineMediumLong}`}
+        />
         <span
           className={`${styles.skeletonLine} ${styles.skeletonLineShort}`}
         />
       </div>
-      <div aria-hidden="true" className={styles.skeletonCard}>
+      <div aria-hidden="true" className={styles.skeletonTextBlock}>
         <span
-          className={`${styles.skeletonLine} ${styles.skeletonLineTitle}`}
+          className={`${styles.skeletonLine} ${styles.skeletonLineSubheading}`}
         />
-        <span className={styles.skeletonDivider} />
+        <span className={`${styles.skeletonLine} ${styles.skeletonLineFull}`} />
+        <span className={`${styles.skeletonLine} ${styles.skeletonLineLong}`} />
         <span
           className={`${styles.skeletonLine} ${styles.skeletonLineMedium}`}
         />
-        <span className={`${styles.skeletonLine} ${styles.skeletonLineLong}`} />
+        <span className={`${styles.skeletonLine} ${styles.skeletonLineTiny}`} />
+      </div>
+      <div aria-hidden="true" className={styles.skeletonTextBlock}>
+        <span className={`${styles.skeletonLine} ${styles.skeletonLineFull}`} />
+        <span
+          className={`${styles.skeletonLine} ${styles.skeletonLineMediumLong}`}
+        />
+        <span
+          className={`${styles.skeletonLine} ${styles.skeletonLineMedium}`}
+        />
         <span
           className={`${styles.skeletonLine} ${styles.skeletonLineShort}`}
         />

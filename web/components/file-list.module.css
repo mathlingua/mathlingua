@@ -948,22 +948,46 @@
   height: 0.78rem;
 }
 
+.skeletonLineHeading {
+  width: 38%;
+  height: 1.35rem;
+  margin-bottom: 0.35rem;
+}
+
+.skeletonLineSubheading {
+  width: 25%;
+  height: 1.05rem;
+  margin-bottom: 0.25rem;
+}
+
 .skeletonLineTitle {
   width: 42%;
   height: 1rem;
   margin-bottom: 0.1rem;
 }
 
+.skeletonLineFull {
+  width: 100%;
+}
+
 .skeletonLineLong {
+  width: 92%;
+}
+
+.skeletonLineMediumLong {
   width: 82%;
 }
 
 .skeletonLineMedium {
-  width: 62%;
+  width: 68%;
 }
 
 .skeletonLineShort {
-  width: 38%;
+  width: 48%;
+}
+
+.skeletonLineTiny {
+  width: 30%;
 }
 
 .skeletonDivider {

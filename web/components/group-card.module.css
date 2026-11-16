@@ -276,7 +276,10 @@
 
 .sectionStack {
   display: grid;
-  gap: var(--viewer-spacing-section-gap, 0.45rem);
+  gap: var(
+    --viewer-spacing-section-gap,
+    var(--viewer-spacing-item-gap, 0.08rem)
+  );
   min-width: 0;
   margin-top: var(--viewer-spacing-section-margin-top, 0.6rem);
   padding-right: 0;
@@ -560,7 +563,10 @@
   }
 
   .sectionStack {
-    gap: var(--viewer-spacing-section-gap, 0.45rem);
+    gap: var(
+      --viewer-spacing-section-gap,
+      var(--viewer-spacing-item-gap, 0.08rem)
+    );
     padding-right: 0;
   }
 

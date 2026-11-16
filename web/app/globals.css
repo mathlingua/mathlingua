@@ -117,7 +117,7 @@ html[data-font="euler"] .katex .mathit {
   --viewer-spacing-heading-to-text-gap: 0.75rem;
   --viewer-spacing-prose-to-card-gap: 2.35rem;
   --viewer-spacing-heading-top-gap: 2.5rem;
-  --viewer-spacing-section-gap: 0.45rem;
+  --viewer-spacing-section-gap: var(--viewer-spacing-item-gap, 0.08rem);
   --viewer-spacing-section-margin-top: 0.6rem;
   --viewer-spacing-item-gap: 0.08rem;
   --viewer-spacing-formulation-line-height: 1.36;
@@ -203,7 +203,7 @@ html[data-spacing="compact"] {
   --viewer-spacing-heading-to-text-gap: 0.55rem;
   --viewer-spacing-prose-to-card-gap: 1.15rem;
   --viewer-spacing-heading-top-gap: 1.2rem;
-  --viewer-spacing-section-gap: 0.2rem;
+  --viewer-spacing-section-gap: var(--viewer-spacing-item-gap, 0.02rem);
   --viewer-spacing-section-margin-top: 0.35rem;
   --viewer-spacing-item-gap: 0.02rem;
   --viewer-spacing-formulation-line-height: 1.25;
@@ -224,7 +224,7 @@ html[data-spacing="comfortable"] {
   --viewer-spacing-heading-to-text-gap: 0.75rem;
   --viewer-spacing-prose-to-card-gap: 2.35rem;
   --viewer-spacing-heading-top-gap: 2.5rem;
-  --viewer-spacing-section-gap: 0.45rem;
+  --viewer-spacing-section-gap: var(--viewer-spacing-item-gap, 0.08rem);
   --viewer-spacing-section-margin-top: 0.6rem;
   --viewer-spacing-item-gap: 0.08rem;
   --viewer-spacing-formulation-line-height: 1.36;
@@ -245,7 +245,7 @@ html[data-spacing="spacious"] {
   --viewer-spacing-heading-to-text-gap: 1.15rem;
   --viewer-spacing-prose-to-card-gap: 3.25rem;
   --viewer-spacing-heading-top-gap: 3.5rem;
-  --viewer-spacing-section-gap: 0.9rem;
+  --viewer-spacing-section-gap: var(--viewer-spacing-item-gap, 0.22rem);
   --viewer-spacing-section-margin-top: 0.95rem;
   --viewer-spacing-item-gap: 0.22rem;
   --viewer-spacing-formulation-line-height: 1.56;
@@ -267,7 +267,7 @@ html[data-spacing="spacious"] {
     --viewer-spacing-heading-to-text-gap: 0.75rem;
     --viewer-spacing-prose-to-card-gap: 1.95rem;
     --viewer-spacing-heading-top-gap: 2.1rem;
-    --viewer-spacing-section-gap: 0.45rem;
+    --viewer-spacing-section-gap: var(--viewer-spacing-item-gap, 0.08rem);
     --viewer-spacing-section-break-gap: 3.5rem;
   }
 
@@ -283,7 +283,7 @@ html[data-spacing="spacious"] {
     --viewer-spacing-heading-to-text-gap: 0.5rem;
     --viewer-spacing-prose-to-card-gap: 0.85rem;
     --viewer-spacing-heading-top-gap: 0.9rem;
-    --viewer-spacing-section-gap: 0.18rem;
+    --viewer-spacing-section-gap: var(--viewer-spacing-item-gap, 0.02rem);
     --viewer-spacing-section-margin-top: 0.3rem;
     --viewer-spacing-item-gap: 0.02rem;
     --viewer-spacing-formulation-line-height: 1.25;
@@ -304,7 +304,7 @@ html[data-spacing="spacious"] {
     --viewer-spacing-heading-to-text-gap: 0.75rem;
     --viewer-spacing-prose-to-card-gap: 1.95rem;
     --viewer-spacing-heading-top-gap: 2.1rem;
-    --viewer-spacing-section-gap: 0.45rem;
+    --viewer-spacing-section-gap: var(--viewer-spacing-item-gap, 0.08rem);
     --viewer-spacing-section-margin-top: 0.6rem;
     --viewer-spacing-item-gap: 0.08rem;
     --viewer-spacing-formulation-line-height: 1.36;
@@ -325,7 +325,7 @@ html[data-spacing="spacious"] {
     --viewer-spacing-heading-to-text-gap: 1.05rem;
     --viewer-spacing-prose-to-card-gap: 2.65rem;
     --viewer-spacing-heading-top-gap: 2.85rem;
-    --viewer-spacing-section-gap: 0.85rem;
+    --viewer-spacing-section-gap: var(--viewer-spacing-item-gap, 0.2rem);
     --viewer-spacing-section-margin-top: 0.9rem;
     --viewer-spacing-item-gap: 0.2rem;
     --viewer-spacing-formulation-line-height: 1.54;
@@ -348,7 +348,7 @@ html[data-spacing="spacious"] {
     --viewer-spacing-heading-to-text-gap: 0.7rem;
     --viewer-spacing-prose-to-card-gap: 1.35rem;
     --viewer-spacing-heading-top-gap: 1.45rem;
-    --viewer-spacing-section-gap: 0.45rem;
+    --viewer-spacing-section-gap: var(--viewer-spacing-item-gap, 0.08rem);
     --viewer-spacing-section-margin-top: 0.55rem;
     --viewer-spacing-item-gap: 0.08rem;
     --viewer-spacing-formulation-line-height: 1.38;
@@ -367,7 +367,7 @@ html[data-spacing="spacious"] {
     --viewer-spacing-heading-to-text-gap: 0.45rem;
     --viewer-spacing-prose-to-card-gap: 0.55rem;
     --viewer-spacing-heading-top-gap: 0.6rem;
-    --viewer-spacing-section-gap: 0.15rem;
+    --viewer-spacing-section-gap: var(--viewer-spacing-item-gap, 0.02rem);
     --viewer-spacing-section-margin-top: 0.25rem;
     --viewer-spacing-item-gap: 0.02rem;
     --viewer-spacing-formulation-line-height: 1.24;
@@ -388,7 +388,7 @@ html[data-spacing="spacious"] {
     --viewer-spacing-heading-to-text-gap: 0.7rem;
     --viewer-spacing-prose-to-card-gap: 1.35rem;
     --viewer-spacing-heading-top-gap: 1.45rem;
-    --viewer-spacing-section-gap: 0.45rem;
+    --viewer-spacing-section-gap: var(--viewer-spacing-item-gap, 0.08rem);
     --viewer-spacing-section-margin-top: 0.55rem;
     --viewer-spacing-item-gap: 0.08rem;
     --viewer-spacing-formulation-line-height: 1.38;
@@ -409,7 +409,7 @@ html[data-spacing="spacious"] {
     --viewer-spacing-heading-to-text-gap: 0.95rem;
     --viewer-spacing-prose-to-card-gap: 1.85rem;
     --viewer-spacing-heading-top-gap: 1.95rem;
-    --viewer-spacing-section-gap: 0.85rem;
+    --viewer-spacing-section-gap: var(--viewer-spacing-item-gap, 0.22rem);
     --viewer-spacing-section-margin-top: 0.9rem;
     --viewer-spacing-item-gap: 0.22rem;
     --viewer-spacing-formulation-line-height: 1.58;

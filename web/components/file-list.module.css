@@ -35,6 +35,7 @@
   padding: 1.6rem 1.5rem 2rem;
   border-right: 1px solid var(--line);
   background: var(--surface);
+  z-index: 2;
   transition:
     opacity 180ms ease,
     transform 180ms ease,
@@ -1190,7 +1191,6 @@
 }
 
 :global(html[data-theme^="journal"]) .outlinePanel {
-  z-index: 2;
   background: var(--surface-alt);
   border-right: 1.5px solid var(--line);
   box-shadow: 4px 0 14px rgba(25, 12, 6, 0.15);
@@ -1325,7 +1325,6 @@
 }
 
 :global(html[data-theme="journal-dark"]) .outlinePanel {
-  z-index: 2;
   background: var(--surface-alt);
   border-right: 1.5px solid var(--line);
   box-shadow: 4px 0 16px rgba(0, 0, 0, 0.4);
@@ -1483,7 +1482,8 @@
     pointer-events: auto;
   }
 
-  .outlinePanel {
+  .outlinePanel,
+  :global(html) .outlinePanel {
     position: fixed;
     left: 0;
     top: var(--viewer-total-chrome-height, var(--viewer-chrome-height));

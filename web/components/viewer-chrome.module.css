@@ -822,9 +822,8 @@
 
 :global(html[data-theme^="journal"]) .header {
   border-bottom: 2px solid var(--line);
-  background:
-    linear-gradient(180deg, #3d2318 0%, #24140e 100%);
-  box-shadow: 
+  background: linear-gradient(180deg, #3d2318 0%, #24140e 100%);
+  box-shadow:
     0 4px 15px rgba(0, 0, 0, 0.45),
     inset 0 -1px 0 rgba(212, 175, 55, 0.25);
   backdrop-filter: none;
@@ -923,7 +922,7 @@
       transparent 45%
     ),
     var(--surface);
-  box-shadow: 
+  box-shadow:
     0 10px 25px rgba(0, 0, 0, 0.5),
     inset 0 0 0 1px rgba(212, 175, 55, 0.2);
 }
@@ -939,9 +938,8 @@
 }
 
 :global(html[data-theme="journal-dark"]) .header {
-  background:
-    linear-gradient(180deg, #24150e 0%, #140905 100%);
-  box-shadow: 
+  background: linear-gradient(180deg, #24150e 0%, #140905 100%);
+  box-shadow:
     0 4px 18px rgba(0, 0, 0, 0.65),
     inset 0 -1px 0 rgba(184, 147, 59, 0.2);
   backdrop-filter: none;
@@ -977,7 +975,7 @@
       transparent 45%
     ),
     var(--surface);
-  box-shadow: 
+  box-shadow:
     0 12px 28px rgba(0, 0, 0, 0.7),
     inset 0 0 0 1px rgba(184, 147, 59, 0.25);
 }
@@ -1064,6 +1062,65 @@
 }
 
 /* Responsive adjustments */
+
+@media (max-width: 860px) {
+  .button,
+  .button:hover,
+  .button:active,
+  .button:focus-visible,
+  .settingsIconButton,
+  .settingsIconButton:hover,
+  .settingsIconButton:active,
+  .settingsIconButtonActive,
+  :global(html) .button,
+  :global(html) .button:hover,
+  :global(html) .button:active,
+  :global(html) .button:focus-visible,
+  :global(html) .settingsIconButton,
+  :global(html) .settingsIconButton:hover,
+  :global(html) .settingsIconButton:active,
+  :global(html) .settingsIconButtonActive,
+  :global(html[data-theme]) .button,
+  :global(html[data-theme]) .button:hover,
+  :global(html[data-theme]) .button:active,
+  :global(html[data-theme]) .button:focus-visible,
+  :global(html[data-theme]) .settingsIconButton,
+  :global(html[data-theme]) .settingsIconButton:hover,
+  :global(html[data-theme]) .settingsIconButton:active,
+  :global(html[data-theme]) .settingsIconButtonActive {
+    border: none;
+    border-color: transparent;
+    box-shadow: none;
+    transform: none;
+  }
+
+  .button,
+  .button:hover,
+  .button:active,
+  .settingsIconButton,
+  .settingsIconButton:hover,
+  .settingsIconButton:active,
+  :global(html) .button,
+  :global(html) .button:hover,
+  :global(html) .button:active,
+  :global(html) .settingsIconButton,
+  :global(html) .settingsIconButton:hover,
+  :global(html) .settingsIconButton:active,
+  :global(html[data-theme]) .button,
+  :global(html[data-theme]) .button:hover,
+  :global(html[data-theme]) .button:active,
+  :global(html[data-theme]) .settingsIconButton,
+  :global(html[data-theme]) .settingsIconButton:hover,
+  :global(html[data-theme]) .settingsIconButton:active {
+    background: transparent;
+  }
+
+  .settingsIconButtonActive,
+  :global(html) .settingsIconButtonActive,
+  :global(html[data-theme]) .settingsIconButtonActive {
+    background: var(--accent-soft);
+  }
+}
 
 @media (max-width: 640px) {
   .subbarContent {

@@ -1617,10 +1617,10 @@
     width: fit-content;
     max-width: calc(50% - 0.35rem);
     padding: 0.55rem 0.65rem;
-    border: 1px solid var(--line);
+    border: none;
     border-radius: var(--radius-card);
-    background: var(--card-bg);
-    box-shadow: var(--shadow);
+    background: transparent;
+    box-shadow: none;
   }
 
   .pageNavButton:only-child {
@@ -1643,8 +1643,13 @@
     white-space: nowrap;
   }
 
-  :global(html[data-theme^="journal"]) .pageNavButton,
-  :global(html[data-theme^="journal"]) .pageNavButton:hover:not(:disabled) {
+  .pageNavButton,
+  .pageNavButton:hover:not(:disabled),
+  :global(html) .pageNavButton,
+  :global(html) .pageNavButton:hover:not(:disabled),
+  :global(html[data-theme]) .pageNavButton,
+  :global(html[data-theme]) .pageNavButton:hover:not(:disabled) {
+    border: none;
     border-color: transparent;
     background: transparent;
     box-shadow: none;

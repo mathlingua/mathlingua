@@ -22,7 +22,7 @@
 
 .chrome {
   display: grid;
-  grid-template-columns: 2rem minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   height: var(--viewer-chrome-height);
   min-height: var(--viewer-chrome-height);
@@ -33,13 +33,18 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 2.5rem;
+  height: 2.5rem;
   border: none;
   border-radius: var(--radius-control);
   background: transparent;
   color: var(--ink);
   cursor: pointer;
+}
+
+.outlineIcon {
+  width: 1.65rem;
+  height: 1.65rem;
 }
 
 .button:hover {
@@ -60,8 +65,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2rem;
-  height: 2rem;
+  width: 2.5rem;
+  height: 2.5rem;
   padding: 0;
   border: 1px solid transparent;
   border-radius: var(--radius-control);
@@ -87,8 +92,8 @@
 }
 
 .settingsIcon {
-  width: 1.15rem;
-  height: 1.15rem;
+  width: 1.65rem;
+  height: 1.65rem;
 }
 
 /* Secondary slide-down toolbar */

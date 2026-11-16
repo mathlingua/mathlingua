@@ -241,16 +241,15 @@ export function ViewerChrome({
         >
           <svg
             aria-hidden="true"
+            className={styles.outlineIcon}
             fill="none"
-            height="22"
             viewBox="0 0 24 24"
-            width="22"
           >
             <path
               d="M4 6.5H20M4 12H20M4 17.5H20"
               stroke="currentColor"
               strokeLinecap="round"
-              strokeWidth="1.9"
+              strokeWidth="2"
             />
           </svg>
         </button>
@@ -701,11 +700,11 @@ function SettingsIcon() {
         d="M3 6h3m4 0h11M3 12h11m4 0h3M3 18h5m4 0h9"
         stroke="currentColor"
         strokeLinecap="round"
-        strokeWidth="1.7"
+        strokeWidth="1.8"
       />
-      <circle cx="8" cy="6" r="2" stroke="currentColor" strokeWidth="1.7" />
-      <circle cx="16" cy="12" r="2" stroke="currentColor" strokeWidth="1.7" />
-      <circle cx="10" cy="18" r="2" stroke="currentColor" strokeWidth="1.7" />
+      <circle cx="8" cy="6" r="2" stroke="currentColor" strokeWidth="1.8" />
+      <circle cx="16" cy="12" r="2" stroke="currentColor" strokeWidth="1.8" />
+      <circle cx="10" cy="18" r="2" stroke="currentColor" strokeWidth="1.8" />
     </svg>
   );
 }

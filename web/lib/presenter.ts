@@ -364,7 +364,9 @@ export function makeGroupAnchor(
   group: Pick<GroupView, "id">,
   fallbackKey: string,
 ): string {
-  return `group-${sanitizeAnchorSegment(group.id || fallbackKey)}`;
+  return group.id
+    ? sanitizeAnchorSegment(group.id)
+    : `group-${sanitizeAnchorSegment(fallbackKey)}`;
 }
 
 function sanitizeAnchorSegment(value: string): string {

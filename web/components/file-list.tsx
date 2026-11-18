@@ -109,6 +109,53 @@ export function FileList({
     setShowPageSource(false);
   }, [selectedFile?.path]);
 
+  // Support # anchor navigation to top-level items
+  useEffect(() => {
+    const scrollToAnchor = (anchor: string) => {
+      if (!anchor) return;
+      const clean = anchor.replace(/^#/, "");
+      if (!clean) return;
+
+      const target =
+        document.getElementById(`${clean}-description`) ||
+        document.getElementById(clean) ||
+        document.getElementById(`group-${clean}`) ||
+        document.querySelector(`[data-item-id="${clean}"]`);
+
+      if (target) {
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    };
+
+    // Scroll if hash is present when document renders
+    if (window.location.hash) {
+      const timer = setTimeout(() => {
+        scrollToAnchor(window.location.hash);
+      }, 100);
+    }
+
+    const handleHashChange = () => {
+      scrollToAnchor(window.location.hash);
+    };
+
+    const handleMessage = (e: MessageEvent) => {
+      if (e.data && e.data.type === "scroll-to-anchor" && e.data.id) {
+        scrollToAnchor(e.data.id);
+        try {
+          window.history.replaceState(null, "", `#${e.data.id}`);
+        } catch (_) {}
+      }
+    };
+
+    window.addEventListener("hashchange", handleHashChange);
+    window.addEventListener("message", handleMessage);
+
+    return () => {
+      window.removeEventListener("hashchange", handleHashChange);
+      window.removeEventListener("message", handleMessage);
+    };
+  }, [selectedFileIndex, isSelectedFileLoading]);
+
   if (files.length === 0) {
     if (loadError) {
       return (

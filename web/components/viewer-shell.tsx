@@ -156,6 +156,14 @@ export function ViewerShell({
   const [showTypes, setShowTypes] = useState(false);
 
   const selectedNode = readerNodes[selectedNodeIndex] ?? readerNodes[0];
+  const lastSelectedFilePathRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (selectedNode?.kind === "file") {
+      lastSelectedFilePathRef.current = selectedNode.path;
+    }
+  }, [selectedNode]);
+
   const currentDirectory = browsedDirectory ?? selectedNode?.directory ?? "";
   const selectedFileIndex =
     selectedNode?.kind === "file" ? selectedNode.fileIndex : -1;
@@ -463,12 +471,25 @@ export function ViewerShell({
   useEffect(() => {
     const syncSelectedNodeFromPath = () => {
       setBrowsedDirectory(null);
-      setSelectedNodeIndex(
-        resolveReaderNodeIndex(
-          stripRouteBasePath(window.location.pathname, routeBasePath),
-          readerNodes,
-        ),
+      const targetPath = stripRouteBasePath(
+        window.location.pathname,
+        routeBasePath,
       );
+      let nodeIndex = resolveReaderNodeIndex(targetPath, readerNodes);
+
+      // If route resolved to root (node 0) but we were already viewing a specific file,
+      // re-anchor to that file in the new readerNodes instead of jumping to root:
+      if (nodeIndex === 0 && lastSelectedFilePathRef.current) {
+        const preservedIndex = readerNodes.findIndex(
+          (n) =>
+            n.kind === "file" && n.path === lastSelectedFilePathRef.current,
+        );
+        if (preservedIndex >= 0) {
+          nodeIndex = preservedIndex;
+        }
+      }
+
+      setSelectedNodeIndex(nodeIndex);
     };
 
     syncSelectedNodeFromPath();

@@ -127,12 +127,18 @@ export function FileList({
       }
     };
 
-    // Scroll if hash is present when document renders
-    if (window.location.hash) {
-      const timer = setTimeout(() => {
+    // Scroll if hash is present when document renders or updates
+    let timer2: NodeJS.Timeout | number | undefined;
+    const timer = setTimeout(() => {
+      if (window.location.hash) {
         scrollToAnchor(window.location.hash);
-      }, 100);
-    }
+      }
+    }, 100);
+    timer2 = setTimeout(() => {
+      if (window.location.hash) {
+        scrollToAnchor(window.location.hash);
+      }
+    }, 350);
 
     const handleHashChange = () => {
       scrollToAnchor(window.location.hash);
@@ -142,7 +148,9 @@ export function FileList({
       if (e.data && e.data.type === "scroll-to-anchor" && e.data.id) {
         scrollToAnchor(e.data.id);
         try {
-          window.history.replaceState(null, "", `#${e.data.id}`);
+          const clean = e.data.id.replace(/^#/, "");
+          const newUrl = `${window.location.pathname}${window.location.search}#${clean}`;
+          window.history.replaceState(null, "", newUrl);
         } catch (_) {}
       }
     };
@@ -151,10 +159,12 @@ export function FileList({
     window.addEventListener("message", handleMessage);
 
     return () => {
+      clearTimeout(timer);
+      if (timer2) clearTimeout(timer2);
       window.removeEventListener("hashchange", handleHashChange);
       window.removeEventListener("message", handleMessage);
     };
-  }, [selectedFileIndex, isSelectedFileLoading]);
+  }, [selectedFileIndex, isSelectedFileLoading, selectedFile]);
 
   if (files.length === 0) {
     if (loadError) {

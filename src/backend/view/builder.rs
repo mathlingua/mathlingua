@@ -241,7 +241,7 @@ fn has_blocking_user_issues(events: &[Event]) -> bool {
 /// The config wins because it is what the author chose to call the collection;
 /// the directory name is only a stand-in for collections without a config (or
 /// with an empty `name`).
-fn collection_title(collection_root: &Path) -> String {
+pub(crate) fn collection_title(collection_root: &Path) -> String {
     let configured_name = load_config(collection_root).name;
     let configured_name = configured_name.trim();
     if !configured_name.is_empty() {

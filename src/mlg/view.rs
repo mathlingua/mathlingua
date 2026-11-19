@@ -1,5 +1,5 @@
 use crate::backend::collection::SourceCollection;
-use crate::backend::view::CollectionView;
+use crate::backend::view::{CollectionView, collection_title};
 use crate::events::{Event, EventLog, EventLogListener, MessageStatus};
 use crate::mlg::util::{has_blocking_user_issues_since, no_errors_since};
 use crate::mlg::view_assets::{ViewerPageConfig, configured_viewer_index, viewer_asset};
@@ -47,76 +47,70 @@ pub(super) fn view_in(
     let listener = bind_view_listener(port, event_log)?;
     let bound_port = listener.local_addr()?.port();
     let url = format!("http://localhost:{bound_port}");
-    let mut watcher = SourceWatcher::new(cwd);
-    let collection_view = loop {
-        let starting_event_count = event_log.events().len();
-        event_log.user_status_start(Some(ORIGIN), format!("Starting viewer at {url} …"));
+    let starting_event_count = event_log.events().len();
+    event_log.user_status_start(Some(ORIGIN), format!("Starting viewer at {url} …"));
 
-        let mut collection = SourceCollection::load(cwd, event_log, ORIGIN);
-        if collection.source_files().is_empty() {
-            if !watch {
-                return finish_view_setup_with_possible_errors(event_log);
-            }
-            event_log.user_log(
-                Some(ORIGIN),
-                "No MathLingua files were found; watching for changes …",
-            );
-            wait_for_view_change(&mut watcher, event_log);
-            continue;
+    let mut collection = SourceCollection::load(cwd, event_log, ORIGIN);
+    if collection.source_files().is_empty() {
+        if !watch {
+            return finish_view_setup_with_possible_errors(event_log);
         }
-
-        event_log.system_debug(
+        event_log.user_log(
             Some(ORIGIN),
-            format!(
-                "Checking collection before rendering {} file(s)",
-                collection.source_files().len()
-            ),
+            "No MathLingua files were found; viewer ready and watching for changes …",
         );
-        collection.run_view_check_passes(event_log, ORIGIN);
+    }
 
-        if has_blocking_user_issues_since(event_log, starting_event_count) {
-            if !watch {
-                event_log.user_error(
-                    Some(ORIGIN),
-                    "View not started because one or more files could not be rendered",
-                );
-                return Err(io::Error::other(
-                    "One or more files could not be rendered for viewing",
-                ));
-            }
-            event_log.user_log(
+    event_log.system_debug(
+        Some(ORIGIN),
+        format!(
+            "Checking collection before rendering {} file(s)",
+            collection.source_files().len()
+        ),
+    );
+    collection.run_view_check_passes(event_log, ORIGIN);
+
+    if has_blocking_user_issues_since(event_log, starting_event_count) {
+        if !watch {
+            event_log.user_error(
                 Some(ORIGIN),
-                "Fix the current errors to start the viewer; watching for changes …",
+                "View not started because one or more files could not be rendered",
             );
-            wait_for_view_change(&mut watcher, event_log);
-            continue;
+            return Err(io::Error::other(
+                "One or more files could not be rendered for viewing",
+            ));
         }
-
-        event_log.system_debug(
+        event_log.user_log(
             Some(ORIGIN),
-            format!(
-                "Building a rendered view for {} file(s)",
-                collection.parsed_files().len()
-            ),
+            "Initial files contain errors; starting viewer with available content and watching for changes …",
         );
-        let Some(collection_view) = collection.build_view(event_log) else {
-            if !watch {
-                event_log.user_error(
-                    Some(ORIGIN),
-                    "View not started because one or more files could not be rendered",
-                );
-                return Err(io::Error::other(
-                    "One or more files could not be rendered for viewing",
-                ));
-            }
-            event_log.user_log(
+    }
+
+    event_log.system_debug(
+        Some(ORIGIN),
+        format!(
+            "Building a rendered view for {} file(s)",
+            collection.parsed_files().len()
+        ),
+    );
+    let collection_view = match collection.build_view(event_log) {
+        Some(view) => view,
+        None if watch => CollectionView {
+            title: collection_title(cwd),
+            preface: Vec::new(),
+            preface_source: None,
+            directories: Vec::new(),
+            files: Vec::new(),
+        },
+        None => {
+            event_log.user_error(
                 Some(ORIGIN),
-                "Fix the current errors to start the viewer; watching for changes …",
+                "View not started because one or more files could not be rendered",
             );
-            wait_for_view_change(&mut watcher, event_log);
-            continue;
-        };
-        break collection_view;
+            return Err(io::Error::other(
+                "One or more files could not be rendered for viewing",
+            ));
+        }
     };
 
     let server = Server::from_listener(listener, None)
@@ -205,13 +199,6 @@ fn view_with_watch(
         event_log,
         successful,
     }
-}
-
-fn wait_for_view_change(watcher: &mut SourceWatcher, event_log: &mut EventLog) {
-    watcher.reset();
-    watcher.wait_for_change();
-    event_log.clear_output();
-    event_log.clear_events();
 }
 
 fn bind_view_listener(port: u16, event_log: &mut EventLog) -> io::Result<TcpListener> {

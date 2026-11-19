@@ -155,6 +155,26 @@ export function ViewerShell({
   );
   const [showTypes, setShowTypes] = useState(false);
 
+  const [isEmbedded] = useState(() => {
+    if (typeof window === "undefined") return false;
+    const params = new URLSearchParams(window.location.search);
+    return (
+      params.get("embedded") === "true" ||
+      params.get("embed") === "true" ||
+      params.has("embedded") ||
+      params.has("embed")
+    );
+  });
+
+  useEffect(() => {
+    if (isEmbedded) {
+      document.documentElement.dataset.embedded = "true";
+      return () => {
+        delete document.documentElement.dataset.embedded;
+      };
+    }
+  }, [isEmbedded]);
+
   const selectedNode = readerNodes[selectedNodeIndex] ?? readerNodes[0];
   const lastSelectedFilePathRef = useRef<string | null>(null);
 
@@ -668,27 +688,30 @@ export function ViewerShell({
 
   return (
     <>
-      <ViewerChrome
-        font={font}
-        fontScale={fontScale}
-        onDecreaseFontScale={handleDecreaseFontScale}
-        onFontChange={handleFontChange}
-        onIncreaseFontScale={handleIncreaseFontScale}
-        onResetFontScale={handleResetFontScale}
-        onSpacingChange={handleSpacingChange}
-        onThemeFamilyChange={handleThemeFamilyChange}
-        onThemeModeChange={handleThemeModeChange}
-        onToggleOutline={handleToggleOutline}
-        onToggleTypes={handleToggleTypes}
-        outlineState={outlineState}
-        showTypes={showTypes}
-        spacing={spacing}
-        theme={theme}
-        themeFamily={themeFamily}
-        themeMode={themeMode}
-      />
+      {!isEmbedded && (
+        <ViewerChrome
+          font={font}
+          fontScale={fontScale}
+          onDecreaseFontScale={handleDecreaseFontScale}
+          onFontChange={handleFontChange}
+          onIncreaseFontScale={handleIncreaseFontScale}
+          onResetFontScale={handleResetFontScale}
+          onSpacingChange={handleSpacingChange}
+          onThemeFamilyChange={handleThemeFamilyChange}
+          onThemeModeChange={handleThemeModeChange}
+          onToggleOutline={handleToggleOutline}
+          onToggleTypes={handleToggleTypes}
+          outlineState={outlineState}
+          showTypes={showTypes}
+          spacing={spacing}
+          theme={theme}
+          themeFamily={themeFamily}
+          themeMode={themeMode}
+        />
+      )}
       <main className={styles.pageShell}>
         <FileList
+          isEmbedded={isEmbedded}
           collectionPreface={manifest?.preface}
           collectionPrefaceSource={manifest?.preface_source}
           collectionTitle={manifest?.title}
@@ -706,7 +729,7 @@ export function ViewerShell({
           onNavigateDirectory={handleNavigateDirectory}
           onSelectFile={handleSelectFile}
           onSelectNode={handleSelectNode}
-          outlineState={outlineState}
+          outlineState={isEmbedded ? "closed" : outlineState}
           readerNodes={readerNodes}
           selectedFileIndex={selectedFileIndex}
           selectedNodeIndex={selectedNodeIndex}

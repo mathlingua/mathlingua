@@ -1471,3 +1471,27 @@ select {
 code {
   font-family: var(--font-mono);
 }
+
+/* Embedded viewer mode (used inside Mathlingua Editor right panel) */
+html[data-embedded="true"],
+html[data-embedded="true"] body {
+  background: transparent !important;
+  --viewer-chrome-height: 0px !important;
+  --viewer-total-chrome-height: 0px !important;
+  --viewer-safe-area-top: 0px !important;
+}
+
+html[data-embedded="true"] [class*="readerLayout"] {
+  grid-template-columns: 1fr !important;
+  background: transparent !important;
+  min-height: 100% !important;
+}
+
+html[data-embedded="true"] [class*="documentStream"] {
+  background: transparent !important;
+  padding-top: 1.25rem !important;
+  padding-bottom: 2.5rem !important;
+  padding-left: 1.5rem !important;
+  padding-right: 1.5rem !important;
+}
+

@@ -66,6 +66,8 @@ interface FileListProps {
   selectedNodeIndex: number;
   /** Whether resolved expression types are visible. */
   showTypes: boolean;
+  /** True when rendered in an embedded host (hides chrome, breadcrumbs, nav buttons). */
+  isEmbedded?: boolean;
 }
 
 /** Renders the collection outline beside the selected file's group cards. */
@@ -78,6 +80,7 @@ export function FileList({
   directories,
   files,
   isCollectionLoading = false,
+  isEmbedded = false,
   isSelectedFileLoading = false,
   loadError,
   loadedDefinitions,
@@ -411,19 +414,23 @@ export function FileList({
   return (
     <div
       className={
-        outlineState === "auto"
+        isEmbedded
+          ? `${styles.readerLayout} ${styles.outlineClosed}`
+          : outlineState === "auto"
           ? `${styles.readerLayout} ${styles.outlineAuto}`
           : outlineState === "open"
             ? `${styles.readerLayout} ${styles.outlineOpen}`
             : `${styles.readerLayout} ${styles.outlineClosed}`
       }
     >
-      <div
-        aria-hidden="true"
-        className={styles.outlineBackdrop}
-        onClick={onCloseOutline}
-      />
-      <aside className={styles.outlinePanel}>
+      {!isEmbedded && (
+        <>
+          <div
+            aria-hidden="true"
+            className={styles.outlineBackdrop}
+            onClick={onCloseOutline}
+          />
+          <aside className={styles.outlinePanel}>
         <div className={styles.outlineHeader}>
           <button
             aria-current={isSectionDividerActive ? "page" : undefined}
@@ -524,6 +531,8 @@ export function FileList({
           </ul>
         </nav>
       </aside>
+    </>
+  )}
       <section className={styles.documentStream}>
         <article
           className={`${styles.fileSection} ${styles.pageStageContainer}`}
@@ -548,26 +557,28 @@ export function FileList({
                 showPageSource ? ` ${styles.pageFaceInactive}` : ""
               }`}
             >
-              <div className={styles.pageTopBar}>
-                <div className={styles.pageTopBarBreadcrumb}>
-                  <Breadcrumb
-                    crumbs={breadcrumb}
-                    onNavigate={(directory) => onNavigateDirectory(directory)}
-                  />
+              {!isEmbedded && (
+                <div className={styles.pageTopBar}>
+                  <div className={styles.pageTopBarBreadcrumb}>
+                    <Breadcrumb
+                      crumbs={breadcrumb}
+                      onNavigate={(directory) => onNavigateDirectory(directory)}
+                    />
+                  </div>
+                  {pageSource ? (
+                    <button
+                      aria-label="Show page MathLingua source"
+                      className={`${styles.iconToggle} ${styles.pageSourceToggle}`}
+                      onClick={() => setShowPageSource(true)}
+                      tabIndex={showPageSource ? -1 : 0}
+                      title="Show page MathLingua source"
+                      type="button"
+                    >
+                      <CodeIcon />
+                    </button>
+                  ) : null}
                 </div>
-                {pageSource ? (
-                  <button
-                    aria-label="Show page MathLingua source"
-                    className={`${styles.iconToggle} ${styles.pageSourceToggle}`}
-                    onClick={() => setShowPageSource(true)}
-                    tabIndex={showPageSource ? -1 : 0}
-                    title="Show page MathLingua source"
-                    type="button"
-                  >
-                    <CodeIcon />
-                  </button>
-                ) : null}
-              </div>
+              )}
 
               {isDivider || !selectedFile ? (
                 <DividerPage
@@ -621,7 +632,7 @@ export function FileList({
                 </div>
               )}
 
-              {readerNodes.length > 1 ? (
+              {!isEmbedded && readerNodes.length > 1 ? (
                 <PageNavigation
                   nextLabel={
                     nextNodeIndex === null
@@ -655,23 +666,25 @@ export function FileList({
                   showPageSource ? "" : ` ${styles.pageFaceInactive}`
                 }`}
               >
-                <div className={styles.pageTopBar}>
-                  <div className={styles.pageTopBarBreadcrumb}>
-                    <span className={styles.pageSourceFilename}>
-                      {pageFilename}
-                    </span>
+                {!isEmbedded && (
+                  <div className={styles.pageTopBar}>
+                    <div className={styles.pageTopBarBreadcrumb}>
+                      <span className={styles.pageSourceFilename}>
+                        {pageFilename}
+                      </span>
+                    </div>
+                    <button
+                      aria-label="Show rendered page"
+                      className={`${styles.iconToggle} ${styles.pageSourceToggle}`}
+                      onClick={() => setShowPageSource(false)}
+                      tabIndex={showPageSource ? 0 : -1}
+                      title="Show rendered page"
+                      type="button"
+                    >
+                      <CardIcon />
+                    </button>
                   </div>
-                  <button
-                    aria-label="Show rendered page"
-                    className={`${styles.iconToggle} ${styles.pageSourceToggle}`}
-                    onClick={() => setShowPageSource(false)}
-                    tabIndex={showPageSource ? 0 : -1}
-                    title="Show rendered page"
-                    type="button"
-                  >
-                    <CardIcon />
-                  </button>
-                </div>
+                )}
                 <div className={styles.pageSourceContainer}>
                   <div className={styles.pageSourceSheet}>
                     <MathLinguaSource

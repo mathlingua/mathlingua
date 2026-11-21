@@ -3,7 +3,7 @@ use mlg::cli::{Cli, Command};
 use mlg::events::{ColorMode, EventConsoleWriter, EventFilter, EventLogListener};
 use mlg::{
     check, check_diagnostics_report, check_diagnostics_schema, clean, debug, export, extract,
-    format, init, lsp, release, report, search, structure, version, view, watch_check, watch_view,
+    format, init, lsp, release, report, search, structure, version, view_with_options, watch_check,
     whte_rbt_obj,
 };
 use serde::Serialize;
@@ -95,13 +95,14 @@ fn main() {
             }
         }
         Command::Version => version(Some(console_listener(filter, &cwd))).successful,
-        Command::View(args) => {
-            if args.watch {
-                watch_view(&cwd, args.port, Some(console_listener(filter, &cwd))).successful
-            } else {
-                view(&cwd, args.port, Some(console_listener(filter, &cwd))).successful
-            }
-        }
+        Command::View(args) => view_with_options(
+            &cwd,
+            args.port,
+            args.watch,
+            args.focus_file,
+            Some(console_listener(filter, &cwd)),
+        )
+        .successful,
         Command::WhteRbtObj => whte_rbt_obj(Some(console_listener(filter, &cwd))).successful,
     };
 

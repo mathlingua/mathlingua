@@ -4,7 +4,8 @@ pub use mlg::{
     ReportResult, SearchMatch, SearchReport, SearchResult, StructureReport, StructureResult,
     VersionResult, ViewResult, WhteRbtObjResult, check, check_diagnostics_report,
     check_diagnostics_schema, clean, debug, export, extract, format, init, lsp, release,
-    report, search, structure, version, view, watch_check, watch_view, whte_rbt_obj,
+    report, search, structure, version, view, view_with_options, watch_check, watch_view,
+    whte_rbt_obj,
 };
 pub mod backend;
 pub mod cli;

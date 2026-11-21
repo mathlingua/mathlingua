@@ -131,6 +131,70 @@ pub(crate) fn build_collection_view_with_cached_proto_groups(
     })
 }
 
+pub(crate) enum SingleFileViewUpdate {
+    File(FileView),
+    CollectionPreface {
+        preface: Vec<GroupView>,
+        preface_source: Option<String>,
+    },
+    DirectoryPreface {
+        path: String,
+        preface: Vec<GroupView>,
+        preface_source: Option<String>,
+    },
+}
+
+pub(crate) fn build_single_file_view_with_cached_proto_groups(
+    collection_root: &Path,
+    target_path: &Path,
+    parsed_files: &[ParsedSourceFile],
+    preface_files: &[(PathBuf, PathBuf)],
+    type_info: &CollectionTypeInfo,
+    proto_groups: &mut BTreeMap<PathBuf, Vec<ProtoGroup>>,
+    event_log: &mut EventLog,
+) -> Option<SingleFileViewUpdate> {
+    let registry = build_linked_render_registry(parsed_files);
+
+    if let Some(file) = parsed_files
+        .iter()
+        .find(|file| !file.view_metadata.hidden && file.path == target_path)
+    {
+        let file_view = build_file_view(
+            collection_root,
+            file,
+            proto_groups.remove(&file.path),
+            type_info.get(&file.path),
+            &registry,
+            event_log,
+        )?;
+        return Some(SingleFileViewUpdate::File(file_view));
+    }
+
+    if let Some((directory, preface_path)) = preface_files
+        .iter()
+        .find(|(_, preface_path)| preface_path == target_path)
+    {
+        let single = vec![(directory.clone(), preface_path.clone())];
+        let mut prefaces =
+            build_directory_prefaces(collection_root, &single, &registry, event_log);
+        let dir_rel = relative_path(collection_root, directory);
+        let (items, src) = prefaces.remove(&dir_rel)?;
+        if dir_rel == "content" || dir_rel.is_empty() {
+            return Some(SingleFileViewUpdate::CollectionPreface {
+                preface: items,
+                preface_source: Some(src),
+            });
+        }
+        return Some(SingleFileViewUpdate::DirectoryPreface {
+            path: dir_rel,
+            preface: items,
+            preface_source: Some(src),
+        });
+    }
+
+    None
+}
+
 pub fn build_single_group_view(
     group: ProtoGroup,
     source: String,

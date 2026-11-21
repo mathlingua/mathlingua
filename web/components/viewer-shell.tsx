@@ -293,7 +293,7 @@ export function ViewerShell({
         .catch(() => {
           // Ignore polling errors while rebuilding/restarting
         });
-    }, 500);
+    }, 200);
 
     return () => {
       cancelled = true;

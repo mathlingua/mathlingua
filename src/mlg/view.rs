@@ -1,5 +1,5 @@
 use crate::backend::collection::SourceCollection;
-use crate::backend::view::{CollectionView, collection_title};
+use crate::backend::view::{CollectionView, SingleFileViewUpdate, collection_title};
 use crate::events::{Event, EventLog, EventLogListener, MessageStatus};
 use crate::mlg::util::{has_blocking_user_issues_since, no_errors_since};
 use crate::mlg::view_assets::{ViewerPageConfig, configured_viewer_index, viewer_asset};
@@ -10,7 +10,7 @@ use std::io;
 use std::net::TcpListener;
 use std::path::{Path, PathBuf};
 use std::sync::{
-    Arc,
+    Arc, Mutex,
     atomic::{AtomicBool, AtomicUsize, Ordering},
     mpsc::{self, Receiver, Sender},
 };
@@ -24,7 +24,7 @@ pub struct ViewResult {
 }
 
 pub fn view(cwd: &Path, port: u16, listener: Option<Box<dyn EventLogListener>>) -> ViewResult {
-    view_with_watch(cwd, port, false, listener)
+    view_with_options(cwd, port, false, None, listener)
 }
 
 pub fn watch_view(
@@ -32,13 +32,24 @@ pub fn watch_view(
     port: u16,
     listener: Option<Box<dyn EventLogListener>>,
 ) -> ViewResult {
-    view_with_watch(cwd, port, true, listener)
+    view_with_options(cwd, port, true, None, listener)
+}
+
+pub fn view_with_options(
+    cwd: &Path,
+    port: u16,
+    watch: bool,
+    focus_file: Option<PathBuf>,
+    listener: Option<Box<dyn EventLogListener>>,
+) -> ViewResult {
+    view_with_watch(cwd, port, watch, focus_file, listener)
 }
 
 pub(super) fn view_in(
     cwd: &Path,
     port: u16,
     watch: bool,
+    initial_focus_file: Option<PathBuf>,
     event_log: &mut EventLog,
 ) -> io::Result<()> {
     // Reserve the port before doing collection-wide parsing and rendering. This
@@ -131,10 +142,15 @@ pub(super) fn view_in(
     VIEW_DATA_VERSION.store(1, Ordering::SeqCst);
 
     let (refresh_sender, refresh_receiver) = mpsc::channel();
+    let (trigger_sender, trigger_receiver) = mpsc::channel();
+    let focus_file = Arc::new(Mutex::new(initial_focus_file));
     let stop_refresh = Arc::new(AtomicBool::new(false));
     let refresh_thread = spawn_view_data_refresher(
         cwd.to_path_buf(),
         view_data_path.clone(),
+        collection_view,
+        Arc::clone(&focus_file),
+        trigger_receiver,
         Arc::clone(&stop_refresh),
         url.clone(),
         watch,
@@ -146,6 +162,8 @@ pub(super) fn view_in(
         &server,
         &view_data_path,
         &index,
+        &focus_file,
+        &trigger_sender,
         &refresh_receiver,
         event_log,
     );
@@ -164,6 +182,8 @@ const VIEW_BIND_HOST: &str = "0.0.0.0";
 const COLLECTION_DATA_URL: &str = "/api/collection.json";
 
 const COLLECTION_VERSION_URL: &str = "/api/version";
+
+const COLLECTION_FOCUS_URL: &str = "/api/focus";
 
 static NEXT_VIEW_SESSION_DIR_ID: AtomicUsize = AtomicUsize::new(0);
 
@@ -184,6 +204,7 @@ fn view_with_watch(
     cwd: &Path,
     port: u16,
     watch: bool,
+    focus_file: Option<PathBuf>,
     listener: Option<Box<dyn EventLogListener>>,
 ) -> ViewResult {
     let mut event_log = EventLog::new();
@@ -192,7 +213,7 @@ fn view_with_watch(
     }
 
     let starting_event_count = event_log.events().len();
-    let io_ok = view_in(cwd, port, watch, &mut event_log).is_ok();
+    let io_ok = view_in(cwd, port, watch, focus_file, &mut event_log).is_ok();
     let successful = io_ok && (watch || no_errors_since(&event_log, starting_event_count));
 
     ViewResult {
@@ -239,13 +260,17 @@ fn run_view_server(
     server: &Server,
     view_data_path: &Path,
     index: &[u8],
+    focus_file: &Arc<Mutex<Option<PathBuf>>>,
+    trigger_sender: &Sender<()>,
     refresh_receiver: &Receiver<ViewRefreshMessage>,
     event_log: &mut EventLog,
 ) -> io::Result<()> {
     loop {
         drain_refresh_events(refresh_receiver, event_log);
         if let Some(request) = server.recv_timeout(Duration::from_millis(100))? {
-            if let Err(error) = serve_view_request(request, view_data_path, index) {
+            if let Err(error) =
+                serve_view_request(request, view_data_path, index, focus_file, trigger_sender)
+            {
                 event_log.system_warning(
                     Some(ORIGIN),
                     format!("Could not complete a viewer request: {error}"),
@@ -255,13 +280,42 @@ fn run_view_server(
     }
 }
 
-fn serve_view_request(request: Request, view_data_path: &Path, index: &[u8]) -> io::Result<()> {
+fn serve_view_request(
+    request: Request,
+    view_data_path: &Path,
+    index: &[u8],
+    focus_file: &Arc<Mutex<Option<PathBuf>>>,
+    trigger_sender: &Sender<()>,
+) -> io::Result<()> {
+    let url_path = request.url().split('?').next().unwrap_or("/");
+
+    if url_path == COLLECTION_FOCUS_URL {
+        if request.method() != &Method::Post {
+            return request
+                .respond(Response::empty(StatusCode(405)).with_header(header("Allow", "POST")?));
+        }
+        let next_focus = parse_query_param(request.url(), "path")
+            .filter(|value| !value.trim().is_empty())
+            .map(PathBuf::from);
+        if let Ok(mut guard) = focus_file.lock() {
+            *guard = next_focus;
+        }
+        let _ = trigger_sender.send(());
+        return request.respond(
+            response(
+                b"{\"ok\":true}".to_vec(),
+                StatusCode(200),
+                "application/json; charset=utf-8",
+            )?
+            .with_header(header("Cache-Control", "no-store")?),
+        );
+    }
+
     if !matches!(request.method(), Method::Get | Method::Head) {
         return request
             .respond(Response::empty(StatusCode(405)).with_header(header("Allow", "GET, HEAD")?));
     }
 
-    let url_path = request.url().split('?').next().unwrap_or("/");
     let asset_path = url_path.trim_start_matches('/');
     if asset_path.split('/').any(|part| part == "..") {
         return request.respond(Response::empty(StatusCode(400)));
@@ -375,6 +429,9 @@ fn temporary_view_data_path(path: &Path) -> PathBuf {
 fn spawn_view_data_refresher(
     cwd: PathBuf,
     view_data_path: PathBuf,
+    mut cached_view: CollectionView,
+    focus_file: Arc<Mutex<Option<PathBuf>>>,
+    trigger_receiver: Receiver<()>,
     stop: Arc<AtomicBool>,
     url: String,
     watch: bool,
@@ -384,8 +441,12 @@ fn spawn_view_data_refresher(
         let mut watcher = SourceWatcher::new(&cwd);
 
         while !stop.load(Ordering::Relaxed) {
-            thread::sleep(Duration::from_millis(250));
-            if !watcher.changed() {
+            let triggered = trigger_receiver
+                .recv_timeout(Duration::from_millis(80))
+                .is_ok();
+            while trigger_receiver.try_recv().is_ok() {}
+
+            if !triggered && !watcher.changed() {
                 continue;
             }
             watcher.reset();
@@ -405,7 +466,19 @@ fn spawn_view_data_refresher(
                     break;
                 }
             }
-            match rebuild_collection_view_data(&cwd, &view_data_path) {
+            let current_focus = focus_file.lock().ok().and_then(|guard| guard.clone());
+            let refresh_result = match current_focus {
+                Some(ref target_file) if !cached_view.files.is_empty() => {
+                    rebuild_focused_file_view_data(
+                        &cwd,
+                        target_file,
+                        &mut cached_view,
+                        &view_data_path,
+                    )
+                }
+                _ => rebuild_collection_view_data_into(&cwd, &mut cached_view, &view_data_path),
+            };
+            match refresh_result {
                 Ok(ViewDataRefresh::Updated) => {
                     VIEW_DATA_VERSION.fetch_add(1, Ordering::SeqCst);
                     if watch {
@@ -481,7 +554,76 @@ fn join_view_data_refresher(thread: JoinHandle<io::Result<()>>, event_log: &mut 
     }
 }
 
-fn rebuild_collection_view_data(cwd: &Path, view_data_path: &Path) -> io::Result<ViewDataRefresh> {
+fn rebuild_focused_file_view_data(
+    cwd: &Path,
+    target_file: &Path,
+    cached_view: &mut CollectionView,
+    view_data_path: &Path,
+) -> io::Result<ViewDataRefresh> {
+    let mut event_log = EventLog::new();
+    let starting_event_count = event_log.events().len();
+    let mut collection = SourceCollection::load(cwd, &mut event_log, ORIGIN);
+    let resolved_target =
+        collection.run_single_file_view_check_passes(target_file, &mut event_log, ORIGIN);
+
+    if has_blocking_user_issues_since(&event_log, starting_event_count) {
+        event_log.user_error(
+            Some(ORIGIN),
+            "Rendered view was not updated because the current MathLingua sources have errors",
+        );
+        return Ok(ViewDataRefresh::Blocked(event_log.events().to_vec()));
+    }
+
+    let Some(update) = collection.build_single_file_view(&resolved_target, &mut event_log) else {
+        return rebuild_collection_view_data_into(cwd, cached_view, view_data_path);
+    };
+
+    match update {
+        SingleFileViewUpdate::File(file_view) => {
+            if let Some(existing) = cached_view
+                .files
+                .iter_mut()
+                .find(|entry| entry.path == file_view.path)
+            {
+                *existing = file_view;
+            } else {
+                return rebuild_collection_view_data_into(cwd, cached_view, view_data_path);
+            }
+        }
+        SingleFileViewUpdate::CollectionPreface {
+            preface,
+            preface_source,
+        } => {
+            cached_view.preface = preface;
+            cached_view.preface_source = preface_source;
+        }
+        SingleFileViewUpdate::DirectoryPreface {
+            path,
+            preface,
+            preface_source,
+        } => {
+            if let Some(existing) = cached_view
+                .directories
+                .iter_mut()
+                .find(|dir| dir.path == path)
+            {
+                existing.preface = preface;
+                existing.preface_source = preface_source;
+            } else {
+                return rebuild_collection_view_data_into(cwd, cached_view, view_data_path);
+            }
+        }
+    }
+
+    write_collection_view_data(view_data_path, cached_view)?;
+    Ok(ViewDataRefresh::Updated)
+}
+
+fn rebuild_collection_view_data_into(
+    cwd: &Path,
+    cached_view: &mut CollectionView,
+    view_data_path: &Path,
+) -> io::Result<ViewDataRefresh> {
     let mut event_log = EventLog::new();
     let starting_event_count = event_log.events().len();
     let mut collection = SourceCollection::load(cwd, &mut event_log, ORIGIN);
@@ -503,8 +645,57 @@ fn rebuild_collection_view_data(cwd: &Path, view_data_path: &Path) -> io::Result
         return Ok(ViewDataRefresh::Blocked(event_log.events().to_vec()));
     };
 
-    write_collection_view_data(view_data_path, &collection_view)?;
+    *cached_view = collection_view;
+    write_collection_view_data(view_data_path, cached_view)?;
     Ok(ViewDataRefresh::Updated)
+}
+
+#[cfg(test)]
+fn rebuild_collection_view_data(cwd: &Path, view_data_path: &Path) -> io::Result<ViewDataRefresh> {
+    let mut dummy = CollectionView {
+        title: String::new(),
+        preface: Vec::new(),
+        preface_source: None,
+        directories: Vec::new(),
+        files: Vec::new(),
+    };
+    rebuild_collection_view_data_into(cwd, &mut dummy, view_data_path)
+}
+
+fn parse_query_param(url: &str, key: &str) -> Option<String> {
+    let query = url.split_once('?')?.1;
+    for pair in query.split('&') {
+        if let Some((k, v)) = pair.split_once('=') {
+            if k == key {
+                return Some(percent_decode(v));
+            }
+        }
+    }
+    None
+}
+
+fn percent_decode(input: &str) -> String {
+    let bytes = input.as_bytes();
+    let mut out = Vec::with_capacity(bytes.len());
+    let mut i = 0;
+    while i < bytes.len() {
+        if bytes[i] == b'%' && i + 2 < bytes.len() {
+            if let Ok(hex_str) = std::str::from_utf8(&bytes[i + 1..i + 3]) {
+                if let Ok(val) = u8::from_str_radix(hex_str, 16) {
+                    out.push(val);
+                    i += 3;
+                    continue;
+                }
+            }
+        } else if bytes[i] == b'+' {
+            out.push(b' ');
+            i += 1;
+            continue;
+        }
+        out.push(bytes[i]);
+        i += 1;
+    }
+    String::from_utf8_lossy(&out).into_owned()
 }
 
 fn create_view_session_dir() -> io::Result<PathBuf> {

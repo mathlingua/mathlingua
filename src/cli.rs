@@ -205,6 +205,10 @@ pub struct ViewArgs {
     /// Keep running through source errors and refresh when files change.
     #[arg(long, default_value_t = false)]
     pub watch: bool,
+
+    /// Internal option: only refresh the rendered view for this specific file path.
+    #[arg(long = "focus-file", hide = true)]
+    pub focus_file: Option<PathBuf>,
 }
 
 #[derive(Clone, Debug, Args, PartialEq, Eq)]
@@ -500,7 +504,8 @@ mod tests {
             cli.command,
             Command::View(ViewArgs {
                 port: 4000,
-                watch: false
+                watch: false,
+                focus_file: None,
             })
         ));
     }
@@ -513,8 +518,33 @@ mod tests {
             cli.command,
             Command::View(ViewArgs {
                 port: 3000,
-                watch: true
+                watch: true,
+                focus_file: None,
             })
         ));
+    }
+
+    #[test]
+    fn parses_hidden_view_focus_file() {
+        let cli = Cli::parse_from(["mlg", "view", "--watch", "--focus-file", "content/a.mlg"]);
+
+        assert!(matches!(
+            cli.command,
+            Command::View(ViewArgs {
+                port: 3000,
+                watch: true,
+                focus_file: Some(path),
+            }) if path == PathBuf::from("content/a.mlg")
+        ));
+
+        let help = <Cli as clap::CommandFactory>::command()
+            .find_subcommand_mut("view")
+            .expect("view subcommand")
+            .render_help()
+            .to_string();
+        assert!(
+            !help.contains("focus-file"),
+            "focus-file should remain hidden from help output"
+        );
     }
 }

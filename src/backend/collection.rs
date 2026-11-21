@@ -3,7 +3,10 @@ use crate::backend::semantic::{
     CollectionTypeInfo, DocumentTypeInfo, check_documents_collecting_all_type_info,
     check_documents_collecting_type_info,
 };
-use crate::backend::view::{CollectionView, build_collection_view_with_cached_proto_groups};
+use crate::backend::view::{
+    CollectionView, SingleFileViewUpdate, build_collection_view_with_cached_proto_groups,
+    build_single_file_view_with_cached_proto_groups,
+};
 use crate::events::{Event, EventLocation, EventLog};
 use crate::frontend::{
     ParsedSourceFile, ProtoArgument, ProtoGroup, ProtoParser, ProtoSection, SourceFileViewMetadata,
@@ -125,6 +128,26 @@ impl SourceCollection {
         self.check_text_fences(event_log, origin);
         let files = self.semantic_files();
         self.view_type_info = check_documents_collecting_all_type_info(&files, event_log);
+    }
+
+    /// Runs check passes while retaining expression types only for `target_file`.
+    pub(crate) fn run_single_file_view_check_passes(
+        &mut self,
+        target_file: &Path,
+        event_log: &mut EventLog,
+        origin: &str,
+    ) -> PathBuf {
+        let resolved_target = if target_file.is_absolute() {
+            normalize_path(target_file)
+        } else {
+            normalize_path(&self.root.join(target_file))
+        };
+        let doc_type_info =
+            self.run_check_passes_collecting_type_info(event_log, origin, Some(&resolved_target));
+        self.view_type_info.clear();
+        self.view_type_info
+            .insert(resolved_target.clone(), doc_type_info);
+        resolved_target
     }
 
     /// Runs the check passes and, when `type_info_for` names a file of this
@@ -291,6 +314,22 @@ impl SourceCollection {
             &self.root,
             &self.parsed_files,
             &self.source_directory_view_metadata,
+            &self.preface_files,
+            &self.view_type_info,
+            &mut self.proto_groups,
+            event_log,
+        )
+    }
+
+    pub(crate) fn build_single_file_view(
+        &mut self,
+        target_path: &Path,
+        event_log: &mut EventLog,
+    ) -> Option<SingleFileViewUpdate> {
+        build_single_file_view_with_cached_proto_groups(
+            &self.root,
+            target_path,
+            &self.parsed_files,
             &self.preface_files,
             &self.view_type_info,
             &mut self.proto_groups,

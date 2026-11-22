@@ -8,8 +8,7 @@ when:
 . A is \\anything
 . A := A
 Appendix:
-. documented:
-  . called: "bad"
+. called: "bad"
 == end:input ==
 == begin:output ==
 error: Subject `A` is specified more than once in the same `when:` scope (`is` and `:=`); choose exactly one of `is`, a quoted specification, a spec-infix specification, or `:=`

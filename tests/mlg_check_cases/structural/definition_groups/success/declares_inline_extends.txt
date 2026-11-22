@@ -5,14 +5,12 @@ Accepts a Declares target that states its supertype inline.
 [\base]
 Declares: x
 Appendix:
-. documented:
-  . called: "base"
+. called: "base"
 
 [\child]
 Declares: x is \base
 Appendix:
-. documented:
-  . called: "child"
+. called: "child"
 == end:input ==
 == begin:output ==
 == end:output ==

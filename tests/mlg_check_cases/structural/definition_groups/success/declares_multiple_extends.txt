@@ -5,14 +5,12 @@ Accepts two independent supertype declarations in an extends section.
 [\first.type]
 Declares: x
 Appendix:
-. documented:
-  . called: "first type"
+. called: "first type"
 
 [\second.type]
 Declares: x
 Appendix:
-. documented:
-  . called: "second type"
+. called: "second type"
 
 [\child]
 Declares: x
@@ -20,8 +18,7 @@ extends:
 . x is \first.type
 . x is \second.type
 Appendix:
-. documented:
-  . called: "child"
+. called: "child"
 == end:input ==
 == begin:output ==
 == end:output ==

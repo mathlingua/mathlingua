@@ -7,8 +7,7 @@ States:
 when: x[1...n] is \\statement
 that: x[1] = x[1]
 Appendix:
-. documented:
-  . called: "all same"
+. called: "all same"
 
 Theorem:
 given: P, Q is \\statement

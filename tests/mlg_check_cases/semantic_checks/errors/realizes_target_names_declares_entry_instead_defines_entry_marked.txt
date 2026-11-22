@@ -5,14 +5,12 @@ Rejects a Realizes target that names a Declares entry instead of a Defines entry
 [\set]
 Declares: X
 Appendix:
-. documented:
-  . called: "set"
+. called: "set"
 
 [\not.a.realization]
 Realizes: X := \set
 Appendix:
-. documented:
-  . called: "not a realization"
+. called: "not a realization"
 == end:input ==
 == begin:output ==
 error: `Realizes:` must name a `Defines:` marked `abstractly:`; `\set` is a `Declares:`

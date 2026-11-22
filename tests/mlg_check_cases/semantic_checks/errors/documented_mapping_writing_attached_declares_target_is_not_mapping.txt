@@ -5,10 +5,9 @@ Rejects documented mapping writing attached to a Declares target that is not a m
 [\thing]
 Declares: X
 Appendix:
-. documented:
-  . called: "thing"
-  . writing: f(x)
-    as: "f(x)"
+. called: "thing"
+. writing: f(x)
+  as: "f(x)"
 == end:input ==
 == begin:output ==
 error: Documented `writing:` is only allowed when `Declares:` targets a mapping

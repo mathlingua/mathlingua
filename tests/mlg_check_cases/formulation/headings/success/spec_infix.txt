@@ -5,15 +5,13 @@ Accepts a spec-infix Declares heading and a matching predicate expression.
 [\set]
 Declares: X
 Appendix:
-. documented:
-  . called: "set"
+. called: "set"
 
 [A \:subset:/ B]
 Declares: A is \set
 when: B is \set
 Appendix:
-. documented:
-  . written: "A? subset B?"
+. written: "A? subset B?"
 
 Theorem:
 given: A, B is \set

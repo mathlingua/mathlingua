@@ -5,20 +5,17 @@ Accepts an expresses clause that supplies the value for a typed component in a c
 [\thing]
 Declares: x
 Appendix:
-. documented:
-  . called: "thing"
+. called: "thing"
 
 [\first]
 Defines: a is \thing
 Appendix:
-. documented:
-  . called: "first"
+. called: "first"
 
 [\second]
 Defines: b is \thing
 Appendix:
-. documented:
-  . called: "second"
+. called: "second"
 
 [\pair]
 Defines: P ::= (x, y)
@@ -27,8 +24,7 @@ specifies:
 . y := \second
 expresses: x := \first
 Appendix:
-. documented:
-  . called: "pair"
+. called: "pair"
 == end:input ==
 == begin:output ==
 

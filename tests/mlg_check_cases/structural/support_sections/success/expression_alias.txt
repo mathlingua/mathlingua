@@ -5,8 +5,7 @@ Accepts one local expression alias in an Aliases section.
 [\item]
 Declares: x
 Appendix:
-. documented:
-  . called: "item"
+. called: "item"
 . aliases:
   . alias: same(x_) :=> x_
     written: "x_?"

@@ -5,8 +5,7 @@ Rejects a malformed formulation in the Defines target.
 [\bad]
 Defines: x := (
 Appendix:
-. documented:
-  . called: "bad"
+. called: "bad"
 == end:input ==
 == begin:output ==
 error: Invalid Defines formulation: unexpected end of input; expected `(.`, `(`, `*`, `+`, `-`, `/` or 11 more

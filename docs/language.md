@@ -46,8 +46,7 @@ Declares: f(x__)
 when:
 . A, B is \set
 Appendix:
-. documented:
-  . called: "function from $A?$ to $B?$"
+. called: "function from $A?$ to $B?$"
 ```
 
 Headings identify local labels, commands, people, or resources depending on the
@@ -792,8 +791,7 @@ with a command. Its target may name the type it extends with an `is` relation.
 [\set]
 Declares: X
 Appendix:
-. documented:
-  . called: "set"
+. called: "set"
 ```
 
 Optional sections, in order:
@@ -807,7 +805,6 @@ satisfies:
 Requires:
 Enables:
 Appendix:
-. documented:
 . justification:
 . aliases:
 . writing:
@@ -832,8 +829,7 @@ optional `:=` definition, or both.
 [\foo{s}]
 Defines: x is \bar{s}
 Appendix:
-. documented:
-  . called: "foo"
+. called: "foo"
 ```
 
 It accepts `abstractly:`, `using:`, `when:`, `specifies:`, `expresses:`, and the
@@ -925,8 +921,7 @@ rest).
 [\(continuous)::function:on{A}:to{B}]
 Refines: f(x__)
 Appendix:
-. documented:
-  . adjective: "continuous"
+. adjective: "continuous"
 ```
 
 Its target may repeat the base `Declares:` target exactly or omit trailing
@@ -953,9 +948,8 @@ the heading, just as it is for an ordinary refined command:
 Refines: A
 when: B is \set
 Appendix:
-. documented:
-  . adjective: "nonempty"
-  . written: "A? \subset_{+} B?"
+. adjective: "nonempty"
+. written: "A? \subset_{+} B?"
 ```
 
 The refined operator can then be used in declarations and expressions:
@@ -1001,8 +995,7 @@ Refines: G(x__)
 implicitly:
 specifies: G is \(finite)::magma
 Appendix:
-. documented:
-  . adjective: "finite"
+. adjective: "finite"
 ```
 
 - `implicitly:` — the group merely restates the inherited definition. The body
@@ -1040,9 +1033,8 @@ that:
   then:
   . x * y = y * x
 Appendix:
-. documented:
-  . called: "commutative"
-  . description: "Order does not matter."
+. called: "commutative"
+. description: "Order does not matter."
 ```
 
 ## Theorem-Like Groups
@@ -1267,11 +1259,10 @@ form with each placeholder replaced by its ordinary name:
 [\real.sequence]
 Declares: X ::= x(i_)
 Appendix:
-. documented:
-  . writing: x(i)
-    as: "x?_{i?}"
-  . writing: x(i_)
-    as: "\left\{x?\right\}_{i_?=1}^{\infty}"
+. writing: x(i)
+  as: "x?_{i?}"
+. writing: x(i_)
+  as: "\left\{x?\right\}_{i_?=1}^{\infty}"
 ```
 
 The ordinary form (`x(i)`) renders invocations such as `x(j)`, substituting
@@ -1368,8 +1359,7 @@ named identifiers render — layered on top of the collection-wide `Writing:` gr
 [\natural]
 Declares: n
 Appendix:
-. documented:
-  . called: "natural"
+. called: "natural"
 . writing:
   . "pi :~> \varpi"
 ```
@@ -1770,8 +1760,7 @@ used in an `is` statement.
 Declares: f(x__)
 when: A, B is \set
 Appendix:
-. documented:
-  . called: "function"
+. called: "function"
 ```
 
 A later reference to `\function:on{G}:to{G}` in either an expression or a type
@@ -1857,8 +1846,7 @@ specifies:
 . * is \function:on{X}:to{X}
 . e "in" G
 Appendix:
-. documented:
-  . called: "group"
+. called: "group"
 ```
 
 This means that if the checker knows `G is \group`, it can prove `G is \set`.
@@ -1949,8 +1937,7 @@ the right-hand side of an `is` statement:
 Declares: f(x__) is (_ "in" A) -> (_ "in" B)
 when: A, B is \set
 Appendix:
-. documented:
-  . called: "function"
+. called: "function"
 ```
 
 The input side contains one or more specs and the output side contains exactly
@@ -2008,8 +1995,7 @@ Declares: R
 Requires:
 . capability: x_ "in" R :-> x is \real
 Appendix:
-. documented:
-  . called: "reals"
+. called: "reals"
 ```
 
 If the context contains `R is \reals` and `r "in" R`, the checker can reduce the
@@ -2042,8 +2028,7 @@ Enables:
 . from: Y ::= {y__ : ...}
   capability: x_ "in" X :<->: x_ memberOf Y
 Appendix:
-. documented:
-  . called: "set"
+. called: "set"
 ```
 
 If a value is introduced as `A := \set@{x_ : x_ is \real}`, the checker
@@ -2241,16 +2226,14 @@ substitution markers such as `$A?$`.
 
 ```text
 Appendix:
-. documented:
-  . called: "function on $A?$ to $B?$"
+. called: "function on $A?$ to $B?$"
 ```
 
 `written:` entries provide math-mode rendering templates.
 
 ```text
 Appendix:
-. documented:
-  . written: "f? \: : \: A? \rightarrow B?"
+. written: "f? \: : \: A? \rightarrow B?"
 ```
 
 A template placeholder may use either the source placeholder spelling or its
@@ -2360,9 +2343,8 @@ rather than as a second, competing title.
 [\empty.set]
 Declares: X
 Appendix:
-. documented:
-  . called: "empty set"
-  . written: "\emptyset"
+. called: "empty set"
+. written: "\emptyset"
 ```
 
 That card is titled "Empty set  $\emptyset$" (with `$\emptyset$` muted). An item

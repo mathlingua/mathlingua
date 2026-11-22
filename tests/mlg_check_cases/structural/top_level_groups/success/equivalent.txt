@@ -5,14 +5,12 @@ Accepts an Equivalent item whose to section names two existing commands.
 [\left]
 Defines: x is \\anything
 Appendix:
-. documented:
-  . called: "left"
+. called: "left"
 
 [\right]
 Defines: x is \\anything
 Appendix:
-. documented:
-  . called: "right"
+. called: "right"
 
 [\same]
 Equivalent:
@@ -20,8 +18,7 @@ to:
 . \left
 . \right
 Appendix:
-. documented:
-  . called: "same"
+. called: "same"
 == end:input ==
 == begin:output ==
 == end:output ==

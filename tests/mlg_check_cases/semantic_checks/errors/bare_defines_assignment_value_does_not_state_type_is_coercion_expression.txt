@@ -7,15 +7,13 @@ Declares: X
 Requires:
 . capability: x_ "in" X :-> \\abstract
 Appendix:
-. documented:
-  . called: "set"
+. called: "set"
 
 [A \.cross./ B]
 Defines: X := {(a_, b_) : a_ "in" A; b_ "in" B}
 when: A, B is \set
 Appendix:
-. documented:
-  . called: "cross"
+. called: "cross"
 == end:input ==
 == begin:output ==
 error: `Defines:` target `X` must state its type: use `... is <type>` or a top-level `\...@...` coercion (e.g. `\set@{...}`)

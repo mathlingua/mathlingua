@@ -883,8 +883,7 @@ mod tests {
             [\function:on{A}:to{B}]
             Declares: f(x__) ::= y_
             Appendix:
-            . documented:
-              . called: \"function\"
+            . called: \"function\"
             Id: \"123\"
             ```
             "
@@ -1122,8 +1121,7 @@ Id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
             r#"[\thing]
     Declares: value
     Appendix:
-    . documented:
-      . written: "\operatorname{thing}"
+    . written: "\operatorname{thing}"
 
     Theorem:
     then:
@@ -1348,10 +1346,9 @@ Id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
             r#"[\function{A, B}]
     Defines: A ::= B "defines" B
     Appendix:
-    . documented:
-      . [docs.called]
-        written:
-        . "\operatorname{function}"
+    . [docs.called]
+      written:
+      . "\operatorname{function}"
 
     [\function{A}]
     Theorem:
@@ -1373,7 +1370,7 @@ Id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
         assert!(has_user_error_at(
             &event_log,
             &canonical_file,
-            9,
+            8,
             1,
             &format!(
                 "Duplicate command signature `\\function` in Theorem; previously defined as Defines in {}:1:2",
@@ -1395,8 +1392,7 @@ Conjecture:
 given: x is \\expression
 then: x = x
 Appendix:
-. documented:
-  . called: "Identity conjecture"
+. called: "Identity conjecture"
 "#,
         )
         .unwrap();
@@ -1527,8 +1523,7 @@ Related:
 . to: "#complex.analysis"
   specifies: "Closely connected subjects."
 Appendix:
-. documented:
-  . called: "Real Analysis"
+. called: "Real Analysis"
 "##,
         )
         .unwrap();
@@ -1625,15 +1620,13 @@ specifies: "c makes them cofunctions."
 Declares: S
 when: a is \\expression
 Appendix:
-. documented:
-  . called: "aaa"
+. called: "aaa"
 
 [\bbb{a}]
 Declares: T
 when: a is \\expression
 Appendix:
-. documented:
-  . called: "bbb"
+. called: "bbb"
 
 [\eq{a}]
 Equivalent:
@@ -1672,15 +1665,13 @@ to:
 Declares: S
 when: a is \\expression
 Appendix:
-. documented:
-  . called: "aaa"
+. called: "aaa"
 
 [\bbb{a}]
 Defines: b is \\expression
 when: a is \\expression
 Appendix:
-. documented:
-  . called: "bbb"
+. called: "bbb"
 
 [\eq{a}]
 Equivalent:
@@ -1720,15 +1711,13 @@ to:
 Declares: S
 when: a is \\expression
 Appendix:
-. documented:
-  . called: "aaa"
+. called: "aaa"
 
 [\bbb{a}]
 Declares: f(x__)
 when: a is \\expression
 Appendix:
-. documented:
-  . called: "bbb"
+. called: "bbb"
 
 [\eq{a}]
 Equivalent:
@@ -1768,15 +1757,13 @@ to:
 Defines: b is \\expression
 when: a is \\expression
 Appendix:
-. documented:
-  . called: "aaa"
+. called: "aaa"
 
 [\bbb{a}]
 Defines: c is \\statement
 when: a is \\expression
 Appendix:
-. documented:
-  . called: "bbb"
+. called: "bbb"
 
 [\eq{a}]
 Equivalent:
@@ -1818,15 +1805,13 @@ to:
 Declares: S
 when: a is \\statement
 Appendix:
-. documented:
-  . called: "aaa"
+. called: "aaa"
 
 [\bbb{a}]
 Declares: T
 when: a is \\statement
 Appendix:
-. documented:
-  . called: "bbb"
+. called: "bbb"
 
 [\eq{a}]
 Equivalent:
@@ -1869,15 +1854,13 @@ to:
 Declares: S
 when: a is \\expression
 Appendix:
-. documented:
-  . called: "aaa"
+. called: "aaa"
 
 [\bbb{a}]
 Declares: T
 when: a is \\expression
 Appendix:
-. documented:
-  . called: "bbb"
+. called: "bbb"
 
 [\eq{a}]
 Equivalent:
@@ -1955,15 +1938,13 @@ then:
 Declares: S
 when: a is \\expression
 Appendix:
-. documented:
-  . called: "aaa"
+. called: "aaa"
 
 [\bbb{a}]
 Declares: T
 when: a is \\expression
 Appendix:
-. documented:
-  . called: "bbb"
+. called: "bbb"
 
 [\eq{a}]
 Equivalent:
@@ -1979,8 +1960,7 @@ when:
 . a is \\expression
 . p is \aaa{a}
 Appendix:
-. documented:
-  . called: "uses"
+. called: "uses"
 
 Theorem:
 given:
@@ -2019,15 +1999,13 @@ then:
 Declares: S
 when: a is \\expression
 Appendix:
-. documented:
-  . called: "aaa"
+. called: "aaa"
 
 [\bbb{a}]
 Declares: T
 when: a is \\expression
 Appendix:
-. documented:
-  . called: "bbb"
+. called: "bbb"
 
 [\eq{a}]
 Equivalent:
@@ -2043,8 +2021,7 @@ when:
 . a is \\expression
 . p is \aaa{a}
 Appendix:
-. documented:
-  . called: "uses"
+. called: "uses"
 
 Theorem:
 given:
@@ -2089,16 +2066,14 @@ Declares: X
 Enables:
 . capability: x_ "belongsA" X :-> \\abstract
 Appendix:
-. documented:
-  . called: "setA"
+. called: "setA"
 
 [\setB]
 Declares: Y
 Enables:
 . capability: x_ "belongsA" Y :-> \\abstract
 Appendix:
-. documented:
-  . called: "setB"
+. called: "setB"
 
 [\eqset]
 Equivalent:
@@ -2143,16 +2118,14 @@ Declares: X
 Enables:
 . capability: x_ "belongsA" X :-> \\abstract
 Appendix:
-. documented:
-  . called: "setA"
+. called: "setA"
 
 [\setB]
 Declares: Y
 Enables:
 . capability: x_ "belongsA" Y :-> \\abstract
 Appendix:
-. documented:
-  . called: "setB"
+. called: "setB"
 
 [\eqset]
 Equivalent:
@@ -2163,8 +2136,7 @@ to:
 [\other]
 Declares: Z
 Appendix:
-. documented:
-  . called: "other"
+. called: "other"
 
 Theorem:
 given:
@@ -2203,10 +2175,9 @@ then:
     Defines: A ::= B "defines" B
     when: A, B is \\anything
     Appendix:
-    . documented:
-      . [docs.called]
-        written:
-        . "\operatorname{function}"
+    . [docs.called]
+      written:
+      . "\operatorname{function}"
 
     Theorem:
     then:
@@ -2226,7 +2197,7 @@ then:
         assert!(has_user_error_at(
             &event_log,
             &file.canonicalize().unwrap(),
-            12,
+            11,
             7,
             "Undefined command signature `\\function`"
         ));
@@ -2243,10 +2214,9 @@ then:
             r#"[\foo{A, B}(x)]
     Defines: A "defines" B
     Appendix:
-    . documented:
-      . [docs.called]
-        written:
-        . "\operatorname{foo}"
+    . [docs.called]
+      written:
+      . "\operatorname{foo}"
 
     Theorem:
     then:
@@ -2266,7 +2236,7 @@ then:
         assert!(has_user_error_at(
             &event_log,
             &file.canonicalize().unwrap(),
-            11,
+            10,
             7,
             "Command signature `\\foo` expects argument shape `{2}(1)` but found `{1}(2)`"
         ));
@@ -2283,17 +2253,15 @@ then:
             r#"[\thing]
     Declares: value
     Appendix:
-    . documented:
-      . written: "\operatorname{thing}"
+    . written: "\operatorname{thing}"
 
     [\foo{A, B}(x)]
     Defines: A "defines" B
     when: A, B is \thing
     Appendix:
-    . documented:
-      . [docs.called]
-        written:
-        . "\operatorname{foo}"
+    . [docs.called]
+      written:
+      . "\operatorname{foo}"
 
     Theorem:
     given:
@@ -2377,24 +2345,21 @@ then:
     when: f is \\anything
     that: f is? \\anything
     Appendix:
-    . documented:
-      . called: "exact selector"
+    . called: "exact selector"
 
     [\arbitrary.selector{f(x_, y_)}:d{f.u?_}]
     States:
     when: f is \\anything
     that: f is? \\anything
     Appendix:
-    . documented:
-      . called: "arbitrary selector"
+    . called: "arbitrary selector"
 
     [\variadic.selector{f(x_[i_:=1...n])}:d{f.x_[i_[j_:=1...m]]}]
     States:
     when: f is \\anything
     that: f is? \\anything
     Appendix:
-    . documented:
-      . called: "variadic selector"
+    . called: "variadic selector"
     "#,
         )
         .unwrap();
@@ -2425,15 +2390,13 @@ then:
     Enables:
     . capability: x_ + y_ :=> x_ \.natural.+./ y_
     Appendix:
-    . documented:
-      . called: "natural"
+    . called: "natural"
 
     [x_ \.natural.+./ y_]
     Defines: z is \natural
     when: x_, y_ is \natural
     Appendix:
-    . documented:
-      . written: "x_? + y_?"
+    . written: "x_? + y_?"
 
     [\function]
     Declares: f(x__) ::= y_
@@ -2441,15 +2404,13 @@ then:
     . x__ is \\expression
     . y_ is \\anything
     Appendix:
-    . documented:
-      . called: "function"
+    . called: "function"
 
     [\d{f(x_, y_)}:d{f.x_}]
     Defines: g(x_, y_) is \function
     when: f is \function
     Appendix:
-    . documented:
-      . written: "d"
+    . written: "d"
 
     Theorem:
     then: \d[x_, y_ is \natural]{x_ + y_}:d{x_}
@@ -2488,14 +2449,12 @@ then:
     . from: Y ::= {y__ : ...}
       capability: x_ "in" X :<->: x_ memberOf Y
     Appendix:
-    . documented:
-      . called: "set"
+    . called: "set"
 
     [\naturals.set]
     Defines: N := \set@{n_ : n_ is \natural}
     Appendix:
-    . documented:
-      . called: "naturals"
+    . called: "naturals"
 
     [\function:?on{A}:?to{B}]
     Declares: f(x__) ::= y_
@@ -2504,43 +2463,37 @@ then:
     . x__ "in" A
     . y_ "in" B
     Appendix:
-    . documented:
-      . called: "function"
+    . called: "function"
 
     [A \.set.cross./ B]
     Defines: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
     when: A, B is \set
     Appendix:
-    . documented:
-      . called: "cross"
+    . called: "cross"
 
     [\binary.operation:on{X}]
     Declares: x_ * y_ is \function:on{X \.set.cross./ X}:to{X}
     when: X is \set
     Appendix:
-    . documented:
-      . called: "binary operation"
+    . called: "binary operation"
 
     [n_ \.natural.+./ m_]
     Defines: n_ + m_ is \binary.operation:on{\naturals.set}
     Appendix:
-    . documented:
-      . written: "n_? + m_?"
+    . written: "n_? + m_?"
 
     [\natural]
     Declares: n
     Enables:
     . capability: x_ + y_ :=> x_ \.natural.+./ y_
     Appendix:
-    . documented:
-      . called: "natural"
+    . called: "natural"
 
     [\d{f(x_, y_)}:d{f.x_}]
     Defines: g(x_, y_) is \function:on{\naturals.set}:to{\naturals.set}
     when: f is \function:on{\naturals.set}:to{\naturals.set}
     Appendix:
-    . documented:
-      . written: "d"
+    . written: "d"
 
     Theorem:
     then: \d[x_, y_ is \natural]{x_ + y_}:d{x_}
@@ -2572,38 +2525,33 @@ then:
             r#"[\natural]
     Declares: n
     Appendix:
-    . documented:
-      . called: "natural"
+    . called: "natural"
 
     [\natural.pair]
     Declares: P ::= (a, b)
     specifies:
     . a, b is \natural
     Appendix:
-    . documented:
-      . called: "natural pair"
+    . called: "natural pair"
 
     [\natural.set]
     Declares: N ::= {n__ : ...}
     specifies:
     . n__ is \natural
     Appendix:
-    . documented:
-      . called: "natural set"
+    . called: "natural set"
 
     [\take.pair{P}]
     Defines: result is \\anything
     when: P is \natural.pair
     Appendix:
-    . documented:
-      . called: "take pair"
+    . called: "take pair"
 
     [\take.set{N}]
     Defines: result is \\anything
     when: N is \natural.set
     Appendix:
-    . documented:
-      . called: "take set"
+    . called: "take set"
 
     Theorem:
     given: x, y is \natural
@@ -2638,59 +2586,51 @@ then:
             r#"[\natural]
     Declares: n
     Appendix:
-    . documented:
-      . called: "natural"
+    . called: "natural"
 
     [\real]
     Declares: r
     Appendix:
-    . documented:
-      . called: "real"
+    . called: "real"
 
     [\natural.function]
     Declares: f(x_) ::= y_
     specifies:
     . x_, y_ is \natural
     Appendix:
-    . documented:
-      . called: "natural function"
+    . called: "natural function"
 
     [\natural.pair]
     Declares: P ::= (a, b)
     specifies:
     . a, b is \natural
     Appendix:
-    . documented:
-      . called: "natural pair"
+    . called: "natural pair"
 
     [\natural.set]
     Declares: N ::= {n__ : ...}
     specifies:
     . n__ is \natural
     Appendix:
-    . documented:
-      . called: "natural set"
+    . called: "natural set"
 
     [\take.function{f}]
     Defines: result is \\anything
     when: f is \natural.function
     Appendix:
-    . documented:
-      . called: "take function"
+    . called: "take function"
 
     [\take.pair{P}]
     Defines: result is \\anything
     when: P is \natural.pair
     Appendix:
-    . documented:
-      . called: "take pair"
+    . called: "take pair"
 
     [\take.set{N}]
     Defines: result is \\anything
     when: N is \natural.set
     Appendix:
-    . documented:
-      . called: "take set"
+    . called: "take set"
 
     Theorem:
     given: r is \real
@@ -2771,8 +2711,7 @@ then:
     . x[1...n] = y[1...n]
     . \\map{x[1...i_...n]}:to{x[i_]}
     Appendix:
-    . documented:
-      . called: "foo"
+    . called: "foo"
 
     [\foo2{x...n}:bar2{y...m}]
     States:
@@ -2781,8 +2720,7 @@ then:
     . y[1...m] is \\statement
     that: x[1...n] = x[1...n]
     Appendix:
-    . documented:
-      . called: "foo two"
+    . called: "foo two"
 
     Theorem:
     given: P, Q, R, S is \\statement
@@ -2818,26 +2756,22 @@ then:
             r#"[\real]
     Declares: x
     Appendix:
-    . documented:
-      . called: "real"
+    . called: "real"
 
     [\whole]
     Declares: x
     Appendix:
-    . documented:
-      . called: "whole"
+    . called: "whole"
 
     [\natural]
     Declares: x
     Appendix:
-    . documented:
-      . called: "natural"
+    . called: "natural"
 
     [\integer]
     Declares: x
     Appendix:
-    . documented:
-      . called: "integer"
+    . called: "integer"
 
     Specify:
     . decimal:
@@ -2854,32 +2788,28 @@ then:
     when: x is \real
     that: x = x
     Appendix:
-    . documented:
-      . called: "accept real"
+    . called: "accept real"
 
     [\accept.whole{x}]
     States:
     when: x is \whole
     that: x = x
     Appendix:
-    . documented:
-      . called: "accept whole"
+    . called: "accept whole"
 
     [\accept.natural{x}]
     States:
     when: x is \natural
     that: x = x
     Appendix:
-    . documented:
-      . called: "accept natural"
+    . called: "accept natural"
 
     [\accept.integer{x}]
     States:
     when: x is \integer
     that: x = x
     Appendix:
-    . documented:
-      . called: "accept integer"
+    . called: "accept integer"
 
     Theorem:
     then:
@@ -2916,14 +2846,12 @@ then:
             r#"[\whole]
     Declares: x
     Appendix:
-    . documented:
-      . called: "whole"
+    . called: "whole"
 
     [\natural]
     Declares: x
     Appendix:
-    . documented:
-      . called: "natural"
+    . called: "natural"
 
     Specify:
     . zeroOrPositiveInt:
@@ -2935,40 +2863,35 @@ then:
     Defines: z is \natural
     when: x, y is \natural
     Appendix:
-    . documented:
-      . called: "multiply"
+    . called: "multiply"
 
     [\accept.whole{x}]
     States:
     when: x is \whole
     that: x = x
     Appendix:
-    . documented:
-      . called: "accept whole"
+    . called: "accept whole"
 
     [\one.based{x[i_ := 1...n]}]
     States:
     when: x[1...n] is \\statement
     that: x[\mul{i, i}]
     Appendix:
-    . documented:
-      . called: "one based"
+    . called: "one based"
 
     [\zero.based{x[i_ := 0...n]}]
     States:
     when: x[0...n] is \\statement
     that: \accept.whole{i}
     Appendix:
-    . documented:
-      . called: "zero based"
+    . called: "zero based"
 
     [\two.dimensional{x[(i_, j_) := (1,1)...(m,n)]}]
     States:
     when: x[..., ...] is \\statement
     that: x[\mul{i, i}, j]
     Appendix:
-    . documented:
-      . called: "two dimensional"
+    . called: "two dimensional"
 
     Theorem:
     given: P, Q is \\statement
@@ -3005,14 +2928,12 @@ then:
             r#"[\real]
     Declares: x
     Appendix:
-    . documented:
-      . called: "real"
+    . called: "real"
 
     [\natural]
     Declares: x
     Appendix:
-    . documented:
-      . called: "natural"
+    . called: "natural"
 
     Specify:
     . positiveInt:
@@ -3022,16 +2943,14 @@ then:
     Defines: z is \real
     when: x is \natural
     Appendix:
-    . documented:
-      . called: "real value"
+    . called: "real value"
 
     [\one.based{x[i_ := 1...n]}]
     States:
     when: x[1...n] is \\statement
     that: x[\real.value{i}]
     Appendix:
-    . documented:
-      . called: "one based"
+    . called: "one based"
     "#,
         )
         .unwrap();
@@ -3064,14 +2983,12 @@ then:
             r#"[\real]
     Declares: x
     Appendix:
-    . documented:
-      . called: "real"
+    . called: "real"
 
     [\natural]
     Declares: x
     Appendix:
-    . documented:
-      . called: "natural"
+    . called: "natural"
 
     Specify:
     . positiveInt:
@@ -3082,8 +2999,7 @@ then:
     when: x is \natural
     that: x = x
     Appendix:
-    . documented:
-      . called: "accept natural"
+    . called: "accept natural"
 
     Theorem:
     given: 1 is \real
@@ -3119,8 +3035,7 @@ then:
     when: x[i, j] is \\statement
     that: x[i, j] = x[i, j]
     Appendix:
-    . documented:
-      . called: "matrix statement"
+    . called: "matrix statement"
 
     Theorem:
     given: P, Q, R, S is \\statement
@@ -3154,15 +3069,13 @@ then:
             r#"[\matrix]
     Declares: X
     Appendix:
-    . documented:
-      . called: "matrix"
+    . called: "matrix"
 
     [\matrix:of{x[(i_, j_) := (1,1)...(m,n)]}]
     Defines: X is \matrix
     when: x[..., ...] is \\statement
     Appendix:
-    . documented:
-      . written: "\left [ x?{{...\:...}...\\} \right ]"
+    . written: "\left [ x?{{...\:...}...\\} \right ]"
 
     Theorem:
     given: P, Q, R, S, T, U is \\statement
@@ -3201,14 +3114,12 @@ then:
     . from: Y ::= {y__ : ...}
       capability: x_ "in" X :<->: x_ memberOf Y
     Appendix:
-    . documented:
-      . called: "set"
+    . called: "set"
 
     [\naturals.set]
     Defines: N := \set@{n_ : n_ is \natural}
     Appendix:
-    . documented:
-      . called: "naturals"
+    . called: "naturals"
 
     [\function:?on{A}:?to{B}]
     Declares: f(x__) ::= y_
@@ -3217,49 +3128,42 @@ then:
     . x__ "in" A
     . y_ "in" B
     Appendix:
-    . documented:
-      . called: "function"
+    . called: "function"
 
     [A \.set.cross./ B]
     Defines: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
     when: A, B is \set
     Appendix:
-    . documented:
-      . called: "cross"
+    . called: "cross"
 
     [\binary.operation:on{X}]
     Declares: x_ * y_ is \function:on{X \.set.cross./ X}:to{X}
     when: X is \set
     Appendix:
-    . documented:
-      . called: "binary operation"
+    . called: "binary operation"
 
     [n_ \.natural.+./ m_]
     Defines: n_ + m_ is \binary.operation:on{\naturals.set}
     Appendix:
-    . documented:
-      . written: "n_? + m_?"
+    . written: "n_? + m_?"
 
     [\natural]
     Declares: n
     Enables:
     . capability: x_ + y_ :=> x_ \.natural.+./ y_
     Appendix:
-    . documented:
-      . called: "natural"
+    . called: "natural"
 
     [\matrix]
     Declares: X
     Appendix:
-    . documented:
-      . called: "matrix"
+    . called: "matrix"
 
     [\matrix:of{x[(i_, j_) := (1,1)...(m,n)]}]
     Defines: X is \matrix
     when: x[..., ...] is \natural
     Appendix:
-    . documented:
-      . written: "matrix"
+    . written: "matrix"
 
     Theorem:
     given: a, b, c, x, y, z is \natural
@@ -3294,8 +3198,7 @@ then:
     when: x[i, j] is \\statement
     that: x[i, j] = x[i, j]
     Appendix:
-    . documented:
-      . called: "matrix statement"
+    . called: "matrix statement"
 
     Theorem:
     given: P, Q, R, S is \\statement
@@ -3338,8 +3241,7 @@ then:
     . y[1...n] is \\statement
     that: x[1...n] = y[1...n]
     Appendix:
-    . documented:
-      . called: "foo"
+    . called: "foo"
 
     Theorem:
     given: P, Q, R is \\statement
@@ -3381,8 +3283,7 @@ then:
     when: x... is \\statement
     that: x... + 1
     Appendix:
-    . documented:
-      . called: "foo"
+    . called: "foo"
     "#,
         )
         .unwrap();
@@ -3417,17 +3318,15 @@ then:
             r#"[\thing]
     Declares: value
     Appendix:
-    . documented:
-      . written: "\operatorname{thing}"
+    . written: "\operatorname{thing}"
 
     [\some.function{A}(x, y)]
     Defines: A is \thing
     when: A is \thing
     Appendix:
-    . documented:
-      . [docs.called]
-        written:
-        . "\operatorname{someFunction}"
+    . [docs.called]
+      written:
+      . "\operatorname{someFunction}"
 
     Theorem:
     given:
@@ -3463,8 +3362,7 @@ then:
             r#"[\natural]
     Declares: N
     Appendix:
-    . documented:
-      . called: "natural"
+    . called: "natural"
 
     [\natural.constructor]
     Declares: succ(n_) ::= m_
@@ -3472,15 +3370,13 @@ then:
     . n_ is \natural
     . m_ is \natural
     Appendix:
-    . documented:
-      . called: "natural constructor"
+    . called: "natural constructor"
 
     [\natural.succ(n_)]
     Defines: succ(n_) is \natural.constructor
     Appendix:
-    . documented:
-      . called: "successor of $n?$"
-      . written: "n?+\!\!+"
+    . called: "successor of $n?$"
+    . written: "n?+\!\!+"
     "#,
         )
         .unwrap();
@@ -3511,15 +3407,13 @@ then:
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . called: "set"
+    . called: "set"
 
     [A \.set.cross./ B]
     Defines: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
     when: A, B is \set
     Appendix:
-    . documented:
-      . called: "Cartesian product"
+    . called: "Cartesian product"
 
     [\function:?on{A}:?to{B}]
     Declares: f(x__) ::= y_
@@ -3528,28 +3422,24 @@ then:
     . x__ "in" A
     . y_ "in" B
     Appendix:
-    . documented:
-      . called: "function"
+    . called: "function"
 
     [\naturals.set]
     Defines: N is \set
     Appendix:
-    . documented:
-      . called: "natural numbers"
+    . called: "natural numbers"
 
     [\binary.operation:on{X}]
     Declares: x_ * y_ is \function:on{X \.set.cross./ X}:to{X}
     when: X is \set
     Appendix:
-    . documented:
-      . called: "binary operation on $X?$"
+    . called: "binary operation on $X?$"
 
     [n_ \.natural.+./ m_]
     Defines: n_ + m_ ::= p_ is \binary.operation:on{\naturals.set}
     expresses: p_ := n_
     Appendix:
-    . documented:
-      . called: "natural addition"
+    . called: "natural addition"
 
     Theorem:
     given: n, m "in" \naturals.set
@@ -3584,31 +3474,27 @@ then:
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\function:on{A}:to{B}]
     Declares: f(x__)
     when: A, B is \set
     Appendix:
-    . documented:
-      . written: "A? \to B?"
+    . written: "A? \to B?"
 
     [\(bounded)::function:on{A}:to{B}]
     Refines: f(x__)
     when: A, B is \set
     Appendix:
-    . documented:
-      . adjective: "bounded"
-      . written: "\operatorname{bounded}"
+    . adjective: "bounded"
+    . written: "\operatorname{bounded}"
 
     [\(continuous)::function:on{A}:to{B}]
     Refines: f(x__)
     when: A, B is \set
     Appendix:
-    . documented:
-      . adjective: "continuous"
-      . written: "\operatorname{continuous}"
+    . adjective: "continuous"
+    . written: "\operatorname{continuous}"
 
     Theorem:
     given:
@@ -3643,15 +3529,13 @@ then:
             r#"[\set]
     Declares: X
     Appendix:
-    . documented:
-      . written: "set"
+    . written: "set"
 
     [A \:subset:/ B]
     Declares: A
     when: B is \set
     Appendix:
-    . documented:
-      . written: "A? \subset B?"
+    . written: "A? \subset B?"
 
     [A \:(nonempty)::subset:/ B]
     Refines: A
@@ -3659,9 +3543,8 @@ then:
     satisfies:
     . A \:subset?:/ B
     Appendix:
-    . documented:
-      . adjective: "nonempty"
-      . written: "A? \subset_{+} B?"
+    . adjective: "nonempty"
+    . written: "A? \subset_{+} B?"
 
     Theorem:
     given:
@@ -3696,21 +3579,18 @@ then:
             r#"[\set]
     Declares: X
     Appendix:
-    . documented:
-      . called: "set"
+    . called: "set"
 
     [\(nonempty)::set]
     Refines: X
     Appendix:
-    . documented:
-      . adjective: "nonempty"
+    . adjective: "nonempty"
 
     [A \:subset:/ B]
     Declares: A is \set
     when: B is \set
     Appendix:
-    . documented:
-      . written: "A? \subset B?"
+    . written: "A? \subset B?"
 
     Theorem:
     given:
@@ -3750,8 +3630,7 @@ then:
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [A \:subset:/ B]
     Declares: A is \set
@@ -3759,9 +3638,8 @@ then:
     Requires:
     . capability: x_ "in" A :-> x_ "in" B
     Appendix:
-    . documented:
-      . written: "A? \subseteq B?"
-      . called: "$A?$ is a subset of $B?$"
+    . written: "A? \subseteq B?"
+    . called: "$A?$ is a subset of $B?$"
     "#,
         )
         .unwrap();
@@ -3785,7 +3663,7 @@ then:
         // A `Defines:` value must state the type it defines — either `... is <type>`
         // or a top-level `\ty@value` build. A bare `X := {…}` is rejected even though
         // the `memberOf` capability would let the collection literal infer `\set`.
-        let set = "[\\set]\nDeclares: X\nRequires:\n. capability: x_ \"in\" X :-> \\\\abstract\nEnables:\n. from: Y ::= {y__ : ...}\n  capability: x_ \"in\" X :-> x_ memberOf Y\nAppendix:\n. documented:\n  . called: \"set\"\n\n";
+        let set = "[\\set]\nDeclares: X\nRequires:\n. capability: x_ \"in\" X :-> \\\\abstract\nEnables:\n. from: Y ::= {y__ : ...}\n  capability: x_ \"in\" X :-> x_ memberOf Y\nAppendix:\n. called: \"set\"\n\n";
 
         let accepted = [
             // Explicit `is`.
@@ -3799,7 +3677,7 @@ then:
             write_mlg_fixture(
                 &file,
                 &format!(
-                    "{set}[A \\.set.cross./ B]\nDefines: {defines}\nwhen: A, B is \\set\nAppendix:\n. documented:\n  . called: \"cross\"\n"
+                    "{set}[A \\.set.cross./ B]\nDefines: {defines}\nwhen: A, B is \\set\nAppendix:\n. called: \"cross\"\n"
                 ),
             )
             .unwrap();
@@ -3822,7 +3700,7 @@ then:
         write_mlg_fixture(
             &file,
             &format!(
-                "{set}[A \\.set.cross./ B]\nDefines: X := {{(a_, b_) : a_ \"in\" A; b_ \"in\" B}}\nwhen: A, B is \\set\nAppendix:\n. documented:\n  . called: \"cross\"\n"
+                "{set}[A \\.set.cross./ B]\nDefines: X := {{(a_, b_) : a_ \"in\" A; b_ \"in\" B}}\nwhen: A, B is \\set\nAppendix:\n. called: \"cross\"\n"
             ),
         )
         .unwrap();
@@ -3857,8 +3735,7 @@ then:
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     Theorem:
     given: X := \set@{x_ : x_ is \set}
@@ -3895,8 +3772,7 @@ then:
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     Theorem:
     given: n is \\expression
@@ -3936,15 +3812,13 @@ then:
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\function:on{A}:to{B}]
     Declares: f(x__)
     when: A, B is \set
     Appendix:
-    . documented:
-      . written: "A? \to B?"
+    . written: "A? \to B?"
 
     Theorem:
     given:
@@ -3985,28 +3859,24 @@ then:
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\group]
     Declares: X
     Appendix:
-    . documented:
-      . written: "\operatorname{group}"
+    . written: "\operatorname{group}"
 
     [\function:on{A}:to{B}]
     Declares: f(x__)
     when: A, B is \set
     Appendix:
-    . documented:
-      . written: "A? \to B?"
+    . written: "A? \to B?"
 
     [\needs.group{G}]
     Declares: x
     when: G is \group
     Appendix:
-    . documented:
-      . written: "\operatorname{needsGroup}"
+    . written: "\operatorname{needsGroup}"
 
     Theorem:
     given:
@@ -4049,15 +3919,13 @@ then:
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\function:on{A}:to{B}]
     Declares: f(x__)
     when: A, B is \set
     Appendix:
-    . documented:
-      . written: "A? \to B?"
+    . written: "A? \to B?"
 
     Theorem:
     given:
@@ -4100,17 +3968,15 @@ then:
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . called: "set"
-      . written: "\operatorname{set}"
+    . called: "set"
+    . written: "\operatorname{set}"
 
     [\function:?on{A}:?to{B}]
     Declares: f(x__)
     when: A, B is \set
     Appendix:
-    . documented:
-      . called: "function"
-      . written: "f?"
+    . called: "function"
+    . written: "f?"
 
     [\(injective)::function:?on{A}:?to{B}]
     Refines: f(x__)
@@ -4121,17 +3987,15 @@ then:
       . if: f(x1) = f(x2)
         then: x1 = x2
     Appendix:
-    . documented:
-      . adjective: "injective"
-      . written: "\operatorname{injective}"
+    . adjective: "injective"
+    . written: "\operatorname{injective}"
 
     [\(surjective)::function:?on{A}:?to{B}]
     Refines: f(x__)
     when: A, B is \set
     Appendix:
-    . documented:
-      . adjective: "surjective"
-      . written: "\operatorname{surjective}"
+    . adjective: "surjective"
+    . written: "\operatorname{surjective}"
 
     Theorem:
     given: f is \(injective, surjective)::function
@@ -4166,8 +4030,7 @@ then:
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\function:?on{A}:?to{B}]
     Declares: f(x__) ::= y_
@@ -4176,9 +4039,8 @@ then:
     . x__ "in" A
     . y_ "in" B
     Appendix:
-    . documented:
-      . called: "function"
-      . written: "f?"
+    . called: "function"
+    . written: "f?"
 
     [\ternary.function:?on{A}:?to{B}]
     Declares: g(x_, y_, z_) ::= w_
@@ -4189,9 +4051,8 @@ then:
     . z_ "in" A
     . w_ "in" B
     Appendix:
-    . documented:
-      . called: "ternary function"
-      . written: "g?"
+    . called: "ternary function"
+    . written: "g?"
 
     [f \.function.compose./ g]
     Defines: h(x__) := f(g(x__)) is \function:on{A}:to{C}
@@ -4200,9 +4061,8 @@ then:
     . g is \function:on{A}:to{B}
     . f is \function:on{B}:to{C}
     Appendix:
-    . documented:
-      . written: "f? \circ g?"
-      . called: "function composition"
+    . written: "f? \circ g?"
+    . called: "function composition"
 
     Theorem:
     given:
@@ -4254,8 +4114,7 @@ then:
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\function:?on{A}:?to{B}]
     Declares: f(x__) ::= y_
@@ -4269,9 +4128,8 @@ then:
       . existsUnique: y "in" B
         suchThat: f(x) = y
     Appendix:
-    . documented:
-      . called: "function on $A?$ to $B?$"
-      . written: "f? \: : \: A? \rightarrow B?"
+    . called: "function on $A?$ to $B?$"
+    . written: "f? \: : \: A? \rightarrow B?"
     "#,
         )
         .unwrap();
@@ -4307,39 +4165,33 @@ then:
             r#"[\set]
     Declares: X
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\function]
     Declares: f(x__)
     Appendix:
-    . documented:
-      . written: "\operatorname{function}"
+    . written: "\operatorname{function}"
 
     [\bounded.function]
     Declares: f(x__) is \function
     Appendix:
-    . documented:
-      . written: "\operatorname{boundedFunction}"
+    . written: "\operatorname{boundedFunction}"
 
     [\(injective)::function]
     Refines: f(x__)
     Appendix:
-    . documented:
-      . adjective: "injective"
+    . adjective: "injective"
 
     [\(surjective)::function]
     Refines: f(x__)
     Appendix:
-    . documented:
-      . adjective: "surjective"
+    . adjective: "surjective"
 
     [\(bijective)::function]
     Refines: f(x__)
     specifies: f is \(injective, surjective)::[[f]]
     Appendix:
-    . documented:
-      . adjective: "bijective"
+    . adjective: "bijective"
 
     Theorem:
     given: f is \bounded.function
@@ -4373,34 +4225,29 @@ then:
             r#"[\set]
     Declares: X
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\function]
     Declares: f(x__)
     Appendix:
-    . documented:
-      . written: "\operatorname{function}"
+    . written: "\operatorname{function}"
 
     [\bounded.function]
     Declares: f(x__) is \function
     Appendix:
-    . documented:
-      . written: "\operatorname{boundedFunction}"
+    . written: "\operatorname{boundedFunction}"
 
     [\(injective)::function]
     Refines: f(x__)
     Appendix:
-    . documented:
-      . adjective: "injective"
+    . adjective: "injective"
 
     [\(injective)::bounded.function]
     Refines: f(x__)
     implicitly:
     specifies: f is \(injective)::function
     Appendix:
-    . documented:
-      . adjective: "injective"
+    . adjective: "injective"
     "#,
         )
         .unwrap();
@@ -4429,34 +4276,29 @@ then:
             r#"[\set]
     Declares: X
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\function]
     Declares: f(x__)
     Appendix:
-    . documented:
-      . written: "\operatorname{function}"
+    . written: "\operatorname{function}"
 
     [\bounded.function]
     Declares: f(x__) is \function
     Appendix:
-    . documented:
-      . written: "\operatorname{boundedFunction}"
+    . written: "\operatorname{boundedFunction}"
 
     [\(injective)::function]
     Refines: f(x__)
     Appendix:
-    . documented:
-      . adjective: "injective"
+    . adjective: "injective"
 
     [\(injective)::bounded.function]
     Refines: f(x__)
     implicitly:
     specifies: f is \(injective)::[[f]]
     Appendix:
-    . documented:
-      . adjective: "injective"
+    . adjective: "injective"
     "#,
         )
         .unwrap();
@@ -4489,26 +4331,22 @@ then:
             r#"[\set]
     Declares: X
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\function]
     Declares: f(x__)
     Appendix:
-    . documented:
-      . written: "\operatorname{function}"
+    . written: "\operatorname{function}"
 
     [\bounded.function]
     Declares: f(x__) is \function
     Appendix:
-    . documented:
-      . written: "\operatorname{boundedFunction}"
+    . written: "\operatorname{boundedFunction}"
 
     [\(injective)::function]
     Refines: f(x__)
     Appendix:
-    . documented:
-      . adjective: "injective"
+    . adjective: "injective"
 
     [\(injective)::bounded.function]
     Refines: f(x__)
@@ -4518,8 +4356,7 @@ then:
     . forAll: x__
       then: f(x__) = f(x__)
     Appendix:
-    . documented:
-      . adjective: "injective"
+    . adjective: "injective"
     "#,
         )
         .unwrap();
@@ -4552,26 +4389,22 @@ then:
             r#"[\set]
     Declares: X
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\function]
     Declares: f(x__)
     Appendix:
-    . documented:
-      . written: "\operatorname{function}"
+    . written: "\operatorname{function}"
 
     [\bounded.function]
     Declares: f(x__) is \function
     Appendix:
-    . documented:
-      . written: "\operatorname{boundedFunction}"
+    . written: "\operatorname{boundedFunction}"
 
     [\(injective)::function]
     Refines: f(x__)
     Appendix:
-    . documented:
-      . adjective: "injective"
+    . adjective: "injective"
 
     [\(injective)::bounded.function]
     Refines: f(x__)
@@ -4581,8 +4414,7 @@ then:
     . forAll: x__
       then: f(x__) = f(x__)
     Appendix:
-    . documented:
-      . adjective: "injective"
+    . adjective: "injective"
     "#,
         )
         .unwrap();
@@ -4611,34 +4443,29 @@ then:
             r#"[\set]
     Declares: X
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\function]
     Declares: f(x__)
     Appendix:
-    . documented:
-      . written: "\operatorname{function}"
+    . written: "\operatorname{function}"
 
     [\bounded.function]
     Declares: f(x__) is \function
     Appendix:
-    . documented:
-      . written: "\operatorname{boundedFunction}"
+    . written: "\operatorname{boundedFunction}"
 
     [\(injective)::function]
     Refines: f(x__)
     Appendix:
-    . documented:
-      . adjective: "injective"
+    . adjective: "injective"
 
     [\(injective)::bounded.function]
     Refines: f(x__)
     explicitly:
     specifies: f is \(injective)::[[f]]
     Appendix:
-    . documented:
-      . adjective: "injective"
+    . adjective: "injective"
     "#,
         )
         .unwrap();
@@ -4669,28 +4496,24 @@ then:
             r#"[\set]
     Declares: X
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\function]
     Declares: f(x__)
     Appendix:
-    . documented:
-      . written: "\operatorname{function}"
+    . written: "\operatorname{function}"
 
     [\bounded.function]
     Declares: f(x__) is \function
     Appendix:
-    . documented:
-      . written: "\operatorname{boundedFunction}"
+    . written: "\operatorname{boundedFunction}"
 
     [\(injective)::bounded.function]
     Refines: f(x__)
     implicitly: f
     specifies: f is \(injective)::[[f]]
     Appendix:
-    . documented:
-      . adjective: "injective"
+    . adjective: "injective"
     "#,
         )
         .unwrap();
@@ -4721,20 +4544,17 @@ then:
             r#"[\set]
     Declares: X
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\function]
     Declares: f(x__)
     Appendix:
-    . documented:
-      . written: "\operatorname{function}"
+    . written: "\operatorname{function}"
 
     [\bounded.function]
     Declares: f(x__) is \function
     Appendix:
-    . documented:
-      . written: "\operatorname{boundedFunction}"
+    . written: "\operatorname{boundedFunction}"
 
     [\(injective)::bounded.function]
     Refines: f(x__)
@@ -4742,8 +4562,7 @@ then:
     explicitly:
     specifies: f is \(injective)::[[f]]
     Appendix:
-    . documented:
-      . adjective: "injective"
+    . adjective: "injective"
     "#,
         )
         .unwrap();
@@ -4776,22 +4595,19 @@ then:
             r#"[\set]
     Declares: X
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\function]
     Declares: f(x__)
     Appendix:
-    . documented:
-      . written: "\operatorname{function}"
+    . written: "\operatorname{function}"
 
     [\(injective)::function]
     Refines: f(x__)
     implicitly:
     specifies: f is \(injective)::[[f]]
     Appendix:
-    . documented:
-      . adjective: "injective"
+    . adjective: "injective"
     "#,
         )
         .unwrap();
@@ -4829,8 +4645,7 @@ then:
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     Text: "Example:
            ```mlg
@@ -4847,8 +4662,7 @@ then:
     specifies:
     . X "in" A
     Appendix:
-    . documented:
-      . written: "\operatorname{foo}"
+    . written: "\operatorname{foo}"
     Id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"
     "#,
         )
@@ -4912,8 +4726,7 @@ then:
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\fun:?on{A}:?to{B}]
     Declares: f(x__) ::= y_
@@ -4926,15 +4739,13 @@ then:
       . existsUnique: y "in" B
         suchThat: f(x) = y
     Appendix:
-    . documented:
-      . written: "\operatorname{fun}"
+    . written: "\operatorname{fun}"
 
     [\pair:on{A}:to{B}]
     Defines: P := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
     when: A, B is \set
     Appendix:
-    . documented:
-      . written: "P"
+    . written: "P"
     "#,
         )
         .unwrap();
@@ -4989,15 +4800,13 @@ then:
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [A \.set.cross./ B]
     Defines: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
     when: A, B is \set
     Appendix:
-    . documented:
-      . written: "A? \times B?"
+    . written: "A? \times B?"
 
     [\function:?on{A}:?to{B}]
     Declares: f(x__) ::= y_
@@ -5006,15 +4815,13 @@ then:
     . x__ "in" A
     . y_ "in" B
     Appendix:
-    . documented:
-      . written: "f?"
+    . written: "f?"
 
     [\binary.operation:on{X}]
     Declares: x_ * y_ is \function:on{X \.set.cross./ X}:to{X}
     when: X is \set
     Appendix:
-    . documented:
-      . written: "\operatorname{binop}"
+    . written: "\operatorname{binop}"
 
     [\(associative)::binary.operation:on{X}]
     Refines: x_ * y_
@@ -5023,8 +4830,7 @@ then:
     . forAll: a, b, c "in" X
       then: (a * b) * c = a * (b * c)
     Appendix:
-    . documented:
-      . adjective: "associative"
+    . adjective: "associative"
     "#,
         )
         .unwrap();
@@ -5058,23 +4864,20 @@ then:
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . called: "set"
+    . called: "set"
 
     [\magma]
     Declares: M ::= (X, *) is \set via X
     specifies: * is \set
     Appendix:
-    . documented:
-      . called: "magma"
+    . called: "magma"
 
     [\magma.too]
     Declares: M ::= (X, *)
     extends: M is \set via X
     specifies: * is \set
     Appendix:
-    . documented:
-      . called: "magma too"
+    . called: "magma too"
 
     Theorem:
     given: M ::= (X, *) is \magma
@@ -5119,15 +4922,13 @@ then:
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . called: "set"
+    . called: "set"
 
     [\function:on{A}:to{B}]
     Declares: f(x__) is (_ "in" A) -> (_ "in" B)
     when: A, B is \set
     Appendix:
-    . documented:
-      . called: "function"
+    . called: "function"
 
     [\group]
     Declares: G ::= (X, *, e) is \set via X
@@ -5136,8 +4937,7 @@ then:
     . * is \function:on{X}:to{X}
     . e "in" G
     Appendix:
-    . documented:
-      . called: "group"
+    . called: "group"
     "#,
         )
         .unwrap();
@@ -5176,8 +4976,7 @@ then:
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . called: "set"
+    . called: "set"
 
     [\left.pair]
     Declares: L ::= (U, V)
@@ -5185,8 +4984,7 @@ then:
     . U is \set
     . V is \set
     Appendix:
-    . documented:
-      . called: "left pair"
+    . called: "left pair"
 
     [\right.pair]
     Declares: R ::= (S, T)
@@ -5194,8 +4992,7 @@ then:
     . S is \set
     . T is \set
     Appendix:
-    . documented:
-      . called: "right pair"
+    . called: "right pair"
 
     [\triple]
     Declares: X ::= (A, B, C)
@@ -5203,8 +5000,7 @@ then:
     . X is \left.pair via (A, B)
     . X is \right.pair via (B, C)
     Appendix:
-    . documented:
-      . called: "triple"
+    . called: "triple"
     "#,
         )
         .unwrap();
@@ -5233,8 +5029,7 @@ then:
             r#"[\set]
     Declares: X
     Appendix:
-    . documented:
-      . called: "set"
+    . called: "set"
 
     [\left.triple]
     Declares: L ::= (A, B, C)
@@ -5243,14 +5038,12 @@ then:
     . B is \set
     . C is \set
     Appendix:
-    . documented:
-      . called: "left triple"
+    . called: "left triple"
 
     [\(refined)::left.triple]
     Refines: L ::= (A, B, C)
     Appendix:
-    . documented:
-      . adjective: "refined"
+    . adjective: "refined"
 
     [\right.triple]
     Declares: R ::= (U, V, W)
@@ -5259,8 +5052,7 @@ then:
     . V is \set
     . W is \set
     Appendix:
-    . documented:
-      . called: "right triple"
+    . called: "right triple"
 
     [\combined]
     Declares: R ::= (X, +, *, 0, 1)
@@ -5268,8 +5060,7 @@ then:
     . R is \(refined)::left.triple via (X, +, 0)
     . R is \right.triple via (X, *, 1)
     Appendix:
-    . documented:
-      . called: "combined"
+    . called: "combined"
 
     Theorem:
     given: R ::= (X, +, *, 0, 1) is \combined
@@ -5305,14 +5096,12 @@ then:
             r#"[\set]
     Declares: X
     Appendix:
-    . documented:
-      . called: "set"
+    . called: "set"
 
     [\other]
     Declares: X
     Appendix:
-    . documented:
-      . called: "other"
+    . called: "other"
 
     [\left.pair]
     Declares: L ::= (A, B)
@@ -5320,8 +5109,7 @@ then:
     . A is \set
     . B is \set
     Appendix:
-    . documented:
-      . called: "left pair"
+    . called: "left pair"
 
     [\right.pair]
     Declares: R ::= (U, V)
@@ -5329,8 +5117,7 @@ then:
     . U is \other
     . V is \set
     Appendix:
-    . documented:
-      . called: "right pair"
+    . called: "right pair"
 
     [\combined]
     Declares: R ::= (X, Y, Z)
@@ -5338,8 +5125,7 @@ then:
     . R is \left.pair via (X, Y)
     . R is \right.pair via (X, Z)
     Appendix:
-    . documented:
-      . called: "combined"
+    . called: "combined"
     "#,
         )
         .unwrap();
@@ -5369,8 +5155,7 @@ then:
             r#"[\set]
     Declares: X
     Appendix:
-    . documented:
-      . called: "set"
+    . called: "set"
 
     [\triple]
     Declares: T ::= (A, B, C)
@@ -5379,8 +5164,7 @@ then:
     . B is \set
     . C is \set
     Appendix:
-    . documented:
-      . called: "triple"
+    . called: "triple"
 
     [\bad]
     Declares: R ::= (X, Y, Z)
@@ -5391,8 +5175,7 @@ then:
     . R is \triple via (X, X, Z)
     . X is \triple via (X, Y, Z)
     Appendix:
-    . documented:
-      . called: "bad"
+    . called: "bad"
     "#,
         )
         .unwrap();
@@ -5453,8 +5236,7 @@ then:
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . called: "set"
+    . called: "set"
 
     [\left.pair]
     Declares: L ::= (U, V)
@@ -5462,8 +5244,7 @@ then:
     . U is \set
     . V is \set
     Appendix:
-    . documented:
-      . called: "left pair"
+    . called: "left pair"
 
     [\right.pair]
     Declares: R ::= (S, T)
@@ -5471,8 +5252,7 @@ then:
     . S is \set
     . T is \set
     Appendix:
-    . documented:
-      . called: "right pair"
+    . called: "right pair"
 
     [\triple]
     Declares: X ::= (A, B, C)
@@ -5480,8 +5260,7 @@ then:
     . X is \left.pair via (A, B)
     . X is \right.pair via (B, C)
     Appendix:
-    . documented:
-      . called: "triple"
+    . called: "triple"
 
     Theorem:
     given: X ::= (A, B, C) is \triple
@@ -5516,21 +5295,18 @@ then:
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . called: "set"
+    . called: "set"
 
     [\function:on{A}:to{B}]
     Declares: f(x__) is (_ "in" A) -> (_ "in" B)
     when: A, B is \set
     Appendix:
-    . documented:
-      . called: "function"
+    . called: "function"
 
     [\empty.set]
     Defines: E := \set@{x : ...}
     Appendix:
-    . documented:
-      . called: "empty set"
+    . called: "empty set"
 
     [\naturals]
     Defines: Nb ::= (N, 0, succ(n_))
@@ -5540,8 +5316,7 @@ then:
     . 0 "in" N
     . succ is \function:on{N}:to{N}
     Appendix:
-    . documented:
-      . called: "naturals"
+    . called: "naturals"
 
 "#;
 
@@ -5649,8 +5424,7 @@ then:
     . 0 := \empty.set
     . succ(n_) := \empty.set
     Appendix:
-    . documented:
-      . called: "von Neumann naturals"
+    . called: "von Neumann naturals"
 
     Theorem:
     given: Nb ::= (N, 0, succ(n_)) := \naturals
@@ -5695,8 +5469,7 @@ then:
     specifies:
     . N := \empty.set
     Appendix:
-    . documented:
-      . called: "partial naturals"
+    . called: "partial naturals"
     "#
             ),
         )
@@ -5736,8 +5509,7 @@ then:
                 r#"{REALIZES_PRELUDE}    [\not.a.declaration]
     Realizes: Nb := \set
     Appendix:
-    . documented:
-      . called: "not a declaration"
+    . called: "not a declaration"
     "#
             ),
         )
@@ -5778,8 +5550,7 @@ then:
     . A := \empty.set
     . B is \set
     Appendix:
-    . documented:
-      . called: "concrete pair"
+    . called: "concrete pair"
     "#
             ),
         )
@@ -5828,15 +5599,13 @@ then:
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [A \.set.cross./ B]
     Defines: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
     when: A, B is \set
     Appendix:
-    . documented:
-      . written: "A? \times B?"
+    . written: "A? \times B?"
 
     [\function:?on{A}:?to{B}]
     Declares: f(x__) ::= y_
@@ -5845,15 +5614,13 @@ then:
     . x__ "in" A
     . y_ "in" B
     Appendix:
-    . documented:
-      . written: "f?"
+    . written: "f?"
 
     [\binary.operation:on{X}]
     Declares: x_ * y_ is \function:on{X \.set.cross./ X}:to{X}
     when: X is \set
     Appendix:
-    . documented:
-      . written: "\operatorname{binop}"
+    . written: "\operatorname{binop}"
 
     [\(associative)::binary.operation:on{X}]
     Refines: x_ * y_
@@ -5862,15 +5629,13 @@ then:
     . forAll: a, b, c "in" X
       then: (a * b) * c = a * (b * c)
     Appendix:
-    . documented:
-      . adjective: "associative"
+    . adjective: "associative"
 
     [\semigroup]
     Declares: S ::= (X, *) is \set via X
     specifies: * is \(associative)::binary.operation:on{X}
     Appendix:
-    . documented:
-      . written: "\operatorname{semigroup}"
+    . written: "\operatorname{semigroup}"
     "#,
         )
         .unwrap();
@@ -5904,15 +5669,13 @@ then:
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [A \.set.cross./ B]
     Defines: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
     when: A, B is \set
     Appendix:
-    . documented:
-      . written: "A? \times B?"
+    . written: "A? \times B?"
 
     [\function:?on{A}:?to{B}]
     Declares: f(x__) ::= y_
@@ -5921,22 +5684,19 @@ then:
     . x__ "in" A
     . y_ "in" B
     Appendix:
-    . documented:
-      . written: "f?"
+    . written: "f?"
 
     [\binary.operation:on{X}]
     Declares: x_ * y_ is \function:on{X \.set.cross./ X}:to{X}
     when: X is \set
     Appendix:
-    . documented:
-      . written: "\operatorname{binop}"
+    . written: "\operatorname{binop}"
 
     [\magma]
     Declares: M ::= (X, *) is \set via X
     specifies: * is \binary.operation:on{M}
     Appendix:
-    . documented:
-      . written: "\operatorname{magma}"
+    . written: "\operatorname{magma}"
 
     [\(associative)::binary.operation:on{X}]
     Refines: x_ * y_
@@ -5945,8 +5705,7 @@ then:
     . forAll: a, b, c "in" X
       then: (a * b) * c = a * (b * c)
     Appendix:
-    . documented:
-      . adjective: "associative"
+    . adjective: "associative"
 
     [\(commutative)::binary.operation:on{X}]
     Refines: x_ * y_
@@ -5955,43 +5714,37 @@ then:
     . forAll: a, b "in" X
       then: a * b = b * a
     Appendix:
-    . documented:
-      . adjective: "commutative"
+    . adjective: "commutative"
 
     [\semigroup]
     Declares: S ::= (X, *) is \magma via (X, *)
     specifies: * is \(associative)::binary.operation:on{X}
     Appendix:
-    . documented:
-      . written: "\operatorname{semigroup}"
+    . written: "\operatorname{semigroup}"
 
     [\(commutative)::semigroup]
     Refines: S ::= (X, *)
     specifies: * is \(commutative)::binary.operation:on{X}
     Appendix:
-    . documented:
-      . adjective: "commutative"
+    . adjective: "commutative"
 
     [\named.magma]
     Declares: M ::= (X, operation) is \set via X
     specifies: operation is \binary.operation:on{X}
     Appendix:
-    . documented:
-      . called: "named magma"
+    . called: "named magma"
 
     [\named.semigroup]
     Declares: S ::= (X, operation) is \named.magma via (X, operation)
     specifies: operation is \(associative)::binary.operation:on{X}
     Appendix:
-    . documented:
-      . called: "named semigroup"
+    . called: "named semigroup"
 
     [\(commutative)::named.semigroup]
     Refines: S ::= (X, operation)
     specifies: operation is \(commutative)::binary.operation:on{X}
     Appendix:
-    . documented:
-      . adjective: "commutative"
+    . adjective: "commutative"
 
     Theorem:
     given: S ::= (X, operation) is \(commutative)::named.semigroup
@@ -6025,15 +5778,13 @@ then:
             r#"[\set]
     Declares: X
     Appendix:
-    . documented:
-      . called: "set"
+    . called: "set"
 
     [A \:subset:/ B]
     Declares: A is \set
     when: B is \set
     Appendix:
-    . documented:
-      . called: "subset"
+    . called: "subset"
 
     [\bad{A}:in{B}]
     Declares: X
@@ -6044,8 +5795,7 @@ then:
     . A \:subset:/ B
     . A := B
     Appendix:
-    . documented:
-      . called: "bad"
+    . called: "bad"
     "#,
         )
         .unwrap();
@@ -6085,14 +5835,12 @@ then:
             r#"[\set]
     Declares: X
     Appendix:
-    . documented:
-      . called: "set"
+    . called: "set"
 
     [\(finite)::set]
     Refines: X
     Appendix:
-    . documented:
-      . adjective: "finite"
+    . adjective: "finite"
 
     [\bad{A}]
     Declares: X
@@ -6100,15 +5848,13 @@ then:
     . A is \set
     . A is \(finite)::set
     Appendix:
-    . documented:
-      . called: "bad"
+    . called: "bad"
 
     [\also.bad{A}]
     Declares: A is \set
     specifies: A is \(finite)::set
     Appendix:
-    . documented:
-      . called: "also bad"
+    . called: "also bad"
     "#,
         )
         .unwrap();
@@ -6147,8 +5893,7 @@ then:
             r#"[\set]
     Declares: X
     Appendix:
-    . documented:
-      . called: "set"
+    . called: "set"
 
     [\bad]
     Declares: X ::= (A, B)
@@ -6157,8 +5902,7 @@ then:
     . A := B
     . B is \set
     Appendix:
-    . documented:
-      . called: "bad"
+    . called: "bad"
     "#,
         )
         .unwrap();
@@ -6190,35 +5934,30 @@ then:
             r#"[\set]
     Declares: X
     Appendix:
-    . documented:
-      . called: "set"
+    . called: "set"
 
     [\binary.operation:on{X}]
     Declares: x_ * y_
     when: X is \set
     Appendix:
-    . documented:
-      . called: "binary operation"
+    . called: "binary operation"
 
     [\magma]
     Declares: M ::= (X, *) is \set via X
     specifies: * is \binary.operation:on{X}
     Appendix:
-    . documented:
-      . called: "magma"
+    . called: "magma"
 
     [\(finite)::set]
     Refines: X
     Appendix:
-    . documented:
-      . adjective: "finite"
+    . adjective: "finite"
 
     [\(bad)::magma]
     Refines: M ::= (X, *)
     specifies: * is \(finite)::set
     Appendix:
-    . documented:
-      . adjective: "bad"
+    . adjective: "bad"
     "#,
         )
         .unwrap();
@@ -6255,8 +5994,7 @@ then:
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\function:?on{A}:?to{B}]
     Declares: f(x__) ::= y_
@@ -6265,29 +6003,25 @@ then:
     . x__ "in" A
     . y_ "in" B
     Appendix:
-    . documented:
-      . written: "f?"
+    . written: "f?"
 
     [\binary.operation:on{X}]
     Declares: x_ * y_ is \function:on{X}:to{X}
     when: X is \set
     Appendix:
-    . documented:
-      . written: "\operatorname{binop}"
+    . written: "\operatorname{binop}"
 
     [\magma]
     Declares: M ::= (X, *) is \set via X
     specifies: * is \binary.operation:on{M}
     Appendix:
-    . documented:
-      . written: "\operatorname{magma}"
+    . written: "\operatorname{magma}"
 
     [\bad.magma]
     Declares: B ::= (X, *) is \magma via (X, *)
     specifies: * is \function:on{X}:to{X}
     Appendix:
-    . documented:
-      . written: "\operatorname{bad}"
+    . written: "\operatorname{bad}"
     "#,
         )
         .unwrap();
@@ -6325,8 +6059,7 @@ then:
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\grp:of{G}]
     Declares: Z
@@ -6335,8 +6068,7 @@ then:
     . capability: x_ "in" Z :-> x_ is \grp.element:of{G}
       written: "x_? \in Z?"
     Appendix:
-    . documented:
-      . written: "\operatorname{grp}"
+    . written: "\operatorname{grp}"
     "#,
         )
         .unwrap();
@@ -6375,15 +6107,13 @@ then:
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [A \.set.cross./ B]
     Defines: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
     when: A, B is \set
     Appendix:
-    . documented:
-      . written: "A? \times B?"
+    . written: "A? \times B?"
 
     [\function:?on{A}:?to{B}]
     Declares: f(x__) ::= y_
@@ -6392,23 +6122,20 @@ then:
     . x__ "in" A
     . y_ "in" B
     Appendix:
-    . documented:
-      . written: "f?"
+    . written: "f?"
 
     [\binary.operation:on{X}]
     Declares: x_ * y_ is \function:on{X \.set.cross./ X}:to{X}
     when: X is \set
     Appendix:
-    . documented:
-      . written: "\operatorname{binop}"
+    . written: "\operatorname{binop}"
 
     [\magma]
     Declares: M ::= (X, *) is \set via X
     specifies:
     . * is \binary.operation:on{M}
     Appendix:
-    . documented:
-      . written: "\operatorname{magma}"
+    . written: "\operatorname{magma}"
 
     [\magma.element:of{M ::= (X, *)}]
     Declares: x "in" X
@@ -6417,8 +6144,7 @@ then:
     . capability: x_ [*] y_ :=> x_ is \undefined.elt:of{M}
       written: "x_? *? y_?"
     Appendix:
-    . documented:
-      . written: "\operatorname{elt}"
+    . written: "\operatorname{elt}"
     "#,
         )
         .unwrap();
@@ -6458,8 +6184,7 @@ then:
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\elt:of{X}]
     Declares: x "in" X
@@ -6470,8 +6195,7 @@ then:
     . capability: x.twin(a_) :=> a_
       written: "a_?"
     Appendix:
-    . documented:
-      . written: "\operatorname{elt}"
+    . written: "\operatorname{elt}"
 
     Theorem:
     given:
@@ -6513,15 +6237,13 @@ then:
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . called: "set"
+    . called: "set"
 
     [A \.cross./ B]
     Defines: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
     when: A, B is \set
     Appendix:
-    . documented:
-      . called: "cross"
+    . called: "cross"
 
     [\function:on{A}:to{B}]
     Declares: f(x__) ::= y_
@@ -6530,15 +6252,13 @@ then:
     . x__ "in" A
     . y_ "in" B
     Appendix:
-    . documented:
-      . called: "function"
+    . called: "function"
 
     [\binary.operation:on{X}]
     Declares: x_ * y_ is \function:on{X \.cross./ X}:to{X}
     when: X is \set
     Appendix:
-    . documented:
-      . called: "binary operation"
+    . called: "binary operation"
 
     [\magma]
     Declares: M ::= (X, *) is \set via X
@@ -6546,8 +6266,7 @@ then:
     Enables:
     . capability: x_ "in" M :<->: x_ is \magma.element:of{M}
     Appendix:
-    . documented:
-      . called: "magma"
+    . called: "magma"
 
     [\magma.element:of{M ::= (X, *)}]
     Declares: x "in" X
@@ -6556,8 +6275,7 @@ then:
     . capability: x_ [*] y_ :=> x_ |M.*| y_
       written: "x_? *? y_?"
     Appendix:
-    . documented:
-      . called: "magma element"
+    . called: "magma element"
 
     [\group]
     Declares: G ::= (X, *, e) is \magma via (X, *)
@@ -6565,8 +6283,7 @@ then:
     Enables:
     . capability: x_ "in" G :<->: x_ is \group.element:of{G}
     Appendix:
-    . documented:
-      . called: "group"
+    . called: "group"
 
     [\group.element:of{G}]
     Declares: x is \magma.element:of{G}
@@ -6575,8 +6292,7 @@ then:
     . capability: x.inv :=> \group.inverse:of{x}:in{G}
       written: "x+?^{-1}"
     Appendix:
-    . documented:
-      . called: "group element"
+    . called: "group element"
 
     [\group.inverse:of{x}:in{G}]
     Defines: y "in" G
@@ -6584,8 +6300,7 @@ then:
     . G is \group
     . x "in" G
     Appendix:
-    . documented:
-      . called: "group inverse"
+    . called: "group inverse"
 
     Theorem:
     given:
@@ -6631,8 +6346,7 @@ then:
     Requires:
     . capability: x_ "in" C :-> x_ is \element:of{C}
     Appendix:
-    . documented:
-      . written: "\operatorname{container}"
+    . written: "\operatorname{container}"
 
     [\element:of{C}]
     Declares: x "in" C
@@ -6641,8 +6355,7 @@ then:
     . capability: x.copy :=> \copy:of{x}:in{C}
       written: "x?^{\prime}"
     Appendix:
-    . documented:
-      . written: "\operatorname{element}"
+    . written: "\operatorname{element}"
 
     [\copy:of{x}:in{C}]
     Defines: y "in" C
@@ -6650,8 +6363,7 @@ then:
     . C is \container
     . x "in" C
     Appendix:
-    . documented:
-      . written: "x+?^{\prime}"
+    . written: "x+?^{\prime}"
 
     Theorem:
     given:
@@ -6690,8 +6402,7 @@ then:
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\elt:of{X}]
     Declares: x "in" X
@@ -6700,8 +6411,7 @@ then:
     . capability: z.self :=> x
       written: "x?"
     Appendix:
-    . documented:
-      . written: "\operatorname{elt}"
+    . written: "\operatorname{elt}"
     "#,
         )
         .unwrap();
@@ -6741,8 +6451,7 @@ then:
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [A \:subset:/ B]
     Declares: A is \set
@@ -6750,21 +6459,18 @@ then:
     Requires:
     . capability: x_ "in" A :-> x_ "in" B
     Appendix:
-    . documented:
-      . called: "subset of $B?$"
+    . called: "subset of $B?$"
 
     [\op]
     Declares: f(x__)
     Appendix:
-    . documented:
-      . written: "\operatorname{op}"
+    . written: "\operatorname{op}"
 
     [\binary.operation:on{X}]
     Declares: x_ * y_ is \op
     when: X is \set
     Appendix:
-    . documented:
-      . called: "binary operation on $X?$"
+    . called: "binary operation on $X?$"
 
     [\grp]
     Declares: G ::= (X, *, e) is \set via X
@@ -6772,8 +6478,7 @@ then:
     . * is \binary.operation:on{X}
     . e "in" X
     Appendix:
-    . documented:
-      . called: "grp"
+    . called: "grp"
 
     [H ::= (X1, *_1, e1) \:sub:/ G ::= (X, *, e)]
     Declares: H ::= (X1, *_1, e1)
@@ -6783,8 +6488,7 @@ then:
     . *_1 is \binary.operation:on{X1}
     . e1 "in" X1
     Appendix:
-    . documented:
-      . called: "subgroup"
+    . called: "subgroup"
     "#,
         )
         .unwrap();
@@ -6818,8 +6522,7 @@ Enables:
 . from: Y ::= {y__ : ...}
   capability: x_ "in" X :-> x_ memberOf Y
 Appendix:
-. documented:
-  . called: "set"
+. called: "set"
 
 [\function:on{A}:to{B}]
 Declares: f(x__) ::= y_
@@ -6828,22 +6531,19 @@ specifies:
 . x__ "in" A
 . y_ "in" B
 Appendix:
-. documented:
-  . called: "function"
+. called: "function"
 
 [A \.cross./ B]
 Defines: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
 when: A, B is \set
 Appendix:
-. documented:
-  . called: "cross"
+. called: "cross"
 
 [\binary.operation:on{X}]
 Declares: x_ * y_ is \function:on{X \.cross./ X}:to{X}
 when: X is \set
 Appendix:
-. documented:
-  . called: "binary operation"
+. called: "binary operation"
 
 [\group]
 Declares: G ::= (X, *, e) is \set via X
@@ -6851,8 +6551,7 @@ specifies:
 . * is \binary.operation:on{G}
 . e "in" X
 Appendix:
-. documented:
-  . called: "group"
+. called: "group"
 
 [G1 ::= (X1, *_1, e1) \.direct.product./ G2 ::= (X2, *_2, e2)]
 Defines: G3 ::= (X3, *_3, e3) is \group
@@ -6862,8 +6561,7 @@ expresses:
 . (a1_, a2_) *_3 (b1_, b2_) := (a1_ *_1 b1_, a2_ *_2 b2_)
 . e3 := (e1, e2)
 Appendix:
-. documented:
-  . called: "direct product"
+. called: "direct product"
 "#,
         )
         .unwrap();
@@ -6898,8 +6596,7 @@ Appendix:
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [A \:subset:/ B]
     Declares: A is \set
@@ -6907,22 +6604,19 @@ Appendix:
     Requires:
     . capability: x_ "in" A :-> x_ "in" B
     Appendix:
-    . documented:
-      . called: "subset of $B?$"
+    . called: "subset of $B?$"
 
     [\fn:on{A}:to{B}]
     Declares: f(x__) ::= y_
     when: A, B is \set
     Appendix:
-    . documented:
-      . written: "f?"
+    . written: "f?"
 
     [\op:on{X}]
     Declares: p(x__) ::= y_ is \fn:on{X}:to{X}
     when: X is \set
     Appendix:
-    . documented:
-      . written: "\operatorname{op}"
+    . written: "\operatorname{op}"
 
     [\uses:of{g(x__)}:sub{S}]
     Declares: h
@@ -6930,8 +6624,7 @@ Appendix:
     . g is \fn:on{A?}:to{B?}
     . S \:subset:/ A
     Appendix:
-    . documented:
-      . called: "uses"
+    . called: "uses"
 
     Theorem:
     given:
@@ -6974,8 +6667,7 @@ Appendix:
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [A \:subset:/ B]
     Declares: A is \set
@@ -6983,8 +6675,7 @@ Appendix:
     Requires:
     . capability: x_ "in" A :-> x_ "in" B
     Appendix:
-    . documented:
-      . called: "subset of $B?$"
+    . called: "subset of $B?$"
 
     [\wrap:of{A}:in{B}]
     Defines: w "in" B
@@ -6992,8 +6683,7 @@ Appendix:
     . B is \set
     . A \:subset:/ B
     Appendix:
-    . documented:
-      . called: "wrap"
+    . called: "wrap"
 
     [\pair.thm]
     Theorem:
@@ -7010,8 +6700,7 @@ Appendix:
       by: \pair.thm#given{P := P; Q := Q}
       because: P is? \set
     Appendix:
-    . documented:
-      . called: "thing"
+    . called: "thing"
     "#,
         )
         .unwrap();
@@ -7042,8 +6731,7 @@ Appendix:
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . called: "set"
+    . called: "set"
 
     [\thing]
     Declares: t
@@ -7051,8 +6739,7 @@ Appendix:
     specifies:
     . (.x is \set.)[:known:]
     Appendix:
-    . documented:
-      . called: "thing"
+    . called: "thing"
     . justification:
       . for: (:known:)
         have: x is \set
@@ -7095,8 +6782,7 @@ Appendix:
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [A \:subset:/ B]
     Declares: A is \set
@@ -7104,8 +6790,7 @@ Appendix:
     Requires:
     . capability: x_ "in" A :-> x_ "in" B
     Appendix:
-    . documented:
-      . called: "subset of $B?$"
+    . called: "subset of $B?$"
 
     [\wrap:of{A}:in{B}]
     Defines: w "in" B
@@ -7113,8 +6798,7 @@ Appendix:
     . B is \set
     . A \:subset:/ B
     Appendix:
-    . documented:
-      . called: "wrap"
+    . called: "wrap"
 
     [\thing:on{P}:and{Q}]
     Declares: t
@@ -7123,8 +6807,7 @@ Appendix:
     . have: t is \wrap:of{P}:in{Q}
       asserting: P is? \set
     Appendix:
-    . documented:
-      . called: "thing"
+    . called: "thing"
     "#,
         )
         .unwrap();
@@ -7181,9 +6864,8 @@ Appendix:
             r#"[\broken]
 Defines: b is \\expression
 Appendix:
-. documented:
-  . called: "broken"
-  . written: "\invalid{latex"
+. called: "broken"
+. written: "\invalid{latex"
 
 Theorem:
 then:
@@ -7211,10 +6893,10 @@ Text:
                 matches!(
                     e.as_message(),
                     Some(m) if m.message.starts_with("For `\\broken`:")
-                        && matches!(&m.location, Some(EventLocation::File { span: Some(span), .. }) if span.start.row == Some(10))
+                        && matches!(&m.location, Some(EventLocation::File { span: Some(span), .. }) if span.start.row == Some(9))
                 )
             })
-            .expect("expected warning for `\\broken` on line 11 (row 10)");
+            .expect("expected warning for `\\broken` on line 10 (row 9)");
         let msg = cmd_warning.as_message().unwrap();
         assert_eq!(msg.level, Level::Warning);
         assert!(msg.message.contains("KaTeX parse error:"));
@@ -7222,7 +6904,7 @@ Text:
         match loc {
             EventLocation::File { span: Some(span), path } => {
                 assert_eq!(path.file_name().unwrap(), "theory.mlg");
-                assert_eq!(span.start.row, Some(10));
+                assert_eq!(span.start.row, Some(9));
                 assert_eq!(span.start.column, Some(2));
             }
             _ => panic!("expected File location with span"),
@@ -7240,7 +6922,7 @@ Text:
         match loc {
             EventLocation::File { span: Some(span), path } => {
                 assert_eq!(path.file_name().unwrap(), "theory.mlg");
-                assert_eq!(span.start.row, Some(14));
+                assert_eq!(span.start.row, Some(13));
                 assert_eq!(span.start.column, Some(23));
             }
             _ => panic!("expected File location with span"),
@@ -7265,8 +6947,7 @@ Text:
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [A \:subset:/ B]
     Declares: A is \set
@@ -7274,8 +6955,7 @@ Text:
     Requires:
     . capability: x_ "in" A :-> x_ "in" B
     Appendix:
-    . documented:
-      . called: "subset of $B?$"
+    . called: "subset of $B?$"
 
     [\wrap:of{A}:in{B}]
     Defines: w "in" B
@@ -7283,8 +6963,7 @@ Text:
     . B is \set
     . A \:subset:/ B
     Appendix:
-    . documented:
-      . called: "wrap"
+    . called: "wrap"
 
     [\thing:on{P}:and{Q}]
     Declares: t
@@ -7292,8 +6971,7 @@ Text:
     specifies:
     . (.t is \wrap:of{P}:in{Q}.)[:1:]
     Appendix:
-    . documented:
-      . called: "thing"
+    . called: "thing"
     . justification:
       . for: (:1:)
         have:
@@ -7332,8 +7010,7 @@ Text:
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\thing]
     Declares: t
@@ -7342,8 +7019,7 @@ Text:
     specifies:
     . z is \set
     Appendix:
-    . documented:
-      . called: "thing"
+    . called: "thing"
     . justification:
       . for: (:1:)
         have:
@@ -7384,8 +7060,7 @@ Text:
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\thing]
     Declares: t
@@ -7397,8 +7072,7 @@ Text:
     . (.y := x.)[:1:]
     . z := (.x.)[:2:]
     Appendix:
-    . documented:
-      . called: "thing"
+    . called: "thing"
     . justification:
       . for: (:1:)
         have: y := x
@@ -7439,15 +7113,13 @@ Text:
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [A \.set.cross./ B]
     Defines: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
     when: A, B is \set
     Appendix:
-    . documented:
-      . written: "A? \times B?"
+    . written: "A? \times B?"
 
     [\fn:on{A}:to{B}]
     Declares: f(x__) ::= y_
@@ -7456,23 +7128,20 @@ Text:
     . x__ "in" A
     . y_ "in" B
     Appendix:
-    . documented:
-      . written: "f?"
+    . written: "f?"
 
     [\op:on{X}]
     Declares: x_ * y_ is \fn:on{X \.set.cross./ X}:to{X}
     when: X is \set
     Appendix:
-    . documented:
-      . written: "\operatorname{op}"
+    . written: "\operatorname{op}"
 
     [\magma]
     Declares: M ::= (X, *) is \set via X
     specifies:
     . * is \op:on{X}
     Appendix:
-    . documented:
-      . written: "\operatorname{magma}"
+    . written: "\operatorname{magma}"
 
     Theorem:
     given:
@@ -7515,8 +7184,7 @@ Text:
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\grp]
     Declares: G is \set
@@ -7524,15 +7192,13 @@ Text:
     . capability: x_ "in" G :<->: x_ is \grp.elt:of{G}
       written: "x_? \in G?"
     Appendix:
-    . documented:
-      . written: "\operatorname{grp}"
+    . written: "\operatorname{grp}"
 
     [\grp.elt:of{G}]
     Declares: x "in" G
     when: G is \grp
     Appendix:
-    . documented:
-      . written: "\operatorname{elt}"
+    . written: "\operatorname{elt}"
 
     [\op:of{x}:in{G}]
     Defines: y is \grp.elt:of{G}
@@ -7540,8 +7206,7 @@ Text:
     . G is \grp
     . x "in" G
     Appendix:
-    . documented:
-      . written: "\operatorname{op}"
+    . written: "\operatorname{op}"
 
     Theorem:
     given:
@@ -7579,22 +7244,19 @@ Text:
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . called: "set"
+    . called: "set"
 
     [\foo]
     Declares: X is \set
     Enables:
     . capability: x_ "in" X :-> x_ is \bar
     Appendix:
-    . documented:
-      . called: "foo"
+    . called: "foo"
 
     [\bar]
     Declares: x
     Appendix:
-    . documented:
-      . called: "bar"
+    . called: "bar"
 
     [\needs.member{x}:of{X}]
     Declares: y
@@ -7602,8 +7264,7 @@ Text:
     . X is \foo
     . x "in" X
     Appendix:
-    . documented:
-      . called: "needs member"
+    . called: "needs member"
 
     Theorem:
     given:
@@ -7642,28 +7303,24 @@ Text:
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . called: "set"
+    . called: "set"
 
     [\both]
     Declares: X is \set
     Enables:
     . capability: x_ "in" X :<->: x_ is \foo; x_ is \bar
     Appendix:
-    . documented:
-      . called: "both"
+    . called: "both"
 
     [\foo]
     Declares: x
     Appendix:
-    . documented:
-      . called: "foo"
+    . called: "foo"
 
     [\bar]
     Declares: x
     Appendix:
-    . documented:
-      . called: "bar"
+    . called: "bar"
 
     [\needs.both{x}]
     Declares: y
@@ -7671,8 +7328,7 @@ Text:
     . x is \foo
     . x is \bar
     Appendix:
-    . documented:
-      . called: "needs both"
+    . called: "needs both"
 
     [\needs.member{x}:of{X}]
     Declares: y
@@ -7680,8 +7336,7 @@ Text:
     . X is \both
     . x "in" X
     Appendix:
-    . documented:
-      . called: "needs member"
+    . called: "needs member"
 
     Theorem:
     given:
@@ -7736,20 +7391,17 @@ Text:
     Enables:
     . capability: x_ "in" X :<->: x_ memberOf X
     Appendix:
-    . documented:
-      . called: "set"
+    . called: "set"
 
     [\foo]
     Declares: x
     Appendix:
-    . documented:
-      . called: "foo"
+    . called: "foo"
 
     [\bar]
     Declares: x
     Appendix:
-    . documented:
-      . called: "bar"
+    . called: "bar"
 
     [\needs.member{x}:of{X}]
     Declares: y
@@ -7757,15 +7409,13 @@ Text:
     . X is \set
     . x "in" X
     Appendix:
-    . documented:
-      . called: "needs member"
+    . called: "needs member"
 
     [\needs.bar{x}]
     Declares: y
     when: x is \bar
     Appendix:
-    . documented:
-      . called: "needs bar"
+    . called: "needs bar"
 
     Theorem:
     given:
@@ -7833,8 +7483,7 @@ Text:
     . capability: x_ "in" X :-> \\abstract
       written: "x_? \in X?"
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     Theorem:
     given:
@@ -7871,14 +7520,12 @@ Text:
     Requires:
     . definition: \natural.0 is \natural
     Appendix:
-    . documented:
-      . written: "\mathbb{N}"
+    . written: "\mathbb{N}"
 
     [\natural.0]
     Defines: n is \natural
     Appendix:
-    . documented:
-      . written: "0"
+    . written: "0"
     "#,
         )
         .unwrap();
@@ -7907,14 +7554,12 @@ Text:
             r#"[\set]
     Declares: X
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\sqrt]
     Defines: y is \set
     Appendix:
-    . documented:
-      . written: "\sqrt{}"
+    . written: "\sqrt{}"
 
     Theorem:
     then: \set is? \\type
@@ -7946,16 +7591,14 @@ Text:
             r#"[\set]
     Declares: X
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\tag:?on{A}]
     Declares: x
     when: A is \set
     Appendix:
-    . documented:
-      . called: "tag"
-      . written: "\operatorname{tag}"
+    . called: "tag"
+    . written: "\operatorname{tag}"
 
     Theorem:
     given: x is \tag:?on{A}
@@ -7992,15 +7635,13 @@ Text:
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\function:?on{A}:?to{B}]
     Declares: f(x__)
     when: A, B is \set
     Appendix:
-    . documented:
-      . called: "function"
+    . called: "function"
 
     [\(injective)::function:?on{A}:?to{B}]
     Refines: f(x__)
@@ -8011,8 +7652,7 @@ Text:
       . if: f(x1) = f(x2)
         then: x1 = x2
     Appendix:
-    . documented:
-      . adjective: "injective"
+    . adjective: "injective"
     Id: "8ae265b6-2112-4576-9976-6ba3beb95829"
     "#,
         )
@@ -8047,8 +7687,7 @@ Text:
       . P
       . Q
     Appendix:
-    . documented:
-      . written: "P? \text{ and } Q?"
+    . written: "P? \text{ and } Q?"
     Id: "da152255-eeb1-498e-9ef4-f0ee017406d2"
     "#,
         )
@@ -8094,8 +7733,7 @@ Text:
       . P
       . Q
     Appendix:
-    . documented:
-      . written: "P? \text{ and } Q?"
+    . written: "P? \text{ and } Q?"
     Id: "da152255-eeb1-498e-9ef4-f0ee017406d2"
 
     [P \.or./ Q]
@@ -8106,8 +7744,7 @@ Text:
       . P
       . Q
     Appendix:
-    . documented:
-      . written: "P? \text{ or } Q?"
+    . written: "P? \text{ or } Q?"
     Id: "93149456-ff84-40af-8c41-b06906405ffa"
     "#,
         )
@@ -8132,8 +7769,7 @@ Text:
             r#"[\set]
     Declares: X
     Appendix:
-    . documented:
-      . called: "set"
+    . called: "set"
     Id: "059126b9-dc83-41a2-aa1c-84f8e942f8d6"
 
     [P \.or./ Q]
@@ -8144,17 +7780,15 @@ Text:
       . P
       . Q
     Appendix:
-    . documented:
-      . written: "P? \text{ or } Q?"
+    . written: "P? \text{ or } Q?"
     Id: "93149456-ff84-40af-8c41-b06906405ffa"
 
     [\pair:of{a}:and{b}]
     Defines: P := {x_ : x_ is \set | x = a \.or./ x = b} is \set
     when: a, b is \set
     Appendix:
-    . documented:
-      . called: "pair of $a?$ and $b?$"
-      . written: "\{a?, b?\}"
+    . called: "pair of $a?$ and $b?$"
+    . written: "\{a?, b?\}"
     Id: "10faf153-d005-4feb-b620-c31589aefea1"
     "#,
         )
@@ -8179,15 +7813,13 @@ Text:
             r#"[\real]
     Declares: x
     Appendix:
-    . documented:
-      . called: "real"
+    . called: "real"
     Id: "f1a2b3c4-1111-4a22-8333-111111111111"
 
     [\natural]
     Declares: n
     Appendix:
-    . documented:
-      . called: "natural"
+    . called: "natural"
     Id: "f1a2b3c4-2222-4a22-8333-222222222222"
 
     Theorem:
@@ -8218,8 +7850,7 @@ Text:
             r#"[\real]
     Declares: x
     Appendix:
-    . documented:
-      . called: "real"
+    . called: "real"
     Id: "f1a2b3c4-1111-4a22-8333-111111111111"
 
     Theorem:
@@ -8253,16 +7884,14 @@ Text:
             r#"[\set]
     Declares: S
     Appendix:
-    . documented:
-      . called: "set"
+    . called: "set"
     Id: "f1a2b3c4-4444-4a22-8333-444444444444"
 
     [\foo]
     Defines: X := {x_ : x_ is \set | \\forAll{y is \set}:then{y is? \set}} is \set
     Appendix:
-    . documented:
-      . called: "foo"
-      . written: "X?"
+    . called: "foo"
+    . written: "X?"
     Id: "b165f407-283d-4d1b-815f-9200da352065"
     "#,
         )
@@ -8287,16 +7916,14 @@ Text:
             r#"[\set]
     Declares: S
     Appendix:
-    . documented:
-      . called: "set"
+    . called: "set"
     Id: "f1a2b3c4-4444-4a22-8333-444444444444"
 
     [\foo]
     Defines: X := {x_ : x_ is \set | \\forall{y is \set}:then{y is? \set}} is \set
     Appendix:
-    . documented:
-      . called: "foo"
-      . written: "X?"
+    . called: "foo"
+    . written: "X?"
     Id: "b165f407-283d-4d1b-815f-9200da352065"
     "#,
         )
@@ -8331,37 +7958,32 @@ Text:
             r#"[\set]
     Declares: X
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\function:?on{A}:?to{B}]
     Declares: f(x__)
     when: A, B is \set
     Appendix:
-    . documented:
-      . called: "function"
-      . written: "f?"
+    . called: "function"
+    . written: "f?"
 
     [\(injective)::function:?on{A}:?to{B}]
     Refines: f(x__) is \function:?on{A}
     when: A, B is \set
     Appendix:
-    . documented:
-      . adjective: "injective"
+    . adjective: "injective"
 
     [\(surjective)::function:?on{A}:?to{B}]
     Refines: f(x__)
     when: A, B is \set
     Appendix:
-    . documented:
-      . called: "surjective"
-      . adjective: "surjective"
+    . called: "surjective"
+    . adjective: "surjective"
 
     [\(bad)::function]
     Declares: g
     Appendix:
-    . documented:
-      . written: "\operatorname{bad}"
+    . written: "\operatorname{bad}"
     "#,
         )
         .unwrap();
@@ -8402,15 +8024,13 @@ Text:
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . called: "set"
+    . called: "set"
 
     [A \.cross./ B]
     Defines: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
     when: A, B is \set
     Appendix:
-    . documented:
-      . called: "cross"
+    . called: "cross"
 
     [\function:on{A}:to{B}]
     Declares: f(x__) ::= y_
@@ -8419,15 +8039,13 @@ Text:
     . x__ "in" A
     . y_ "in" B
     Appendix:
-    . documented:
-      . called: "function"
+    . called: "function"
 
     [\binary.operation:on{X}]
     Declares: x_ * y_ is \function:on{X \.cross./ X}:to{X}
     when: X is \set
     Appendix:
-    . documented:
-      . called: "binary operation"
+    . called: "binary operation"
 
     [\group]
     Declares: G ::= (X, *, e) is \set via X
@@ -8435,8 +8053,7 @@ Text:
     . * is \binary.operation:on{G}
     . e "in" G
     Appendix:
-    . documented:
-      . called: "group"
+    . called: "group"
 
     [\(abelian)::group]
     Refines: G ::= (X, *, e)
@@ -8444,8 +8061,7 @@ Text:
     . forAll: x, y "in" G
       then: x * y = y * x
     Appendix:
-    . documented:
-      . adjective: "abelian"
+    . adjective: "abelian"
     "#,
         )
         .unwrap();
@@ -8476,8 +8092,7 @@ Text:
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . called: "set"
+    . called: "set"
 
     [\function:?on{A}:?to{B}]
     Declares: f(x__) ::= y_
@@ -8486,29 +8101,25 @@ Text:
     . x__ "in" A
     . y_ "in" B
     Appendix:
-    . documented:
-      . called: "function"
+    . called: "function"
 
     [\(full)::function:?on{A}:?to{B}]
     Refines: f(x__) ::= y_
     when: A, B is \set
     Appendix:
-    . documented:
-      . adjective: "full"
+    . adjective: "full"
 
     [\(subject)::function:?on{A}:?to{B}]
     Refines: f(x__)
     when: A, B is \set
     Appendix:
-    . documented:
-      . adjective: "subject"
+    . adjective: "subject"
 
     [\(name)::function:?on{A}:?to{B}]
     Refines: f
     when: A, B is \set
     Appendix:
-    . documented:
-      . adjective: "name"
+    . adjective: "name"
     "#,
         )
         .unwrap();
@@ -8537,8 +8148,7 @@ Text:
             r#"[\set]
     Declares: X
     Appendix:
-    . documented:
-      . called: "set"
+    . called: "set"
 
     [\group]
     Declares: G ::= (X, *, e) is \set via X
@@ -8546,14 +8156,12 @@ Text:
     . * is \set
     . e is \set
     Appendix:
-    . documented:
-      . called: "group"
+    . called: "group"
 
     [\(bad)::group]
     Refines: G ::= (X, operation, e)
     Appendix:
-    . documented:
-      . adjective: "bad"
+    . adjective: "bad"
     "#,
         )
         .unwrap();
@@ -8584,15 +8192,13 @@ Text:
             r#"[\real]
     Declares: x
     Appendix:
-    . documented:
-      . written: "\operatorname{real}"
+    . written: "\operatorname{real}"
 
     [\foo{s}]
     Declares: x
     when: s is \real
     Appendix:
-    . documented:
-      . written: "\operatorname{foo}"
+    . written: "\operatorname{foo}"
 
     Theorem:
     given: r is \real
@@ -8626,20 +8232,17 @@ Text:
             r#"[\real]
     Declares: R
     Appendix:
-    . documented:
-      . written: "\operatorname{real}"
+    . written: "\operatorname{real}"
 
     [\complex]
     Declares: C
     Appendix:
-    . documented:
-      . written: "\operatorname{complex}"
+    . written: "\operatorname{complex}"
 
     [\integer]
     Declares: I
     Appendix:
-    . documented:
-      . written: "\operatorname{integer}"
+    . written: "\operatorname{integer}"
 
     [a \.complex.+./ b]
     Defines: c is \complex
@@ -8647,8 +8250,7 @@ Text:
     . a is \real
     . b is \complex
     Appendix:
-    . documented:
-      . written: "a? + b?"
+    . written: "a? + b?"
 
     [a \.real.+./ b]
     Defines: c is \real
@@ -8656,8 +8258,7 @@ Text:
     . a is \real
     . b is \integer
     Appendix:
-    . documented:
-      . written: "a? + b?"
+    . written: "a? + b?"
 
     [x_ + y_]
     Disambiguates:
@@ -8670,8 +8271,7 @@ Text:
     . y_ is \integer
     to: x_ \.real.+./ y_
     Appendix:
-    . documented:
-      . written: "x_? + y_?"
+    . written: "x_? + y_?"
 
     [op(x_, y_)]
     Disambiguates:
@@ -8680,8 +8280,7 @@ Text:
     . y_ is \integer
     to: x_ \.real.+./ y_
     Appendix:
-    . documented:
-      . written: "op(x_?, y_?)"
+    . written: "op(x_?, y_?)"
 
     Theorem:
     given:
@@ -8722,15 +8321,13 @@ Text:
             Enables:
             . capability: x_ "in" X :-> \\abstract
             Appendix:
-            . documented:
-              . called: "set"
+            . called: "set"
 
             [A \.cross./ B]
             Defines: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
             when: A, B is \set
             Appendix:
-            . documented:
-              . written: "A? \times B?"
+            . written: "A? \times B?"
 
             [\fn:on{A}:to{B}]
             Declares: f(x__) ::= y_
@@ -8739,15 +8336,13 @@ Text:
             . x__ "in" A
             . y_ "in" B
             Appendix:
-            . documented:
-              . called: "fn"
+            . called: "fn"
 
             [\op:on{X}]
             Declares: x_ * y_ is \fn:on{X \.cross./ X}:to{X}
             when: X is \set
             Appendix:
-            . documented:
-              . called: "op"
+            . called: "op"
 
             [\elt:of{M ::= (X, *)}]
             Declares: x "in" X
@@ -8756,8 +8351,7 @@ Text:
             . capability: x_ * y_ :=> x_ |M.*| y_
               written: "x_? * y_?"
             Appendix:
-            . documented:
-              . called: "elt"
+            . called: "elt"
 
             [\structure]
             Declares: M ::= (X, *) is \set via X
@@ -8767,16 +8361,14 @@ Text:
             . capability: x_ "in" M :-> x_ is \elt:of{M}
               written: "x_? \in M?"
             Appendix:
-            . documented:
-              . called: "structure"
+            . called: "structure"
 
             [\pointed.structure]
             Declares: S ::= (X, *, e) is \structure via (X, *)
             specifies:
             . e "in" X
             Appendix:
-            . documented:
-              . called: "pointed structure"
+            . called: "pointed structure"
 
             Theorem:
             given:
@@ -8823,8 +8415,7 @@ Text:
             r#"[\thing]
     Declares: x
     Appendix:
-    . documented:
-      . called: "thing"
+    . called: "thing"
 
     [\object]
     Defines: O ::= (first, second, next(x_))
@@ -8834,8 +8425,7 @@ Text:
     . second is \thing
     . next is (_ is \thing) -> (_ is \thing)
     Appendix:
-    . documented:
-      . called: "object"
+    . called: "object"
 
     Theorem:
     then:
@@ -8872,22 +8462,19 @@ Text:
     Enables:
     . capability: x_ + y_ :=> x_ \.set.+./ y_
     Appendix:
-    . documented:
-      . called: "set"
+    . called: "set"
 
     [A \.set.+./ B]
     Defines: C is \set
     when: A, B is \set
     Appendix:
-    . documented:
-      . written: "A? + B?"
+    . written: "A? + B?"
 
     [x_ + y_]
     Disambiguates:
     else: x_ :+: y_
     Appendix:
-    . documented:
-      . written: "x_? + y_?"
+    . written: "x_? + y_?"
 
     Theorem:
     given: A, B is \set
@@ -8926,16 +8513,14 @@ Text:
     . capability: x_ *_free y_ :=> x_ \.set.minus./ y_
     . capability: x_ |minus| y_ :=> x_ \.set.minus./ y_
     Appendix:
-    . documented:
-      . called: "set"
+    . called: "set"
 
     [A \.set.minus./ B]
     Defines: C := A is \set
     when: A, B is \set
     Appendix:
-    . documented:
-      . called: "set difference of $A?$ and $B?$"
-      . written: "A? \backslash B?"
+    . called: "set difference of $A?$ and $B?$"
+    . written: "A? \backslash B?"
 
     Theorem:
     given: A, B is \set
@@ -8991,8 +8576,7 @@ Text:
     to: x_ \.set.minus./ y_
     else: x_ :-: y_
     Appendix:
-    . documented:
-      . written: "x_? - y_?"
+    . written: "x_? - y_?"
     "#,
         )
         .unwrap();
@@ -9025,39 +8609,34 @@ Text:
     Enables:
     . capability: x_ - y_ :=> x_ \.set.minus./ y_
     Appendix:
-    . documented:
-      . called: "set"
+    . called: "set"
 
     [A \.set.minus./ B]
     Defines: C is \set
     when: A, B is \set
     Appendix:
-    . documented:
-      . called: "set difference of $A?$ and $B?$"
-      . written: "A? \backslash B?"
+    . called: "set difference of $A?$ and $B?$"
+    . written: "A? \backslash B?"
 
     [A \.set.union./ B]
     Defines: C is \set
     when: A, B is \set
     Appendix:
-    . documented:
-      . called: "union of $A?$ and $B?$"
-      . written: "A? \cup B?"
+    . called: "union of $A?$ and $B?$"
+    . written: "A? \cup B?"
 
     [A \.set.symmetric.difference./ B]
     Defines: C := (A - B) \.set.union./ (B - A) is \set
     when: A, B is \set
     Appendix:
-    . documented:
-      . called: "symmetric difference of $A?$ and $B?$"
-      . written: "A? \Delta B?"
+    . called: "symmetric difference of $A?$ and $B?$"
+    . written: "A? \Delta B?"
 
     [x_ - y_]
     Disambiguates:
     else: x_ :-: y_
     Appendix:
-    . documented:
-      . written: "x_? - y_?"
+    . written: "x_? - y_?"
     "#,
         )
         .unwrap();
@@ -9090,15 +8669,13 @@ Text:
     . capability: f(x_) :=> \foo{X, x_}
     . capability: a :=> \some.value{X}
     Appendix:
-    . documented:
-      . called: "set"
+    . called: "set"
 
     [\not{P}]
     Defines: Q is \\statement
     when: P is \\expression
     Appendix:
-    . documented:
-      . written: "\neg P?"
+    . written: "\neg P?"
 
     [\foo{X, x}]
     Defines: Y is \\expression
@@ -9106,15 +8683,13 @@ Text:
     . X is \set
     . x is \\expression
     Appendix:
-    . documented:
-      . written: "\operatorname{foo}(X?, x?)"
+    . written: "\operatorname{foo}(X?, x?)"
 
     [\some.value{X}]
     Defines: Y is \\expression
     when: X is \set
     Appendix:
-    . documented:
-      . written: "\operatorname{someValue}(X?)"
+    . written: "\operatorname{someValue}(X?)"
 
     Theorem:
     given: A, B is \set
@@ -9153,8 +8728,7 @@ Text:
     . capability: x_ "in" X :-> \\abstract
       written: "x_? \in X?"
     Appendix:
-    . documented:
-      . called: "set"
+    . called: "set"
 
     [\relation:from{A}:to{B}]
     Declares: R
@@ -9166,16 +8740,14 @@ Text:
     . capability: R(a_, b_) :-> (a_, b_) "in" R
       written: "a_? \: R \: b_?"
     Appendix:
-    . documented:
-      . called: "relation from $A?$ to $B?$"
-      . written: "R? \subseteq A? \times B?"
+    . called: "relation from $A?$ to $B?$"
+    . written: "R? \subseteq A? \times B?"
 
     [\needs.specification{P}]
     Declares: x
     when: P is \\specification
     Appendix:
-    . documented:
-      . written: "\operatorname{needsSpecification}(P?)"
+    . written: "\operatorname{needsSpecification}(P?)"
 
     Theorem:
     given:
@@ -9222,8 +8794,7 @@ Text:
     . capability: x_ != y_ :=> \not{x_ = y_}
     . capability: x_ - y_ :=> x_ \.set.minus./ y_
     Appendix:
-    . documented:
-      . called: "set"
+    . called: "set"
 
     [X \.set.=./ Y]
     States:
@@ -9234,22 +8805,19 @@ Text:
     . forAll: Z "in" Y
       then: Z "in" X
     Appendix:
-    . documented:
-      . written: "X? = Y?"
+    . written: "X? = Y?"
 
     [A \.set.minus./ B]
     Defines: C is \set
     when: A, B is \set
     Appendix:
-    . documented:
-      . written: "A? \backslash B?"
+    . written: "A? \backslash B?"
 
     [\not{P}]
     Defines: Q is \\statement
     when: P is \\expression
     Appendix:
-    . documented:
-      . written: "\neg P?"
+    . written: "\neg P?"
 
     [\empty.set]
     Defines: X is \set
@@ -9258,16 +8826,14 @@ Text:
       . exists: Y is \set
         suchThat: Y "in" X
     Appendix:
-    . documented:
-      . written: "\emptyset"
+    . written: "\emptyset"
 
     [\nonempty.set]
     Declares: X is \set
     satisfies:
     . X != \empty.set
     Appendix:
-    . documented:
-      . called: "non-empty set"
+    . called: "non-empty set"
     "#,
         )
         .unwrap();
@@ -9301,8 +8867,7 @@ Text:
     . capability: x_ "in" X :-> \\abstract
       written: "x_? \in X?"
     Appendix:
-    . documented:
-      . called: "set"
+    . called: "set"
 
     Theorem:
     given: A, B is \set
@@ -9352,21 +8917,18 @@ Text:
             r#"[\set]
     Declares: X
     Appendix:
-    . documented:
-      . called: "set"
+    . called: "set"
 
     [\number]
     Declares: n
     Appendix:
-    . documented:
-      . called: "number"
+    . called: "number"
 
     [\needs.statement{P}]
     Declares: x
     when: P is \\statement
     Appendix:
-    . documented:
-      . written: "\operatorname{needsStatement}(P?)"
+    . written: "\operatorname{needsStatement}(P?)"
 
     Theorem:
     given:
@@ -9408,31 +8970,27 @@ Text:
     . capability: x_ = y_ :=> x_ \.set.=./ y_
     . capability: x_ != y_ :=> \not{x_ = y_}
     Appendix:
-    . documented:
-      . called: "set"
+    . called: "set"
 
     [A \.set.=./ B]
     States:
     when: A, B is \set
     that: A = A
     Appendix:
-    . documented:
-      . written: "A? = B?"
+    . written: "A? = B?"
 
     [\not{P}]
     States:
     when: P is \\statement
     that: P
     Appendix:
-    . documented:
-      . written: "\neg P?"
+    . written: "\neg P?"
 
     [\needs.statement{P}]
     Declares: x
     when: P is \\statement
     Appendix:
-    . documented:
-      . written: "\operatorname{needsStatement}(P?)"
+    . written: "\operatorname{needsStatement}(P?)"
 
     Theorem:
     given: A, B is \set
@@ -9467,16 +9025,14 @@ Text:
             r#"[\set]
     Declares: X
     Appendix:
-    . documented:
-      . called: "set"
+    . called: "set"
 
     [A \.set.union./ B]
     Defines: C is \set
     when: A, B is \set
     Appendix:
-    . documented:
-      . called: "union of $A?$ and $B?$"
-      . written: "A? \cup B?"
+    . called: "union of $A?$ and $B?$"
+    . written: "A? \cup B?"
 
     Theorem:
     given: A, B is \set
@@ -9528,46 +9084,40 @@ Text:
             r#"[\real]
     Declares: R
     Appendix:
-    . documented:
-      . written: "\operatorname{real}"
+    . written: "\operatorname{real}"
 
     [\prefix.real{x}]
     Defines: y is \real
     when: x is \real
     Appendix:
-    . documented:
-      . written: "\operatorname{pre}(x?)"
+    . written: "\operatorname{pre}(x?)"
 
     [\postfix.real{x}]
     Defines: y is \real
     when: x is \real
     Appendix:
-    . documented:
-      . written: "\operatorname{post}(x?)"
+    . written: "\operatorname{post}(x?)"
 
     [f| x_]
     Disambiguates:
     when: x_ is \real
     to: \prefix.real{x_}
     Appendix:
-    . documented:
-      . written: "f| x_?"
+    . written: "f| x_?"
 
     [x_ |f]
     Disambiguates:
     when: x_ is \real
     to: \postfix.real{x_}
     Appendix:
-    . documented:
-      . written: "x_? |f"
+    . written: "x_? |f"
 
     [g(x_)]
     Disambiguates:
     when: x_ is \real
     to: \prefix.real{x_}
     Appendix:
-    . documented:
-      . written: "g(x_?)"
+    . written: "g(x_?)"
 
     Theorem:
     given: r is \real
@@ -9607,16 +9157,14 @@ Text:
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [A \.set.cross./ B]
     Defines: C := {(a_, b_) : a_ "in" A, b_ "in" B} is \set
     when: A, B is \set
     Appendix:
-    . documented:
-      . called: "Cartesian product of $A?$ and $B?$"
-      . written: "A? \times B?"
+    . called: "Cartesian product of $A?$ and $B?$"
+    . written: "A? \times B?"
     "#,
         )
         .unwrap();
@@ -9647,8 +9195,7 @@ Text:
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . called: "set"
+    . called: "set"
 
     [\class:of{x}:over{X}]
     Defines: C is \set
@@ -9656,15 +9203,13 @@ Text:
     . X is \set
     . x "in" X
     Appendix:
-    . documented:
-      . called: "class of $x?$ over $X?$"
+    . called: "class of $x?$ over $X?$"
 
     [\classes:of{X}]
     Defines: I := \set@{ \class:of{x_}:over{X} : x_ "in" X }
     when: X is \set
     Appendix:
-    . documented:
-      . called: "classes of $X?$"
+    . called: "classes of $X?$"
     "#,
         )
         .unwrap();
@@ -9696,17 +9241,15 @@ Text:
     . capability: x_ "in" X :-> \\abstract
       written: "x_? \in X?"
     Appendix:
-    . documented:
-      . called: "set"
+    . called: "set"
     Id: "059126b9-dc83-41a2-aa1c-84f8e942f8d6"
 
     [\ordered.pair:of{a}:and{b}]
     Defines: P is \set
     when: a, b is \\anything
     Appendix:
-    . documented:
-      . called: "ordered pair of $a?$ and $b?$"
-      . written: "(a?, b?)"
+    . called: "ordered pair of $a?$ and $b?$"
+    . written: "(a?, b?)"
     Id: "10faf153-d005-4feb-b620-c31589aefea1"
 
     [\cartesian.product:of{A}:and{B}]
@@ -9714,9 +9257,8 @@ Text:
     when: A, B is \set
     expresses: P := {z_ ::= (a_, b_) : a_ "in" A; b_ "in" B | z_ := \ordered.pair:of{a_}:and{b_}}
     Appendix:
-    . documented:
-      . called: "cartesian product of $A?$ and $B?$"
-      . written: "A? \times B?"
+    . called: "cartesian product of $A?$ and $B?$"
+    . written: "A? \times B?"
     Id: "64578792-cf4f-4497-9c79-3fc0189a08e4"
     "#,
         )
@@ -9746,15 +9288,13 @@ Text:
             r#"[\real]
     Declares: x
     Appendix:
-    . documented:
-      . written: "\operatorname{real}"
+    . written: "\operatorname{real}"
 
     [\foo{s}]
     Declares: x
     when: s is \real
     Appendix:
-    . documented:
-      . written: "\operatorname{foo}"
+    . written: "\operatorname{foo}"
 
     Theorem:
     then:
@@ -9792,8 +9332,7 @@ Text:
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [A \:subset:/ B]
     Declares: A is \set
@@ -9803,15 +9342,13 @@ Text:
       then:
       . a "in"? B
     Appendix:
-    . documented:
-      . written: "A? \subseteq B?"
+    . written: "A? \subseteq B?"
 
     [\needs.set{s}]
     Declares: x
     when: s is \set
     Appendix:
-    . documented:
-      . written: "\operatorname{needsSet}"
+    . written: "\operatorname{needsSet}"
 
     Theorem:
     given: A, B is \set
@@ -9855,15 +9392,13 @@ Text:
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [A \:subset:/ B]
     Declares: A is \set
     when: B is \set
     Appendix:
-    . documented:
-      . written: "A? \subseteq B?"
+    . written: "A? \subseteq B?"
 
     Theorem:
     given: A, B is \set
@@ -9917,21 +9452,18 @@ Text:
             r#"[\set]
     Declares: X
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\thing]
     Declares: X
     Appendix:
-    . documented:
-      . written: "\operatorname{thing}"
+    . written: "\operatorname{thing}"
 
     [A \:subset:/ B]
     Declares: A is \set
     when: B is \set
     Appendix:
-    . documented:
-      . written: "A? \subseteq B?"
+    . written: "A? \subseteq B?"
 
     Theorem:
     given:
@@ -9972,8 +9504,7 @@ Text:
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [A \:subset:?within{U}:/ B]
     Declares: A is \set
@@ -9985,8 +9516,7 @@ Text:
       then:
       . a "in"? B
     Appendix:
-    . documented:
-      . written: "A? \subseteq B?"
+    . written: "A? \subseteq B?"
 
     Theorem:
     given:
@@ -10026,8 +9556,7 @@ Text:
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [A \:subset:?within{U}:/ B]
     Declares: A is \set
@@ -10039,16 +9568,14 @@ Text:
       then:
       . a "in"? B
     Appendix:
-    . documented:
-      . written: "A? \subseteq B?"
+    . written: "A? \subseteq B?"
 
     [P \.and./ Q]
     States:
     when: P, Q is \\statement
     that: P
     Appendix:
-    . documented:
-      . written: "P? \land Q?"
+    . written: "P? \land Q?"
 
     [A \.set.intersect:?within{U}./ B]
     Defines: C \:subset:/ U
@@ -10058,8 +9585,7 @@ Text:
     . B \:subset:/ U
     expresses: C := {c_ : c_ "in" U | (.c "in"? A.) \.and./ (.c "in"? B.)}
     Appendix:
-    . documented:
-      . written: "A? \cap@[U]{_{U?}}:{} B?"
+    . written: "A? \cap@[U]{_{U?}}:{} B?"
     "#,
         )
         .unwrap();
@@ -10090,15 +9616,13 @@ Text:
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [A \:subset:/ B]
     Declares: A is \set
     when: B is \set
     Appendix:
-    . documented:
-      . written: "A? \subseteq B?"
+    . written: "A? \subseteq B?"
 
     [A \.same.as./ B]
     States:
@@ -10106,29 +9630,25 @@ Text:
     that:
     . A is? \set
     Appendix:
-    . documented:
-      . written: "A? \equiv B?"
+    . written: "A? \equiv B?"
 
     [\needs.expression{x}]
     Declares: y
     when: x is \\expression
     Appendix:
-    . documented:
-      . written: "\operatorname{needsExpression}"
+    . written: "\operatorname{needsExpression}"
 
     [\needs.statement{x}]
     Declares: y
     when: x is \\statement
     Appendix:
-    . documented:
-      . written: "\operatorname{needsStatement}"
+    . written: "\operatorname{needsStatement}"
 
     [\needs.specification{x}]
     Declares: y
     when: x is \\specification
     Appendix:
-    . documented:
-      . written: "\operatorname{needsSpecification}"
+    . written: "\operatorname{needsSpecification}"
 
     Theorem:
     given:
@@ -10172,29 +9692,25 @@ Text:
             r#"[\set]
     Declares: X
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\needs.statement{x}]
     Declares: y
     when: x is \\statement
     Appendix:
-    . documented:
-      . written: "\operatorname{needsStatement}"
+    . written: "\operatorname{needsStatement}"
 
     [\needs.specification{x}]
     Declares: y
     when: x is \\specification
     Appendix:
-    . documented:
-      . written: "\operatorname{needsSpecification}"
+    . written: "\operatorname{needsSpecification}"
 
     [\wrap{x}]
     Declares: y
     when: x is \\expression
     Appendix:
-    . documented:
-      . written: "\operatorname{wrap}"
+    . written: "\operatorname{wrap}"
 
     Theorem:
     given: A is \set
@@ -10241,22 +9757,19 @@ Text:
             r#"[\set]
     Declares: X
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [A \:wrong:/ B]
     Declares: C
     when: B is \set
     Appendix:
-    . documented:
-      . written: "\operatorname{wrong}"
+    . written: "\operatorname{wrong}"
 
     [A \:states:/ B]
     States:
     that: A = A
     Appendix:
-    . documented:
-      . written: "\operatorname{states}"
+    . written: "\operatorname{states}"
     "#,
         )
         .unwrap();
@@ -10295,8 +9808,7 @@ Text:
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\function:on{A}:to{B}]
     Declares: f(x__)
@@ -10307,9 +9819,8 @@ Text:
       . existsUnique: y "in" B
         suchThat: f(x) = y
     Appendix:
-    . documented:
-      . called: "function on $A?$ to $B?$"
-      . written: "f? \: : \: A? \rightarrow B?"
+    . called: "function on $A?$ to $B?$"
+    . written: "f? \: : \: A? \rightarrow B?"
 
     Theorem:
     given:
@@ -10346,14 +9857,14 @@ Text:
         assert!(has_user_error_at(
             &event_log,
             &canonical_file,
-            30,
+            28,
             8,
             "Could not establish requirement `g is \\set` for command `\\function:on:to`"
         ));
         assert!(has_user_error_at(
             &event_log,
             &canonical_file,
-            28,
+            26,
             7,
             "Could not establish requirement `x is \\set` for command `\\function:on:to`"
         ));
@@ -10372,8 +9883,7 @@ Text:
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\element.of:group{G ::= (X, *, e)}]
     Declares: x "in" X
@@ -10383,8 +9893,7 @@ Text:
     . * is \function:on{X}:to{X}
     . e "in" G
     Appendix:
-    . documented:
-      . written: "x? \in G?"
+    . written: "x? \in G?"
 
     [\group]
     Declares: G ::= (X, *, e) is \set via X
@@ -10394,15 +9903,13 @@ Text:
     Enables:
     . capability: x_ "in" G :-> x_ is \element.of:group{G}
     Appendix:
-    . documented:
-      . written: "\operatorname{group}"
+    . written: "\operatorname{group}"
 
     [\function:on{A}:to{B}]
     Declares: f(x__)
     when: A, B is \set
     Appendix:
-    . documented:
-      . written: "A? \to B?"
+    . written: "A? \to B?"
 
     Theorem:
     given:
@@ -10440,15 +9947,13 @@ Text:
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\function:on{A}:to{B}]
     Declares: f(x__) is (_ "in" A) -> (_ "in" B)
     when: A, B is \set
     Appendix:
-    . documented:
-      . written: "A? \to B?"
+    . written: "A? \to B?"
 
     Theorem:
     given:
@@ -10487,19 +9992,17 @@ Text:
     Enables:
     . capability: a_ "in" A :-> \\abstract
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\sequence:on{A}]
     Declares: X ::= x(i_) is (_ "in" A) -> (_ "in" A)
     when: A is \set
     Appendix:
-    . documented:
-      . writing: x(i)
-        as: "x?_{i?}"
-      . writing: x(i_)
-        as: "\left\{x?_{i_?}\right\}"
-      . called: "sequence"
+    . writing: x(i)
+      as: "x?_{i?}"
+    . writing: x(i_)
+      as: "\left\{x?_{i_?}\right\}"
+    . called: "sequence"
 
     [\pointed.sequence:on{A}]
     Declares: X ::= x(i_) ::= y_
@@ -10508,12 +10011,11 @@ Text:
     . i_ "in" A
     . y_ "in" A
     Appendix:
-    . documented:
-      . writing: x(i)
-        as: "x?_{i?}"
-      . writing: x(i_)
-        as: "\left\{x?_{i_?}\right\}"
-      . called: "pointed sequence"
+    . writing: x(i)
+      as: "x?_{i?}"
+    . writing: x(i_)
+      as: "\left\{x?_{i_?}\right\}"
+    . called: "pointed sequence"
 
     Theorem:
     given:
@@ -10558,15 +10060,13 @@ Text:
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\function:on{A}:to{B}]
     Declares: f(x__) is (_ "in" A) -> (_ "in" B)
     when: A, B is \set
     Appendix:
-    . documented:
-      . written: "A? \to B?"
+    . written: "A? \to B?"
 
     Theorem:
     given:
@@ -10605,14 +10105,12 @@ Text:
             r#"[\real]
     Declares: x
     Appendix:
-    . documented:
-      . written: "\operatorname{real}"
+    . written: "\operatorname{real}"
 
     [\integer]
     Declares: x
     Appendix:
-    . documented:
-      . written: "\operatorname{integer}"
+    . written: "\operatorname{integer}"
 
     Theorem:
     given:
@@ -10650,20 +10148,17 @@ Text:
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\real]
     Declares: r
     Appendix:
-    . documented:
-      . written: "\operatorname{real}"
+    . written: "\operatorname{real}"
 
     [\integer]
     Declares: z
     Appendix:
-    . documented:
-      . written: "\operatorname{integer}"
+    . written: "\operatorname{integer}"
 
     Theorem:
     given:
@@ -10743,16 +10238,14 @@ Text:
             r#"[\real]
     Declares: r
     Appendix:
-    . documented:
-      . written: "\operatorname{real}"
+    . written: "\operatorname{real}"
 
     [\real.function]
     Declares: f(x_) ::= y_
     specifies:
     . f is (_ is \real) -> (_ is \real)
     Appendix:
-    . documented:
-      . written: "f?"
+    . written: "f?"
 
     Theorem:
     given:
@@ -10789,14 +10282,12 @@ Text:
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\natural]
     Declares: n
     Appendix:
-    . documented:
-      . written: "\operatorname{natural}"
+    . written: "\operatorname{natural}"
 
     Theorem:
     given:
@@ -10846,15 +10337,13 @@ Text:
             r#"[\natural.0]
     Defines: 0 is \natural
     Appendix:
-    . documented:
-      . written: "0"
+    . written: "0"
 
     [\natural.succ(n_)]
     Defines: succ(n_) is (_ is \natural) -> (_ is \natural)
     Appendix:
-    . documented:
-      . called: "successor of $n?$"
-      . written: "n?+\!\!+"
+    . called: "successor of $n?$"
+    . written: "n?+\!\!+"
 
     [\natural]
     Declares: n
@@ -10862,8 +10351,7 @@ Text:
     . definition: \natural.0 is \natural
     . definition: \natural.succ is (_ is \natural) -> (_ is \natural)
     Appendix:
-    . documented:
-      . called: "naturals"
+    . called: "naturals"
     "#,
         )
         .unwrap();
@@ -10892,15 +10380,13 @@ Text:
             r#"[\set]
     Declares: X
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\function:on{A}:to{B}]
     Declares: f(x__) is (x "in" A) -> (_ "in" B)
     when: A, B is \set
     Appendix:
-    . documented:
-      . written: "A? \to B?"
+    . written: "A? \to B?"
     "#,
         )
         .unwrap();
@@ -10931,15 +10417,13 @@ Text:
             r#"[\set]
     Declares: X
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\function:on{A}:to{B}]
     Declares: f(x__)
     when: A, B is \set
     Appendix:
-    . documented:
-      . written: "A? \to B?"
+    . written: "A? \to B?"
 
     Theorem:
     given:
@@ -10962,7 +10446,7 @@ Text:
         assert!(has_user_error_at(
             &event_log,
             &file.canonicalize().unwrap(),
-            20,
+            18,
             27,
             "Unrecognized symbol `Z`"
         ));
@@ -10979,15 +10463,13 @@ Text:
             r#"[\real]
     Declares: x
     Appendix:
-    . documented:
-      . written: "\operatorname{real}"
+    . written: "\operatorname{real}"
 
     [\foo{s}]
     Declares: x
     when: s is \real
     Appendix:
-    . documented:
-      . written: "\operatorname{foo}"
+    . written: "\operatorname{foo}"
 
     Theorem:
     given: A is \real
@@ -11023,8 +10505,7 @@ Text:
             r#"[\real]
     Declares: x
     Appendix:
-    . documented:
-      . written: "\operatorname{real}"
+    . written: "\operatorname{real}"
 
     Theorem:
     given: x := y
@@ -11059,8 +10540,7 @@ Text:
             r#"[\set]
     Declares: X
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\function:on{A}:to{B}]
     Declares: f(x__) ::= y_
@@ -11069,15 +10549,13 @@ Text:
     . x__ is \\expression
     . y_ is \\anything
     Appendix:
-    . documented:
-      . written: "f? \: : \: A? \rightarrow B?"
+    . written: "f? \: : \: A? \rightarrow B?"
 
     [\identify.function:on{A}]
     Defines: f(x__) := x__ is \function:on{A}:to{B}
     when: A is \set
     Appendix:
-    . documented:
-      . called: "identity function on $A?$"
+    . called: "identity function on $A?$"
     "#,
         )
         .unwrap();
@@ -11105,8 +10583,7 @@ Text:
         let source = r#"[\set]
     Declares: X
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\function:?on{A}:?to{B}]
     Declares: f(x__) ::= y_
@@ -11115,8 +10592,7 @@ Text:
     . x__ is \\expression
     . y_ is \\anything
     Appendix:
-    . documented:
-      . written: "f? \: : \: A? \rightarrow B?"
+    . written: "f? \: : \: A? \rightarrow B?"
 
     [f \.function.compose./ g]
     Defines: h(x__) := f(g(x__)) is \function:on{A}:to{C}
@@ -11125,15 +10601,13 @@ Text:
     . g is \function:on{A}:to{B}
     . f is \function:on{B}:to{C}
     Appendix:
-    . documented:
-      . written: "f? \circ g?"
+    . written: "f? \circ g?"
 
     [\identify.function:on{A}]
     Defines: f(x__) := x__ is \function:on{A}:to{B}
     when: A is \set
     Appendix:
-    . documented:
-      . called: "identity function on $A?$"
+    . called: "identity function on $A?$"
     "#;
 
         write_mlg_fixture(&file, source).unwrap();
@@ -11196,8 +10670,7 @@ Text:
             r#"[\real]
     Declares: x
     Appendix:
-    . documented:
-      . written: "\operatorname{real}"
+    . written: "\operatorname{real}"
 
     Theorem:
     given: f(x_) := x_
@@ -11230,8 +10703,7 @@ Text:
             r#"[\set]
     Declares: X
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     Theorem:
     where: x memberOf X
@@ -11266,15 +10738,13 @@ Text:
             r#"[\real]
     Declares: x
     Appendix:
-    . documented:
-      . written: "\operatorname{real}"
+    . written: "\operatorname{real}"
 
     [\foo{s}]
     Declares: x
     when: s is \real
     Appendix:
-    . documented:
-      . written: "\operatorname{foo}"
+    . written: "\operatorname{foo}"
 
     Theorem:
     then:
@@ -11313,8 +10783,7 @@ Text:
     . capability: x_ "in" X :-> \\abstract
       written: "x_? \in X?"
     Appendix:
-    . documented:
-      . called: "set"
+    . called: "set"
 
     Theorem:
     given: A, B is \set
@@ -11370,8 +10839,7 @@ Text:
     . capability: x_ "in" X :-> \\abstract
       written: "x_? \\in X?"
     Appendix:
-    . documented:
-      . called: "set"
+    . called: "set"
 
     Theorem:
     given: X is \set
@@ -11410,8 +10878,7 @@ Text:
     . capability: x_ "in" X :-> \\abstract
       written: "x_? \\in X?"
     Appendix:
-    . documented:
-      . called: "set"
+    . called: "set"
 
     Theorem:
     given: X is \set
@@ -11449,8 +10916,7 @@ Text:
             r#"[\real]
     Declares: x
     Appendix:
-    . documented:
-      . written: "\operatorname{real}"
+    . written: "\operatorname{real}"
 
     Theorem:
     then:
@@ -11484,17 +10950,15 @@ Text:
             r#"[\thing]
     Declares: value
     Appendix:
-    . documented:
-      . written: "\operatorname{thing}"
+    . written: "\operatorname{thing}"
 
     [\foo:?baz{A}:?bar{B}]
     Defines: A ::= B "defines" B
     when: A, B is \thing
     Appendix:
-    . documented:
-      . [docs.called]
-        written:
-        . "\operatorname{foo}"
+    . [docs.called]
+      written:
+      . "\operatorname{foo}"
 
     Theorem:
     given: a, b is \thing
@@ -11533,10 +10997,9 @@ Text:
             r#"[\foo:?baz{A}:?bar{B}]
     Defines: A ::= B "defines" B
     Appendix:
-    . documented:
-      . [docs.called]
-        written:
-        . "\operatorname{foo}"
+    . [docs.called]
+      written:
+      . "\operatorname{foo}"
 
     Theorem:
     then:
@@ -11577,8 +11040,7 @@ Text:
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [X \.set.=./ Y]
     States:
@@ -11589,8 +11051,7 @@ Text:
     . forAll: Z "in" Y
       then: Z "in" X
     Appendix:
-    . documented:
-      . written: "X? = Y?"
+    . written: "X? = Y?"
 
     Theorem:
     given: A, B is \set
@@ -11624,23 +11085,20 @@ Text:
             r#"[\real]
     Declares: x
     Appendix:
-    . documented:
-      . written: "\operatorname{real}"
+    . written: "\operatorname{real}"
 
     [\reals]
     Declares: R
     Enables:
     . capability: x_ "in" R :-> x is \real
     Appendix:
-    . documented:
-      . written: "\operatorname{reals}"
+    . written: "\operatorname{reals}"
 
     [\foo{s}]
     Declares: x
     when: s is \real
     Appendix:
-    . documented:
-      . written: "\operatorname{foo}"
+    . written: "\operatorname{foo}"
 
     Theorem:
     given:
@@ -11676,23 +11134,20 @@ Text:
             r#"[\real]
     Declares: r
     Appendix:
-    . documented:
-      . written: "\operatorname{real}"
+    . written: "\operatorname{real}"
 
     [\set]
     Declares: X ::= {x__ : ...}
     Enables:
     . capability: x_ "in" X :-> x_ memberOf X
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\needs.real{x}]
     Declares: y
     when: x is \real
     Appendix:
-    . documented:
-      . written: "\operatorname{needsReal}(x?)"
+    . written: "\operatorname{needsReal}(x?)"
 
     Theorem:
     given:
@@ -11750,36 +11205,31 @@ Text:
     . from: Y ::= {y__ : ...}
       capability: x_ "in" X :-> x_ memberOf Y
     Appendix:
-    . documented:
-      . called: "set"
+    . called: "set"
 
     [A \.cross./ B]
     Defines: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
     when: A, B is \set
     Appendix:
-    . documented:
-      . called: "product"
+    . called: "product"
 
     [\natural]
     Declares: n
     Enables:
     . capability: x_ + y_ :=> x_ \.natural.+./ y_
     Appendix:
-    . documented:
-      . called: "natural"
+    . called: "natural"
 
     [\naturals]
     Defines: N := \set@{n_ : n_ is \natural}
     Appendix:
-    . documented:
-      . called: "naturals"
+    . called: "naturals"
 
     [a_ \.natural.+./ b_]
     Defines: c is \natural
     when: a_, b_ is \natural
     Appendix:
-    . documented:
-      . written: "a_? + b_?"
+    . written: "a_? + b_?"
 
     Theorem:
     given: (n1, n2) "in" (\naturals \.cross./ \naturals)
@@ -11812,30 +11262,26 @@ Text:
             r#"[\real]
     Declares: r
     Appendix:
-    . documented:
-      . written: "\operatorname{real}"
+    . written: "\operatorname{real}"
 
     [\set]
     Declares: X ::= {x__ : ...}
     Enables:
     . capability: x_ "in" X :-> x_ memberOf X
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\needs.real{x}]
     Declares: y
     when: x is \real
     Appendix:
-    . documented:
-      . written: "\operatorname{needsReal}(x?)"
+    . written: "\operatorname{needsReal}(x?)"
 
     [\set:where{spec}]
     Defines: X := {x_ : x_ satisfies spec} is \set
     when: spec is \\specification
     Appendix:
-    . documented:
-      . written: "\operatorname{setWhere}(spec?)"
+    . written: "\operatorname{setWhere}(spec?)"
 
     Theorem:
     given:
@@ -11869,30 +11315,26 @@ Text:
             r#"[\real]
     Declares: r
     Appendix:
-    . documented:
-      . written: "\operatorname{real}"
+    . written: "\operatorname{real}"
 
     [\set]
     Declares: X ::= {x__ : ...}
     Enables:
     . capability: x_ "in" X :-> x_ memberOf X
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\needs.real{x}]
     Declares: y
     when: x is \real
     Appendix:
-    . documented:
-      . written: "\operatorname{needsReal}(x?)"
+    . written: "\operatorname{needsReal}(x?)"
 
     [\set:of{T}]
     Defines: X := {x_ : x_ is T} is \set
     when: T is \\type
     Appendix:
-    . documented:
-      . written: "\operatorname{setOf}(T?)"
+    . written: "\operatorname{setOf}(T?)"
 
     Theorem:
     given:
@@ -11927,8 +11369,7 @@ Text:
             r#"[\real]
     Declares: r
     Appendix:
-    . documented:
-      . written: "\operatorname{real}"
+    . written: "\operatorname{real}"
 
     Theorem:
     given:
@@ -11963,8 +11404,7 @@ Text:
             r#"[\real]
     Declares: r
     Appendix:
-    . documented:
-      . written: "\operatorname{real}"
+    . written: "\operatorname{real}"
 
     Theorem:
     given:
@@ -12005,8 +11445,7 @@ Text:
             r#"[\real]
     Declares: r
     Appendix:
-    . documented:
-      . written: "\operatorname{real}"
+    . written: "\operatorname{real}"
 
     Theorem:
     given:
@@ -12048,8 +11487,7 @@ Text:
             r#"[\real]
     Declares: r
     Appendix:
-    . documented:
-      . written: "\operatorname{real}"
+    . written: "\operatorname{real}"
 
     Theorem:
     given:
@@ -12086,15 +11524,13 @@ Text:
             r#"[\real]
     Declares: r
     Appendix:
-    . documented:
-      . written: "\operatorname{real}"
+    . written: "\operatorname{real}"
 
     [\collect{S}]
     Declares: y
     when: S is \\expression
     Appendix:
-    . documented:
-      . written: "\operatorname{collect}(S?)"
+    . written: "\operatorname{collect}(S?)"
 
     Theorem:
     given:
@@ -12132,23 +11568,20 @@ Text:
             r#"[\real]
     Declares: r
     Appendix:
-    . documented:
-      . written: "\operatorname{real}"
+    . written: "\operatorname{real}"
 
     [\set]
     Declares: X ::= {x__ : ...}
     Enables:
     . capability: x_ "in" X :-> x_ memberOf X
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\needs.real{x}]
     Declares: y
     when: x is \real
     Appendix:
-    . documented:
-      . written: "\operatorname{needsReal}(x?)"
+    . written: "\operatorname{needsReal}(x?)"
 
     Theorem:
     given:
@@ -12185,30 +11618,26 @@ Text:
             r#"[\real]
     Declares: r
     Appendix:
-    . documented:
-      . written: "\operatorname{real}"
+    . written: "\operatorname{real}"
 
     [\set]
     Declares: X ::= {x__ : ...}
     Enables:
     . capability: x_ "in" X :-> x_ memberOf X
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\needs.set{x}]
     Declares: y
     when: x is \set
     Appendix:
-    . documented:
-      . written: "\operatorname{needsSet}(x?)"
+    . written: "\operatorname{needsSet}(x?)"
 
     [\set:where{spec}]
     Defines: X := {x_ : x_ satisfies spec} is \set
     when: spec is \\specification
     Appendix:
-    . documented:
-      . written: "\operatorname{setWhere}(spec?)"
+    . written: "\operatorname{setWhere}(spec?)"
 
     Theorem:
     given:
@@ -12250,23 +11679,20 @@ Text:
             r#"[\real]
     Declares: r
     Appendix:
-    . documented:
-      . written: "\operatorname{real}"
+    . written: "\operatorname{real}"
 
     [\set]
     Declares: X ::= {x__ : ...}
     Enables:
     . capability: x_ "in" X :-> x_ memberOf X
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\set:where{spec}]
     Defines: X := {x_ : x_ satisfies spec} is \set
     when: spec is \\specification
     Appendix:
-    . documented:
-      . written: "\operatorname{setWhere}(spec?)"
+    . written: "\operatorname{setWhere}(spec?)"
 
     Theorem:
     given:
@@ -12311,15 +11737,13 @@ Text:
     . from: Y ::= {y__ : ...}
       capability: x_ "in" X :-> x_ memberOf Y
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\needs.set{x}]
     Declares: y
     when: x is \set
     Appendix:
-    . documented:
-      . written: "\operatorname{needsSet}(x?)"
+    . written: "\operatorname{needsSet}(x?)"
 
     Theorem:
     given: X := {x_ : x_ is \set} is \set
@@ -12356,8 +11780,7 @@ Text:
             r#"[\set]
     Declares: X
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\function]
     Declares: f(x__) ::= y_
@@ -12368,15 +11791,13 @@ Text:
     . from: P ::= {(p_, q_) : ...}
       as: f(p_) := q_
     Appendix:
-    . documented:
-      . written: "\operatorname{function}"
+    . written: "\operatorname{function}"
 
     [\needs.set{x}]
     Declares: y
     when: x is \set
     Appendix:
-    . documented:
-      . written: "\operatorname{needsSet}(x?)"
+    . written: "\operatorname{needsSet}(x?)"
 
     Theorem:
     given:
@@ -12411,15 +11832,13 @@ Text:
             r#"[\rational]
     Declares: r
     Appendix:
-    . documented:
-      . written: "\operatorname{rational}"
+    . written: "\operatorname{rational}"
 
     [\as.rational{x}]
     Defines: r is \rational
     when: x is \integer
     Appendix:
-    . documented:
-      . written: "\operatorname{asRational}(x?)"
+    . written: "\operatorname{asRational}(x?)"
 
     [\integer]
     Declares: n
@@ -12428,8 +11847,7 @@ Text:
       as: r := \as.rational{n} is \rational
       signifies: n \.embedded.to./ r
     Appendix:
-    . documented:
-      . written: "\operatorname{integer}"
+    . written: "\operatorname{integer}"
 
     [A \.embedded.to./ B]
     States:
@@ -12438,22 +11856,19 @@ Text:
     . B is \rational
     that: A is? \integer
     Appendix:
-    . documented:
-      . written: "A? \hookrightarrow B?"
+    . written: "A? \hookrightarrow B?"
 
     [A \.rational.+./ B]
     Defines: C is \rational
     when: A, B is \rational
     Appendix:
-    . documented:
-      . written: "A? + B?"
+    . written: "A? + B?"
 
     [\needs.rational{x}]
     Declares: y
     when: x is \rational
     Appendix:
-    . documented:
-      . written: "\operatorname{needsRational}(x?)"
+    . written: "\operatorname{needsRational}(x?)"
 
     Theorem:
     given: n is \integer
@@ -12492,16 +11907,14 @@ Text:
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . called: "set"
+    . called: "set"
 
     [\group]
     Declares: G
     Requires:
     . capability: x_ "in" G :-> \\abstract
     Appendix:
-    . documented:
-      . called: "group"
+    . called: "group"
 
     [H \:subgroup:/ G]
     Declares: H
@@ -12510,8 +11923,7 @@ Text:
     . view:
       as: H' := H is \group
     Appendix:
-    . documented:
-      . called: "subgroup"
+    . called: "subgroup"
 
     [\members:of{H}:in{G}]
     Defines: C := \set@{h_ : h_ "in" H}
@@ -12519,8 +11931,7 @@ Text:
     . G is \group
     . H \:subgroup:/ G
     Appendix:
-    . documented:
-      . called: "members"
+    . called: "members"
     "#,
         )
         .unwrap();
@@ -12551,15 +11962,13 @@ Text:
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . called: "set"
+    . called: "set"
 
     [\function:on{A}:to{B}]
     Declares: f(x__) is (_ "in" A) -> (_ "in" B)
     when: A, B is \set
     Appendix:
-    . documented:
-      . called: "function"
+    . called: "function"
 
     [\naturals]
     Defines: Nb ::= (N, 0, S(n_))
@@ -12572,8 +11981,7 @@ Text:
     . view:
       as: X := N is \set
     Appendix:
-    . documented:
-      . called: "naturals"
+    . called: "naturals"
 
     Theorem:
     then:
@@ -12609,8 +12017,7 @@ Text:
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . called: "set"
+    . called: "set"
 
     [\function:on{A}:to{B}]
     Declares: f(x__) ::= y_
@@ -12619,36 +12026,31 @@ Text:
     . x__ "in" A
     . y_ "in" B
     Appendix:
-    . documented:
-      . called: "function"
+    . called: "function"
 
     [\(inductive)::set]
     Refines: I
     Appendix:
-    . documented:
-      . adjective: "inductive"
+    . adjective: "inductive"
 
     [\omega]
     Defines: omega is \set
     Enables:
     . capability: X_ "in" omega :-> X_ is \(inductive)::set
     Appendix:
-    . documented:
-      . written: "\omega"
+    . written: "\omega"
 
     [\set.successor:of{X}]
     Defines: Y is \set
     when: X is \set
     Appendix:
-    . documented:
-      . called: "set successor"
+    . called: "set successor"
 
     [\S(n_)]
     Defines: S(n_) is \function:on{\omega}:to{\omega}
     expresses: S(n_) := \set.successor:of{n_}
     Appendix:
-    . documented:
-      . written: "S(n_?)"
+    . written: "S(n_?)"
     "#,
         )
         .unwrap();
@@ -12680,22 +12082,19 @@ Declares: X ::= {x__ : ...}
 Enables:
 . capability: x_ "in" X :-> x_ memberOf X
 Appendix:
-. documented:
-  . called: "set"
+. called: "set"
 
 [\(inductive)::set]
 Refines: I
 Appendix:
-. documented:
-  . adjective: "inductive"
+. adjective: "inductive"
 
 [\axiom.of.infinity]
 Axiom:
 then:
 . exists: A is \(inductive)::set
 Appendix:
-. documented:
-  . called: "axiom of infinity"
+. called: "axiom of infinity"
 
 [\von.neumann.omega]
 Defines: omega is \set
@@ -12712,8 +12111,7 @@ expresses:
 Enables:
 . capability: X_ "in" omega :-> X_ is \set
 Appendix:
-. documented:
-  . written: "\omega"
+. written: "\omega"
 . justification:
   . for: (:1:)
     have: A is \(inductive)::set
@@ -12747,16 +12145,14 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
             r#"[\von.neumann.natural]
     Declares: n
     Appendix:
-    . documented:
-      . called: "von Neumann natural"
+    . called: "von Neumann natural"
 
     [\set]
     Declares: X ::= {x__ : ...}
     Enables:
     . capability: x_ "in" X :-> x_ memberOf X
     Appendix:
-    . documented:
-      . called: "set"
+    . called: "set"
 
     [\naturals]
     Defines: Nb ::= (N, Z)
@@ -12768,15 +12164,13 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
     . view:
       as: X := N is \set
     Appendix:
-    . documented:
-      . called: "naturals"
+    . called: "naturals"
 
     [\needs.natural{x}]
     Declares: y
     when: x is \von.neumann.natural
     Appendix:
-    . documented:
-      . called: "needs natural"
+    . called: "needs natural"
 
     Theorem:
     given: x "in" \naturals
@@ -12809,8 +12203,7 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
             r#"[\rational]
     Declares: r
     Appendix:
-    . documented:
-      . written: "\operatorname{rational}"
+    . written: "\operatorname{rational}"
 
     [\integer]
     Declares: n
@@ -12818,15 +12211,13 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
     . view:
       as: r := n is \rational
     Appendix:
-    . documented:
-      . written: "\operatorname{integer}"
+    . written: "\operatorname{integer}"
 
     [\needs.rational{x}]
     Declares: y
     when: x is \rational
     Appendix:
-    . documented:
-      . written: "\operatorname{needsRational}(x?)"
+    . written: "\operatorname{needsRational}(x?)"
 
     Theorem:
     given: n is \integer
@@ -12863,8 +12254,7 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
     Enables:
     . capability: x_ + y_ :=> x_ \.rational.+./ y_
     Appendix:
-    . documented:
-      . written: "\operatorname{rational}"
+    . written: "\operatorname{rational}"
 
     [\integer]
     Declares: n
@@ -12872,15 +12262,13 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
     . view:
       as: r := n is \rational
     Appendix:
-    . documented:
-      . written: "\operatorname{integer}"
+    . written: "\operatorname{integer}"
 
     [A \.rational.+./ B]
     Defines: C is \rational
     when: A, B is \rational
     Appendix:
-    . documented:
-      . written: "A? + B?"
+    . written: "A? + B?"
 
     Theorem:
     given: n, m is \integer
@@ -12916,8 +12304,7 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
             r#"[\rational]
     Declares: r
     Appendix:
-    . documented:
-      . written: "\operatorname{rational}"
+    . written: "\operatorname{rational}"
 
     [\integer]
     Declares: n
@@ -12927,8 +12314,7 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
       when: n is \integer
       represents: \\something.else
     Appendix:
-    . documented:
-      . written: "\operatorname{integer}"
+    . written: "\operatorname{integer}"
     "#,
         )
         .unwrap();
@@ -12962,8 +12348,7 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
             r#"[\rational]
     Declares: r
     Appendix:
-    . documented:
-      . written: "\operatorname{rational}"
+    . written: "\operatorname{rational}"
 
     [\integer]
     Declares: n
@@ -12971,23 +12356,20 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
     . view:
       as: r := n is \rational
     Appendix:
-    . documented:
-      . written: "\operatorname{integer}"
+    . written: "\operatorname{integer}"
 
     [A \.rational.+./ B]
     Defines: C is \rational
     when: A, B is \rational
     Appendix:
-    . documented:
-      . written: "A? + B?"
+    . written: "A? + B?"
 
     [x_ + y_]
     Disambiguates:
     when: x_, y_ is \rational
     to: x_ \.rational.+./ y_
     Appendix:
-    . documented:
-      . written: "x_? + y_?"
+    . written: "x_? + y_?"
 
     Theorem:
     given: n, m is \integer
@@ -13027,15 +12409,13 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
     Requires:
     . capability: x_ "in" X :-> x_ memberOf X
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [A \.set.minus./ B]
     Defines: C is \set
     when: A, B is \set
     Appendix:
-    . documented:
-      . written: "A? \setminus B?"
+    . written: "A? \setminus B?"
 
     Theorem:
     given: X := {x_ : x_ is \set} is \set
@@ -13078,8 +12458,7 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
             r#"[\function]
     Declares: f
     Appendix:
-    . documented:
-      . written: "\operatorname{function}"
+    . written: "\operatorname{function}"
 
     [\set]
     Declares: X
@@ -13090,15 +12469,13 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
     . from: Y ::= {y_ : ...}
       capability: x_ "in" X :-> x_ is \function
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [A \.set.minus./ B]
     Defines: C is \set
     when: A, B is \set
     Appendix:
-    . documented:
-      . written: "A? \setminus B?"
+    . written: "A? \setminus B?"
 
     Theorem:
     given: X := {x_ : x_ is \set} is \set
@@ -13143,15 +12520,13 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
     Enables:
     . capability: x_ "in" X :-> x_ memberOf X
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\needs.anything{x}]
     Declares: y
     when: x is \\anything
     Appendix:
-    . documented:
-      . written: "\operatorname{needsAnything}(x?)"
+    . written: "\operatorname{needsAnything}(x?)"
 
     Theorem:
     given:
@@ -13186,15 +12561,13 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
             r#"[\set]
     Declares: X
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\accepts.anything{X}]
     Declares: Y
     when: X is \\anything
     Appendix:
-    . documented:
-      . written: "\operatorname{acceptsAnything}(X?)"
+    . written: "\operatorname{acceptsAnything}(X?)"
 
     Theorem:
     given: A is \set
@@ -13227,15 +12600,13 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
             r#"[\set]
     Declares: X
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\accepts.obsolete{X}]
     Declares: Y
     when: X is \\opaque
     Appendix:
-    . documented:
-      . written: "\operatorname{acceptsObsolete}(X?)"
+    . written: "\operatorname{acceptsObsolete}(X?)"
 
     Theorem:
     given: A is \set
@@ -13271,15 +12642,13 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
             r#"[\set]
     Declares: X
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\requires.set{X}]
     Declares: Y
     when: X is \set
     Appendix:
-    . documented:
-      . written: "\operatorname{requiresSet}(X?)"
+    . written: "\operatorname{requiresSet}(X?)"
 
     Theorem:
     given: A is \\anything
@@ -13317,8 +12686,7 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
     Enables:
     . capability: x_ "in" G :-> \\abstract
     Appendix:
-    . documented:
-      . written: "\operatorname{group}"
+    . written: "\operatorname{group}"
 
     [\foo{G}:with{x}]
     Declares: y
@@ -13326,8 +12694,7 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
     . G is \group
     . x "in" G
     Appendix:
-    . documented:
-      . written: "\operatorname{foo}"
+    . written: "\operatorname{foo}"
 
     Theorem:
     given:
@@ -13364,15 +12731,13 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
             r#"[\set]
     Declares: X
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\function:?on{A}:?to{B}]
     Declares: f(x__)
     when: A, B is \set
     Appendix:
-    . documented:
-      . written: "\operatorname{function}"
+    . written: "\operatorname{function}"
 
     [\group]
     Declares: G ::= (X, *, e)
@@ -13381,8 +12746,7 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
     . * is \function:on{X}:to{X}
     . e "in" G
     Appendix:
-    . documented:
-      . written: "\operatorname{group}"
+    . written: "\operatorname{group}"
     "#,
         )
         .unwrap();
@@ -13415,8 +12779,7 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
             r#"[\set]
     Declares: X
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\group]
     Declares: G ::= (X, *, e)
@@ -13425,8 +12788,7 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
     . Y is \set
     . e := X
     Appendix:
-    . documented:
-      . written: "\operatorname{group}"
+    . written: "\operatorname{group}"
     "#,
         )
         .unwrap();
@@ -13494,22 +12856,19 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\function:on{A}:to{B}]
     Declares: f(x__)
     when: A, B is \set
     Appendix:
-    . documented:
-      . written: "\operatorname{function}"
+    . written: "\operatorname{function}"
 
     [\element.of:group{G}]
     Declares: x
     when: G is \group
     Appendix:
-    . documented:
-      . written: "x? \in G?"
+    . written: "x? \in G?"
 
     [\group]
     Declares: G ::= (X, *, e) is \set via X
@@ -13520,8 +12879,7 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
     Enables:
     . capability: x_ "in" G :-> x_ is \element.of:group{G}
     Appendix:
-    . documented:
-      . written: "\operatorname{group}"
+    . written: "\operatorname{group}"
     "#,
         )
         .unwrap();
@@ -13572,15 +12930,13 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
             r#"[\set]
     Declares: X
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [A \:subset:/ B]
     Declares: A is \set
     when: A, B is \set
     Appendix:
-    . documented:
-      . written: "A? \subseteq B?"
+    . written: "A? \subseteq B?"
     "#,
         )
         .unwrap();
@@ -13614,8 +12970,7 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
             r#"[\set]
     Declares: X
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [A \:subset:?within{U}:/ B]
     Declares: A is \set
@@ -13623,15 +12978,13 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
     . U is \set
     . B is \set
     Appendix:
-    . documented:
-      . written: "A? \subset B?"
+    . written: "A? \subset B?"
 
     [A \.combine:?using{U}./ B]
     Defines: C is \set
     when: A, B is \set
     Appendix:
-    . documented:
-      . written: "A? \star B?"
+    . written: "A? \star B?"
     "#,
         )
         .unwrap();
@@ -13660,26 +13013,22 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
             r#"[\bar]
     Declares: x
     Appendix:
-    . documented:
-      . written: "\operatorname{bar}"
+    . written: "\operatorname{bar}"
 
     [\baz]
     Declares: x
     Appendix:
-    . documented:
-      . written: "\operatorname{baz}"
+    . written: "\operatorname{baz}"
 
     [\foo2]
     Declares: x
     Appendix:
-    . documented:
-      . written: "\operatorname{fooTwo}"
+    . written: "\operatorname{fooTwo}"
 
     [\baz2]
     Declares: x
     Appendix:
-    . documented:
-      . written: "\operatorname{bazTwo}"
+    . written: "\operatorname{bazTwo}"
 
     [\foo{A}]
     Declares: B is \bar
@@ -13689,8 +13038,7 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
     . forAll: A is \baz2
       then: A is? \baz2
     Appendix:
-    . documented:
-      . written: "\operatorname{foo}"
+    . written: "\operatorname{foo}"
     "#,
         )
         .unwrap();
@@ -13736,8 +13084,7 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
             r#"[\function]
     Declares: f(x__)
     Appendix:
-    . documented:
-      . written: "\operatorname{function}"
+    . written: "\operatorname{function}"
 
     Theorem:
     then:
@@ -13773,8 +13120,7 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
             r#"[\function]
     Declares: f(x__)
     Appendix:
-    . documented:
-      . written: "\operatorname{function}"
+    . written: "\operatorname{function}"
 
     Theorem:
     then:
@@ -13904,8 +13250,7 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
             r#"[\bar{A, A}]
     Declares: x
     Appendix:
-    . documented:
-      . written: "\operatorname{bar}"
+    . written: "\operatorname{bar}"
     "#,
         )
         .unwrap();
@@ -13934,21 +13279,18 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
             r#"[\bar]
     Declares: x
     Appendix:
-    . documented:
-      . written: "\operatorname{bar}"
+    . written: "\operatorname{bar}"
 
     [\baz]
     Declares: x
     Appendix:
-    . documented:
-      . written: "\operatorname{baz}"
+    . written: "\operatorname{baz}"
 
     [\foo]
     Declares: B is \bar
     using: B is \baz
     Appendix:
-    . documented:
-      . written: "\operatorname{foo}"
+    . written: "\operatorname{foo}"
     "#,
         )
         .unwrap();
@@ -13977,21 +13319,18 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
             r#"[\set]
     Declares: X
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\natural]
     Declares: x
     Appendix:
-    . documented:
-      . written: "\operatorname{natural}"
+    . written: "\operatorname{natural}"
 
     [\function:on{A}:to{B}]
     Declares: f(x__)
     when: A, B is \set
     Appendix:
-    . documented:
-      . written: "\operatorname{function}"
+    . written: "\operatorname{function}"
 
     [\naturals]
     Defines: Nb ::= (N, 0, S(n_))
@@ -14017,8 +13356,7 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
     . view:
       as: S := N is \set
     Appendix:
-    . documented:
-      . called: "the naturals"
+    . called: "the naturals"
     "#,
         )
         .unwrap();
@@ -14047,15 +13385,13 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
             r#"[\set]
     Declares: X
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\function:?on{A}:?to{B}]
     Declares: f(x__)
     when: A, B is \set
     Appendix:
-    . documented:
-      . written: "\operatorname{function}"
+    . written: "\operatorname{function}"
 
     [\group]
     Declares: G ::= (X, *, e)
@@ -14066,16 +13402,14 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
     Enables:
     . capability: x_ "in" G :-> x_ is \element.of:group{G}
     Appendix:
-    . documented:
-      . written: "\operatorname{group}"
+    . written: "\operatorname{group}"
 
     [\element.of:group{G}]
     Declares: x
     when: G is \group
     Appendix:
-    . documented:
-      . called: "element of group $G?$"
-      . written: "x? \in G?"
+    . called: "element of group $G?$"
+    . written: "x? \in G?"
     "#,
         )
         .unwrap();
@@ -14106,21 +13440,18 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
             r#"[\set]
     Declares: X
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\thing]
     Declares: value
     Appendix:
-    . documented:
-      . written: "\operatorname{thing}"
+    . written: "\operatorname{thing}"
 
     [\element.of:group{G}]
     Declares: x
     when: G is \set
     Appendix:
-    . documented:
-      . written: "x? \in G?"
+    . written: "x? \in G?"
 
     Theorem:
     given: A, x is \thing
@@ -14157,15 +13488,13 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
             r#"[\set]
     Declares: X
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\function:?on{A}:?to{B}]
     Declares: f(x__)
     when: A, B is \set
     Appendix:
-    . documented:
-      . written: "\operatorname{function}"
+    . written: "\operatorname{function}"
 
     [\group]
     Declares: G ::= (X, *, e)
@@ -14176,16 +13505,14 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
     Enables:
     . capability: x_ "in" G :-> x_ is \element.of:group{G}
     Appendix:
-    . documented:
-      . written: "\operatorname{group}"
+    . written: "\operatorname{group}"
 
     [\element.of:group{G}]
     Declares: x
     when: G is \set
     Appendix:
-    . documented:
-      . called: "element of group $G?$"
-      . written: "x? \in G?"
+    . called: "element of group $G?$"
+    . written: "x? \in G?"
     "#,
         )
         .unwrap();
@@ -14219,15 +13546,13 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
             r#"[\set]
     Declares: X
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [\function:?on{A}:?to{B}]
     Declares: f(x__)
     when: A, B is \set
     Appendix:
-    . documented:
-      . written: "\operatorname{function}"
+    . written: "\operatorname{function}"
 
     [\group]
     Declares: G ::= (X, *, e) is \set
@@ -14238,16 +13563,14 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
     Enables:
     . capability: x_ "in" G :-> x_ is \element.of:group{G}
     Appendix:
-    . documented:
-      . written: "\operatorname{group}"
+    . written: "\operatorname{group}"
 
     [\element.of:group{G}]
     Declares: x
     when: G is \set
     Appendix:
-    . documented:
-      . called: "element of group $G?$"
-      . written: "x? \in G?"
+    . called: "element of group $G?$"
+    . written: "x? \in G?"
     "#,
         )
         .unwrap();
@@ -14276,10 +13599,9 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
             r#"[\some.function{A}(x, y)]
     Defines: A "defines" B
     Appendix:
-    . documented:
-      . [docs.called]
-        written:
-        . "\operatorname{someFunction}"
+    . [docs.called]
+      written:
+      . "\operatorname{someFunction}"
 
     Theorem:
     then:
@@ -14299,7 +13621,7 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
         assert!(has_user_error_at(
             &event_log,
             &file.canonicalize().unwrap(),
-            11,
+            10,
             7,
             "Command signature `\\some.function` expects argument shape `{1}(2)` but found `{2}(2)`"
         ));
@@ -14316,10 +13638,9 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
             r#"[\some.function{A}(x, y)]
     Defines: A "defines" B
     Appendix:
-    . documented:
-      . [docs.called]
-        written:
-        . "\operatorname{someFunction}"
+    . [docs.called]
+      written:
+      . "\operatorname{someFunction}"
 
     Theorem:
     then:
@@ -14339,7 +13660,7 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
         assert!(has_user_error_at(
             &event_log,
             &file.canonicalize().unwrap(),
-            11,
+            10,
             7,
             "Command signature `\\some.function` expects argument shape `{1}(2)` but found `{1}(3)`"
         ));
@@ -14362,10 +13683,9 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
     [\called.only]
     Declares: A
     Appendix:
-    . documented:
-      . [docs.called]
-        called:
-      . "called only"
+    . [docs.called]
+      called:
+    . "called only"
 
     [\refines.missing]
     Refines: A
@@ -14399,7 +13719,7 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
         assert!(has_user_error_at(
             &event_log,
             &canonical_file,
-            17,
+            16,
             1,
             "Refines entries must include an `adjective:` item in `Documented:`"
         ));
@@ -14420,8 +13740,7 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [x \.not.in./ X]
     States:
@@ -14464,8 +13783,7 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Appendix:
-    . documented:
-      . written: "\operatorname{set}"
+    . written: "\operatorname{set}"
 
     [x \.not.in./ X]
     States:
@@ -14473,8 +13791,7 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
     that:
     . not: x "in"? X
     Appendix:
-    . documented:
-      . written: "x? \notin X?"
+    . written: "x? \notin X?"
     "#,
         )
         .unwrap();
@@ -14503,28 +13820,25 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
             r#"[\written.only]
     Defines: A is \\anything
     Appendix:
-    . documented:
-      . [docs.written]
-        written:
-        . "written only"
+    . [docs.written]
+      written:
+      . "written only"
 
     [\called.only]
     Declares: A
     Appendix:
-    . documented:
-      . [docs.called]
-        called:
-        . "called only"
+    . [docs.called]
+      called:
+      . "called only"
 
     [\called.and.written]
     Declares: A
     Appendix:
-    . documented:
-      . [docs.called]
-        called:
-        . "called and written"
-        written:
-        . "written"
+    . [docs.called]
+      called:
+      . "called and written"
+      written:
+      . "written"
     "#,
         )
         .unwrap();
@@ -14553,24 +13867,21 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
             r#"[\set]
 Declares: X
 Appendix:
-. documented:
-  . called: "set"
+. called: "set"
 Id: "0d50b7b0-30b6-4bb1-9fa9-6ac3fcb435f0"
 
 [\ordered.pair]
 Declares: p
 using: A, B is \set
 Appendix:
-. documented:
-  . called: "ordered pair"
+. called: "ordered pair"
 Id: "c48e8057-c05f-458d-b7ad-09df94d4e9a4"
 
 [\ordered.pair:of{A}:and{B}]
 Defines: p is \ordered.pair#using{A := A; B := B}
 when: A, B is \set
 Appendix:
-. documented:
-  . called: "ordered pair of $A?$ and $B?$"
+. called: "ordered pair of $A?$ and $B?$"
 Id: "9890d56c-448e-41d1-99cb-9dfbd33f1643"
 
 [\uses.given.context]
@@ -14613,24 +13924,21 @@ Declares: X
 Requires:
 . capability: x_ "in" X :-> \\abstract
 Appendix:
-. documented:
-  . called: "set"
+. called: "set"
 
 [\singleton.set:of{X}]
 Defines: Y is \set
 using: U is \set
 when: X "in" U
 Appendix:
-. documented:
-  . called: "singleton set"
+. called: "singleton set"
 
 [\set.successor:of{X}]
 Defines: Y is \set
 when: X is \set
 expresses: \singleton.set:of{X}
 Appendix:
-. documented:
-  . called: "set successor"
+. called: "set successor"
 "#,
         )
         .unwrap();
@@ -14659,23 +13967,20 @@ Appendix:
             r#"[\set]
 Declares: X
 Appendix:
-. documented:
-  . called: "set"
+. called: "set"
 Id: "0d50b7b0-30b6-4bb1-9fa9-6ac3fcb435f0"
 
 [\pair]
 Declares: P
 Appendix:
-. documented:
-  . called: "pair"
+. called: "pair"
 Id: "7e446cf6-995e-45aa-9b05-e07bf4be82e1"
 
 [\set.theoretic.pair:of{a}:and{b}]
 Defines: P is \set
 when: a, b is \set
 Appendix:
-. documented:
-  . called: "set-theoretic pair of $a?$ and $b?$"
+. called: "set-theoretic pair of $a?$ and $b?$"
 Id: "9f79d83e-8423-4343-b547-e391b3305994"
 
 [\pair:on{a}:and{b}]
@@ -14685,8 +13990,7 @@ Enables:
 . view:
   as: p := \set.theoretic.pair:of{a}:and{b} is \set
 Appendix:
-. documented:
-  . written: "(a?, b?)"
+. written: "(a?, b?)"
 Id: "a95d2ea7-d1fd-41a5-b55c-b6c18c0d05b7"
 "#,
         )
@@ -14716,16 +14020,14 @@ Id: "a95d2ea7-d1fd-41a5-b55c-b6c18c0d05b7"
             r#"[\set]
 Declares: X
 Appendix:
-. documented:
-  . called: "set"
+. called: "set"
 Id: "b977c5dd-d79e-426c-8cc8-b028a716c47a"
 
 [\foo:of{a}:and{b}]
 Defines: Z ::= (x, y) := (a, b) is \set
 when: a, b is \set
 Appendix:
-. documented:
-  . called: "foo"
+. called: "foo"
 Id: "5800ef12-bed3-427b-985f-ae871a6080ff"
 
 [\foo2:of{a}:and{b}]
@@ -14735,8 +14037,7 @@ expresses:
 . x := a
 . y := b
 Appendix:
-. documented:
-  . called: "foo2"
+. called: "foo2"
 Id: "5800ef12-bed3-427b-985f-ae871a6080f1"
 "#,
         )
@@ -14766,8 +14067,7 @@ Id: "5800ef12-bed3-427b-985f-ae871a6080f1"
             r#"[\set]
 Declares: X
 Appendix:
-. documented:
-  . called: "set"
+. called: "set"
 Id: "b977c5dd-d79e-426c-8cc8-b028a716c47a"
 
 [\foo:of{a}:and{b}]
@@ -14778,8 +14078,7 @@ expresses:
 . x := b
 . y := b
 Appendix:
-. documented:
-  . called: "foo"
+. called: "foo"
 Id: "5800ef12-bed3-427b-985f-ae871a6080ff"
 "#,
         )
@@ -14822,8 +14121,7 @@ then:
   then: x = x
   else: x = x
 Appendix:
-. documented:
-  . called: "Piecewise test theorem"
+. called: "Piecewise test theorem"
 "#,
         )
         .unwrap();
@@ -14855,42 +14153,36 @@ Declares: X
 Requires:
 . capability: x_ "in" X :-> \\abstract
 Appendix:
-. documented:
-  . called: "set"
+. called: "set"
 
 [\empty.set]
 Defines: X is \set
 Appendix:
-. documented:
-  . called: "empty set"
+. called: "empty set"
 
 [\von.neumann.omega]
 Defines: omega is \set
 Enables:
 . capability: X_ "in" omega :-> X_ is \set
 Appendix:
-. documented:
-  . called: "Von Neumann Omega"
+. called: "Von Neumann Omega"
 
 [\von.neumann.S(n_)]
 Defines: S(n_) is \function:on{\von.neumann.omega}:to{\von.neumann.omega}
 expresses: S(n_) := \set.successor:of{n_}
 Appendix:
-. documented:
-  . called: "Von Neumann Successor"
+. called: "Von Neumann Successor"
 
 [\set.successor:of{X}]
 Defines: Y is \set
 when: X is \set
 Appendix:
-. documented:
-  . called: "The set successor of $X?$"
+. called: "The set successor of $X?$"
 
 [\natural]
 Declares: n
 Appendix:
-. documented:
-  . called: "natural"
+. called: "natural"
 
 [\function:?on{A}:?to{B}]
 Declares: f(x__) ::= y_
@@ -14899,8 +14191,7 @@ specifies:
 . x__ "in" A
 . y_ "in" B
 Appendix:
-. documented:
-  . called: "function"
+. called: "function"
 
 [\naturals]
 Defines: Nb ::= (N, 0, S(n_))
@@ -14910,8 +14201,7 @@ specifies:
 . 0 "in" N
 . S is \function:on{N}:to{N}
 Appendix:
-. documented:
-  . called: "the naturals"
+. called: "the naturals"
 
 [\von.neumann.naturals]
 Realizes: Nb ::= (N, 0, S(n_)) := \naturals
@@ -14922,8 +14212,7 @@ specifies:
 Enables:
 . capability: x_ "in" Nb :<->: x_ "in" N
 Appendix:
-. documented:
-  . called: "Von Neumann Naturals"
+. called: "Von Neumann Naturals"
 
 [\to.von.neumann.natural{n}]
 Defines: m "in" \von.neumann.naturals
@@ -14936,8 +14225,7 @@ expresses:
   . let: k is \natural
     then: m = \set.successor:of{\to.von.neumann.natural{k}}
 Appendix:
-. documented:
-  . called: "Von Neumann Numeral"
+. called: "Von Neumann Numeral"
 "#,
         )
         .unwrap();
@@ -14967,14 +14255,12 @@ Appendix:
 [\set]
 Declares: X
 Appendix:
-. documented:
-  . called: "set"
+. called: "set"
 
 [\empty.set]
 Defines: X is \set
 Appendix:
-. documented:
-  . called: "empty set"
+. called: "empty set"
 
 [\group_like]
 Declares: G ::= (X, e)
@@ -14982,8 +14268,7 @@ specifies:
 . X is \set
 . e := \empty.set
 Appendix:
-. documented:
-  . called: "group like"
+. called: "group like"
 
 [\concrete_group]
 Defines: G ::= (X, e) := \group_like
@@ -14991,8 +14276,7 @@ specifies:
 . X := \empty.set
 . e := \empty.set
 Appendix:
-. documented:
-  . called: "concrete group"
+. called: "concrete group"
 "#,
         )
         .unwrap();
@@ -15024,8 +14308,7 @@ Declares: X
 Requires:
 . capability: x_ "in" X :-> \\abstract
 Appendix:
-. documented:
-  . called: "set"
+. called: "set"
 
 [\function:?on{A}:?to{B}]
 Declares: f(x__) ::= y_
@@ -15034,8 +14317,7 @@ specifies:
 . x__ "in" A
 . y_ "in" B
 Appendix:
-. documented:
-  . called: "function"
+. called: "function"
 
 [\naturals]
 Defines: Nb ::= (N, 0, S(n_))
@@ -15045,14 +14327,12 @@ specifies:
 . 0 "in" N
 . S is \function:on{N}:to{N}
 Appendix:
-. documented:
-  . called: "the naturals"
+. called: "the naturals"
 
 [\natural]
 Declares: n "in" \naturals..N
 Appendix:
-. documented:
-  . called: "natural"
+. called: "natural"
 "#,
         )
         .unwrap();
@@ -15084,16 +14364,14 @@ mod type_info_tests {
     const SOURCE: &str = r#"[\set]
 Declares: X
 Appendix:
-. documented:
-  . called: "set"
+. called: "set"
 
 
 [\element:of{X}]
 Declares: x
 when: X is \set
 Appendix:
-. documented:
-  . called: "element"
+. called: "element"
 
 
 Theorem:

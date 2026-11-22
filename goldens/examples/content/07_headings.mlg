@@ -6,8 +6,7 @@
 Declares: M
 when: R, S is \set
 Appendix:
-. documented:
-  . called: "module over $R?$ with $S?$"
+. called: "module over $R?$ with $S?$"
 Id: "c259c92b-6f91-4b41-95d6-ad435836be8c"
 
 
@@ -17,8 +16,7 @@ Id: "c259c92b-6f91-4b41-95d6-ad435836be8c"
 Declares: N
 when: V, P is \set
 Appendix:
-. documented:
-  . called: "norm"
+. called: "norm"
 Id: "fe2341bc-c21b-4a78-8cec-1089da4af4f2"
 
 
@@ -31,8 +29,7 @@ when: B is \set
 Requires:
 . capability: x_ "in" A :-> x_ "in" B
 Appendix:
-. documented:
-  . written: "A? \subseteq B?"
+. written: "A? \subseteq B?"
 Id: "2acb059b-46d8-4cca-a4fc-aaae4bf9b135"
 
 
@@ -43,16 +40,14 @@ when:
 . U is \set
 . B \:subset:/ U
 Appendix:
-. documented:
-  . written: "A? \subseteq_{U?} B?"
+. written: "A? \subseteq_{U?} B?"
 Id: "07e8e611-08e0-490d-8f62-030af8f9e7e8"
 
 
 [\reals.set]
 Defines: R := \set@{r : ...}
 Appendix:
-. documented:
-  . called: "the set of reals"
+. called: "the set of reals"
 Id: "8ec56012-f504-44d1-a1eb-04301de15075"
 
 
@@ -62,8 +57,7 @@ Id: "8ec56012-f504-44d1-a1eb-04301de15075"
 Defines: v is \real
 when: f is \function:on{\reals.set}:to{\reals.set}
 Appendix:
-. documented:
-  . called: "partial derivative"
+. called: "partial derivative"
 Id: "086ac065-d2bf-41a9-a291-34a747dc2e6d"
 
 
@@ -77,6 +71,5 @@ given:
 where: A \:subset:/ B
 then: x "in"? B
 Appendix:
-. documented:
-  . called: "a subset passes membership along"
+. called: "a subset passes membership along"
 Id: "b13ec219-c558-42b6-8d28-57d8ea23126e"

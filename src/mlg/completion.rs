@@ -452,14 +452,6 @@ const NESTED_GROUPS: &[(&str, &[Section])] = &[
 fn item_starters(section: &str) -> Option<&'static [&'static str]> {
     Some(match section {
         "Appendix" => &[
-            "documented",
-            "justification",
-            "aliases",
-            "writing",
-            "references",
-            "metadata",
-        ],
-        "documented" => &[
             "written",
             "called",
             "adjective",
@@ -469,6 +461,10 @@ fn item_starters(section: &str) -> Option<&'static [&'static str]> {
             "related",
             "discoverer",
             "notes",
+            "justification",
+            "aliases",
+            "references",
+            "metadata",
         ],
         "Enables" => &["capability", "from", "view"],
         "Requires" => &["capability", "definition"],
@@ -1238,8 +1234,8 @@ mod tests {
 
     #[test]
     fn bullet_in_documented_suggests_item_groups() {
-        let text = "Defines: f\nAppendix:\n. documented:\n  . ";
-        let got = labels(&complete(text, 3, 4));
+        let text = "Defines: f\nAppendix:\n. ";
+        let got = labels(&complete(text, 2, 2));
         assert!(got.contains(&"written".to_string()));
         assert!(got.contains(&"called".to_string()));
         assert!(!got.contains(&"forAll".to_string()));

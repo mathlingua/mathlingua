@@ -5,14 +5,12 @@ Accepts a Defines assignment whose coercion expression states the type of its va
 [\set]
 Declares: X
 Appendix:
-. documented:
-  . called: "set"
+. called: "set"
 
 [\empty.set]
 Defines: E := \set@{x : ...}
 Appendix:
-. documented:
-  . called: "empty set"
+. called: "empty set"
 == end:input ==
 == begin:output ==
 

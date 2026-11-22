@@ -7,8 +7,7 @@ Axiom:
 given: x is \\anything
 then: x = x
 Appendix:
-. documented:
-  . called: "reflexive"
+. called: "reflexive"
 == end:input ==
 == begin:output ==
 == end:output ==

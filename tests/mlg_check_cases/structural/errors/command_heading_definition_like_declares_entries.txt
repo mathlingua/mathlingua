@@ -4,8 +4,7 @@ Requires a command heading for definition-like Declares entries.
 == begin:input ==
 Declares: X
 Appendix:
-. documented:
-  . called: "something"
+. called: "something"
 == end:input ==
 == begin:output ==
 error: Expected command heading

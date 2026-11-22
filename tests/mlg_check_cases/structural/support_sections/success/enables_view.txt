@@ -5,8 +5,7 @@ Accepts one view rule in an Enables section.
 [\target]
 Declares: t
 Appendix:
-. documented:
-  . called: "target"
+. called: "target"
 
 [\source]
 Declares: s
@@ -14,8 +13,7 @@ Enables:
 . view:
   as: t := s is \target
 Appendix:
-. documented:
-  . called: "source"
+. called: "source"
 == end:input ==
 == begin:output ==
 == end:output ==

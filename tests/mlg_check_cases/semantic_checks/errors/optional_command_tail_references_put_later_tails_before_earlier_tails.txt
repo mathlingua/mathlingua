@@ -6,8 +6,7 @@ Rejects optional command-tail references that put later tails before earlier tai
 Defines: A ::= B "defines" B
 when: A, B is \\anything
 Appendix:
-. documented:
-  . called: "foo"
+. called: "foo"
 
 Theorem:
 then: \foo:bar{2}:baz{1}

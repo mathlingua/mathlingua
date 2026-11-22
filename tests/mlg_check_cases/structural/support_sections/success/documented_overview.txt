@@ -5,9 +5,8 @@ Accepts one overview entry in a Documented section.
 [\item]
 Declares: x
 Appendix:
-. documented:
-  . called: "item"
-  . overview: "A short overview."
+. called: "item"
+. overview: "A short overview."
 == end:input ==
 == begin:output ==
 == end:output ==

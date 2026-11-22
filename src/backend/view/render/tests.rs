@@ -26,7 +26,7 @@ fn registry_for(source: &str) -> super::RenderRegistry {
 /// placeholder `A?`, `A+?`, or `A-?`, so the result is the substituted value alone.
 fn rendered_with_modifier(modifier: &str, argument: &str) -> String {
     let registry = registry_for(&format!(
-        "[\\f:of{{A}}]\nDeclares: X\nAppendix:\n. documented:\n  . written: \"A{modifier}?\"\n"
+        "[\\f:of{{A}}]\nDeclares: X\nAppendix:\n. written: \"A{modifier}?\"\n"
     ));
 
     render_formulation_latex(&format!(r#"\f:of{{{argument}}}"#), &registry)
@@ -53,8 +53,7 @@ fn renders_command_expressions_from_written_templates() {
         r#"[\empty.set]
 Defines: X is \set
 Appendix:
-. documented:
-  . written: "\emptyset"
+. written: "\emptyset"
 "#,
     );
 
@@ -75,8 +74,7 @@ specifies:
 . 0 is \natural
 . succ is (_ is \natural) -> (_ is \natural)
 Appendix:
-. documented:
-  . written: "\mathbb{R}"
+. written: "\mathbb{R}"
 "#,
     );
 
@@ -100,8 +98,7 @@ fn renders_variadic_command_arguments_in_written_templates() {
         r#"[\sequence:of{x...n}]
 Declares: S
 Appendix:
-. documented:
-  . written: "x? \; (n?)"
+. written: "x? \; (n?)"
 "#,
     );
 
@@ -118,29 +115,25 @@ fn renders_the_most_specific_mapping_parameter_overload() {
 Axiom:
 then: P
 Appendix:
-. documented:
-  . called: "first parameter integral"
+. called: "first parameter integral"
 
 [\integral{f(x_, y_)}:d{f.y_}]
 Axiom:
 then: P
 Appendix:
-. documented:
-  . called: "second parameter integral"
+. called: "second parameter integral"
 
 [\integral{f(x_[i_:=1...n])}:d{f.x1?_, f.x2?_}]
 Axiom:
 then: P
 Appendix:
-. documented:
-  . called: "two parameter integral"
+. called: "two parameter integral"
 
 [\integral{f(x_[i_:=1...n])}:d{f.x_[i_[j_:=1...m]]}]
 Axiom:
 then: P
 Appendix:
-. documented:
-  . called: "variadic parameter integral"
+. called: "variadic parameter integral"
 "#,
     );
 
@@ -170,8 +163,7 @@ fn mapping_parameter_written_templates_render_the_body_and_selected_parameter() 
         r#"[\d{f(x_, y_)}:d{f.x_}]
 Defines: g(x_, y_) is \function
 Appendix:
-. documented:
-  . written: "\frac{d}{d x_?} f?"
+. written: "\frac{d}{d x_?} f?"
 "#,
     );
 
@@ -229,22 +221,19 @@ fn renders_variadic_parameters_and_slices_symbolically() {
 States:
 that: x... = x...
 Appendix:
-. documented:
-  . written: "x?"
+. written: "x?"
 
 [\one{x[i_ := 1...n]}]
 States:
 that: x[1...i_...n] = x[1...i_...n]
 Appendix:
-. documented:
-  . written: "x?"
+. written: "x?"
 
 [\zero{x[i_ := 0...n]}]
 States:
 that: x[0...i_...n] = x[0...i_...n]
 Appendix:
-. documented:
-  . written: "x?"
+. written: "x?"
 "#,
     );
 
@@ -336,36 +325,31 @@ fn renders_two_dimensional_variadics_and_matrix_templates() {
 Axiom:
 then: P
 Appendix:
-. documented:
-  . written: "\left[ x?{{...,...}\\} \right]"
+. written: "\left[ x?{{...,...}\\} \right]"
 
 [\matrix.prefix{x[(i_, j_) := (1,1)...(m,n)]}]
 Axiom:
 then: P
 Appendix:
-. documented:
-  . written: "x?{R...{...C}}"
+. written: "x?{R...{...C}}"
 
 [\matrix.postfix{x[(i_, j_) := (1,1)...(m,n)]}]
 Axiom:
 then: P
 Appendix:
-. documented:
-  . written: "x?{{C...}...R}"
+. written: "x?{{C...}...R}"
 
 [\matrix.both{x[(i_, j_) := (1,1)...(m,n)]}]
 Axiom:
 then: P
 Appendix:
-. documented:
-  . written: "x?{L...{...C...}...R}"
+. written: "x?{L...{...C...}...R}"
 
 [\matrix.bmatrix{x[(i_, j_) := (1,1)...(m,n)]}]
 Axiom:
 then: P
 Appendix:
-. documented:
-  . written: "\begin{bmatrix} x?{{...&...}...\\} \end{bmatrix}"
+. written: "\begin{bmatrix} x?{{...&...}...\\} \end{bmatrix}"
 "#,
     );
 
@@ -420,36 +404,31 @@ fn renders_variadic_written_and_called_join_notation() {
 States:
 that: x... = x...
 Appendix:
-. documented:
-  . written: "x?{...A}"
+. written: "x?{...A}"
 
 [\pre{x...}]
 States:
 that: x... = x...
 Appendix:
-. documented:
-  . written: "x?{B...}"
+. written: "x?{B...}"
 
 [\between{x...}]
 States:
 that: x... = x...
 Appendix:
-. documented:
-  . written: "x?{...\text{ and }...}"
+. written: "x?{...\text{ and }...}"
 
 [\called{x...}]
 States:
 that: x... = x...
 Appendix:
-. documented:
-  . called: "all of $x?{...\text{ and }...}$"
+. called: "all of $x?{...\text{ and }...}$"
 
 [\paren{x...}]
 States:
 that: x... = x...
 Appendix:
-. documented:
-  . written: "x+?{...C...}"
+. written: "x+?{...C...}"
 "#,
     );
 
@@ -482,8 +461,7 @@ fn renders_command_context_assignments_as_visible_given_values() {
 Axiom:
 then: P
 Appendix:
-. documented:
-  . called: "axiom of extension"
+. called: "axiom of extension"
 "#,
     );
 
@@ -500,8 +478,7 @@ fn renders_command_context_assignments_as_visible_using_values() {
 Declares: p
 using: A, B is \set
 Appendix:
-. documented:
-  . called: "ordered pair"
+. called: "ordered pair"
 "#,
     );
 
@@ -521,9 +498,8 @@ Enables:
 . capability: R(a_, b_) :-> (a_, b_) "in" R
   written: "a_? \: R \: b_?"
 Appendix:
-. documented:
-  . called: "relation from $A?$ to $B?$"
-  . written: "R? \subseteq A? \times B?"
+. called: "relation from $A?$ to $B?$"
+. written: "R? \subseteq A? \times B?"
 "#,
     );
 
@@ -542,8 +518,7 @@ Enables:
 . capability: x.inv :=> \group.inverse:of{x}:in{G}
   written: "x+?^{-1}"
 Appendix:
-. documented:
-  . called: "group element"
+. called: "group element"
 "#,
     );
 
@@ -579,9 +554,8 @@ fn renders_is_statements_from_called_templates() {
         r#"[\function:on{A}:to{B}]
 Declares: f(x__)
 Appendix:
-. documented:
-  . called: "function on $A?$ to $B?$"
-  . written: "f? : A? \rightarrow B?"
+. called: "function on $A?$ to $B?$"
+. written: "f? : A? \rightarrow B?"
 "#,
     );
 
@@ -597,9 +571,8 @@ fn renders_is_predicates_with_called_when_written_contains_subject() {
         r#"[\function:on{A}:to{B}]
 Declares: f(x__)
 Appendix:
-. documented:
-  . called: "function on $A?$ to $B?$"
-  . written: "f? : A? \rightarrow B?"
+. called: "function on $A?$ to $B?$"
+. written: "f? : A? \rightarrow B?"
 "#,
     );
 
@@ -615,8 +588,7 @@ fn renders_called_templates_as_text_when_called_is_present() {
         r#"[\group]
 Declares: G ::= (X, *, e)
 Appendix:
-. documented:
-  . called: "group"
+. called: "group"
 "#,
     );
 
@@ -636,9 +608,8 @@ fn renders_comma_separated_is_or_spec_subjects_with_called_commands() {
         r#"[\set]
 Declares: X
 Appendix:
-. documented:
-  . called: "set"
-  . written: "\operatorname{Set}"
+. called: "set"
+. written: "\operatorname{Set}"
 "#,
     );
 
@@ -654,8 +625,7 @@ fn renders_is_via_statements_from_called_templates() {
         r#"[\set]
 Declares: X
 Appendix:
-. documented:
-  . called: "set"
+. called: "set"
 "#,
     );
 
@@ -707,14 +677,12 @@ fn renders_structural_spec_literal_types() {
         r#"[\natural]
 Declares: n
 Appendix:
-. documented:
-  . written: "\mathbb{N}"
+. written: "\mathbb{N}"
 
 [\reals]
 Declares: x
 Appendix:
-. documented:
-  . written: "\mathbb{R}"
+. written: "\mathbb{R}"
 "#,
     );
 
@@ -774,8 +742,7 @@ fn uses_written_as_called_form_when_called_is_missing() {
         r#"[\empty.set]
 Defines: X is \set
 Appendix:
-. documented:
-  . written: "\emptyset"
+. written: "\emptyset"
 "#,
     );
 
@@ -799,9 +766,8 @@ fn renders_called_templates_with_math_substitutions() {
         r#"[\field:over{V}]
 Declares: F
 Appendix:
-. documented:
-  . called: "field over $V?$"
-  . written: "\mathsf{Field}_{V?}"
+. called: "field over $V?$"
+. written: "\mathsf{Field}_{V?}"
 "#,
     );
 
@@ -817,24 +783,21 @@ fn renders_refined_command_types_from_called_templates() {
         r#"[\function:on{A}:to{B}]
 Declares: f(x__)
 Appendix:
-. documented:
-  . called: "function on $A?$ to $B?$"
-    written:
-    . "f? \: : \: A? \rightarrow B?"
+. called: "function on $A?$ to $B?$"
+  written:
+  . "f? \: : \: A? \rightarrow B?"
 
 [\(bounded)::function:on{A}:to{B}]
 Refines: f(x__)
 Appendix:
-. documented:
-  . adjective: "bounded"
-  . written: "\operatorname{Bounded}"
+. adjective: "bounded"
+. written: "\operatorname{Bounded}"
 
 [\(continuous)::function:on{A}:to{B}]
 Refines: f(x__)
 Appendix:
-. documented:
-  . adjective: "continuous"
-  . written: "\operatorname{Continuous}"
+. adjective: "continuous"
+. written: "\operatorname{Continuous}"
 "#,
     );
 
@@ -860,15 +823,13 @@ fn renders_refined_predicates_and_missing_placeholders_without_question_marks() 
         r#"[\function:?on{A}:?to{B}]
 Declares: f(x__)
 Appendix:
-. documented:
-  . called: "function on $A?$ to $B?$"
-  . written: "f? \: : \: A? \rightarrow B?"
+. called: "function on $A?$ to $B?$"
+. written: "f? \: : \: A? \rightarrow B?"
 
 [\(injective)::function:?on{A}:?to{B}]
 Refines: f(x__)
 Appendix:
-. documented:
-  . adjective: "injective"
+. adjective: "injective"
 "#,
     );
 
@@ -891,9 +852,8 @@ fn renders_definition_group_headings_from_both_documented_forms() {
         r#"[\function:on{A}:to{B}]
 Declares: f(x__)
 Appendix:
-. documented:
-  . called: "function on $A?$ to $B?$"
-  . written: "f? \: : \: A? \rightarrow B?"
+. called: "function on $A?$ to $B?$"
+. written: "f? \: : \: A? \rightarrow B?"
 "#,
     );
 
@@ -914,9 +874,8 @@ fn definition_group_heading_order_is_called_then_written_however_they_are_listed
         r#"[\function:on{A}:to{B}]
 Declares: f(x__)
 Appendix:
-. documented:
-  . written: "f? \: : \: A? \rightarrow B?"
-  . called: "function on $A?$ to $B?$"
+. written: "f? \: : \: A? \rightarrow B?"
+. called: "function on $A?$ to $B?$"
 "#,
     );
 
@@ -948,8 +907,7 @@ fn destructured_parameters_render_as_base_names_in_titles_with_separate_destruct
         r#"[H ::= (X', *', e') \:submagma:/ G ::= (X, *, e)]
 Declares: H ::= (X', *', e')
 Appendix:
-. documented:
-  . written: "H? \leq G?"
+. written: "H? \leq G?"
 "#,
     );
 
@@ -978,8 +936,7 @@ fn renders_plain_called_placeholders_in_group_headings() {
         r#"[A \:subset:/ B]
 Declares: A
 Appendix:
-. documented:
-  . called: "A? subset of B?"
+. called: "A? subset of B?"
 "#,
     );
 
@@ -995,9 +952,8 @@ fn renders_definition_group_heading_forms_without_capitalizing() {
         r#"[\set]
 Declares: X
 Appendix:
-. documented:
-  . called: "set"
-  . written: "\operatorname{Set}"
+. called: "set"
+. written: "\operatorname{Set}"
 "#,
     );
 
@@ -1017,18 +973,16 @@ fn renders_refines_group_headings_from_refinement_and_refined_called_text() {
         r#"[\function:on{A}:to{B}]
 Declares: f(x__)
 Appendix:
-. documented:
-  . called: "function on $A?$ to $B?$"
-  . written: "f? \: : \: A? \rightarrow B?"
+. called: "function on $A?$ to $B?$"
+. written: "f? \: : \: A? \rightarrow B?"
 
 [\(continuous)::function:on{A}:to{B}]
 Refines: f
 Appendix:
-. documented:
-  . adjective:
-    . "continuous"
-    . "unbroken"
-  . written: "\operatorname{Continuous}"
+. adjective:
+  . "continuous"
+  . "unbroken"
+. written: "\operatorname{Continuous}"
 "#,
     );
 
@@ -1049,24 +1003,21 @@ fn renders_dynamic_refined_tail_as_the_enclosing_refines_base() {
         r#"[\function:?on{A}:?to{B}]
 Declares: f(x__) ::= y_
 Appendix:
-. documented:
-  . called: "function@[A]{ on $A?$}@[B]{ to $B?}$"
+. called: "function@[A]{ on $A?$}@[B]{ to $B?}$"
 
 [\(injective)::function:?on{A}:?to{B}]
 Refines: f
 Appendix:
-. documented:
-  . adjective:
-    . "injective"
-    . "one-to-one"
+. adjective:
+  . "injective"
+  . "one-to-one"
 
 [\(surjective)::function:?on{A}:?to{B}]
 Refines: f
 Appendix:
-. documented:
-  . adjective:
-    . "surjective"
-    . "onto"
+. adjective:
+  . "surjective"
+  . "onto"
 "#,
     );
 
@@ -1089,8 +1040,7 @@ fn refines_display_keeps_explicit_types_and_infix_refinements_unchanged() {
         r#"[\group]
 Declares: G
 Appendix:
-. documented:
-  . called: "group"
+. called: "group"
 "#,
     );
 
@@ -1114,8 +1064,7 @@ fn refines_display_adds_the_base_type_to_operator_targets() {
         r#"[\binary.operation:on{X}]
 Declares: x_ * y_
 Appendix:
-. documented:
-  . called: "binary operation on $X?$"
+. called: "binary operation on $X?$"
 "#,
     );
 
@@ -1135,15 +1084,13 @@ fn renders_refined_spec_infix_headings_and_expressions() {
         r#"[A \:subset:/ B]
 Declares: A
 Appendix:
-. documented:
-  . called: "$A?$ subset of $B?$"
+. called: "$A?$ subset of $B?$"
 
 [A \:(nonempty)::subset:/ B]
 Refines: A
 Appendix:
-. documented:
-  . adjective: "nonempty"
-  . written: "A? \subsetneq B?"
+. adjective: "nonempty"
+. written: "A? \subsetneq B?"
 "#,
     );
 
@@ -1168,32 +1115,27 @@ fn renders_implicit_refined_spec_infix_adjectives_after_the_base() {
         r#"[\set]
 Declares: X
 Appendix:
-. documented:
-  . called: "set"
+. called: "set"
 
 [\(a)::set]
 Refines: X
 Appendix:
-. documented:
-  . adjective: "alpha"
+. adjective: "alpha"
 
 [\(b)::set]
 Refines: X
 Appendix:
-. documented:
-  . adjective: "beta"
+. adjective: "beta"
 
 [\(c)::set]
 Refines: X
 Appendix:
-. documented:
-  . adjective: "gamma"
+. adjective: "gamma"
 
 [A \:subset:/ B]
 Declares: A
 Appendix:
-. documented:
-  . called: "$A?$ subset of $B?$"
+. called: "$A?$ subset of $B?$"
 "#,
     );
 
@@ -1286,12 +1228,11 @@ fn renders_documented_mapping_writing_templates() {
         r#"[\real.sequence]
 Declares: X ::= x(i_) ::= y_
 Appendix:
-. documented:
-  . called: "real sequence"
-  . writing: x(i)
-    as: "x?_{i?}"
-  . writing: x(i_)
-    as: "\left\{x?\right\}_{i_?=1}^{\infty}"
+. called: "real sequence"
+. writing: x(i)
+  as: "x?_{i?}"
+. writing: x(i_)
+  as: "\left\{x?\right\}_{i_?=1}^{\infty}"
 "#,
     );
 
@@ -1358,9 +1299,8 @@ fn renders_conditional_written_templates_for_optional_infix_tail() {
         r#"[A \.intersect:?within{U}./ B]
 Declares: I
 Appendix:
-. documented:
-  . called: "intersection"
-  . written: "A? \cap@[U]{_{U?}} B?"
+. called: "intersection"
+. written: "A? \cap@[U]{_{U?}} B?"
 "#,
     );
 
@@ -1384,8 +1324,7 @@ that:
   . A
   . B
 Appendix:
-. documented:
-  . written: "A? \text{ and } B?"
+. written: "A? \text{ and } B?"
 "#,
     );
 
@@ -1404,8 +1343,7 @@ when: P is \\statement
 that:
 . not: P
 Appendix:
-. documented:
-  . written: "\neg P+?"
+. written: "\neg P+?"
 
 [P \.and./ Q]
 States:
@@ -1415,8 +1353,7 @@ that:
   . P
   . Q
 Appendix:
-. documented:
-  . written: "P? \text{ and } Q?"
+. written: "P? \text{ and } Q?"
 "#,
     );
     registry.link_references = true;
@@ -1463,23 +1400,20 @@ fn renders_conditional_templates_with_fallbacks_multiple_vars_and_nesting() {
         r#"[\decorate:?with{U}]
 Declares: D
 Appendix:
-. documented:
-  . called: "decorated"
-  . written: "d@[U]{_{U?}}:{_X}"
+. called: "decorated"
+. written: "d@[U]{_{U?}}:{_X}"
 
 [\both{x}:?and{y}]
 Declares: B
 Appendix:
-. documented:
-  . called: "both"
-  . written: "@[x, y]{x? + y?}:{missing}"
+. called: "both"
+. written: "@[x, y]{x? + y?}:{missing}"
 
 [\nest{x}:?with{y}]
 Declares: N
 Appendix:
-. documented:
-  . called: "nested"
-  . written: "@[x]{x? + @[y]{y?}:{*}}:{0}"
+. called: "nested"
+. written: "@[x]{x? + @[y]{y?}:{*}}:{0}"
 "#,
     );
 
@@ -1515,9 +1449,8 @@ fn renders_conditionals_in_called_templates() {
         r#"[\ambient:?within{U}]
 Declares: A
 Appendix:
-. documented:
-  . called: "ambient@[U]{ within $U?$}:{ without ambient}"
-  . written: "\operatorname{Ambient}@[U]{_{U?}}"
+. called: "ambient@[U]{ within $U?$}:{ without ambient}"
+. written: "\operatorname{Ambient}@[U]{_{U?}}"
 "#,
     );
 
@@ -1544,9 +1477,8 @@ fn written_that_is_a_whole_unbound_conditional_falls_back_to_called() {
         r#"[\function:?on{A}:?to{B}]
 Declares: f(x__)
 Appendix:
-. documented:
-  . called: "func@[A]{ on $A?$}@[B]{ to $B?$}"
-  . written: "@[A, B]{f? : A? \rightarrow B?}"
+. called: "func@[A]{ on $A?$}@[B]{ to $B?$}"
+. written: "@[A, B]{f? : A? \rightarrow B?}"
 "#,
     );
 
@@ -1583,8 +1515,7 @@ fn renders_soft_build_marker_as_space() {
         r#"[\set]
 Declares: X
 Appendix:
-. documented:
-  . called: "set"
+. called: "set"
 "#,
     );
 
@@ -1677,8 +1608,7 @@ fn a_name_followed_by_plus_or_minus_is_still_ordinary_text() {
         r#"[\g:of{A}:and{B}]
 Declares: X
 Appendix:
-. documented:
-  . written: "A?-B? \: A?+B?"
+. written: "A?-B? \: A?+B?"
 "#,
     );
 
@@ -1696,9 +1626,8 @@ fn a_composed_card_title_does_not_change_how_the_item_is_named_inline() {
         r#"[\empty.set]
 Declares: X
 Appendix:
-. documented:
-  . called: "empty set"
-  . written: "\emptyset"
+. called: "empty set"
+. written: "\emptyset"
 "#,
     );
 
@@ -1726,10 +1655,9 @@ fn a_written_nested_inside_called_pairs_with_it_in_the_title() {
         r#"[\function:on{A}:to{B}]
 Declares: f(x__)
 Appendix:
-. documented:
-  . called: "function on $A?$ to $B?$"
-    written:
-    . "f? \: : \: A? \rightarrow B?"
+. called: "function on $A?$ to $B?$"
+  written:
+  . "f? \: : \: A? \rightarrow B?"
 "#,
     );
 
@@ -1754,15 +1682,13 @@ fn written_placeholder_with_underscore_matches_header_parameter() {
 [\set.successor:of{X}]
 Defines: Y
 Appendix:
-. documented:
-  . called: "set successor"
+. called: "set successor"
 
 [\von.neumann.S(n_)]
 Defines: S(n_)
 Appendix:
-. documented:
-  . written: "S(n_?)"
-  . called: "Von Neumann Successor"
+. written: "S(n_?)"
+. called: "Von Neumann Successor"
 "#,
     );
 

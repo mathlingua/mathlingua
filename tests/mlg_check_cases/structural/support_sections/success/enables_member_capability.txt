@@ -8,8 +8,7 @@ Enables:
 . capability: x.self :=> x
   written: "x?"
 Appendix:
-. documented:
-  . called: "thing"
+. called: "thing"
 == end:input ==
 == begin:output ==
 == end:output ==

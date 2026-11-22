@@ -9,8 +9,7 @@ Example:
 [\function:on{A}:to{B}]
 Declares: f(x__) ::= y_
 Appendix:
-. documented:
-  . called: \"function\"
+. called: \"function\"
 Id: \"123\"
 ```
 "

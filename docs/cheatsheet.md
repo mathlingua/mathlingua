@@ -65,11 +65,11 @@ A concise high-level reference for the Mathlingua language. For in-depth specifi
 | `Requires:` | `Requires:` | Prerequisites (capabilities or definitions) needed to use an entry |
 | `Enables:` | `Enables:` | Capabilities, views, or conversions provided by an entry |
 | `Proof:` | `Proof: "..."` | Informal or formal proof body for a theorem |
-| `Appendix:` | `Appendix:` | Container for auxiliary sections (`documented:`, `justification:`, `aliases:`, `writing:`, `references:`, `metadata:`) |
-| `. documented:` | `. documented:` | Human-readable documentation inside `Appendix:` (`called:`, `written:`, `description:`, etc.) |
+| `Appendix:` | `Appendix:` | Container for auxiliary sections (`called:`, `written:`, `adjective:`, `description:`, `overview:`, `related:`, `discoverer:`, `writing:`, `justification:`, `aliases:`, `references:`, `metadata:`) |
+| `. called:` / `. written:` / `. description:` | `. called: "set"` | Human-readable documentation entries directly inside `Appendix:` |
 | `. justification:` | `. justification:` | Deductive steps inside `Appendix:` discharging formulation labels (`[:label:]`) |
 | `. aliases:` | `. aliases:` | Alternative notation aliases inside `Appendix:` (`:=>`, `:->`, `:<->:`) |
-| `. writing:` | `. writing:` | Item-scoped LaTeX rendering overrides inside `Appendix:` (`"name :~> body"`) |
+| `. writing:` | `. writing:` | Item-scoped LaTeX rendering overrides (`"name :~> body"`) or mapping writing (`writing: ... as: "..."`) inside `Appendix:` |
 | `. references:` | `. references:` | Citations to external resources inside `Appendix:` (`$resource` or `for:` / `entry:`) |
 | `. metadata:` | `. metadata:` | Versioning metadata inside `Appendix:` (`version:`) |
 | `Id:` | `Id: "uuid"` | Unique UUID identifier as the final section of any top-level item |

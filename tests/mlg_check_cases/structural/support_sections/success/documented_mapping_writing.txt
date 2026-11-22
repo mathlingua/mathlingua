@@ -5,10 +5,9 @@ Accepts one mapping writing entry in a Documented section.
 [\mapping]
 Declares: x(i_)
 Appendix:
-. documented:
-  . called: "mapping"
-  . writing: x(i)
-    as: "x?_{i?}"
+. called: "mapping"
+. writing: x(i)
+  as: "x?_{i?}"
 == end:input ==
 == begin:output ==
 == end:output ==

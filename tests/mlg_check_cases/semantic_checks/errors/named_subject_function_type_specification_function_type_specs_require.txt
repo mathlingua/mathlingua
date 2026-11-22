@@ -5,15 +5,13 @@ Rejects a named subject in a function-type specification because function type s
 [\set]
 Declares: X
 Appendix:
-. documented:
-  . called: "set"
+. called: "set"
 
 [\function:on{A}:to{B}]
 Declares: f(x__) is (x "in" A) -> (_ "in" B)
 when: A, B is \set
 Appendix:
-. documented:
-  . called: "function"
+. called: "function"
 == end:input ==
 == begin:output ==
 error: Function type specs must use `_` as their subject

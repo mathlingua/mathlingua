@@ -5,16 +5,14 @@ Accepts a theorem command invocation with a #given context assignment that satis
 [\set]
 Declares: X
 Appendix:
-. documented:
-  . called: "set"
+. called: "set"
 
 [\uses.context]
 Theorem:
 given: A is \set
 then: A is? \set
 Appendix:
-. documented:
-  . called: "uses context"
+. called: "uses context"
 
 Theorem:
 given: X is \set

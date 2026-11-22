@@ -7,8 +7,7 @@ States:
 when: A, B is \\anything
 that: A = A
 Appendix:
-. documented:
-  . called: "related"
+. called: "related"
 == end:input ==
 == begin:output ==
 error: Spec-infix headings may only be used with Declares entries

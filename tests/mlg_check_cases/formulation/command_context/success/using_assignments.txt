@@ -5,22 +5,19 @@ Accepts a command invocation with a #using context assignment that satisfies the
 [\set]
 Declares: X
 Appendix:
-. documented:
-  . called: "set"
+. called: "set"
 
 [\ordered.pair]
 Declares: p
 using: A is \set
 Appendix:
-. documented:
-  . called: "ordered pair"
+. called: "ordered pair"
 
 [\ordered.pair:of{A}]
 Defines: p is \ordered.pair#using{A := A}
 when: A is \set
 Appendix:
-. documented:
-  . called: "ordered pair of $A?$"
+. called: "ordered pair of $A?$"
 == end:input ==
 == begin:output ==
 == end:output ==

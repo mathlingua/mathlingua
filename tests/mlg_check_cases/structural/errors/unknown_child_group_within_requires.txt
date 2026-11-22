@@ -7,8 +7,7 @@ Declares: X
 Requires:
 . mystery: X
 Appendix:
-. documented:
-  . called: "set"
+. called: "set"
 == end:input ==
 == begin:output ==
 error: Unexpected requires group `mystery`

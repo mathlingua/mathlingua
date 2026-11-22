@@ -5,23 +5,20 @@ Accepts function-named postfix operator syntax and resolves it through a matchin
 [\real]
 Declares: x
 Appendix:
-. documented:
-  . called: "real"
+. called: "real"
 
 [\postfix.real{x}]
 Defines: y is \real
 when: x is \real
 Appendix:
-. documented:
-  . called: "postfix real"
+. called: "postfix real"
 
 [x_ |f]
 Disambiguates:
 when: x_ is \real
 to: \postfix.real{x_}
 Appendix:
-. documented:
-  . written: "x_? |f"
+. written: "x_? |f"
 
 Theorem:
 given: r is \real

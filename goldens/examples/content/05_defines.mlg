@@ -6,24 +6,21 @@
 [\empty.set]
 Defines: E := \set@{x : ...}
 Appendix:
-. documented:
-  . called: "the empty set"
+. called: "the empty set"
 Id: "57e85a10-0056-47f9-99e6-29fecbcb150a"
 
 
 [\unit.set]
 Defines: U := \set@{x : ...}
 Appendix:
-. documented:
-  . called: "the unit set"
+. called: "the unit set"
 Id: "1e934b9d-74dd-4899-87c2-b0aba62c4216"
 
 
 [\the.point]
 Defines: p is \element:of{\unit.set}
 Appendix:
-. documented:
-  . called: "the distinguished point"
+. called: "the distinguished point"
 Id: "99bc0132-e074-4af8-abb4-ebfb31053bd7"
 
 
@@ -35,8 +32,7 @@ specifies:
 . L := \zero
 . R := \one
 Appendix:
-. documented:
-  . called: "the unit pair"
+. called: "the unit pair"
 Id: "7a8868cb-2094-4205-977b-21d11a5e629e"
 
 
@@ -51,8 +47,7 @@ specifies:
 expresses:
 . low := \zero
 Appendix:
-. documented:
-  . called: "the sign pair"
+. called: "the sign pair"
 Id: "c8118a7a-7309-4654-b2a3-7533ff37c41a"
 
 
@@ -67,8 +62,7 @@ specifies:
 . p "in" S
 . f is \function:on{S}:to{S}
 Appendix:
-. documented:
-  . called: "a pointed system"
+. called: "a pointed system"
 Id: "1f8c9fc8-0e72-4759-9d5b-8f141a5267b2"
 
 
@@ -81,8 +75,7 @@ specifies:
 . p := \the.point
 . f := \identity:on{\unit.set}
 Appendix:
-. documented:
-  . called: "the unit pointed system"
+. called: "the unit pointed system"
 Id: "2fd0eff6-585a-4a78-acee-5ad00b69f90e"
 
 
@@ -98,8 +91,7 @@ specifies:
 expresses:
 . f := \identity:on{\unit.set}
 Appendix:
-. documented:
-  . called: "the lazily described unit system"
+. called: "the lazily described unit system"
 Id: "c9ec2e4f-2ec0-408a-907a-cdee2c79e1c4"
 
 
@@ -111,6 +103,5 @@ then:
 . S is? \set
 . p "in"? S
 Appendix:
-. documented:
-  . called: "a realization keeps its declaration's types"
+. called: "a realization keeps its declaration's types"
 Id: "6c1f5583-6be5-4fbf-bbdc-fd3276bf6a6a"

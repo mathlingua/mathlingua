@@ -5,8 +5,7 @@ Accepts callable command headings whose placeholder parameters are repeated in t
 [\natural]
 Declares: N
 Appendix:
-. documented:
-  . called: "natural"
+. called: "natural"
 
 [\natural.constructor]
 Declares: succ(n_) ::= m_
@@ -14,14 +13,12 @@ specifies:
 . n_ is \natural
 . m_ is \natural
 Appendix:
-. documented:
-  . called: "natural constructor"
+. called: "natural constructor"
 
 [\natural.succ(n_)]
 Defines: succ(n_) is \natural.constructor
 Appendix:
-. documented:
-  . called: "successor"
+. called: "successor"
 == end:input ==
 == begin:output ==
 == end:output ==

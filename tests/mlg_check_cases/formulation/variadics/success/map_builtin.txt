@@ -7,8 +7,7 @@ States:
 when: x[1...n] is \\statement
 that: \\map{x[1...i_...n]}:to{x[i_]}
 Appendix:
-. documented:
-  . called: "map each"
+. called: "map each"
 
 Theorem:
 given: P, Q is \\statement

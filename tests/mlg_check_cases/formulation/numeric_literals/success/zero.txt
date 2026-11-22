@@ -5,8 +5,7 @@ Accepts a zero literal at the nominal type configured by the zeroOrPositiveInt S
 [\whole]
 Declares: x
 Appendix:
-. documented:
-  . called: "whole"
+. called: "whole"
 
 Specify:
 . zeroOrPositiveInt:
@@ -17,8 +16,7 @@ States:
 when: x is \whole
 that: x = x
 Appendix:
-. documented:
-  . called: "accept"
+. called: "accept"
 
 Theorem:
 then: \accept{0}

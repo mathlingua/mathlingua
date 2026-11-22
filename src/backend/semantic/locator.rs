@@ -739,7 +739,7 @@ mod tests {
             "\n",
             "[\\bar]\n",
             "Declares: X\n",
-            "Appendix:\n. documented:\n",
+            "Appendix:\n",
             ". written: \"uses \\foo\"\n",
         );
         let masked = mask_mlg_fences(source);
@@ -773,7 +773,7 @@ mod tests {
 
     #[test]
     fn masks_single_line_text_values_but_keeps_the_label() {
-        let source = "Appendix:\n. documented:\n  . written: \"\\set\"\n";
+        let source = "Appendix:\n. written: \"\\set\"\n";
         let masked = mask_text_values(source);
         assert!(
             masked.contains(". written: "),

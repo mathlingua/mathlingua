@@ -5,8 +5,7 @@ Rejects a mapping literal body that refers to a symbol outside the mapping and s
 [\real]
 Declares: r
 Appendix:
-. documented:
-  . called: "real"
+. called: "real"
 
 Theorem:
 given:

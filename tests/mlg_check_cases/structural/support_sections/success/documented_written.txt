@@ -5,8 +5,7 @@ Accepts one written entry in a Documented section.
 [\item]
 Declares: x
 Appendix:
-. documented:
-  . written: "x?"
+. written: "x?"
 == end:input ==
 == begin:output ==
 == end:output ==

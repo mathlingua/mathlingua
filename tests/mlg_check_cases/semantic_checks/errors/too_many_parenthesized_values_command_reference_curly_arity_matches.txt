@@ -7,8 +7,7 @@ States:
 when: A is \\anything
 that: 1 = 1
 Appendix:
-. documented:
-  . called: "some function"
+. called: "some function"
 
 Theorem:
 given: A, x, y, z is \\anything

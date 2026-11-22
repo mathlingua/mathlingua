@@ -5,8 +5,7 @@ Accepts one local specification-operator alias in an Aliases section.
 [\thing]
 Declares: X
 Appendix:
-. documented:
-  . called: "thing"
+. called: "thing"
 . aliases:
   . alias: x_ "has" X :-> x_ is \thing
 == end:input ==

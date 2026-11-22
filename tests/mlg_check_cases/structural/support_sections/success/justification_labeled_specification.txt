@@ -8,8 +8,7 @@ specifies:
 . A is \\anything
 . (.B is \\anything.)[:second:]
 Appendix:
-. documented:
-  . called: "pair"
+. called: "pair"
 . justification:
   . for: (:second:)
     have: B is \\anything

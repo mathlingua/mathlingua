@@ -5,8 +5,7 @@ Accepts a mapping literal whose parameter type is stated explicitly.
 [\real]
 Declares: x
 Appendix:
-. documented:
-  . called: "real"
+. called: "real"
 
 Theorem:
 given: f := (x_ is \real) => x_

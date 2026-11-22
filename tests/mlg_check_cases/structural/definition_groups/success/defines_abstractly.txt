@@ -5,8 +5,7 @@ Accepts an abstractly marker on a Defines item whose typed components intentiona
 [\thing]
 Declares: x
 Appendix:
-. documented:
-  . called: "thing"
+. called: "thing"
 
 [\abstract.pair]
 Defines: P ::= (x, y)
@@ -15,8 +14,7 @@ specifies:
 . x is \thing
 . y is \thing
 Appendix:
-. documented:
-  . called: "abstract pair"
+. called: "abstract pair"
 == end:input ==
 == begin:output ==
 

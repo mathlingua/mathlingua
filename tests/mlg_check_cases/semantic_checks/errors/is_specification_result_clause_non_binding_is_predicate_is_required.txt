@@ -5,8 +5,7 @@ Rejects an `is` specification in a result clause, where the non-binding `is?` pr
 [\thing]
 Declares: x
 Appendix:
-. documented:
-  . called: "thing"
+. called: "thing"
 
 Theorem:
 given: x is \thing

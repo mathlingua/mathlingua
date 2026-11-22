@@ -5,15 +5,13 @@ Accepts collection-literal sugar directly inside a command's curly argument grou
 [\real]
 Declares: x
 Appendix:
-. documented:
-  . called: "real"
+. called: "real"
 
 [\collect{S}]
 Declares: y
 when: S is \\expression
 Appendix:
-. documented:
-  . called: "collect"
+. called: "collect"
 
 Theorem:
 given: a is \\anything

@@ -832,7 +832,7 @@ mod tests {
         fs::create_dir_all(&content).expect("expected content dir");
         fs::write(
             &file,
-            "[\\set]\nDeclares: S\nAppendix:\n. documented:\n  . called: \"set\"\n",
+            "[\\set]\nDeclares: S\nAppendix:\n. called: \"set\"\n",
         )
         .expect("expected source file");
         assert_eq!(
@@ -844,7 +844,7 @@ mod tests {
 
         fs::write(
             &file,
-            "[\\set]\nDeclares: S\nAppendix:\n. documented:\n  . called: \"updated set\"\n",
+            "[\\set]\nDeclares: S\nAppendix:\n. called: \"updated set\"\n",
         )
         .expect("expected updated source file");
         assert_eq!(
@@ -867,7 +867,7 @@ mod tests {
         fs::create_dir_all(&content).expect("expected content dir");
         fs::write(
             &file,
-            "[\\set]\nDeclares: S\nAppendix:\n. documented:\n  . called: \"set\"\n\n\nTheorem:\ngiven: X is \\set\nthen: X is? \\set\n",
+            "[\\set]\nDeclares: S\nAppendix:\n. called: \"set\"\n\n\nTheorem:\ngiven: X is \\set\nthen: X is? \\set\n",
         )
         .expect("expected source file");
 
@@ -948,7 +948,7 @@ mod tests {
         fs::create_dir_all(&content).expect("expected content dir");
         fs::write(
             &file,
-            "[\\set]\nDeclares: S\nAppendix:\n. documented:\n  . called: \"set\"\n",
+            "[\\set]\nDeclares: S\nAppendix:\n. called: \"set\"\n",
         )
         .unwrap();
         assert_eq!(

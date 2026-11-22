@@ -5,15 +5,13 @@ Rejects a symbol used in a command argument before that symbol has been introduc
 [\set]
 Declares: X
 Appendix:
-. documented:
-  . called: "set"
+. called: "set"
 
 [\function:on{A}:to{B}]
 Declares: f(x__)
 when: A, B is \set
 Appendix:
-. documented:
-  . called: "function"
+. called: "function"
 
 Theorem:
 given:

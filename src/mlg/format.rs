@@ -877,15 +877,15 @@ mod tests {
 
     #[test]
     fn reflows_over_long_inline_description() {
-        let source = "[\\foo]\nDeclares: X\nAppendix:\n. documented:\n  . description: \"The primitive object of the theory. Belonging is here.\"\nId: \"x\"\n";
+        let source = "[\\foo]\nDeclares: X\nAppendix:\n. description: \"The primitive object of the theory. Belonging is here.\"\nId: \"x\"\n";
         let formatted = format_source(source, 60).expect("expected a change");
         let lines: Vec<&str> = formatted.split('\n').collect();
-        // Wrapped onto two lines, continuation indented to the content column (18).
+        // Wrapped onto two lines, continuation indented to the content column (16).
         assert_eq!(
-            lines[4],
-            "  . description: \"The primitive object of the theory."
+            lines[3],
+            ". description: \"The primitive object of the theory."
         );
-        assert_eq!(lines[5], "                  Belonging is here.\"");
+        assert_eq!(lines[4], "                Belonging is here.\"");
         // Idempotent.
         assert_eq!(format_source(&formatted, 60), None);
     }
@@ -1049,7 +1049,7 @@ mod tests {
     fn leaves_text_with_multiline_latex_unchanged() {
         // The exact example from the feature request: a description containing
         // `$$…$$` and `\[…\]` display-math blocks must be left untouched.
-        let source = "[\\foo]\nDeclares: x\nAppendix:\n. documented:\n  . called: \"family indexed by $I?$\"\n  . written: \"\\{A?_i\\}_{i \\in I?}\"\n  . description: \"A family of sets is a function $A$ with domain $I$. When $A$ is\n                  a family over $I$ one writes $\\{A_i\\}_{i \\in I}$ and $A_i$ for\n                  $A(i)$.\n                  $$\n                    \\int f(x) \\: dx\n                  $$\n                  Some more text\n                  \\[\n                    \\int f(x) \\: dx\n                  \\]\"\nId: \"a2451abb-cfc3-4655-a641-ff6826592e7d\"\n";
+        let source = "[\\foo]\nDeclares: x\nAppendix:\n. called: \"family indexed by $I?$\"\n. written: \"\\{A?_i\\}_{i \\in I?}\"\n. description: \"A family of sets is a function $A$ with domain $I$. When $A$ is\n                a family over $I$ one writes $\\{A_i\\}_{i \\in I}$ and $A_i$ for\n                $A(i)$.\n                $$\n                  \\int f(x) \\: dx\n                $$\n                Some more text\n                \\[\n                  \\int f(x) \\: dx\n                \\]\"\nId: \"a2451abb-cfc3-4655-a641-ff6826592e7d\"\n";
         assert_eq!(format_source(source, 100), None);
     }
 
@@ -1069,8 +1069,8 @@ mod tests {
     fn preserves_nested_list_indentation_when_wrapping() {
         // A nested item (indented past the content column) keeps its level, and each
         // level wraps under its own hanging indent.
-        let source = "Appendix:\n. documented:\n  . description: \"Outline:\n                  * outer item that is reasonably long so that it wraps across the margin here\n                    * inner nested item that is also long enough to wrap across the print margin\n                  * second outer\"\nId: \"x\"\n";
-        let expected = "Appendix:\n. documented:\n  . description: \"Outline:\n                  * outer item that is reasonably long so that it\n                    wraps across the margin here\n                    * inner nested item that is also long enough to\n                      wrap across the print margin\n                  * second outer\"\nId: \"x\"\n";
+        let source = "Appendix:\n. description: \"Outline:\n                * outer item that is reasonably long so that it wraps across the margin here\n                  * inner nested item that is also long enough to wrap across the print margin\n                * second outer\"\nId: \"x\"\n";
+        let expected = "Appendix:\n. description: \"Outline:\n                * outer item that is reasonably long so that it wraps\n                  across the margin here\n                  * inner nested item that is also long enough to wrap\n                    across the print margin\n                * second outer\"\nId: \"x\"\n";
         assert_eq!(format_source(source, 70).as_deref(), Some(expected));
         assert_eq!(format_source(expected, 70), None);
     }
@@ -1079,12 +1079,12 @@ mod tests {
     fn reflows_ordered_list_items_and_preserves_the_marker() {
         // Ordered markers (`1. `) survive and wrap with a hanging indent sized to the
         // marker width.
-        let source = "Appendix:\n. documented:\n  . description: \"Steps:\n                  1. do the first thing and then keep going until the line is quite long indeed\n                  2. done\"\nId: \"x\"\n";
+        let source = "Appendix:\n. description: \"Steps:\n                1. do the first thing and then keep going until the line is quite long indeed\n                2. done\"\nId: \"x\"\n";
         let formatted = format_source(source, 60).expect("expected reflow");
-        assert!(formatted.contains("                  1. do the first thing and then keep going"));
+        assert!(formatted.contains("                1. do the first thing and then keep going"));
         // The wrapped continuation hangs under the marker (content column + `1. `).
-        assert!(formatted.contains("\n                     until"));
-        assert!(formatted.contains("                  2. done"));
+        assert!(formatted.contains("\n                   until"));
+        assert!(formatted.contains("                2. done"));
         assert_eq!(format_source(&formatted, 60), None);
     }
 
@@ -1127,8 +1127,8 @@ mod tests {
     fn preserves_interior_spacing_of_a_code_fence() {
         // Significant interior whitespace (`a    b`) and relative indentation (`  c`)
         // inside the fence survive verbatim while the prose before it is reflowed.
-        let source = "Appendix:\n. documented:\n  . description: \"Consider the example below where spacing matters a great deal here:\n                  ```\n                  a    b\n                    c\n                  ```\"\nId: \"x\"\n";
-        let expected = "Appendix:\n. documented:\n  . description: \"Consider the example below where spacing\n                  matters a great deal here:\n                  ```\n                  a    b\n                    c\n                  ```\"\nId: \"x\"\n";
+        let source = "Appendix:\n. description: \"Consider the example below where spacing matters a great deal here:\n                ```\n                a    b\n                  c\n                ```\"\nId: \"x\"\n";
+        let expected = "Appendix:\n. description: \"Consider the example below where spacing\n                matters a great deal here:\n                ```\n                a    b\n                  c\n                ```\"\nId: \"x\"\n";
         assert_eq!(format_source(source, 60).as_deref(), Some(expected));
         assert_eq!(format_source(expected, 60), None);
     }
@@ -1136,7 +1136,7 @@ mod tests {
     #[test]
     fn keeps_inline_math_with_internal_spaces_whole() {
         // `$\{A_i\}_{i \in I}$` has internal spaces but must never be split.
-        let source = "Appendix:\n. documented:\n  . description: \"aaaa bbbb cccc dddd eeee ffff $\\{A_i\\}_{i \\in I}$ gggg hhhh\"\nId: \"x\"\n";
+        let source = "Appendix:\n. description: \"aaaa bbbb cccc dddd eeee ffff $\\{A_i\\}_{i \\in I}$ gggg hhhh\"\nId: \"x\"\n";
         let formatted = format_source(source, 40).expect("expected wrapping at margin 40");
         assert!(
             formatted.contains("$\\{A_i\\}_{i \\in I}$"),
@@ -1152,14 +1152,14 @@ mod tests {
     #[test]
     fn leaves_text_with_overwide_latex_blob_unchanged() {
         // A single-line blob too wide to fit on a line → the author laid it out.
-        let source = "Appendix:\n. documented:\n  . description: \"text $blobbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb$ more\"\nId: \"x\"\n";
+        let source = "Appendix:\n. description: \"text $blobbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb$ more\"\nId: \"x\"\n";
         assert_eq!(format_source(source, 30), None);
     }
 
     #[test]
     fn still_reflows_descriptions_with_short_inline_math() {
         // Short inline math does not block reflow.
-        let source = "Appendix:\n. documented:\n  . description: \"The value $x$ satisfies $x \\in A$ and also $x \\notin B$ under the stated hypotheses here.\"\nId: \"x\"\n";
+        let source = "Appendix:\n. description: \"The value $x$ satisfies $x \\in A$ and also $x \\notin B$ under the stated hypotheses here.\"\nId: \"x\"\n";
         let formatted = format_source(source, 60).expect("expected reflow");
         assert!(formatted.split('\n').count() > 3, "expected wrapping");
         assert!(formatted.contains("$x \\in A$"));
@@ -1175,7 +1175,7 @@ mod tests {
     #[test]
     fn keeps_inline_mathlingua_fragments_whole() {
         // `{. x is \real .}` has internal spaces but must never be split across lines.
-        let source = "Appendix:\n. documented:\n  . description: \"aaaa bbbb cccc dddd eeee ffff {. x is \\real .} gggg hhhh\"\nId: \"x\"\n";
+        let source = "Appendix:\n. description: \"aaaa bbbb cccc dddd eeee ffff {. x is \\real .} gggg hhhh\"\nId: \"x\"\n";
         let formatted = format_source(source, 40).expect("expected wrapping at margin 40");
         assert!(
             formatted.contains("{. x is \\real .}"),
@@ -1192,7 +1192,7 @@ mod tests {
     #[test]
     fn keeps_display_mathlingua_fragments_whole() {
         // `{{. x^2 + y^2 = z^2 .}}` has internal spaces and must never be split across lines.
-        let source = "Appendix:\n. documented:\n  . description: \"aaaa bbbb cccc dddd eeee {{. x^2 + y^2 = z^2 .}} ffff gggg\"\nId: \"x\"\n";
+        let source = "Appendix:\n. description: \"aaaa bbbb cccc dddd eeee {{. x^2 + y^2 = z^2 .}} ffff gggg\"\nId: \"x\"\n";
         let formatted = format_source(source, 45).expect("expected wrapping at margin 45");
         assert!(
             formatted.contains("{{. x^2 + y^2 = z^2 .}}"),
@@ -1208,7 +1208,7 @@ mod tests {
     #[test]
     fn keeps_theorem_reference_fragments_whole() {
         // `{: \some.thm :}` has internal spaces and must never be split across lines.
-        let source = "Appendix:\n. documented:\n  . description: \"aaaa bbbb cccc dddd eeee {: \\some.thm :} ffff gggg\"\nId: \"x\"\n";
+        let source = "Appendix:\n. description: \"aaaa bbbb cccc dddd eeee {: \\some.thm :} ffff gggg\"\nId: \"x\"\n";
         let formatted = format_source(source, 40).expect("expected wrapping at margin 40");
         assert!(
             formatted.contains("{: \\some.thm :}"),
@@ -1224,21 +1224,21 @@ mod tests {
     #[test]
     fn leaves_text_with_multiline_mathlingua_fragment_unchanged() {
         // A multi-line display fragment must be left untouched.
-        let source = "Appendix:\n. documented:\n  . description: \"Some text before\n                  {{.\n                    x + y = z\n                  .}}\n                  and some text after\"\nId: \"x\"\n";
+        let source = "Appendix:\n. description: \"Some text before\n                {{.\n                  x + y = z\n                .}}\n                and some text after\"\nId: \"x\"\n";
         assert_eq!(format_source(source, 80), None);
     }
 
     #[test]
     fn leaves_text_with_overwide_mathlingua_fragment_unchanged() {
         // A single-line fragment too wide to fit on a line → leave untouched.
-        let source = "Appendix:\n. documented:\n  . description: \"text {. blobbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb .} more\"\nId: \"x\"\n";
+        let source = "Appendix:\n. description: \"text {. blobbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb .} more\"\nId: \"x\"\n";
         assert_eq!(format_source(source, 30), None);
     }
 
     #[test]
     fn does_not_confuse_ellipsis_or_variadic_templates() {
         // `{...}` in text must not be treated as `{.`
-        let source = "Appendix:\n. documented:\n  . description: \"Consider the sequence of terms {...} where each term is clearly specified.\"\nId: \"x\"\n";
+        let source = "Appendix:\n. description: \"Consider the sequence of terms {...} where each term is clearly specified.\"\nId: \"x\"\n";
         let formatted = format_source(source, 50).expect("expected wrapping");
         assert!(formatted.contains("{...}"));
     }

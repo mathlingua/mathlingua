@@ -5,15 +5,13 @@ Accepts `satisfies` with an anonymous specification literal inside a set-builder
 [\real]
 Declares: x
 Appendix:
-. documented:
-  . called: "real"
+. called: "real"
 
 [\collect{S}]
 Declares: y
 when: S is \\expression
 Appendix:
-. documented:
-  . called: "collect"
+. called: "collect"
 
 Theorem:
 given: a is \\anything

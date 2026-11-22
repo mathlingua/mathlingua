@@ -5,8 +5,7 @@ Accepts one called entry in a Documented section.
 [\item]
 Declares: x
 Appendix:
-. documented:
-  . called: "item"
+. called: "item"
 == end:input ==
 == begin:output ==
 == end:output ==

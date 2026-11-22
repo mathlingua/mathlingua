@@ -12,5 +12,4 @@ given:
 then:
 . x = x
 Appendix:
-. documented:
-  . called: "Binary operation preserves equality"
+. called: "Binary operation preserves equality"

@@ -5,8 +5,7 @@ Rejects a quoted specification fact when the subject's type provides no matching
 [\set]
 Declares: X
 Appendix:
-. documented:
-  . called: "set"
+. called: "set"
 
 [\group]
 Declares: G ::= (X, e)
@@ -14,8 +13,7 @@ specifies:
 . X is \set
 . e "in" G
 Appendix:
-. documented:
-  . called: "group"
+. called: "group"
 == end:input ==
 == begin:output ==
 error: Could not validate spec fact `e "in" G`: no provided spec operator `"in"` is available for `G`

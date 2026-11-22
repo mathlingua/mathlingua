@@ -5,15 +5,14 @@
 [\documented.showcase]
 Declares: X ::= x(i_)
 Appendix:
-. documented:
-  . called: "documented showcase"
-  . written: "\operatorname{showcase}"
-  . writing: x(i)
-    as: "x?_{i?}"
-  . overview: "A one-line summary."
-  . description: "A longer description of the idea."
-  . related: "#algebra"
-  . discoverer: "@emmy.noether"
+. called: "documented showcase"
+. written: "\operatorname{showcase}"
+. writing: x(i)
+  as: "x?_{i?}"
+. overview: "A one-line summary."
+. description: "A longer description of the idea."
+. related: "#algebra"
+. discoverer: "@emmy.noether"
 Id: "0b81f148-f5c4-411d-bbaa-6f5dd4566db6"
 
 
@@ -26,8 +25,7 @@ Requires:
 . capability: x_ "in" X :-> \\abstract
 . definition: \zero is \natural
 Appendix:
-. documented:
-  . called: "requires showcase"
+. called: "requires showcase"
 Id: "b4643f0c-2a8e-4b8c-9c45-daf810276e37"
 
 
@@ -43,8 +41,7 @@ Enables:
 . view:
   as: S := \unit.set is \set
 Appendix:
-. documented:
-  . called: "enables showcase"
+. called: "enables showcase"
 Id: "80bdeb53-b07a-411c-b7e2-7bd81e2059cb"
 
 
@@ -56,8 +53,7 @@ specifies:
 . A is \set
 . (.B is \set.)[:carrier:]
 Appendix:
-. documented:
-  . called: "justification showcase"
+. called: "justification showcase"
 . justification:
   . for: (:carrier:)
     have: B is \set
@@ -72,8 +68,7 @@ Id: "decbcbc2-aa62-430f-aa16-d044ea928c10"
 Declares: G ::= (X, *) is \set via X
 specifies: * is \operation:on{G}
 Appendix:
-. documented:
-  . called: "alias showcase"
+. called: "alias showcase"
 . aliases:
   . alias: twice(x_) :=> x_ * x_
     written: "x_?^{2}"
@@ -94,6 +89,5 @@ given:
 where: y "in" G
 then: y is? \element:of{X}
 Appendix:
-. documented:
-  . called: "a capability reduces membership"
+. called: "a capability reduces membership"
 Id: "6f2caf05-a403-49ae-9ffd-28530e77efec"

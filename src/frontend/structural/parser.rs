@@ -4456,6 +4456,7 @@ fn parse_appendix(
     }
 
     let mut seen: std::collections::HashSet<&str> = std::collections::HashSet::new();
+    let mut documented_items: Vec<DocumentedItem> = Vec::new();
 
     for argument in &appendix_section.arguments {
         let ProtoArgument::Group(entry_group) = argument else {
@@ -4477,43 +4478,49 @@ fn parse_appendix(
             continue;
         };
 
-        if ensure_no_heading(entry_group, tracker).is_none() {
-            continue;
-        }
+        // A `writing:` group with an `as:` section is a documented mapping-writing
+        // entry; a bare `writing:` group without `as:` is an item-level writing alias.
+        let is_mapping_writing =
+            label == "writing" && entry_group.sections.iter().any(|s| s.label == "as");
 
         match label {
-            "documented" => {
-                if spec.documented == AppendixDocumentedMode::None {
-                    tracker.user_error_at_row(
-                        Some(ORIGIN),
-                        entry_group.metadata.row,
-                        "Unexpected appendix group `documented`",
-                    );
-                    continue;
-                }
-                if !seen.insert("documented") {
-                    tracker.user_error_at_row(
-                        Some(ORIGIN),
-                        entry_group.metadata.row,
-                        "Duplicate `documented` entry in `Appendix`",
-                    );
-                    continue;
-                }
-                if let Some(sections) =
-                    identify_sections("documented", &entry_group.sections, tracker, &["documented"])
-                    && let Some(sec) = section(&sections, "documented")
-                {
-                    let item_parser = match spec.documented {
-                        AppendixDocumentedMode::Standard => parse_documented_item_group,
-                        AppendixDocumentedMode::Refines => parse_refines_documented_item_group,
-                        AppendixDocumentedMode::Topic => parse_topic_documented_item_group,
-                        AppendixDocumentedMode::None => unreachable!(),
-                    };
-                    parsed.documented = parse_required_groups(sec, "documented", tracker, item_parser)
-                        .map(|arguments| DocumentedSection { arguments });
+            "written"
+            | "called"
+            | "adjective"
+            | "overview"
+            | "description"
+            | "related"
+            | "discoverer"
+            | "writing"
+                if label != "writing" || is_mapping_writing =>
+            {
+                let item = match spec.documented {
+                    AppendixDocumentedMode::None => {
+                        tracker.user_error_at_row(
+                            Some(ORIGIN),
+                            entry_group.metadata.row,
+                            format!("Unexpected appendix group `{label}`"),
+                        );
+                        None
+                    }
+                    AppendixDocumentedMode::Standard => {
+                        parse_documented_item_group(entry_group, tracker)
+                    }
+                    AppendixDocumentedMode::Refines => {
+                        parse_refines_documented_item_group(entry_group, tracker)
+                    }
+                    AppendixDocumentedMode::Topic => {
+                        parse_topic_documented_item_group(entry_group, tracker)
+                    }
+                };
+                if let Some(item) = item {
+                    documented_items.push(item);
                 }
             }
             "justification" => {
+                if ensure_no_heading(entry_group, tracker).is_none() {
+                    continue;
+                }
                 if !spec.justification {
                     tracker.user_error_at_row(
                         Some(ORIGIN),
@@ -4547,6 +4554,9 @@ fn parse_appendix(
                 }
             }
             "aliases" => {
+                if ensure_no_heading(entry_group, tracker).is_none() {
+                    continue;
+                }
                 if !spec.aliases {
                     tracker.user_error_at_row(
                         Some(ORIGIN),
@@ -4573,6 +4583,9 @@ fn parse_appendix(
                 }
             }
             "writing" => {
+                if ensure_no_heading(entry_group, tracker).is_none() {
+                    continue;
+                }
                 if !spec.writing {
                     tracker.user_error_at_row(
                         Some(ORIGIN),
@@ -4598,6 +4611,9 @@ fn parse_appendix(
                 }
             }
             "references" => {
+                if ensure_no_heading(entry_group, tracker).is_none() {
+                    continue;
+                }
                 if !spec.references {
                     tracker.user_error_at_row(
                         Some(ORIGIN),
@@ -4623,6 +4639,9 @@ fn parse_appendix(
                 }
             }
             "metadata" => {
+                if ensure_no_heading(entry_group, tracker).is_none() {
+                    continue;
+                }
                 if !spec.metadata {
                     tracker.user_error_at_row(
                         Some(ORIGIN),
@@ -4657,6 +4676,10 @@ fn parse_appendix(
             }
         }
     }
+
+    parsed.documented = OneOrMore::try_from(documented_items)
+        .ok()
+        .map(|arguments| DocumentedSection { arguments });
 
     parsed
 }
@@ -4970,8 +4993,7 @@ when:
 to: x_ \.real.+./ y_
 else: x_
 Appendix:
-. documented:
-  . written: "x_? + y_?"
+. written: "x_? + y_?"
 "#,
         );
 
@@ -4998,8 +5020,7 @@ Appendix:
 Disambiguates:
 else: x_ :-: y_
 Appendix:
-. documented:
-  . written: "x_? + y_?"
+. written: "x_? + y_?"
 "#,
         );
 
@@ -5023,8 +5044,7 @@ Requires:
 . capability: n_ + m_ :=> n_ \.natural.+./ m_
 . definition: \natural.0 is \natural
 Appendix:
-. documented:
-  . called: "natural"
+. called: "natural"
 "#,
         );
 
@@ -5066,9 +5086,8 @@ extends: X is \thing
             r#"[\sequence]
 Declares: x(i_)
 Appendix:
-. documented:
-  . writing: x
-    as: "x"
+. writing: x
+  as: "x"
 "#,
         );
 
@@ -5108,10 +5127,9 @@ Enables:
   written:
   . "+"
 Appendix:
-. documented:
-  . [docs.written]
-    written:
-    . "plus"
+. [docs.written]
+  written:
+  . "plus"
 . justification:
   . for: (:proof.label:)
     have:
@@ -5135,10 +5153,9 @@ Enables:
   view:
   as: y := X is \bar
 Appendix:
-. documented:
-  . [docs.called]
-    called:
-    . "addition"
+. [docs.called]
+  called:
+  . "addition"
 . justification:
   . for: (:proof.by:)
     have:
@@ -5154,43 +5171,38 @@ Appendix:
 [\structure.writing]
 Declares: plus(x_, y_)
 Appendix:
-. documented:
-  . [docs.writing]
-    writing: plus(x, y)
-    as: "x? + y?"
-  . writing: plus(x_, y_)
-    as: "\operatorname{plus}(x?, y?)"
+. [docs.writing]
+  writing: plus(x, y)
+  as: "x? + y?"
+. writing: plus(x_, y_)
+  as: "\operatorname{plus}(x?, y?)"
 
 [\structure.overview]
 Declares: O
 Appendix:
-. documented:
-  . [docs.overview]
-    overview: "Binary operation on X"
+. [docs.overview]
+  overview: "Binary operation on X"
 
 [\structure.description]
 Declares: P
 Appendix:
-. documented:
-  . [docs.description]
-    description: "Longer prose for readers"
+. [docs.description]
+  description: "Longer prose for readers"
 
 [\structure.related]
 Declares: R
 Appendix:
-. documented:
-  . [docs.related]
-    related:
-    . "group"
-    . "ring"
+. [docs.related]
+  related:
+  . "group"
+  . "ring"
 
 [\structure.discoverer]
 Declares: D
 Appendix:
-. documented:
-  . [docs.discoverer]
-    discoverer:
-    . "Gauss"
+. [docs.discoverer]
+  discoverer:
+  . "Gauss"
 
 [\constant]
 Defines: zero is \element
@@ -5494,8 +5506,7 @@ Declares: t
 satisfies:
 . (.*' := `*`.)[:1:]
 Appendix:
-. documented:
-  . called: "thing"
+. called: "thing"
 . justification:
   . for: (:1:)
     have: *' := `*`
@@ -5522,8 +5533,7 @@ Declares: X
 Enables:
 . capability: x_ "in" X :-> \\abstract
 Appendix:
-. documented:
-  . called: "set"
+. called: "set"
 "#,
         );
 
@@ -5552,8 +5562,7 @@ Enables:
   as: r := X is \rational
   signifies: X \.embedded.to./ r
 Appendix:
-. documented:
-  . called: "set"
+. called: "set"
 "#,
         );
 
@@ -5582,8 +5591,7 @@ Enables:
 . view:
   as: y := b is \group
 Appendix:
-. documented:
-  . written: "P?"
+. written: "P?"
 "#,
         );
 
@@ -5615,8 +5623,7 @@ Enables:
 . view: unexpected
   as: k := n is \integer
 Appendix:
-. documented:
-  . called: "integer"
+. called: "integer"
 "#,
         );
 
@@ -5637,8 +5644,7 @@ Enables:
 . viewable:
   as: r is \rational
 Appendix:
-. documented:
-  . written: "\operatorname{integer}"
+. written: "\operatorname{integer}"
 "#,
         );
 
@@ -5660,8 +5666,7 @@ Enables:
   to: s := \as.set{n} is \set
   represents: \\encoding
 Appendix:
-. documented:
-  . written: "\operatorname{integer}"
+. written: "\operatorname{integer}"
 "#,
         );
 
@@ -5715,8 +5720,7 @@ when:
 . a = b
 specifies: a = b
 Appendix:
-. documented:
-  . description: "a and b name the same value."
+. description: "a and b name the same value."
 "#,
         );
 
@@ -5831,8 +5835,7 @@ Related:
 . to: "\function:on:to"
   specifies: "Functions studied here."
 Appendix:
-. documented:
-  . called: "Real Analysis"
+. called: "Real Analysis"
 "##,
         );
 
@@ -5900,8 +5903,7 @@ Topic: "A topic with no heading."
 [#real.analysis]
 Topic: "Analysis over the real numbers."
 Appendix:
-. documented:
-  . description: "Not allowed here."
+. description: "Not allowed here."
 "#,
         );
 
@@ -6077,8 +6079,7 @@ Theorem:
 then: x = x
 Proof: "By reflexivity."
 Appendix:
-. documented:
-  . called: "reflexivity"
+. called: "reflexivity"
 . aliases:
   . alias: reflect(x_) :=> x_
 . writing:
@@ -7151,8 +7152,7 @@ Writing:
 [\natural]
 Declares: n
 Appendix:
-. documented:
-  . called: "natural"
+. called: "natural"
 . writing:
   . "pi :~> \varpi"
   . "e :~> \mathrm{e}"
@@ -7178,8 +7178,7 @@ Appendix:
 [\natural]
 Declares: n
 Appendix:
-. documented:
-  . called: "natural"
+. called: "natural"
 . writing:
   . pi :~> \varpi
 "#,
@@ -7219,10 +7218,9 @@ iff:
   iff:
   . x = x
 Appendix:
-. documented:
-  . [axiom.written]
-    written:
-    . "axiom"
+. [axiom.written]
+  written:
+  . "axiom"
 . justification:
   . for: (:axiom.justified:)
     have:
@@ -7391,8 +7389,7 @@ expresses:
 Enables:
 . capability: X_ "in" omega :-> X_ is \set
 Appendix:
-. documented:
-  . written: "\omega"
+. written: "\omega"
 . justification:
   . for: (:1:)
     have: A is \(inductive)::set
@@ -7609,8 +7606,7 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
 [\pair]
 Declares: P
 Appendix:
-. documented:
-  . called: "pair"
+. called: "pair"
 . justification:
   . for: (:step:)
     have: x = x
@@ -7641,8 +7637,7 @@ Appendix:
 [\pair]
 Declares: P
 Appendix:
-. documented:
-  . called: "pair"
+. called: "pair"
 . justification:
   . [step]
     have: x = x

@@ -9,8 +9,7 @@
 Declares: M ::= (X, *) is \set via X
 specifies: * is \operation:on{M}
 Appendix:
-. documented:
-  . called: "magma"
+. called: "magma"
 Id: "0e5be05c-2b6d-48cc-8dec-d656eb6bb8b7"
 
 
@@ -20,8 +19,7 @@ Id: "0e5be05c-2b6d-48cc-8dec-d656eb6bb8b7"
 Declares: M ::= (X, *, e) is \magma via (X, *)
 specifies: e "in" X
 Appendix:
-. documented:
-  . called: "monoid"
+. called: "monoid"
 Id: "b41b952a-239a-49de-b27a-a896f0494b30"
 
 
@@ -30,8 +28,7 @@ Id: "b41b952a-239a-49de-b27a-a896f0494b30"
 [\group]
 Declares: G ::= (X, *, e) is \monoid via (X, *, e)
 Appendix:
-. documented:
-  . called: "group"
+. called: "group"
 Id: "bc7fdaea-a45a-4569-8607-78555d8a03eb"
 
 
@@ -39,8 +36,7 @@ Id: "bc7fdaea-a45a-4569-8607-78555d8a03eb"
 [\(abelian)::group]
 Refines: G ::= (X, *, e)
 Appendix:
-. documented:
-  . adjective: "abelian"
+. adjective: "abelian"
 Id: "9ed8036e-561f-4fb9-80bf-2bd214428bc7"
 
 
@@ -53,8 +49,7 @@ specifies:
 . R is \(abelian)::group via (X, +, 0)
 . R is \monoid via (X, *, 1)
 Appendix:
-. documented:
-  . called: "ring"
+. called: "ring"
 Id: "a73b420d-f146-4142-bf5d-270916506a47"
 
 
@@ -67,8 +62,7 @@ extends:
 . B is \magma via (X, *)
 . B is \magma via (X, +)
 Appendix:
-. documented:
-  . called: "bimagma"
+. called: "bimagma"
 Id: "fde4a779-17a4-48a3-997b-ad20380eb324"
 
 
@@ -82,8 +76,7 @@ then:
 . X is? \set
 . e "in"? X
 Appendix:
-. documented:
-  . called: "a group is a set"
+. called: "a group is a set"
 Id: "da7562a6-f7e7-4e0e-ba84-30ed132faeb1"
 
 
@@ -97,6 +90,5 @@ then:
 . 0 "in"? X
 . 1 "in"? X
 Appendix:
-. documented:
-  . called: "a ring inherits both subtype views"
+. called: "a ring inherits both subtype views"
 Id: "60f94c0e-e5c7-40cb-b082-f2ab7bb0f6db"

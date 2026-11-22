@@ -5,15 +5,13 @@ Rejects an inferred command parameter when the same name is already introduced i
 [\set]
 Declares: X
 Appendix:
-. documented:
-  . called: "set"
+. called: "set"
 
 [\function:on{A}:to{B}]
 Declares: f(x__)
 when: A, B is \set
 Appendix:
-. documented:
-  . called: "function"
+. called: "function"
 
 Theorem:
 given:

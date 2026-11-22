@@ -5,8 +5,7 @@ Accepts one item-local Writing alias.
 [\item]
 Declares: x
 Appendix:
-. documented:
-  . called: "item"
+. called: "item"
 . writing:
   . "item :~> \\operatorname{item}"
 == end:input ==

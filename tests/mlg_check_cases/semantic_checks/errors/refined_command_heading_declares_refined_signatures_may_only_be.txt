@@ -5,8 +5,7 @@ Rejects a refined command heading on Declares because refined signatures may onl
 [\(special)::thing]
 Declares: X
 Appendix:
-. documented:
-  . called: "special thing"
+. called: "special thing"
 == end:input ==
 == begin:output ==
 error: Refined command headings may only be used with Refines entries

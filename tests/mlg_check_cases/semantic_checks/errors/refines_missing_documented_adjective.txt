@@ -5,8 +5,7 @@ Rejects a Refines item that has no adjective rendering in Documented.
 [\thing]
 Declares: x
 Appendix:
-. documented:
-  . called: "thing"
+. called: "thing"
 
 [\(special)::thing]
 Refines: x

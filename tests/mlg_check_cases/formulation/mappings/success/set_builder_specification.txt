@@ -5,15 +5,13 @@ Accepts a set-builder expression whose bound target has an explicit specificatio
 [\real]
 Declares: x
 Appendix:
-. documented:
-  . called: "real"
+. called: "real"
 
 [\collect{S}]
 Declares: y
 when: S is \\expression
 Appendix:
-. documented:
-  . called: "collect"
+. called: "collect"
 
 Theorem:
 given: a is \\anything

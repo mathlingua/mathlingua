@@ -5,16 +5,14 @@ Accepts one named-definition requirement on a Declares item.
 [\required]
 Defines: x is \\anything
 Appendix:
-. documented:
-  . called: "required"
+. called: "required"
 
 [\consumer]
 Declares: x
 Requires:
 . definition: \required is \\anything
 Appendix:
-. documented:
-  . called: "consumer"
+. called: "consumer"
 == end:input ==
 == begin:output ==
 == end:output ==

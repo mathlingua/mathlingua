@@ -6,8 +6,7 @@ Accepts a have:by: Justification entry with because clauses and text.
 Theorem:
 then: 1 = 1
 Appendix:
-. documented:
-  . called: "thm"
+. called: "thm"
 
 [\pair]
 Declares: P ::= (A, B)
@@ -15,8 +14,7 @@ specifies:
 . A is \\anything
 . (.B is \\anything.)[:second:]
 Appendix:
-. documented:
-  . called: "pair"
+. called: "pair"
 . justification:
   . [second]
     have: B is \\anything

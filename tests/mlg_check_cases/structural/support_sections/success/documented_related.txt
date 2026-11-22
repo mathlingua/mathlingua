@@ -5,9 +5,8 @@ Accepts one related entry in a Documented section.
 [\item]
 Declares: x
 Appendix:
-. documented:
-  . called: "item"
-  . related: "#related-topic"
+. called: "item"
+. related: "#related-topic"
 == end:input ==
 == begin:output ==
 == end:output ==

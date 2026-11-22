@@ -21,10 +21,9 @@ Enables:
   written:
   . "+"
 Appendix:
-. documented:
-  . [docs.written]
-    written:
-    . "plus"
+. [docs.written]
+  written:
+  . "plus"
 . justification:
   . [proof.label]
     for: (:logic.set.ops.when:)
@@ -49,10 +48,9 @@ Enables:
   view:
   as: y := X is \bar
 Appendix:
-. documented:
-  . [docs.called]
-    called:
-    . "addition"
+. [docs.called]
+  called:
+  . "addition"
 . justification:
   . [proof.by]
     for: (:proof.by:)
@@ -69,37 +67,33 @@ Appendix:
 [\structure.writing]
 Declares: plus(x_, y_)
 Appendix:
-. documented:
-  . [docs.inline.notation]
-    writing: plus(x, y)
-    as: "x? + y?"
-  . [docs.mapping.notation]
-    writing: plus(x_, y_)
-    as: "\operatorname{plus}(x?, y?)"
+. [docs.inline.notation]
+  writing: plus(x, y)
+  as: "x? + y?"
+. [docs.mapping.notation]
+  writing: plus(x_, y_)
+  as: "\operatorname{plus}(x?, y?)"
 
 [\structure.overview]
 Declares: O
 Appendix:
-. documented:
-  . [docs.overview]
-    overview: "Binary operation on X"
+. [docs.overview]
+  overview: "Binary operation on X"
 
 [\structure.related]
 Declares: R
 Appendix:
-. documented:
-  . [docs.related]
-    related:
-    . "group"
-    . "ring"
+. [docs.related]
+  related:
+  . "group"
+  . "ring"
 
 [\structure.discoverer]
 Declares: D
 Appendix:
-. documented:
-  . [docs.discoverer]
-    discoverer:
-    . "Gauss"
+. [docs.discoverer]
+  discoverer:
+  . "Gauss"
 
 [\function:on{A}:to{B}]
 Declares: f(x__)
@@ -112,5 +106,4 @@ satisfies:
     suchThat:
     . f(x) = y
 Appendix:
-. documented:
-  . called: "Function on $A?$ to $B?$"
+. called: "Function on $A?$ to $B?$"

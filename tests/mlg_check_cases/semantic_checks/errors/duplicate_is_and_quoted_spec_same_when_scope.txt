@@ -7,8 +7,7 @@ Declares: X
 Requires:
 . capability: x_ "in" X :-> \\abstract
 Appendix:
-. documented:
-  . called: "set"
+. called: "set"
 
 [\bad{A}:in{B}]
 Declares: X
@@ -17,8 +16,7 @@ when:
 . A is \set
 . A "in" B
 Appendix:
-. documented:
-  . called: "bad"
+. called: "bad"
 == end:input ==
 == begin:output ==
 error: Subject `A` is specified more than once in the same `when:` scope (`is` and `quoted specification`); choose exactly one of `is`, a quoted specification, a spec-infix specification, or `:=`

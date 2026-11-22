@@ -16,8 +16,7 @@ Enables:
   written:
   . "+"
 Appendix:
-. documented:
-  . called: "naturals"
+. called: "naturals"
 . justification:
   . [proof.label]
     for: (:proof.label:)
@@ -62,8 +61,7 @@ Enables:
   written:
   . "+"
 Appendix:
-. documented:
-  . called: "von Neumann naturals"
+. called: "von Neumann naturals"
 . justification:
   . [proof.label]
     for: (:proof.label:)

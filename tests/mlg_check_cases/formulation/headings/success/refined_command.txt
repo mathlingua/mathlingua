@@ -5,15 +5,13 @@ Accepts a refined command heading introduced by Refines.
 [\thing]
 Declares: x
 Appendix:
-. documented:
-  . called: "thing"
+. called: "thing"
 
 [\(special)::thing]
 Refines: x
 satisfies: x is \thing
 Appendix:
-. documented:
-  . adjective: "special"
+. adjective: "special"
 == end:input ==
 == begin:output ==
 == end:output ==

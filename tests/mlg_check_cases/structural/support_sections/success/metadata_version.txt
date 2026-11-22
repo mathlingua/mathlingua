@@ -5,8 +5,7 @@ Accepts one semantic version in a Metadata section.
 [\item]
 Declares: x
 Appendix:
-. documented:
-  . called: "item"
+. called: "item"
 . metadata:
   . version: "1.0.0"
 == end:input ==

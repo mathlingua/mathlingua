@@ -7,8 +7,7 @@ Declares: X
 Requires:
 . capability: x_ "in" X :-> \\abstract
 Appendix:
-. documented:
-  . called: "set"
+. called: "set"
 
 [\element:of{X}]
 Declares: x "in" X
@@ -17,8 +16,7 @@ Enables:
 . capability: x.twin(a_) :=> a_
   written: "a_?"
 Appendix:
-. documented:
-  . called: "element"
+. called: "element"
 
 Theorem:
 given:

@@ -5,15 +5,13 @@ Accepts a command expression containing only the second optional tail from a two
 [\thing]
 Declares: value
 Appendix:
-. documented:
-  . called: "thing"
+. called: "thing"
 
 [\foo:?baz{A}:?bar{B}]
 Defines: A ::= B "defines" B
 when: A, B is \thing
 Appendix:
-. documented:
-  . called: "foo"
+. called: "foo"
 
 Theorem:
 given: a, b is \thing

@@ -5,8 +5,7 @@ Accepts one formulation clause in an Example section; the preceding declaration 
 [\set]
 Declares: X
 Appendix:
-. documented:
-  . called: "set"
+. called: "set"
 
 Example:
 . forAll: x is \set

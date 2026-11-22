@@ -28,8 +28,7 @@ to:
 . \eq{a, b}
 . \same{a, b}
 Appendix:
-. documented:
-  . called: "equal"
+. called: "equal"
 . justification:
   . [equiv.just]
     for: (:equiv.just:)

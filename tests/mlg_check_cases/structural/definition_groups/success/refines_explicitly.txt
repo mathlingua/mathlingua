@@ -5,21 +5,18 @@ Accepts an explicitly marked Refines item that names the corresponding supertype
 [\base]
 Declares: x
 Appendix:
-. documented:
-  . called: "base"
+. called: "base"
 
 [\child]
 Declares: x is \base
 Appendix:
-. documented:
-  . called: "child"
+. called: "child"
 
 [\(special)::base]
 Refines: x
 satisfies: x is \base
 Appendix:
-. documented:
-  . adjective: "special"
+. adjective: "special"
 
 [\(special)::child]
 Refines: x
@@ -27,8 +24,7 @@ explicitly:
 specifies: x is \(special)::base
 satisfies: x is \child
 Appendix:
-. documented:
-  . adjective: "special"
+. adjective: "special"
 == end:input ==
 == begin:output ==
 == end:output ==

@@ -690,8 +690,20 @@ fn escape_markdown_link_label(text: &str) -> String {
 /// registry — so only later `Writing:` sections are treated as item-level
 /// overrides. Entries whose body is not a plain-name `:~>` alias are skipped.
 fn collect_item_writing_overrides(sections: &[ProtoSection]) -> Vec<(String, String)> {
-    appendix_sub_section(sections, "writing")
-        .into_iter()
+    let Some(appendix) = sections.iter().find(|section| section.label == "Appendix") else {
+        return Vec::new();
+    };
+    appendix
+        .arguments
+        .iter()
+        .filter_map(|argument| match argument {
+            ProtoArgument::Group(group)
+                if !group.sections.iter().any(|s| s.label == "as") =>
+            {
+                group.sections.iter().find(|s| s.label == "writing")
+            }
+            _ => None,
+        })
         .flat_map(|section| {
             let inline = section
                 .inline_argument
@@ -753,7 +765,7 @@ fn theorem_like_heading_latex(
 /// A `written:` nested inside a `called:` group counts as the written form too, so
 /// that both spellings of "documented with both forms" title a card the same way.
 fn documented_title_forms(sections: &[ProtoSection]) -> (Option<String>, Option<String>) {
-    let Some(documented) = appendix_sub_section(sections, "documented") else {
+    let Some(documented) = sections.iter().find(|section| section.label == "Appendix") else {
         return (None, None);
     };
 
@@ -927,7 +939,10 @@ fn page_view(kind: &str, sections: &[ProtoSection], registry: &RenderRegistry) -
 }
 
 fn documented_description_text(group: &ProtoGroup) -> Option<String> {
-    let descriptions = appendix_sub_section(&group.sections, "documented")?
+    let descriptions = group
+        .sections
+        .iter()
+        .find(|section| section.label == "Appendix")?
         .arguments
         .iter()
         .filter_map(|argument| match argument {
@@ -1106,7 +1121,7 @@ fn argument_view(
                 .sections
                 .into_iter()
                 .map(|section| {
-                    let context = if section_label == "documented" {
+                    let context = if section_label == "Appendix" {
                         SectionContext::Documented
                     } else {
                         SectionContext::Default
@@ -1194,7 +1209,7 @@ mod tests {
     fn collection_view_title_at(root: &Path) -> String {
         let content = root.join("content");
         let file = content.join("sets.mlg");
-        let source = "[\\set]\nDeclares: S\nAppendix:\n. documented:\n  . called: \"set\"\n";
+        let source = "[\\set]\nDeclares: S\nAppendix:\n. called: \"set\"\n";
 
         fs::create_dir_all(&content).unwrap();
         fs::write(&file, source).unwrap();
@@ -1250,7 +1265,7 @@ mod tests {
         let root = temp_dir.path().join("repo");
         let content = root.join("content");
         let file = content.join("sets.mlg");
-        let source = "[\\set]\nDeclares: S\nAppendix:\n. documented:\n  . called:\n    . \"set\"\n";
+        let source = "[\\set]\nDeclares: S\nAppendix:\n. called:\n  . \"set\"\n";
 
         fs::create_dir_all(&content).unwrap();
         fs::write(&file, source).unwrap();
@@ -1391,14 +1406,12 @@ that:
         let source = r#"[\group]
 Declares: G
 Appendix:
-. documented:
-  . called: "group"
+. called: "group"
 
 [\(finite)::group]
 Refines: G ::= (X, *, e)
 Appendix:
-. documented:
-  . adjective: "finite"
+. adjective: "finite"
 "#;
 
         fs::create_dir_all(&content).unwrap();
@@ -1438,9 +1451,8 @@ Appendix:
         let source = r#"[\membership]
 Declares: X
 Appendix:
-. documented:
-  . called: "membership of $x_?$ in $X?$"
-  . written: "x_? \in X?"
+. called: "membership of $x_?$ in $X?$"
+. written: "x_? \in X?"
 "#;
 
         fs::create_dir_all(&content).unwrap();
@@ -1459,15 +1471,11 @@ Appendix:
         let mut event_log = EventLog::new();
         let view = build_collection_view(&root, &[parsed_file], &[], &[], &mut event_log)
             .expect("expected view");
-        let appendix = view.files[0].items[0]
+        let documented = view.files[0].items[0]
             .sections
             .iter()
             .find(|section| section.label == "Appendix")
             .expect("expected Appendix section");
-        let ArgumentView::Group { sections: doc_sections, .. } = &appendix.arguments[0] else {
-            panic!("expected documented group");
-        };
-        let documented = &doc_sections[0];
         let ArgumentView::Group { sections, .. } = &documented.arguments[0] else {
             panic!("expected called group");
         };
@@ -1491,14 +1499,13 @@ Appendix:
         let source = r#"[\set]
 Declares: X
 Appendix:
-. documented:
-  . called: "set"
-  . description: "Some text
-                            Some indented text
-                            \[
-                                \some.math
-                            \]
-                            "
+. called: "set"
+. description: "Some text
+                          Some indented text
+                          \[
+                              \some.math
+                          \]
+                          "
 Id: "11111111-1111-4111-8111-111111111111"
 "#;
 
@@ -1533,15 +1540,11 @@ Id: "11111111-1111-4111-8111-111111111111"
             Some("Some text\nSome indented text\n\\[\n    \\some.math\n\\]")
         );
 
-        let appendix = view.files[0].items[1]
+        let documented = view.files[0].items[1]
             .sections
             .iter()
             .find(|section| section.label == "Appendix")
             .expect("expected Appendix section");
-        let ArgumentView::Group { sections: doc_sections, .. } = &appendix.arguments[0] else {
-            panic!("expected documented group");
-        };
-        let documented = &doc_sections[0];
         let ArgumentView::Group { sections, .. } = &documented.arguments[1] else {
             panic!("expected description group");
         };
@@ -1612,8 +1615,7 @@ Id: "11111111-1111-4111-8111-111111111111"
 [#real.analysis]
 Topic: "Analysis over the real numbers."
 Appendix:
-. documented:
-  . called: "Real Variable Theory"
+. called: "Real Variable Theory"
 Id: "22222222-2222-4222-8222-222222222222"
 "#;
 
@@ -1661,15 +1663,13 @@ Id: "22222222-2222-4222-8222-222222222222"
         let source = r#"[\set]
 Declares: X
 Appendix:
-. documented:
-  . called: "set"
+. called: "set"
 
 
 [\nonempty.set]
 Declares: X is \set
 Appendix:
-. documented:
-  . called: "non-empty set"
+. called: "non-empty set"
 "#;
 
         fs::create_dir_all(&content).unwrap();
@@ -1710,16 +1710,14 @@ that:
   . A
   . B
 Appendix:
-. documented:
-  . written: "A? \text{ and } B?"
+. written: "A? \text{ and } B?"
 
 
 [\axiom.of.choice]
 Axiom:
 then: X = X
 Appendix:
-. documented:
-  . called: "axiom of choice"
+. called: "axiom of choice"
 
 
 [\axiom.of.unordered.pair]
@@ -1770,8 +1768,7 @@ then: x = x
 Proof:
 . "Because {.x = x.}; see $book.ref."
 Appendix:
-. documented:
-  . called: "reflexivity"
+. called: "reflexivity"
 . writing:
   . "x :~> \xi"
 . references:
@@ -1834,8 +1831,7 @@ Id: "22222222-2222-4222-8222-222222222222"
 given: a is \\expression
 then: a = a
 Appendix:
-. documented:
-  . called: "Commutativity"
+. called: "Commutativity"
 Id: "11111111-1111-4111-8111-111111111111"
 
 
@@ -1847,8 +1843,7 @@ Id: "22222222-2222-4222-8222-222222222222"
 Conjecture:
 then: Y = Y
 Appendix:
-. documented:
-  . called: "Twin prime conjecture"
+. called: "Twin prime conjecture"
 Id: "33333333-3333-4333-8333-333333333333"
 "#;
 
@@ -1891,36 +1886,32 @@ Id: "33333333-3333-4333-8333-333333333333"
         let source = r#"Theorem:
 then: X = X
 Appendix:
-. documented:
-  . called: "Reflexivity"
-  . written: "X = X"
+. called: "Reflexivity"
+. written: "X = X"
 Id: "11111111-1111-4111-8111-111111111111"
 
 
 Theorem:
 then: Y = Y
 Appendix:
-. documented:
-  . written: "Y = Y"
-  . called: "Reflexivity again"
+. written: "Y = Y"
+. called: "Reflexivity again"
 Id: "22222222-2222-4222-8222-222222222222"
 
 
 Theorem:
 then: Z = Z
 Appendix:
-. documented:
-  . written: "Z = Z"
+. written: "Z = Z"
 Id: "33333333-3333-4333-8333-333333333333"
 
 
 Theorem:
 then: W = W
 Appendix:
-. documented:
-  . called: "Nested"
-    written:
-    . "W = W"
+. called: "Nested"
+  written:
+  . "W = W"
 Id: "44444444-4444-4444-8444-444444444444"
 "#;
 
@@ -2198,9 +2189,8 @@ forAll:
 then:
 . [abc]: x > 0
 Appendix:
-. documented:
-  . overview:
-    . [mytext]: "A labeled prose description."
+. overview:
+  . [mytext]: "A labeled prose description."
 Id: "11111111-1111-4111-8111-111111111111"
 "#;
 
@@ -2247,15 +2237,11 @@ Id: "11111111-1111-4111-8111-111111111111"
             other => panic!("expected formulation argument, got {other:?}"),
         }
 
-        let appendix = theorem
+        let documented = theorem
             .sections
             .iter()
             .find(|section| section.label == "Appendix")
             .expect("expected an Appendix section");
-        let ArgumentView::Group { sections: doc_sections, .. } = &appendix.arguments[0] else {
-            panic!("expected documented group");
-        };
-        let documented = &doc_sections[0];
         let ArgumentView::Group { sections, .. } = &documented.arguments[0] else {
             panic!("expected overview group");
         };

@@ -5,15 +5,13 @@ Rejects the same parameterless command signature when two different top-level de
 [\same]
 Defines: x is \\anything
 Appendix:
-. documented:
-  . called: "same"
+. called: "same"
 
 [\same]
 Theorem:
 then: 1 = 1
 Appendix:
-. documented:
-  . called: "same"
+. called: "same"
 == end:input ==
 == begin:output ==
 error: Duplicate command signature `\same` in Theorem; previously defined as Defines in case.mlg:1:2

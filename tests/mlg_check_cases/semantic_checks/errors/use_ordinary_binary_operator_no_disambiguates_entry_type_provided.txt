@@ -5,8 +5,7 @@ Rejects use of an ordinary binary operator when no Disambiguates entry or type-p
 [\number]
 Declares: n
 Appendix:
-. documented:
-  . called: "number"
+. called: "number"
 
 Theorem:
 given: x, y is \number

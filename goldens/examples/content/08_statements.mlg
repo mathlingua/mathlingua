@@ -10,9 +10,8 @@ that:
 . forAll: x is \element:of{\unit.set}
   then: x "in" \unit.set
 Appendix:
-. documented:
-  . called: "commutes with $y?$"
-  . description: "Order does not matter."
+. called: "commutes with $y?$"
+. description: "Order does not matter."
 Id: "bc970e75-9dfb-4274-b470-6fa57ea77741"
 
 
@@ -25,8 +24,7 @@ given:
 where: A \:subset:/ B
 then: A \:subset?:/ B
 Appendix:
-. documented:
-  . called: "a subset is a subset"
+. called: "a subset is a subset"
 Id: "1706b3ba-b789-448c-a5c4-d2bc619e1933"
 
 
@@ -36,8 +34,7 @@ Axiom:
 given: X is \set
 then: X is? \set
 Appendix:
-. documented:
-  . called: "the membership axiom"
+. called: "the membership axiom"
 Id: "d570056b-6eb9-41fb-8284-4adbe6ddeda8"
 
 
@@ -46,8 +43,7 @@ Conjecture:
 given: n is \natural
 then: n is? \natural
 Appendix:
-. documented:
-  . called: "an open question"
+. called: "an open question"
 Id: "e6d5caf7-f4bf-4333-8e6f-b3c65d38cfb2"
 
 
@@ -57,8 +53,7 @@ given: n is \natural
 then: n is? \natural
 iff: n is? \natural
 Appendix:
-. documented:
-  . called: "a trivial equivalence"
+. called: "a trivial equivalence"
 Id: "862537de-6ab3-4b30-b4e9-2651927ab166"
 
 
@@ -94,8 +89,7 @@ then:
 . have: n = n
   iff: n = n
 Appendix:
-. documented:
-  . called: "every clause group"
+. called: "every clause group"
 Id: "85a7e92b-f346-4d3c-b618-b64c9b683d71"
 
 
@@ -110,6 +104,5 @@ then:
   by: \membership.axiom
   because: n = n
 Appendix:
-. documented:
-  . called: "an asserted step"
+. called: "an asserted step"
 Id: "9539b3b1-6b22-4a24-8fd2-84f87f9f8f5d"

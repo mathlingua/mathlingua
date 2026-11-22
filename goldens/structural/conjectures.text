@@ -17,8 +17,7 @@ then:
 iff:
 . y = y
 Appendix:
-. documented:
-  . called: "A plausible result"
+. called: "A plausible result"
 . justification:
   . [conjecture.evidence]
     for: (:logic.not:)

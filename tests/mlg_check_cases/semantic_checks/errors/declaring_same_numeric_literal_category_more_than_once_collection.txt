@@ -5,8 +5,7 @@ Rejects declaring the same numeric-literal category more than once in a collecti
 [\natural]
 Declares: n
 Appendix:
-. documented:
-  . called: "natural"
+. called: "natural"
 
 Specify:
 . positiveInt:

@@ -6,8 +6,7 @@ Accepts the optional by reference section of a have clause.
 Axiom:
 then: 1 = 1
 Appendix:
-. documented:
-  . called: "reason"
+. called: "reason"
 
 Theorem:
 then:

@@ -5,9 +5,8 @@ Accepts one description entry in a Documented section.
 [\item]
 Declares: x
 Appendix:
-. documented:
-  . called: "item"
-  . description: "A longer description."
+. called: "item"
+. description: "A longer description."
 == end:input ==
 == begin:output ==
 == end:output ==

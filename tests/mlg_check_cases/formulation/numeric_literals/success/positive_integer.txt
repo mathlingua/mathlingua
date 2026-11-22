@@ -5,8 +5,7 @@ Accepts a positive integer literal at the nominal type configured by the positiv
 [\natural]
 Declares: x
 Appendix:
-. documented:
-  . called: "natural"
+. called: "natural"
 
 Specify:
 . positiveInt:
@@ -17,8 +16,7 @@ States:
 when: x is \natural
 that: x = x
 Appendix:
-. documented:
-  . called: "accept"
+. called: "accept"
 
 Theorem:
 then: \accept{1}

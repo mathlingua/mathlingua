@@ -7,8 +7,7 @@ States:
 when: x[i, j] is \\statement
 that: x[i, j] = x[i, j]
 Appendix:
-. documented:
-  . called: "matrix statement"
+. called: "matrix statement"
 
 Theorem:
 given: P, Q, R, S is \\statement

@@ -6,8 +6,7 @@ Rejects a second consecutive group heading before any sections.
 [\second]
 Declares: X
 Appendix:
-. documented:
-  . called: "first"
+. called: "first"
 == end:input ==
 == begin:output ==
 error: Unexpected header: [\second]

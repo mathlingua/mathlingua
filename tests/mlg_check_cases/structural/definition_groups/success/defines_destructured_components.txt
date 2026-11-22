@@ -5,20 +5,17 @@ Accepts a concrete destructured Defines item whose components receive values dir
 [\thing]
 Declares: x
 Appendix:
-. documented:
-  . called: "thing"
+. called: "thing"
 
 [\first]
 Defines: a is \thing
 Appendix:
-. documented:
-  . called: "first"
+. called: "first"
 
 [\second]
 Defines: b is \thing
 Appendix:
-. documented:
-  . called: "second"
+. called: "second"
 
 [\pair]
 Defines: P ::= (x, y)
@@ -26,8 +23,7 @@ specifies:
 . x := \first
 . y := \second
 Appendix:
-. documented:
-  . called: "pair"
+. called: "pair"
 == end:input ==
 == begin:output ==
 

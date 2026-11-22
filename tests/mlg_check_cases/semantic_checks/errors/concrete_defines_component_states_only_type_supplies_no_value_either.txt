@@ -5,14 +5,12 @@ Rejects a concrete Defines component that states only a type and supplies no val
 [\set]
 Declares: X
 Appendix:
-. documented:
-  . called: "set"
+. called: "set"
 
 [\empty.set]
 Defines: E := \set@{x : ...}
 Appendix:
-. documented:
-  . called: "empty set"
+. called: "empty set"
 
 [\concrete.pair]
 Defines: P ::= (A, B)
@@ -20,8 +18,7 @@ specifies:
 . A := \empty.set
 . B is \set
 Appendix:
-. documented:
-  . called: "concrete pair"
+. called: "concrete pair"
 == end:input ==
 == begin:output ==
 error: `B` states a specification but no value; define it with `:=`, define it in `expresses:`, or mark this `Defines:` `abstractly:`

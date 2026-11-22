@@ -8,8 +8,7 @@ Enables:
 . from: Y ::= {y__ : ...}
   capability: x_ "in" X :-> x_ memberOf Y
 Appendix:
-. documented:
-  . called: "set"
+. called: "set"
 == end:input ==
 == begin:output ==
 == end:output ==

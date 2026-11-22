@@ -19,11 +19,10 @@ iff:
   iff:
   . x = x
 Appendix:
-. documented:
-  . called: "Every element equals itself"
-  . [axiom.written]
-    written:
-    . "axiom"
+. called: "Every element equals itself"
+. [axiom.written]
+  written:
+  . "axiom"
 . justification:
   . [axiom.justified]
     for: (:logic.if:)

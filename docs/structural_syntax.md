@@ -303,8 +303,8 @@ An empty document is supported by the current implementation because `Document.i
 - **`Resource`** — `ResourceGroup`, heading: resource. Sections: `Resource: ResourceItem+`
 - **`Specify`** — `SpecifyGroup`, heading: none. Sections: `Specify: SpecifyItem+`
 - **`Relation`** — `RelationGroup`, heading: none. Sections: `Relation: OpenText*`, `using?: DeclarationStatement+`, either `between: RelationSubject` / `and: RelationSubject` (undirected) or `from: RelationSubject` / `to: RelationSubject` (directed), `when?: Clause+`, `specifies?: RelationSpecifies`, `Appendix?: AppendixItem+`
-- **`Equivalent`** — `EquivalentGroup`, heading: command. Sections: `Equivalent:` (marker, no arguments), `using?: DeclarationStatement+`, `when?: Clause+`, `to: Expression+`, `Appendix?: AppendixItem+` (accepts `documented:`, `justification:`, `references:`)
-- **`Topic`** — `TopicGroup`, heading: topic. Sections: `Topic: OpenText*`, `within?: OpenText`, `Related?: TopicRelatedItem+`, `Appendix?: AppendixItem+` (accepts `documented:` with `called:` only)
+- **`Equivalent`** — `EquivalentGroup`, heading: command. Sections: `Equivalent:` (marker, no arguments), `using?: DeclarationStatement+`, `when?: Clause+`, `to: Expression+`, `Appendix?: AppendixItem+` (accepts documentation entries, `justification:`, `references:`)
+- **`Topic`** — `TopicGroup`, heading: topic. Sections: `Topic: OpenText*`, `within?: OpenText`, `Related?: TopicRelatedItem+`, `Appendix?: AppendixItem+` (accepts `called:` only)
 
 Notes:
 
@@ -313,10 +313,12 @@ Notes:
 - **Every** top-level group accepts a final optional `Id?: OpenText` section (a
   quoted UUID, validated for placement and uniqueness and not stored in the
   structural AST). Items with auxiliary sections accept an optional `Appendix:`
-  section immediately before `Id:`, containing lowercase sub-groups
-  (`documented:`, `justification:`, `aliases:`, `writing:`, `references:`,
+  section immediately before `Id:`, containing documentation entries directly
+  (`written:`, `called:`, `adjective:`, `writing:`/`as:`, `overview:`,
+  `description:`, `related:`, `discoverer:`) alongside lowercase container
+  entries (`justification:`, `aliases:`, `writing:`, `references:`,
   `metadata:`, each at most once, restricted to the subset allowed for that
-  group kind). `Refines:` documentation is special-cased: its `documented:`
+  group kind). `Refines:` documentation is special-cased: its `Appendix:`
   rejects `called:` and instead requires `adjective:`. `Requires:`, `Enables:`,
   `Proof:`, and `Id:` remain top-level sections outside `Appendix:`.
 
@@ -326,12 +328,14 @@ The following groups are used inside top-level sections.
 
 ### Appendix items
 
-Used inside `Appendix:`. Each entry is a nested group with a lowercase label, appearing at most once per `Appendix:`:
+Used inside `Appendix:`. Documentation items (`written:`, `called:`,
+`adjective:`, `writing:`/`as:`, `overview:`, `description:`, `related:`,
+`discoverer:`) appear directly inside `Appendix:` alongside the following
+single-occurrence lowercase sub-groups:
 
-- **`documented`** — `documented: DocumentedItem+`
 - **`justification`** — `justification: HaveGroup+`
 - **`aliases`** — `aliases: AliasItem+`
-- **`writing`** — `writing: "WritingAlias"+`
+- **`writing`** — `writing: "WritingAlias"+` (no `as:` section)
 - **`references`** — `references: ReferenceItem+`
 - **`metadata`** — `metadata: MetadataItem+`
 
@@ -371,11 +375,11 @@ The optional `signifies:` clause is checked with that symbol, definition, and ty
 
 ### Documented items
 
-Used inside `Appendix:` `. documented:`.
+Used directly inside `Appendix:`.
 
 - **`written`** — `WrittenGroup`, heading: label?. Sections: `written: WrittenText+`
 - **`called`** — `CalledGroup`, heading: label?. Sections: `called: CalledText+`, `written?: WrittenText+`
-- **`adjective`** — `AdjectiveGroup`, heading: label?. Sections: `adjective: AdjectiveText+` (required by `Refines:`; `Refines:` `documented:` rejects `called:`; the first text is the primary rendered adjective and later texts are alternatives)
+- **`adjective`** — `AdjectiveGroup`, heading: label?. Sections: `adjective: AdjectiveText+` (required by `Refines:`; `Refines:` rejects `called:`; the first text is the primary rendered adjective and later texts are alternatives)
 - **`description`** — `DescriptionGroup`, heading: label?. Sections: `description: OpenText`
 - **`writing`** — `WritingGroup`, heading: label?. Sections: `writing: MappingWritingTarget`, `as: WritingText+`. It is valid only in a mapping-shaped `Declares:` item; the target must be either that exact placeholder mapping form or the same invocation with placeholders replaced by their ordinary names. For an aliased form such as `X ::= x(i_)`, these targets use the mapping name `x`
 - **`overview`** — `OverviewGroup`, heading: label?. Sections: `overview: OpenText`
@@ -864,7 +868,7 @@ Appendix?: <AppendixItemUnion>+
 ```
 
 The theorem-like head sections (`Axiom:`/`Theorem:`/`Conjecture:`)
-take no argument. A result's name is given in `Appendix:` `. documented:` `. called:`,
+take no argument. A result's name is given in `Appendix:` `. called:`,
 exactly as for the definition items, and renders as the card's title.
 
 ```group

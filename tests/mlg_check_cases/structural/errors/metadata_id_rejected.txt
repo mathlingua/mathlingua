@@ -5,8 +5,7 @@ Rejects an id group within Metadata.
 [\item]
 Declares: x
 Appendix:
-. documented:
-  . called: "item"
+. called: "item"
 . metadata:
   . id: "item"
 == end:input ==

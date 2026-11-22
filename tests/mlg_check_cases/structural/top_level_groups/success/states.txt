@@ -7,8 +7,7 @@ States:
 when: P is \\statement
 that: P
 Appendix:
-. documented:
-  . called: "holds"
+. called: "holds"
 == end:input ==
 == begin:output ==
 == end:output ==

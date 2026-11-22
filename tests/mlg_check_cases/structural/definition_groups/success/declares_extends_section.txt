@@ -5,15 +5,13 @@ Accepts one supertype declaration in an extends section.
 [\base]
 Declares: x
 Appendix:
-. documented:
-  . called: "base"
+. called: "base"
 
 [\child]
 Declares: x
 extends: x is \base
 Appendix:
-. documented:
-  . called: "child"
+. called: "child"
 == end:input ==
 == begin:output ==
 == end:output ==

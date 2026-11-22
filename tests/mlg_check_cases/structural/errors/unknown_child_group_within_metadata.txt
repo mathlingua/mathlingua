@@ -5,8 +5,7 @@ Rejects an unknown child group within Metadata.
 [\set]
 Declares: X
 Appendix:
-. documented:
-  . called: "set"
+. called: "set"
 . metadata:
   . mystery: "value"
 == end:input ==

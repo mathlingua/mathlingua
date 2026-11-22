@@ -4,8 +4,9 @@ Rejects a refined command heading on Declares because refined signatures may onl
 == begin:input ==
 [\(special)::thing]
 Declares: X
-Documented:
-. called: "special thing"
+Appendix:
+. documented:
+  . called: "special thing"
 == end:input ==
 == begin:output ==
 error: Refined command headings may only be used with Refines entries

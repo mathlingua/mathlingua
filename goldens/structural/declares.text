@@ -20,26 +20,27 @@ Enables:
   capability: plus(x_, y_) :=> x + y
   written:
   . "+"
-Documented:
-. [docs.written]
-  written:
-  . "plus"
-Justification:
-. [proof.label]
-  for: (:logic.set.ops.when:)
-  have:
-  . x = x
-  asserting:
-  . x = x
-Aliases:
-. [alias.expr]
-  alias: plus(x_, y_) :=> x + y
-  written:
-  . "+"
-References:
-. $book.plus
-Metadata:
-. version: "1.0"
+Appendix:
+. documented:
+  . [docs.written]
+    written:
+    . "plus"
+. justification:
+  . [proof.label]
+    for: (:logic.set.ops.when:)
+    have:
+    . x = x
+    asserting:
+    . x = x
+. aliases:
+  . [alias.expr]
+    alias: plus(x_, y_) :=> x + y
+    written:
+    . "+"
+. references:
+  . $book.plus
+. metadata:
+  . version: "1.0"
 
 [\structure.connection]
 Declares: T
@@ -47,53 +48,58 @@ Enables:
 . [conn.plus]
   view:
   as: y := X is \bar
-Documented:
-. [docs.called]
-  called:
-  . "addition"
-Justification:
-. [proof.by]
-  for: (:proof.by:)
-  have:
-  . y = y
-  asserting:
-  . y = y
-Aliases:
-. [alias.spec]
-  alias: x_ "in" X :-> x is \element
-Metadata:
-. version: "1.0"
+Appendix:
+. documented:
+  . [docs.called]
+    called:
+    . "addition"
+. justification:
+  . [proof.by]
+    for: (:proof.by:)
+    have:
+    . y = y
+    asserting:
+    . y = y
+. aliases:
+  . [alias.spec]
+    alias: x_ "in" X :-> x is \element
+. metadata:
+  . version: "1.0"
 
 [\structure.writing]
 Declares: plus(x_, y_)
-Documented:
-. [docs.inline.notation]
-  writing: plus(x, y)
-  as: "x? + y?"
-. [docs.mapping.notation]
-  writing: plus(x_, y_)
-  as: "\operatorname{plus}(x?, y?)"
+Appendix:
+. documented:
+  . [docs.inline.notation]
+    writing: plus(x, y)
+    as: "x? + y?"
+  . [docs.mapping.notation]
+    writing: plus(x_, y_)
+    as: "\operatorname{plus}(x?, y?)"
 
 [\structure.overview]
 Declares: O
-Documented:
-. [docs.overview]
-  overview: "Binary operation on X"
+Appendix:
+. documented:
+  . [docs.overview]
+    overview: "Binary operation on X"
 
 [\structure.related]
 Declares: R
-Documented:
-. [docs.related]
-  related:
-  . "group"
-  . "ring"
+Appendix:
+. documented:
+  . [docs.related]
+    related:
+    . "group"
+    . "ring"
 
 [\structure.discoverer]
 Declares: D
-Documented:
-. [docs.discoverer]
-  discoverer:
-  . "Gauss"
+Appendix:
+. documented:
+  . [docs.discoverer]
+    discoverer:
+    . "Gauss"
 
 [\function:on{A}:to{B}]
 Declares: f(x__)
@@ -105,5 +111,6 @@ satisfies:
   . existsUnique: y "in" B
     suchThat:
     . f(x) = y
-Documented:
-. called: "Function on $A?$ to $B?$"
+Appendix:
+. documented:
+  . called: "Function on $A?$ to $B?$"

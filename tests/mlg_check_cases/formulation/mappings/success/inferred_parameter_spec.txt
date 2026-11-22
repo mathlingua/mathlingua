@@ -4,8 +4,9 @@ Accepts a mapping literal whose bare parameter type is inferred from its declare
 == begin:input ==
 [\real]
 Declares: x
-Documented:
-. called: "real"
+Appendix:
+. documented:
+  . called: "real"
 
 Theorem:
 given: f := x_ => x_ is (_ is \real) -> (_ is \real)

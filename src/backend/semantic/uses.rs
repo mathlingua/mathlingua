@@ -135,7 +135,7 @@ mod tests {
     #[test]
     fn ignores_backslashes_that_match_no_signature() {
         let def = "[\\set]\nDeclares: S\nId: \"11111111-1111-4111-8111-111111111111\"\n";
-        let usage = "[\\thing]\nDeclares: X\nDocumented:\n. written: \"x_? \\in X?\"\nId: \"22222222-2222-4222-8222-222222222222\"\n";
+        let usage = "[\\thing]\nDeclares: X\nAppendix:\n. documented:\n  . written: \"x_? \\in X?\"\nId: \"22222222-2222-4222-8222-222222222222\"\n";
         let files = vec![parsed("def.mlg", def), parsed("thm.mlg", usage)];
 
         let locations = collect_definition_locations(&files);

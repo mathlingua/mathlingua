@@ -4,10 +4,11 @@ Accepts one mapping writing entry in a Documented section.
 == begin:input ==
 [\mapping]
 Declares: x(i_)
-Documented:
-. called: "mapping"
-. writing: x(i)
-  as: "x?_{i?}"
+Appendix:
+. documented:
+  . called: "mapping"
+  . writing: x(i)
+    as: "x?_{i?}"
 == end:input ==
 == begin:output ==
 == end:output ==

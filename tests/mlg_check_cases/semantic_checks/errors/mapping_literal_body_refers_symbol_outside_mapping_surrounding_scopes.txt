@@ -4,8 +4,9 @@ Rejects a mapping literal body that refers to a symbol outside the mapping and s
 == begin:input ==
 [\real]
 Declares: r
-Documented:
-. called: "real"
+Appendix:
+. documented:
+  . called: "real"
 
 Theorem:
 given:

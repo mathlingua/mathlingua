@@ -6,8 +6,9 @@ Rejects an unknown child group within Requires.
 Declares: X
 Requires:
 . mystery: X
-Documented:
-. called: "set"
+Appendix:
+. documented:
+  . called: "set"
 == end:input ==
 == begin:output ==
 error: Unexpected requires group `mystery`

@@ -4,18 +4,21 @@ Accepts an expresses clause that supplies one component value in a Realizes item
 == begin:input ==
 [\thing]
 Declares: x
-Documented:
-. called: "thing"
+Appendix:
+. documented:
+  . called: "thing"
 
 [\first]
 Defines: a is \thing
-Documented:
-. called: "first"
+Appendix:
+. documented:
+  . called: "first"
 
 [\second]
 Defines: b is \thing
-Documented:
-. called: "second"
+Appendix:
+. documented:
+  . called: "second"
 
 [\abstract.pair]
 Defines: P ::= (x, y)
@@ -23,8 +26,9 @@ abstractly:
 specifies:
 . x is \thing
 . y is \thing
-Documented:
-. called: "abstract pair"
+Appendix:
+. documented:
+  . called: "abstract pair"
 
 [\pair]
 Realizes: P := \abstract.pair
@@ -32,8 +36,9 @@ specifies:
 . x is \thing
 . y := \second
 expresses: x := \first
-Documented:
-. called: "pair"
+Appendix:
+. documented:
+  . called: "pair"
 == end:input ==
 == begin:output ==
 

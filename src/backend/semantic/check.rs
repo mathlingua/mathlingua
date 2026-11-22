@@ -654,12 +654,13 @@ Id: "22222222-2222-4222-8222-222222222222"
             "mapping.mlg",
             r#"[\real.sequence]
 Declares: X ::= x(i_)
-Documented:
-. called: "real sequence"
-. writing: x(i)
-  as: "x?_{i?}"
-. writing: x(i_)
-  as: "\left\{x?\right\}_{i_?=1}^{\infty}"
+Appendix:
+. documented:
+  . called: "real sequence"
+  . writing: x(i)
+    as: "x?_{i?}"
+  . writing: x(i_)
+    as: "\left\{x?\right\}_{i_?=1}^{\infty}"
 Id: "11111111-1111-4111-8111-111111111111"
 "#,
         )];
@@ -677,10 +678,11 @@ Id: "11111111-1111-4111-8111-111111111111"
                 "not-mapping.mlg",
                 r#"[\thing]
 Declares: X
-Documented:
-. called: "thing"
-. writing: x(i)
-  as: "x?_{i?}"
+Appendix:
+. documented:
+  . called: "thing"
+  . writing: x(i)
+    as: "x?_{i?}"
 Id: "11111111-1111-4111-8111-111111111111"
 "#,
             ),
@@ -688,10 +690,11 @@ Id: "11111111-1111-4111-8111-111111111111"
                 "wrong-form.mlg",
                 r#"[\real.sequence]
 Declares: x(i_)
-Documented:
-. called: "real sequence"
-. writing: x(j)
-  as: "x?_{j?}"
+Appendix:
+. documented:
+  . called: "real sequence"
+  . writing: x(j)
+    as: "x?_{j?}"
 Id: "22222222-2222-4222-8222-222222222222"
 "#,
             ),
@@ -699,10 +702,11 @@ Id: "22222222-2222-4222-8222-222222222222"
                 "defines.mlg",
                 r#"[\sequence]
 Defines: X is \type
-Documented:
-. called: "sequence"
-. writing: x(i)
-  as: "x?_{i?}"
+Appendix:
+. documented:
+  . called: "sequence"
+  . writing: x(i)
+    as: "x?_{i?}"
 Id: "33333333-3333-4333-8333-333333333333"
 "#,
             ),
@@ -710,10 +714,11 @@ Id: "33333333-3333-4333-8333-333333333333"
                 "wrong-placeholder-kind.mlg",
                 r#"[\ordinary.mapping]
 Declares: x(i_)
-Documented:
-. called: "ordinary mapping"
-. writing: x(i__)
-  as: "x?_{i_?}"
+Appendix:
+. documented:
+  . called: "ordinary mapping"
+  . writing: x(i__)
+    as: "x?_{i_?}"
 Id: "44444444-4444-4444-8444-444444444444"
 "#,
             ),
@@ -721,10 +726,11 @@ Id: "44444444-4444-4444-8444-444444444444"
                 "partly-replaced-placeholders.mlg",
                 r#"[\binary.mapping]
 Declares: x(i_, j_)
-Documented:
-. called: "binary mapping"
-. writing: x(i_, j)
-  as: "x?_{i_?,j?}"
+Appendix:
+. documented:
+  . called: "binary mapping"
+  . writing: x(i_, j)
+    as: "x?_{i_?,j?}"
 Id: "55555555-5555-4555-8555-555555555555"
 "#,
             ),
@@ -758,8 +764,9 @@ then:
   suchThat: y = y
 Proof:
 . "Suppose {.reflect(x) = x.}."
-Aliases:
-. alias: reflect(x_) :=> x_
+Appendix:
+. aliases:
+  . alias: reflect(x_) :=> x_
 Id: "11111111-1111-4111-8111-111111111111"
 "#,
         );
@@ -796,8 +803,9 @@ given: x is \\expression
 then: x = x
 Proof:
 . "Suppose {.reflect(x) = x.}."
-Aliases:
-. alias: reflect(x_) :=> missing
+Appendix:
+. aliases:
+  . alias: reflect(x_) :=> missing
 Id: "33333333-3333-4333-8333-333333333333"
 "#,
         );

@@ -6,8 +6,9 @@ Accepts a named Conjecture item with its required then section.
 Conjecture:
 given: x is \\anything
 then: x = x
-Documented:
-. called: "open question"
+Appendix:
+. documented:
+  . called: "open question"
 == end:input ==
 == begin:output ==
 == end:output ==

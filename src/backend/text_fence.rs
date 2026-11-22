@@ -161,7 +161,7 @@ mod tests {
         // must unescape `\"` -> `"` while leaving `\\abstract` intact, so the
         // capability parses as `x_ "in" X :-> \\abstract` rather than choking on a
         // stray quote or a collapsed single-backslash target.
-        let source = "Text: \"intro\n       ```mlg\n       [\\set]\n       Declares: X\n       Requires:\n       . capability: x_ \\\"in\\\" X :-> \\\\abstract\n       Documented:\n       . called: \\\"set\\\"\n       Id: \\\"a0759217-e1f6-412c-982a-0038cd17a3a1\\\"\n       ```\n\"\n";
+        let source = "Text: \"intro\n       ```mlg\n       [\\set]\n       Declares: X\n       Requires:\n       . capability: x_ \\\"in\\\" X :-> \\\\abstract\n       Appendix:\n       . documented:\n         . called: \\\"set\\\"\n       Id: \\\"a0759217-e1f6-412c-982a-0038cd17a3a1\\\"\n       ```\n\"\n";
         assert!(
             fence_error_messages(source).is_empty(),
             "escaped-quote/builtin fence should check cleanly, got: {:?}",
@@ -186,7 +186,7 @@ mod tests {
     fn accepts_syntactically_valid_fenced_mathlingua() {
         // The example references `\function:on:to`, which is not defined anywhere;
         // that is a semantic concern and must not be reported here.
-        let source = "Text: \"Example:\n```mlg\n[\\function:on{A}:to{B}]\nDeclares: f(x__) ::= y_\nDocumented:\n. called: \\\"function\\\"\n```\n\"\n";
+        let source = "Text: \"Example:\n```mlg\n[\\function:on{A}:to{B}]\nDeclares: f(x__) ::= y_\nAppendix:\n. documented:\n  . called: \\\"function\\\"\n```\n\"\n";
         assert!(
             fence_error_messages(source).is_empty(),
             "valid fenced code should produce no diagnostics"

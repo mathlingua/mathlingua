@@ -6,8 +6,9 @@ Accepts a States item with its required that section.
 States:
 when: P is \\statement
 that: P
-Documented:
-. called: "holds"
+Appendix:
+. documented:
+  . called: "holds"
 == end:input ==
 == begin:output ==
 == end:output ==

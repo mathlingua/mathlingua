@@ -106,7 +106,7 @@ The proto parser does not know what kind of heading this is. The structural pars
 ### Line labels on arguments
 
 A `. ` argument line (for a single-line formulation or text literal, including a
-`References:` resource item) may begin with a `[label]: ` prefix:
+`references:` resource item inside `Appendix:`) may begin with a `[label]: ` prefix:
 
 ```text
 . [label]: <argument content>
@@ -289,40 +289,55 @@ An empty document is supported by the current implementation because `Document.i
 - **`SubsectionTitle`** — `SubsectionTitleGroup`, heading: none. Sections: `SubsectionTitle: OpenText`
 - **`Text`** — `TextGroup`, heading: none. Sections: `Text: OpenText`
 - **`Writing`** — `TopLevelWritingGroup`, heading: none. Sections: `Writing: WritingAlias+` (each alias is a double-quoted string of the form `"name :~> body"`; the LHS must be a `Name` and the body is raw LaTeX)
-- **`Disambiguates`** — `DisambiguatesGroup`, heading: operator/function form. Sections: `Disambiguates:`, zero or more ordered `when: Clause+`/`to: Expression` branches, `else?: Expression`, `Documented?`, `Justification?`, `Aliases?`, `Writing?: "WritingAlias"+`, `References?`, `Metadata?`
-- **`Declares`** — `DeclaresGroup`, heading: command. Sections: `Declares: DeclaresTarget [via FormOrDeclaration]`, `using?: DeclarationStatement+`, `when?: Clause+`, `extends?: ExtendsItem+`, `specifies?: IsOrViaItem+`, `satisfies?: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `Writing?: "WritingAlias"+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`. `DeclaresTarget` is tried as a `FormOrDeclaration` first, then as a `DeclarationStatement` whose `is` relation may name a refined command, allowing typed or value-bearing targets such as `X := value is \set`. That relation is what the definition extends (see `language.md`), and an `is` relation may be followed by `via <FormOrDeclaration>`, stored on the section rather than the target. An `ExtendsItem` is the same `DeclarationStatement [via FormOrDeclaration]` pair; the `extends?:` section spells out the same clauses and exists to allow more than one, so a target that states a relation and an `extends?:` section are mutually exclusive. `extends_clauses` in `structural::ast` normalizes the two spellings into one borrowed list that every consumer works from
-- **`Defines`** — `DefinesGroup`, heading: command. Sections: `Defines: DeclarationStatement`, `abstractly?` (marker, no arguments), `using?: DeclarationStatement+`, `when?: Clause+`, `specifies?: IsOrViaItem+`, `expresses?: Clause`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `Writing?: "WritingAlias"+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`. `abstractly:` is stored as `DefinesGroup::abstractly`; it marks the `specifies:` items that state a specification without a value as abstract, for a `RealizesGroup` to supply
-- **`Realizes`** — `RealizesGroup`, heading: command. Sections: `Realizes: DeclarationStatement`, `using?: DeclarationStatement+`, `when?: Clause+`, `specifies?: IsOrViaItem+`, `expresses?: Clause`, and the same support sections as `Defines`. The target names the realized declaration with `:=` (`Realizes: Nb := \naturals`), which must be a `Defines` marked `abstractly:`; `specifies:` must supply every symbol that declaration left abstract
-- **`Refines`** — `RefinesGroup`, heading: refined command or refined spec-infix command (for example, `[A \:(nonempty)::subset:/ B]`). Sections: `Refines: RefinedDeclarationStatement`, `implicitly?` (marker, no arguments), `explicitly?` (marker, no arguments), `using?: DeclarationStatement+`, `when?: Clause+`, `specifies?: RefinedDeclarationStatement`, `satisfies?: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `Writing?: "WritingAlias"+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`. The `Refines:` target may repeat the base `Declares:` target or omit its expansion and then its subject structure down to a bare name; every included shape must match the base. `implicitly:`/`explicitly:` are optional, mutually exclusive, zero-argument marker sections stored as an `Option<RefinementKind>` (`Implicit`/`Explicit`); see the validation rules under `Refines` refinement markers in `language.md`
-- **`States`** — `StatesGroup`, heading: command. Sections: `States:` (marker, no arguments), `using?: DeclarationStatement+`, `when?: Clause+`, `that: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `Writing?: "WritingAlias"+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
-- **`Axiom`** — `AxiomGroup`, heading: command?. Sections: `Axiom:`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `Writing?: "WritingAlias"+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
-- **`Theorem`** — `TheoremGroup`, heading: command?. Sections: `Theorem:`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Documented?: DocumentedItem+`, `Proof?: OpenText`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `Writing?: "WritingAlias"+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
-- **`Example`** — `ExampleGroup`, heading: command?. Sections: `Example: ExampleItem*`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `Writing?: "WritingAlias"+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`. Each `ExampleItem` is quoted `OpenText`, a declaration or expression, or a nested clause group; items retain their source order
-- **`Conjecture`** — `ConjectureGroup`, heading: command?. Sections: `Conjecture:`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `Writing?: "WritingAlias"+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`. It records a theorem-shaped statement that is not claimed to have a proof
+- **`Disambiguates`** — `DisambiguatesGroup`, heading: operator/function form. Sections: `Disambiguates:`, zero or more ordered `when: Clause+`/`to: Expression` branches, `else?: Expression`, `Appendix?: AppendixItem+`
+- **`Declares`** — `DeclaresGroup`, heading: command. Sections: `Declares: DeclaresTarget [via FormOrDeclaration]`, `using?: DeclarationStatement+`, `when?: Clause+`, `extends?: ExtendsItem+`, `specifies?: IsOrViaItem+`, `satisfies?: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Appendix?: AppendixItem+`. `DeclaresTarget` is tried as a `FormOrDeclaration` first, then as a `DeclarationStatement` whose `is` relation may name a refined command, allowing typed or value-bearing targets such as `X := value is \set`. That relation is what the definition extends (see `language.md`), and an `is` relation may be followed by `via <FormOrDeclaration>`, stored on the section rather than the target. An `ExtendsItem` is the same `DeclarationStatement [via FormOrDeclaration]` pair; the `extends?:` section spells out the same clauses and exists to allow more than one, so a target that states a relation and an `extends?:` section are mutually exclusive. `extends_clauses` in `structural::ast` normalizes the two spellings into one borrowed list that every consumer works from
+- **`Defines`** — `DefinesGroup`, heading: command. Sections: `Defines: DeclarationStatement`, `abstractly?` (marker, no arguments), `using?: DeclarationStatement+`, `when?: Clause+`, `specifies?: IsOrViaItem+`, `expresses?: Clause`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Appendix?: AppendixItem+`. `abstractly:` is stored as `DefinesGroup::abstractly`; it marks the `specifies:` items that state a specification without a value as abstract, for a `RealizesGroup` to supply
+- **`Realizes`** — `RealizesGroup`, heading: command. Sections: `Realizes: DeclarationStatement`, `using?: DeclarationStatement+`, `when?: Clause+`, `specifies?: IsOrViaItem+`, `expresses?: Clause`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Appendix?: AppendixItem+`. The target names the realized declaration with `:=` (`Realizes: Nb := \naturals`), which must be a `Defines` marked `abstractly:`; `specifies:` must supply every symbol that declaration left abstract
+- **`Refines`** — `RefinesGroup`, heading: refined command or refined spec-infix command (for example, `[A \:(nonempty)::subset:/ B]`). Sections: `Refines: RefinedDeclarationStatement`, `implicitly?` (marker, no arguments), `explicitly?` (marker, no arguments), `using?: DeclarationStatement+`, `when?: Clause+`, `specifies?: RefinedDeclarationStatement`, `satisfies?: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Appendix?: AppendixItem+`. The `Refines:` target may repeat the base `Declares:` target or omit its expansion and then its subject structure down to a bare name; every included shape must match the base. `implicitly:`/`explicitly:` are optional, mutually exclusive, zero-argument marker sections stored as an `Option<RefinementKind>` (`Implicit`/`Explicit`); see the validation rules under `Refines` refinement markers in `language.md`
+- **`States`** — `StatesGroup`, heading: command. Sections: `States:` (marker, no arguments), `using?: DeclarationStatement+`, `when?: Clause+`, `that: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Appendix?: AppendixItem+`
+- **`Axiom`** — `AxiomGroup`, heading: command?. Sections: `Axiom:`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Appendix?: AppendixItem+`
+- **`Theorem`** — `TheoremGroup`, heading: command?. Sections: `Theorem:`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Proof?: OpenText`, `Appendix?: AppendixItem+`
+- **`Example`** — `ExampleGroup`, heading: command?. Sections: `Example: ExampleItem*`, `Appendix?: AppendixItem+` (accepts `justification:`, `aliases:`, `writing:`, `references:`, `metadata:`). Each `ExampleItem` is quoted `OpenText`, a declaration or expression, or a nested clause group; items retain their source order
+- **`Conjecture`** — `ConjectureGroup`, heading: command?. Sections: `Conjecture:`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Appendix?: AppendixItem+`. It records a theorem-shaped statement that is not claimed to have a proof
 - **`Person`** — `PersonGroup`, heading: author. Sections: `Person: OpenText+`, `biography?: OpenText`
 - **`Resource`** — `ResourceGroup`, heading: resource. Sections: `Resource: ResourceItem+`
 - **`Specify`** — `SpecifyGroup`, heading: none. Sections: `Specify: SpecifyItem+`
-- **`Relation`** — `RelationGroup`, heading: none. Sections: `Relation: OpenText*`, `using?: DeclarationStatement+`, either `between: RelationSubject` / `and: RelationSubject` (undirected) or `from: RelationSubject` / `to: RelationSubject` (directed), `when?: Clause+`, `specifies?: RelationSpecifies`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `Writing?: "WritingAlias"+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
-- **`Equivalent`** — `EquivalentGroup`, heading: command. Sections: `Equivalent:` (marker, no arguments), `using?: DeclarationStatement+`, `when?: Clause+`, `to: Expression+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `References?: ResourceHeader+`
-- **`Topic`** — `TopicGroup`, heading: topic. Sections: `Topic: OpenText*`, `within?: OpenText`, `Related?: TopicRelatedItem+`, `Documented?: CalledDocumentedItem+`
+- **`Relation`** — `RelationGroup`, heading: none. Sections: `Relation: OpenText*`, `using?: DeclarationStatement+`, either `between: RelationSubject` / `and: RelationSubject` (undirected) or `from: RelationSubject` / `to: RelationSubject` (directed), `when?: Clause+`, `specifies?: RelationSpecifies`, `Appendix?: AppendixItem+`
+- **`Equivalent`** — `EquivalentGroup`, heading: command. Sections: `Equivalent:` (marker, no arguments), `using?: DeclarationStatement+`, `when?: Clause+`, `to: Expression+`, `Appendix?: AppendixItem+` (accepts `documented:`, `justification:`, `references:`)
+- **`Topic`** — `TopicGroup`, heading: topic. Sections: `Topic: OpenText*`, `within?: OpenText`, `Related?: TopicRelatedItem+`, `Appendix?: AppendixItem+` (accepts `documented:` with `called:` only)
 
 Notes:
 
 - `command?` means the heading is optional, but if present it must parse as a formulation command header
 - `OpenText*` means the section itself is required but may contain zero text entries
-- **Every** top-level group additionally accepts a final optional `Id?: OpenText`
-  section (a quoted UUID). It is validated for placement and uniqueness and then
-  discarded — no AST node stores it — so it is omitted from the per-group rows
-  above rather than repeated on each. `Refines:` documentation is special-cased:
-  its `Documented:` rejects `called:` and instead requires `adjective:`.
+- **Every** top-level group accepts a final optional `Id?: OpenText` section (a
+  quoted UUID, validated for placement and uniqueness and not stored in the
+  structural AST). Items with auxiliary sections accept an optional `Appendix:`
+  section immediately before `Id:`, containing lowercase sub-groups
+  (`documented:`, `justification:`, `aliases:`, `writing:`, `references:`,
+  `metadata:`, each at most once, restricted to the subset allowed for that
+  group kind). `Refines:` documentation is special-cased: its `documented:`
+  rejects `called:` and instead requires `adjective:`. `Requires:`, `Enables:`,
+  `Proof:`, and `Id:` remain top-level sections outside `Appendix:`.
 
 ## Nested Group Categories
 
 The following groups are used inside top-level sections.
 
+### Appendix items
+
+Used inside `Appendix:`. Each entry is a nested group with a lowercase label, appearing at most once per `Appendix:`:
+
+- **`documented`** — `documented: DocumentedItem+`
+- **`justification`** — `justification: HaveGroup+`
+- **`aliases`** — `aliases: AliasItem+`
+- **`writing`** — `writing: "WritingAlias"+`
+- **`references`** — `references: ReferenceItem+`
+- **`metadata`** — `metadata: MetadataItem+`
+
 ### Alias items
 
-Used inside `Aliases:`.
+Used inside `Appendix:` `. aliases:`.
 
 - **`alias`** — `AliasGroup`, heading: label?. Sections: `alias: AliasKind`, `written?: WrittenText+`
 
@@ -356,11 +371,11 @@ The optional `signifies:` clause is checked with that symbol, definition, and ty
 
 ### Documented items
 
-Used inside `Documented:`.
+Used inside `Appendix:` `. documented:`.
 
 - **`written`** — `WrittenGroup`, heading: label?. Sections: `written: WrittenText+`
 - **`called`** — `CalledGroup`, heading: label?. Sections: `called: CalledText+`, `written?: WrittenText+`
-- **`adjective`** — `AdjectiveGroup`, heading: label?. Sections: `adjective: AdjectiveText+` (required by `Refines:`; `Refines:` `Documented:` rejects `called:`; the first text is the primary rendered adjective and later texts are alternatives)
+- **`adjective`** — `AdjectiveGroup`, heading: label?. Sections: `adjective: AdjectiveText+` (required by `Refines:`; `Refines:` `documented:` rejects `called:`; the first text is the primary rendered adjective and later texts are alternatives)
 - **`description`** — `DescriptionGroup`, heading: label?. Sections: `description: OpenText`
 - **`writing`** — `WritingGroup`, heading: label?. Sections: `writing: MappingWritingTarget`, `as: WritingText+`. It is valid only in a mapping-shaped `Declares:` item; the target must be either that exact placeholder mapping form or the same invocation with placeholders replaced by their ordinary names. For an aliased form such as `X ::= x(i_)`, these targets use the mapping name `x`
 - **`overview`** — `OverviewGroup`, heading: label?. Sections: `overview: OpenText`
@@ -369,7 +384,7 @@ Used inside `Documented:`.
 
 ### Justification items
 
-Used inside `Justification:` (which appears after `Documented:`). Each item is a
+Used inside `Appendix:` `. justification:`. Each item is a
 `HaveGroup` — a `for?:`/`have:`/`asserting?:`/`by?:`/`because?:` group targeting
 one or more label references via `for: (:label:)` or a `[label]` group heading. Any
 group (`[label]`), single-line `. ` argument (`. [label]: ...`), or grouped
@@ -381,7 +396,7 @@ The `because:` section accepts text (`"..."`) or clauses.
 
 ### Metadata items
 
-Used inside `Metadata:`.
+Used inside `Appendix:` `. metadata:`.
 
 - **`version`** — `VersionGroup`, heading: none. Sections: `version: OpenText`
 
@@ -402,19 +417,19 @@ parsed as formulation type syntax and participates in semantic checking.
 
 Used inside top-level `Resource:`.
 
-`References:` entries name these resources with `$` headers. Both item-wide
+`Appendix:` `. references:` entries name these resources with `$` headers. Both item-wide
 `$book.chapter` (or quoted `"$book.chapter"`) entries and label-specific
 `for: (:label:) / entry: $book.chapter` groups are accepted, where `for:` takes
 one or more label references (`(:label:)`) and `entry:` takes one or more
 resource headers (`$book.chapter`). Duplicate reference labels within the same
-`References:` section and references to undefined labels are rejected. A PDF
+`references:` entry and references to undefined labels are rejected. A PDF
 resource reference may append `:page{n}`. Its `offset:` is the physical PDF page
 corresponding to logical page 1, so the linked physical page is
 `n + offset - 1`. The viewer displays a resolved reference as the resource's
 title followed by its author entries in parentheses. A resource URL becomes the
 link target; for `:page{n}` on a PDF URL, the calculated physical page is added
-as the PDF fragment. `References:` is treated as supporting content and is
-collapsed by default with `Documented:` and `Id:`.
+as the PDF fragment. `Appendix:` is treated as supporting content and is
+collapsed by default in the viewer.
 
 - **`title`** — `ResourceTitleGroup`, heading: none. Sections: `title: OpenText`
 - **`author`** — `ResourceAuthorGroup`, heading: none. Sections: `author: OpenText+`
@@ -737,12 +752,7 @@ Disambiguates:
 (when: <ClauseUnion>+
  to: <Expression>)*
 else?: <Expression>
-Documented?: <DocumentedItemUnion>+
-Justification?: <HaveGroup>+
-Aliases?: <AliasItemUnion>+
-Writing?: "<WritingAlias>"+
-References?: <ResourceHeader>+
-Metadata?: <MetadataItemUnion>+
+Appendix?: <AppendixItemUnion>+
 ```
 
 `Disambiguates:` requires at least one `when:`/`to:` branch or an `else:`.
@@ -759,12 +769,7 @@ specifies?: <IsOrViaItemUnion>+
 satisfies?: <ClauseUnion>+
 Requires?: <RequiresItemUnion>+
 Enables?: <EnablesItemUnion>+
-Documented?: <DocumentedItemUnion>+
-Justification?: <HaveGroup>+
-Aliases?: <AliasItemUnion>+
-Writing?: "<WritingAlias>"+
-References?: <ResourceHeader>+
-Metadata?: <MetadataItemUnion>+
+Appendix?: <AppendixItemUnion>+
 ```
 
 ```group
@@ -777,12 +782,7 @@ specifies?: <IsOrViaItemUnion>+
 expresses?: <ClauseUnion>
 Requires?: <RequiresItemUnion>+
 Enables?: <EnablesItemUnion>+
-Documented?: <DocumentedItemUnion>+
-Justification?: <HaveGroup>+
-Aliases?: <AliasItemUnion>+
-Writing?: "<WritingAlias>"+
-References?: <ResourceHeader>+
-Metadata?: <MetadataItemUnion>+
+Appendix?: <AppendixItemUnion>+
 ```
 
 ```group
@@ -794,12 +794,7 @@ specifies?: <IsOrViaItemUnion>+
 expresses?: <ClauseUnion>
 Requires?: <RequiresItemUnion>+
 Enables?: <EnablesItemUnion>+
-Documented?: <DocumentedItemUnion>+
-Justification?: <HaveGroup>+
-Aliases?: <AliasItemUnion>+
-Writing?: "<WritingAlias>"+
-References?: <ResourceHeader>+
-Metadata?: <MetadataItemUnion>+
+Appendix?: <AppendixItemUnion>+
 ```
 
 ```group
@@ -813,12 +808,7 @@ specifies?: <RefinedDeclarationStatement>
 satisfies?: <ClauseUnion>+
 Requires?: <RequiresItemUnion>+
 Enables?: <EnablesItemUnion>+
-Documented?: <DocumentedItemUnion>+
-Justification?: <HaveGroup>+
-Aliases?: <AliasItemUnion>+
-Writing?: "<WritingAlias>"+
-References?: <ResourceHeader>+
-Metadata?: <MetadataItemUnion>+
+Appendix?: <AppendixItemUnion>+
 ```
 
 ```group
@@ -829,12 +819,7 @@ when?: <ClauseUnion>+
 that: <ClauseUnion>+
 Requires?: <RequiresItemUnion>+
 Enables?: <EnablesItemUnion>+
-Documented?: <DocumentedItemUnion>+
-Justification?: <HaveGroup>+
-Aliases?: <AliasItemUnion>+
-Writing?: "<WritingAlias>"+
-References?: <ResourceHeader>+
-Metadata?: <MetadataItemUnion>+
+Appendix?: <AppendixItemUnion>+
 ```
 
 ```group
@@ -844,12 +829,7 @@ given?: <RefinedDeclarationStatement>+
 where?: <ClauseUnion>+
 then: <ClauseUnion>+
 iff?: <ClauseUnion>+
-Documented?: <DocumentedItemUnion>+
-Justification?: <HaveGroup>+
-Aliases?: <AliasItemUnion>+
-Writing?: "<WritingAlias>"+
-References?: <ResourceHeader>+
-Metadata?: <MetadataItemUnion>+
+Appendix?: <AppendixItemUnion>+
 ```
 
 ```group
@@ -859,23 +839,14 @@ given?: <RefinedDeclarationStatement>+
 where?: <ClauseUnion>+
 then: <ClauseUnion>+
 iff?: <ClauseUnion>+
-Documented?: <DocumentedItemUnion>+
 Proof?: <OpenText>
-Justification?: <HaveGroup>+
-Aliases?: <AliasItemUnion>+
-Writing?: "<WritingAlias>"+
-References?: <ResourceHeader>+
-Metadata?: <MetadataItemUnion>+
+Appendix?: <AppendixItemUnion>+
 ```
 
 ```group
 [CommandHeader]?
 Example: <ExampleItemUnion>*
-Justification?: <HaveGroup>+
-Aliases?: <AliasItemUnion>+
-Writing?: "<WritingAlias>"+
-References?: <ResourceHeader>+
-Metadata?: <MetadataItemUnion>+
+Appendix?: <AppendixItemUnion>+
 ```
 
 ```union
@@ -889,17 +860,12 @@ given?: <RefinedDeclarationStatement>+
 where?: <ClauseUnion>+
 then: <ClauseUnion>+
 iff?: <ClauseUnion>+
-Documented?: <DocumentedItemUnion>+
-Justification?: <HaveGroup>+
-Aliases?: <AliasItemUnion>+
-Writing?: "<WritingAlias>"+
-References?: <ResourceHeader>+
-Metadata?: <MetadataItemUnion>+
+Appendix?: <AppendixItemUnion>+
 ```
 
 The theorem-like head sections (`Axiom:`/`Theorem:`/`Conjecture:`)
-take no argument. A result's name is given in `Documented:` `called:`, exactly as
-for the definition items, and renders as the card's title.
+take no argument. A result's name is given in `Appendix:` `. documented:` `. called:`,
+exactly as for the definition items, and renders as the card's title.
 
 ```group
 [AuthorHeader]
@@ -931,12 +897,7 @@ between: <RelationSubject>
 and: <RelationSubject>
 when?: <ClauseUnion>+
 specifies?: <RelationSpecifies>
-Documented?: <DocumentedItemUnion>+
-Justification?: <HaveGroup>+
-Aliases?: <AliasItemUnion>+
-Writing?: "<WritingAlias>"+
-References?: <ResourceHeader>+
-Metadata?: <MetadataItemUnion>+
+Appendix?: <AppendixItemUnion>+
 ```
 
 or, for a directed relationship:
@@ -948,12 +909,7 @@ from: <RelationSubject>
 to: <RelationSubject>
 when?: <ClauseUnion>+
 specifies?: <RelationSpecifies>
-Documented?: <DocumentedItemUnion>+
-Justification?: <HaveGroup>+
-Aliases?: <AliasItemUnion>+
-Writing?: "<WritingAlias>"+
-References?: <ResourceHeader>+
-Metadata?: <MetadataItemUnion>+
+Appendix?: <AppendixItemUnion>+
 ```
 
 A top-level `Relation:` states either an undirected relationship between the
@@ -978,9 +934,7 @@ Equivalent:
 using?: <DeclarationStatement>+
 when?: <ClauseUnion>+
 to: <Expression>+
-Documented?: <DocumentedItemUnion>+
-Justification?: <HaveGroup>+
-References?: <ResourceHeader>+
+Appendix?: <AppendixItemUnion>+
 ```
 
 A top-level `Equivalent:` declares that the `\command`s listed under `to:` are
@@ -1008,7 +962,7 @@ provides likewise resolves on a value typed as any member or the header.
 Topic: <OpenText>*
 within?: <OpenText>
 Related?: <TopicRelatedItem>+
-Documented?: <CalledDocumentedItem>+
+Appendix?: <AppendixItemUnion>+
 ```
 
 ```group

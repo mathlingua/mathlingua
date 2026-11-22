@@ -4,8 +4,9 @@ Rejects a malformed formulation in the Defines target.
 == begin:input ==
 [\bad]
 Defines: x := (
-Documented:
-. called: "bad"
+Appendix:
+. documented:
+  . called: "bad"
 == end:input ==
 == begin:output ==
 error: Invalid Defines formulation: unexpected end of input; expected `(.`, `(`, `*`, `+`, `-`, `/` or 11 more

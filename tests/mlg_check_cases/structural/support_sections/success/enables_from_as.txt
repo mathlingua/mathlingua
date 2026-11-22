@@ -7,8 +7,9 @@ Declares: P
 Enables:
 . from: Q ::= {(p_, q_) : ...}
   as: p_ := q_
-Documented:
-. called: "pair"
+Appendix:
+. documented:
+  . called: "pair"
 == end:input ==
 == begin:output ==
 == end:output ==

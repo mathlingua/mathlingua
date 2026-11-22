@@ -4,8 +4,9 @@ Rejects an `is` specification in a result clause, where the non-binding `is?` pr
 == begin:input ==
 [\thing]
 Declares: x
-Documented:
-. called: "thing"
+Appendix:
+. documented:
+  . called: "thing"
 
 Theorem:
 given: x is \thing

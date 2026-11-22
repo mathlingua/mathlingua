@@ -4,16 +4,18 @@
 [\left.identity:in{M}]
 Declares: e
 when: M is \magma
-Documented:
-. called: "left identity in $M?$"
+Appendix:
+. documented:
+  . called: "left identity in $M?$"
 Id: "fadd40a3-bcdd-48e1-a884-3daa2350930d"
 
 
 [\right.identity:in{M}]
 Declares: e
 when: M is \magma
-Documented:
-. called: "right identity in $M?$"
+Appendix:
+. documented:
+  . called: "right identity in $M?$"
 Id: "30e3180b-c8e2-4964-944b-693b83a682b8"
 
 
@@ -25,8 +27,9 @@ when: M is \magma
 to:
 . \left.identity:in{M}
 . \right.identity:in{M}
-Documented:
-. called: "identity in $M?$"
+Appendix:
+. documented:
+  . called: "identity in $M?$"
 Id: "5d6aee8a-a36d-4873-8849-42a254e85305"
 
 
@@ -36,8 +39,9 @@ Relation:
 between: G is \group
 and: M is \magma
 specifies: "Every group is a magma under the same operation."
-Documented:
-. called: "a group underlies a magma"
+Appendix:
+. documented:
+  . called: "a group underlies a magma"
 Id: "ff71ef02-ec19-4e54-8dc8-4dd4f54ecfa2"
 
 
@@ -60,8 +64,9 @@ Id: "8c67f45a-2473-4e99-8d86-e27ca89b0fd4"
 -- `Topic` names documentation subject matter.
 [#algebra]
 Topic: "The study of operations on sets."
-Documented:
-. called: "Algebra"
+Appendix:
+. documented:
+  . called: "Algebra"
 Id: "cd54e9f9-3233-4381-a49c-81151fb7f0fd"
 
 
@@ -72,8 +77,9 @@ Related:
 . to: "#algebra"
   . "\group"
   specifies: "Group theory is the part of algebra about groups."
-Documented:
-. called: "Group Theory"
+Appendix:
+. documented:
+  . called: "Group Theory"
 Id: "d38c98a5-6f04-49a0-8009-44bb6e34db82"
 
 

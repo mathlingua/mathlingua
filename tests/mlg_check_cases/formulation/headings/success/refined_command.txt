@@ -4,14 +4,16 @@ Accepts a refined command heading introduced by Refines.
 == begin:input ==
 [\thing]
 Declares: x
-Documented:
-. called: "thing"
+Appendix:
+. documented:
+  . called: "thing"
 
 [\(special)::thing]
 Refines: x
 satisfies: x is \thing
-Documented:
-. adjective: "special"
+Appendix:
+. documented:
+  . adjective: "special"
 == end:input ==
 == begin:output ==
 == end:output ==

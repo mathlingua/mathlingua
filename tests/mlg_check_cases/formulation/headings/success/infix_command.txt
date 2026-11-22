@@ -5,8 +5,9 @@ Accepts an infix-command heading and a matching infix-command expression.
 [A \.pair./ B]
 Defines: x is \\anything
 when: A, B is \\anything
-Documented:
-. called: "pair"
+Appendix:
+. documented:
+  . called: "pair"
 
 Theorem:
 given: a, b is \\anything

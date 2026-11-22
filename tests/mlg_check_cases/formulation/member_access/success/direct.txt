@@ -6,8 +6,9 @@ Accepts direct member access supplied by a capability on the owner's nominal typ
 Declares: X
 Requires:
 . capability: x_ "in" X :-> \\abstract
-Documented:
-. called: "set"
+Appendix:
+. documented:
+  . called: "set"
 
 [\element:of{X}]
 Declares: x "in" X
@@ -15,8 +16,9 @@ when: X is \set
 Enables:
 . capability: x.self :=> x
   written: "x?"
-Documented:
-. called: "element"
+Appendix:
+. documented:
+  . called: "element"
 
 Theorem:
 given:

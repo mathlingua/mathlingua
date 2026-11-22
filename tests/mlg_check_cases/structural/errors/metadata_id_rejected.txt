@@ -4,10 +4,11 @@ Rejects an id group within Metadata.
 == begin:input ==
 [\item]
 Declares: x
-Documented:
-. called: "item"
-Metadata:
-. id: "item"
+Appendix:
+. documented:
+  . called: "item"
+. metadata:
+  . id: "item"
 == end:input ==
 == begin:output ==
 error: Unexpected metadata group `id`

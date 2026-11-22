@@ -6,8 +6,9 @@ Rejects a coercion expression whose value cannot be coerced as the command type 
 Declares: X
 Requires:
 . capability: x_ "in" X :-> \\abstract
-Documented:
-. called: "set"
+Appendix:
+. documented:
+  . called: "set"
 
 Theorem:
 given: n is \\expression

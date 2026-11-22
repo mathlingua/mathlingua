@@ -5,8 +5,9 @@ Rejects a second consecutive group heading before any sections.
 [\first]
 [\second]
 Declares: X
-Documented:
-. called: "first"
+Appendix:
+. documented:
+  . called: "first"
 == end:input ==
 == begin:output ==
 error: Unexpected header: [\second]

@@ -4,8 +4,9 @@ Rejects declaring the same numeric-literal category more than once in a collecti
 == begin:input ==
 [\natural]
 Declares: n
-Documented:
-. called: "natural"
+Appendix:
+. documented:
+  . called: "natural"
 
 Specify:
 . positiveInt:

@@ -2586,15 +2586,7 @@ pub(in crate::frontend::structural::parser) fn parse_example(
         "Example",
         &group.sections,
         tracker,
-        &[
-            "Example",
-            "Justification?",
-            "Aliases?",
-            "Writing?",
-            "References?",
-            "Metadata?",
-            "Id?",
-        ],
+        &["Example", "Appendix?", "Id?"],
     )?;
 
     let mut arguments = Vec::new();
@@ -2708,33 +2700,22 @@ pub(in crate::frontend::structural::parser) fn parse_example(
         }
     }
 
+    let appendix = parse_appendix(
+        sections.get("Appendix").copied(),
+        AppendixSpec::EXAMPLE,
+        tracker,
+    );
+
     Some(ExampleGroup {
         heading,
         example: ExampleSection {
             arguments: arguments.into(),
         },
-        justification: sections.get("Justification").copied().and_then(|section| {
-            parse_required_groups(
-                section,
-                "Justification",
-                tracker,
-                parse_justification_have_group,
-            )
-            .map(|arguments| JustificationSection { arguments })
-        }),
-        aliases: sections.get("Aliases").copied().and_then(|section| {
-            parse_required_groups(section, "Aliases", tracker, parse_alias_item_group)
-                .map(|arguments| AliasesSection { arguments })
-        }),
-        writing: parse_optional_item_writing(&sections, tracker),
-        references: sections.get("References").copied().and_then(|section| {
-            parse_required_resource_references(section, tracker)
-                .map(|arguments| ReferencesSection { arguments })
-        }),
-        metadata: sections.get("Metadata").copied().and_then(|section| {
-            parse_required_groups(section, "Metadata", tracker, parse_metadata_item_group)
-                .map(|arguments| MetadataSection { arguments })
-        }),
+        justification: appendix.justification,
+        aliases: appendix.aliases,
+        writing: appendix.writing,
+        references: appendix.references,
+        metadata: appendix.metadata,
     })
 }
 
@@ -2923,47 +2904,24 @@ pub(in crate::frontend::structural::parser) fn parse_disambiguates(
         "Disambiguates",
         &group.sections[index..],
         tracker,
-        &[
-            "Documented?",
-            "Justification?",
-            "Aliases?",
-            "Writing?",
-            "References?",
-            "Metadata?",
-            "Id?",
-        ],
+        &["Appendix?", "Id?"],
     )?;
+    let appendix = parse_appendix(
+        trailing.get("Appendix").copied(),
+        AppendixSpec::FULL,
+        tracker,
+    );
 
     Some(DisambiguatesGroup {
         heading,
         branches,
         else_,
-        justification: trailing.get("Justification").copied().and_then(|section| {
-            parse_required_groups(
-                section,
-                "Justification",
-                tracker,
-                parse_justification_have_group,
-            )
-            .map(|arguments| JustificationSection { arguments })
-        }),
-        documented: trailing.get("Documented").copied().and_then(|section| {
-            parse_required_groups(section, "Documented", tracker, parse_documented_item_group)
-                .map(|arguments| DocumentedSection { arguments })
-        }),
-        aliases: trailing.get("Aliases").copied().and_then(|section| {
-            parse_required_groups(section, "Aliases", tracker, parse_alias_item_group)
-                .map(|arguments| AliasesSection { arguments })
-        }),
-        writing: parse_optional_item_writing(&trailing, tracker),
-        references: trailing.get("References").copied().and_then(|section| {
-            parse_required_resource_references(section, tracker)
-                .map(|arguments| ReferencesSection { arguments })
-        }),
-        metadata: trailing.get("Metadata").copied().and_then(|section| {
-            parse_required_groups(section, "Metadata", tracker, parse_metadata_item_group)
-                .map(|arguments| MetadataSection { arguments })
-        }),
+        justification: appendix.justification,
+        documented: appendix.documented,
+        aliases: appendix.aliases,
+        writing: appendix.writing,
+        references: appendix.references,
+        metadata: appendix.metadata,
     })
 }
 
@@ -2991,12 +2949,7 @@ pub(in crate::frontend::structural::parser) fn parse_declares(
             "satisfies?",
             "Requires?",
             "Enables?",
-            "Documented?",
-            "Justification?",
-            "Aliases?",
-            "Writing?",
-            "References?",
-            "Metadata?",
+            "Appendix?",
             "Id?",
         ],
     )?;
@@ -3021,6 +2974,11 @@ pub(in crate::frontend::structural::parser) fn parse_declares(
         parse_required_formulations(section, "extends", tracker, parse_extends_item)
             .map(|arguments| ExtendsSection { arguments })
     });
+    let appendix = parse_appendix(
+        sections.get("Appendix").copied(),
+        AppendixSpec::FULL,
+        tracker,
+    );
 
     Some(DeclaresGroup {
         heading,
@@ -3050,32 +3008,12 @@ pub(in crate::frontend::structural::parser) fn parse_declares(
             parse_required_groups(section, "Enables", tracker, parse_enables_item_group)
                 .map(|arguments| EnablesSection { arguments })
         }),
-        justification: sections.get("Justification").copied().and_then(|section| {
-            parse_required_groups(
-                section,
-                "Justification",
-                tracker,
-                parse_justification_have_group,
-            )
-            .map(|arguments| JustificationSection { arguments })
-        }),
-        documented: sections.get("Documented").copied().and_then(|section| {
-            parse_required_groups(section, "Documented", tracker, parse_documented_item_group)
-                .map(|arguments| DocumentedSection { arguments })
-        }),
-        aliases: sections.get("Aliases").copied().and_then(|section| {
-            parse_required_groups(section, "Aliases", tracker, parse_alias_item_group)
-                .map(|arguments| AliasesSection { arguments })
-        }),
-        writing: parse_optional_item_writing(&sections, tracker),
-        references: sections.get("References").copied().and_then(|section| {
-            parse_required_resource_references(section, tracker)
-                .map(|arguments| ReferencesSection { arguments })
-        }),
-        metadata: sections.get("Metadata").copied().and_then(|section| {
-            parse_required_groups(section, "Metadata", tracker, parse_metadata_item_group)
-                .map(|arguments| MetadataSection { arguments })
-        }),
+        justification: appendix.justification,
+        documented: appendix.documented,
+        aliases: appendix.aliases,
+        writing: appendix.writing,
+        references: appendix.references,
+        metadata: appendix.metadata,
     })
 }
 
@@ -3102,15 +3040,15 @@ pub(in crate::frontend::structural::parser) fn parse_defines(
             "expresses?",
             "Requires?",
             "Enables?",
-            "Documented?",
-            "Justification?",
-            "Aliases?",
-            "Writing?",
-            "References?",
-            "Metadata?",
+            "Appendix?",
             "Id?",
         ],
     )?;
+    let appendix = parse_appendix(
+        sections.get("Appendix").copied(),
+        AppendixSpec::FULL,
+        tracker,
+    );
 
     Some(DefinesGroup {
         heading,
@@ -3147,32 +3085,12 @@ pub(in crate::frontend::structural::parser) fn parse_defines(
             parse_required_groups(section, "Enables", tracker, parse_enables_item_group)
                 .map(|arguments| EnablesSection { arguments })
         }),
-        justification: sections.get("Justification").copied().and_then(|section| {
-            parse_required_groups(
-                section,
-                "Justification",
-                tracker,
-                parse_justification_have_group,
-            )
-            .map(|arguments| JustificationSection { arguments })
-        }),
-        documented: sections.get("Documented").copied().and_then(|section| {
-            parse_required_groups(section, "Documented", tracker, parse_documented_item_group)
-                .map(|arguments| DocumentedSection { arguments })
-        }),
-        aliases: sections.get("Aliases").copied().and_then(|section| {
-            parse_required_groups(section, "Aliases", tracker, parse_alias_item_group)
-                .map(|arguments| AliasesSection { arguments })
-        }),
-        writing: parse_optional_item_writing(&sections, tracker),
-        references: sections.get("References").copied().and_then(|section| {
-            parse_required_resource_references(section, tracker)
-                .map(|arguments| ReferencesSection { arguments })
-        }),
-        metadata: sections.get("Metadata").copied().and_then(|section| {
-            parse_required_groups(section, "Metadata", tracker, parse_metadata_item_group)
-                .map(|arguments| MetadataSection { arguments })
-        }),
+        justification: appendix.justification,
+        documented: appendix.documented,
+        aliases: appendix.aliases,
+        writing: appendix.writing,
+        references: appendix.references,
+        metadata: appendix.metadata,
     })
 }
 
@@ -3199,15 +3117,15 @@ pub(in crate::frontend::structural::parser) fn parse_realizes(
             "expresses?",
             "Requires?",
             "Enables?",
-            "Documented?",
-            "Justification?",
-            "Aliases?",
-            "Writing?",
-            "References?",
-            "Metadata?",
+            "Appendix?",
             "Id?",
         ],
     )?;
+    let appendix = parse_appendix(
+        sections.get("Appendix").copied(),
+        AppendixSpec::FULL,
+        tracker,
+    );
 
     Some(RealizesGroup {
         heading,
@@ -3243,32 +3161,12 @@ pub(in crate::frontend::structural::parser) fn parse_realizes(
             parse_required_groups(section, "Enables", tracker, parse_enables_item_group)
                 .map(|arguments| EnablesSection { arguments })
         }),
-        justification: sections.get("Justification").copied().and_then(|section| {
-            parse_required_groups(
-                section,
-                "Justification",
-                tracker,
-                parse_justification_have_group,
-            )
-            .map(|arguments| JustificationSection { arguments })
-        }),
-        documented: sections.get("Documented").copied().and_then(|section| {
-            parse_required_groups(section, "Documented", tracker, parse_documented_item_group)
-                .map(|arguments| DocumentedSection { arguments })
-        }),
-        aliases: sections.get("Aliases").copied().and_then(|section| {
-            parse_required_groups(section, "Aliases", tracker, parse_alias_item_group)
-                .map(|arguments| AliasesSection { arguments })
-        }),
-        writing: parse_optional_item_writing(&sections, tracker),
-        references: sections.get("References").copied().and_then(|section| {
-            parse_required_resource_references(section, tracker)
-                .map(|arguments| ReferencesSection { arguments })
-        }),
-        metadata: sections.get("Metadata").copied().and_then(|section| {
-            parse_required_groups(section, "Metadata", tracker, parse_metadata_item_group)
-                .map(|arguments| MetadataSection { arguments })
-        }),
+        justification: appendix.justification,
+        documented: appendix.documented,
+        aliases: appendix.aliases,
+        writing: appendix.writing,
+        references: appendix.references,
+        metadata: appendix.metadata,
     })
 }
 
@@ -3296,17 +3194,17 @@ pub(in crate::frontend::structural::parser) fn parse_refines(
             "satisfies?",
             "Requires?",
             "Enables?",
-            "Documented?",
-            "Justification?",
-            "Aliases?",
-            "Writing?",
-            "References?",
-            "Metadata?",
+            "Appendix?",
             "Id?",
         ],
     )?;
 
     let refinement_kind = parse_refinement_kind(&sections, tracker);
+    let appendix = parse_appendix(
+        sections.get("Appendix").copied(),
+        AppendixSpec::REFINES,
+        tracker,
+    );
 
     Some(RefinesGroup {
         heading,
@@ -3348,37 +3246,12 @@ pub(in crate::frontend::structural::parser) fn parse_refines(
             parse_required_groups(section, "Enables", tracker, parse_enables_item_group)
                 .map(|arguments| EnablesSection { arguments })
         }),
-        justification: sections.get("Justification").copied().and_then(|section| {
-            parse_required_groups(
-                section,
-                "Justification",
-                tracker,
-                parse_justification_have_group,
-            )
-            .map(|arguments| JustificationSection { arguments })
-        }),
-        documented: sections.get("Documented").copied().and_then(|section| {
-            parse_required_groups(
-                section,
-                "Documented",
-                tracker,
-                parse_refines_documented_item_group,
-            )
-            .map(|arguments| DocumentedSection { arguments })
-        }),
-        aliases: sections.get("Aliases").copied().and_then(|section| {
-            parse_required_groups(section, "Aliases", tracker, parse_alias_item_group)
-                .map(|arguments| AliasesSection { arguments })
-        }),
-        writing: parse_optional_item_writing(&sections, tracker),
-        references: sections.get("References").copied().and_then(|section| {
-            parse_required_resource_references(section, tracker)
-                .map(|arguments| ReferencesSection { arguments })
-        }),
-        metadata: sections.get("Metadata").copied().and_then(|section| {
-            parse_required_groups(section, "Metadata", tracker, parse_metadata_item_group)
-                .map(|arguments| MetadataSection { arguments })
-        }),
+        justification: appendix.justification,
+        documented: appendix.documented,
+        aliases: appendix.aliases,
+        writing: appendix.writing,
+        references: appendix.references,
+        metadata: appendix.metadata,
     })
 }
 
@@ -3402,17 +3275,17 @@ pub(in crate::frontend::structural::parser) fn parse_states(
             "that",
             "Requires?",
             "Enables?",
-            "Documented?",
-            "Justification?",
-            "Aliases?",
-            "Writing?",
-            "References?",
-            "Metadata?",
+            "Appendix?",
             "Id?",
         ],
     )?;
 
     ensure_empty_section(section(&sections, "States")?, "States", tracker);
+    let appendix = parse_appendix(
+        sections.get("Appendix").copied(),
+        AppendixSpec::FULL,
+        tracker,
+    );
 
     Some(StatesGroup {
         heading,
@@ -3435,32 +3308,12 @@ pub(in crate::frontend::structural::parser) fn parse_states(
             parse_required_groups(section, "Enables", tracker, parse_enables_item_group)
                 .map(|arguments| EnablesSection { arguments })
         }),
-        justification: sections.get("Justification").copied().and_then(|section| {
-            parse_required_groups(
-                section,
-                "Justification",
-                tracker,
-                parse_justification_have_group,
-            )
-            .map(|arguments| JustificationSection { arguments })
-        }),
-        documented: sections.get("Documented").copied().and_then(|section| {
-            parse_required_groups(section, "Documented", tracker, parse_documented_item_group)
-                .map(|arguments| DocumentedSection { arguments })
-        }),
-        aliases: sections.get("Aliases").copied().and_then(|section| {
-            parse_required_groups(section, "Aliases", tracker, parse_alias_item_group)
-                .map(|arguments| AliasesSection { arguments })
-        }),
-        writing: parse_optional_item_writing(&sections, tracker),
-        references: sections.get("References").copied().and_then(|section| {
-            parse_required_resource_references(section, tracker)
-                .map(|arguments| ReferencesSection { arguments })
-        }),
-        metadata: sections.get("Metadata").copied().and_then(|section| {
-            parse_required_groups(section, "Metadata", tracker, parse_metadata_item_group)
-                .map(|arguments| MetadataSection { arguments })
-        }),
+        justification: appendix.justification,
+        documented: appendix.documented,
+        aliases: appendix.aliases,
+        writing: appendix.writing,
+        references: appendix.references,
+        metadata: appendix.metadata,
     })
 }
 
@@ -3483,14 +3336,17 @@ pub(in crate::frontend::structural::parser) fn parse_equivalent(
             "using?",
             "when?",
             "to",
-            "Documented?",
-            "Justification?",
-            "References?",
+            "Appendix?",
             "Id?",
         ],
     )?;
 
     ensure_empty_section(section(&sections, "Equivalent")?, "Equivalent", tracker);
+    let appendix = parse_appendix(
+        sections.get("Appendix").copied(),
+        AppendixSpec::EQUIVALENT,
+        tracker,
+    );
 
     Some(EquivalentGroup {
         heading,
@@ -3510,23 +3366,9 @@ pub(in crate::frontend::structural::parser) fn parse_equivalent(
                 parse_expression,
             )?,
         },
-        justification: sections.get("Justification").copied().and_then(|section| {
-            parse_required_groups(
-                section,
-                "Justification",
-                tracker,
-                parse_justification_have_group,
-            )
-            .map(|arguments| JustificationSection { arguments })
-        }),
-        documented: sections.get("Documented").copied().and_then(|section| {
-            parse_required_groups(section, "Documented", tracker, parse_documented_item_group)
-                .map(|arguments| DocumentedSection { arguments })
-        }),
-        references: sections.get("References").copied().and_then(|section| {
-            parse_required_resource_references(section, tracker)
-                .map(|arguments| ReferencesSection { arguments })
-        }),
+        justification: appendix.justification,
+        documented: appendix.documented,
+        references: appendix.references,
     })
 }
 
@@ -3552,12 +3394,7 @@ pub(in crate::frontend::structural::parser) fn parse_relation(
             "to",
             "when?",
             "specifies?",
-            "Documented?",
-            "Justification?",
-            "Aliases?",
-            "Writing?",
-            "References?",
-            "Metadata?",
+            "Appendix?",
             "Id?",
         ][..]
     } else {
@@ -3568,16 +3405,16 @@ pub(in crate::frontend::structural::parser) fn parse_relation(
             "and",
             "when?",
             "specifies?",
-            "Documented?",
-            "Justification?",
-            "Aliases?",
-            "Writing?",
-            "References?",
-            "Metadata?",
+            "Appendix?",
             "Id?",
         ][..]
     };
     let sections = identify_sections("Relation", &group.sections, tracker, expected)?;
+    let appendix = parse_appendix(
+        sections.get("Appendix").copied(),
+        AppendixSpec::FULL,
+        tracker,
+    );
 
     let endpoints = if is_directed {
         RelationEndpoints::Directed {
@@ -3632,32 +3469,12 @@ pub(in crate::frontend::structural::parser) fn parse_relation(
             parse_required_relation_specifies(section, tracker)
                 .map(|argument| RelationSpecifiesSection { argument })
         }),
-        justification: sections.get("Justification").copied().and_then(|section| {
-            parse_required_groups(
-                section,
-                "Justification",
-                tracker,
-                parse_justification_have_group,
-            )
-            .map(|arguments| JustificationSection { arguments })
-        }),
-        documented: sections.get("Documented").copied().and_then(|section| {
-            parse_required_groups(section, "Documented", tracker, parse_documented_item_group)
-                .map(|arguments| DocumentedSection { arguments })
-        }),
-        aliases: sections.get("Aliases").copied().and_then(|section| {
-            parse_required_groups(section, "Aliases", tracker, parse_alias_item_group)
-                .map(|arguments| AliasesSection { arguments })
-        }),
-        writing: parse_optional_item_writing(&sections, tracker),
-        references: sections.get("References").copied().and_then(|section| {
-            parse_required_resource_references(section, tracker)
-                .map(|arguments| ReferencesSection { arguments })
-        }),
-        metadata: sections.get("Metadata").copied().and_then(|section| {
-            parse_required_groups(section, "Metadata", tracker, parse_metadata_item_group)
-                .map(|arguments| MetadataSection { arguments })
-        }),
+        justification: appendix.justification,
+        documented: appendix.documented,
+        aliases: appendix.aliases,
+        writing: appendix.writing,
+        references: appendix.references,
+        metadata: appendix.metadata,
     })
 }
 
@@ -3666,8 +3483,8 @@ pub(in crate::frontend::structural::parser) fn parse_relation(
 /// A `Topic:` names a documentation topic via a required `#`-sigil heading. The
 /// optional `within:` names a parent topic (making this a sub-topic) as a quoted
 /// `"#..."` reference; the optional `Related:` records relationships to other
-/// topics or definitions; and the optional `Documented:` accepts only `called:`,
-/// which overrides how the topic title is rendered.
+/// topics or definitions; and the optional `Appendix:` `documented:` accepts only
+/// `called:`, which overrides how the topic title is rendered.
 pub(in crate::frontend::structural::parser) fn parse_topic(
     group: &ProtoGroup,
     tracker: &mut EventLog,
@@ -3677,8 +3494,13 @@ pub(in crate::frontend::structural::parser) fn parse_topic(
         "Topic",
         &group.sections,
         tracker,
-        &["Topic", "within?", "Related?", "Documented?", "Id?"],
+        &["Topic", "within?", "Related?", "Appendix?", "Id?"],
     )?;
+    let appendix = parse_appendix(
+        sections.get("Appendix").copied(),
+        AppendixSpec::TOPIC,
+        tracker,
+    );
 
     Some(TopicGroup {
         heading,
@@ -3693,15 +3515,7 @@ pub(in crate::frontend::structural::parser) fn parse_topic(
             parse_required_groups(section, "Related", tracker, parse_related_item_group)
                 .map(|arguments| TopicRelatedSection { arguments })
         }),
-        documented: sections.get("Documented").copied().and_then(|section| {
-            parse_required_groups(
-                section,
-                "Documented",
-                tracker,
-                parse_topic_documented_item_group,
-            )
-            .map(|arguments| DocumentedSection { arguments })
-        }),
+        documented: appendix.documented,
     })
 }
 
@@ -3894,27 +3708,18 @@ pub(in crate::frontend::structural::parser) fn parse_argument_theorem_like(
 )> {
     let heading = parse_optional_command_heading(group, tracker)?;
     let section_name = name;
-    let mut section_specs = vec![
-        section_name,
-        "given?",
-        "where?",
-        "then",
-        "iff?",
-        "Documented?",
-    ];
+    let mut section_specs = vec![section_name, "given?", "where?", "then", "iff?"];
     if accepts_proof {
         section_specs.push("Proof?");
     }
-    section_specs.extend([
-        "Justification?",
-        "Aliases?",
-        "Writing?",
-        "References?",
-        "Metadata?",
-        "Id?",
-    ]);
+    section_specs.extend(["Appendix?", "Id?"]);
     let sections = identify_sections(name, &group.sections, tracker, &section_specs)?;
     ensure_no_named_result_arg(sections.get(section_name).copied(), name, tracker);
+    let appendix = parse_appendix(
+        sections.get("Appendix").copied(),
+        AppendixSpec::FULL,
+        tracker,
+    );
 
     Some((
         heading,
@@ -3933,32 +3738,12 @@ pub(in crate::frontend::structural::parser) fn parse_argument_theorem_like(
             parse_required_clauses(section, "iff", tracker)
                 .map(|arguments| IffSection { arguments })
         }),
-        sections.get("Justification").copied().and_then(|section| {
-            parse_required_groups(
-                section,
-                "Justification",
-                tracker,
-                parse_justification_have_group,
-            )
-            .map(|arguments| JustificationSection { arguments })
-        }),
-        sections.get("Documented").copied().and_then(|section| {
-            parse_required_groups(section, "Documented", tracker, parse_documented_item_group)
-                .map(|arguments| DocumentedSection { arguments })
-        }),
-        sections.get("Aliases").copied().and_then(|section| {
-            parse_required_groups(section, "Aliases", tracker, parse_alias_item_group)
-                .map(|arguments| AliasesSection { arguments })
-        }),
-        parse_optional_item_writing(&sections, tracker),
-        sections.get("References").copied().and_then(|section| {
-            parse_required_resource_references(section, tracker)
-                .map(|arguments| ReferencesSection { arguments })
-        }),
-        sections.get("Metadata").copied().and_then(|section| {
-            parse_required_groups(section, "Metadata", tracker, parse_metadata_item_group)
-                .map(|arguments| MetadataSection { arguments })
-        }),
+        appendix.justification,
+        appendix.documented,
+        appendix.aliases,
+        appendix.writing,
+        appendix.references,
+        appendix.metadata,
         sections.get("Proof").copied().and_then(|section| {
             parse_required_open_text(section, "Proof", tracker)
                 .map(|argument| ProofSection { argument })
@@ -4570,14 +4355,310 @@ fn parse_required_writing_aliases(
 /// The section appears after `Aliases:` on definition- and result-like items and
 /// overrides, for that item only, how the collection-wide `Writing:` group renders
 /// the named identifiers.
-fn parse_optional_item_writing(
-    sections: &HashMap<String, &ProtoSection>,
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(in crate::frontend::structural::parser) enum AppendixDocumentedMode {
+    None,
+    Standard,
+    Refines,
+    Topic,
+}
+
+#[derive(Clone, Copy)]
+pub(in crate::frontend::structural::parser) struct AppendixSpec {
+    pub documented: AppendixDocumentedMode,
+    pub justification: bool,
+    pub aliases: bool,
+    pub writing: bool,
+    pub references: bool,
+    pub metadata: bool,
+}
+
+impl AppendixSpec {
+    const FULL: Self = Self {
+        documented: AppendixDocumentedMode::Standard,
+        justification: true,
+        aliases: true,
+        writing: true,
+        references: true,
+        metadata: true,
+    };
+
+    const REFINES: Self = Self {
+        documented: AppendixDocumentedMode::Refines,
+        justification: true,
+        aliases: true,
+        writing: true,
+        references: true,
+        metadata: true,
+    };
+
+    const EXAMPLE: Self = Self {
+        documented: AppendixDocumentedMode::None,
+        justification: true,
+        aliases: true,
+        writing: true,
+        references: true,
+        metadata: true,
+    };
+
+    const EQUIVALENT: Self = Self {
+        documented: AppendixDocumentedMode::Standard,
+        justification: true,
+        aliases: false,
+        writing: false,
+        references: true,
+        metadata: false,
+    };
+
+    const TOPIC: Self = Self {
+        documented: AppendixDocumentedMode::Topic,
+        justification: false,
+        aliases: false,
+        writing: false,
+        references: false,
+        metadata: false,
+    };
+}
+
+#[derive(Default)]
+pub(in crate::frontend::structural::parser) struct ParsedAppendix {
+    pub documented: Option<DocumentedSection>,
+    pub justification: Option<JustificationSection>,
+    pub aliases: Option<AliasesSection>,
+    pub writing: Option<ItemWritingSection>,
+    pub references: Option<ReferencesSection>,
+    pub metadata: Option<MetadataSection>,
+}
+
+fn parse_appendix(
+    appendix_section: Option<&ProtoSection>,
+    spec: AppendixSpec,
     tracker: &mut EventLog,
-) -> Option<ItemWritingSection> {
-    sections.get("Writing").copied().and_then(|section| {
-        parse_required_writing_aliases(section, tracker)
-            .map(|arguments| ItemWritingSection { arguments })
-    })
+) -> ParsedAppendix {
+    let mut parsed = ParsedAppendix::default();
+    let Some(appendix_section) = appendix_section else {
+        return parsed;
+    };
+
+    if appendix_section.inline_argument.is_some() {
+        tracker.user_error_at_row(
+            Some(ORIGIN),
+            appendix_section.metadata.row,
+            "Expected a group in `Appendix`",
+        );
+    } else if appendix_section.arguments.is_empty() {
+        tracker.user_error_at_row(
+            Some(ORIGIN),
+            appendix_section.metadata.row,
+            "Expected at least one argument in `Appendix`",
+        );
+        return parsed;
+    }
+
+    let mut seen: std::collections::HashSet<&str> = std::collections::HashSet::new();
+
+    for argument in &appendix_section.arguments {
+        let ProtoArgument::Group(entry_group) = argument else {
+            let row = match argument {
+                ProtoArgument::Formulation(f) => f.metadata.row,
+                ProtoArgument::Text(t) => t.metadata.row,
+                ProtoArgument::Group(_) => unreachable!(),
+            };
+            tracker.user_error_at_row(Some(ORIGIN), row, "Expected a group in `Appendix`");
+            continue;
+        };
+
+        let Some(label) = first_section_label(entry_group) else {
+            tracker.user_error_at_row(
+                Some(ORIGIN),
+                entry_group.metadata.row,
+                "Expected a section in `Appendix` group",
+            );
+            continue;
+        };
+
+        if ensure_no_heading(entry_group, tracker).is_none() {
+            continue;
+        }
+
+        match label {
+            "documented" => {
+                if spec.documented == AppendixDocumentedMode::None {
+                    tracker.user_error_at_row(
+                        Some(ORIGIN),
+                        entry_group.metadata.row,
+                        "Unexpected appendix group `documented`",
+                    );
+                    continue;
+                }
+                if !seen.insert("documented") {
+                    tracker.user_error_at_row(
+                        Some(ORIGIN),
+                        entry_group.metadata.row,
+                        "Duplicate `documented` entry in `Appendix`",
+                    );
+                    continue;
+                }
+                if let Some(sections) =
+                    identify_sections("documented", &entry_group.sections, tracker, &["documented"])
+                    && let Some(sec) = section(&sections, "documented")
+                {
+                    let item_parser = match spec.documented {
+                        AppendixDocumentedMode::Standard => parse_documented_item_group,
+                        AppendixDocumentedMode::Refines => parse_refines_documented_item_group,
+                        AppendixDocumentedMode::Topic => parse_topic_documented_item_group,
+                        AppendixDocumentedMode::None => unreachable!(),
+                    };
+                    parsed.documented = parse_required_groups(sec, "documented", tracker, item_parser)
+                        .map(|arguments| DocumentedSection { arguments });
+                }
+            }
+            "justification" => {
+                if !spec.justification {
+                    tracker.user_error_at_row(
+                        Some(ORIGIN),
+                        entry_group.metadata.row,
+                        "Unexpected appendix group `justification`",
+                    );
+                    continue;
+                }
+                if !seen.insert("justification") {
+                    tracker.user_error_at_row(
+                        Some(ORIGIN),
+                        entry_group.metadata.row,
+                        "Duplicate `justification` entry in `Appendix`",
+                    );
+                    continue;
+                }
+                if let Some(sections) = identify_sections(
+                    "justification",
+                    &entry_group.sections,
+                    tracker,
+                    &["justification"],
+                ) && let Some(sec) = section(&sections, "justification")
+                {
+                    parsed.justification = parse_required_groups(
+                        sec,
+                        "justification",
+                        tracker,
+                        parse_justification_have_group,
+                    )
+                    .map(|arguments| JustificationSection { arguments });
+                }
+            }
+            "aliases" => {
+                if !spec.aliases {
+                    tracker.user_error_at_row(
+                        Some(ORIGIN),
+                        entry_group.metadata.row,
+                        "Unexpected appendix group `aliases`",
+                    );
+                    continue;
+                }
+                if !seen.insert("aliases") {
+                    tracker.user_error_at_row(
+                        Some(ORIGIN),
+                        entry_group.metadata.row,
+                        "Duplicate `aliases` entry in `Appendix`",
+                    );
+                    continue;
+                }
+                if let Some(sections) =
+                    identify_sections("aliases", &entry_group.sections, tracker, &["aliases"])
+                    && let Some(sec) = section(&sections, "aliases")
+                {
+                    parsed.aliases =
+                        parse_required_groups(sec, "aliases", tracker, parse_alias_item_group)
+                            .map(|arguments| AliasesSection { arguments });
+                }
+            }
+            "writing" => {
+                if !spec.writing {
+                    tracker.user_error_at_row(
+                        Some(ORIGIN),
+                        entry_group.metadata.row,
+                        "Unexpected appendix group `writing`",
+                    );
+                    continue;
+                }
+                if !seen.insert("writing") {
+                    tracker.user_error_at_row(
+                        Some(ORIGIN),
+                        entry_group.metadata.row,
+                        "Duplicate `writing` entry in `Appendix`",
+                    );
+                    continue;
+                }
+                if let Some(sections) =
+                    identify_sections("writing", &entry_group.sections, tracker, &["writing"])
+                    && let Some(sec) = section(&sections, "writing")
+                {
+                    parsed.writing = parse_required_writing_aliases(sec, tracker)
+                        .map(|arguments| ItemWritingSection { arguments });
+                }
+            }
+            "references" => {
+                if !spec.references {
+                    tracker.user_error_at_row(
+                        Some(ORIGIN),
+                        entry_group.metadata.row,
+                        "Unexpected appendix group `references`",
+                    );
+                    continue;
+                }
+                if !seen.insert("references") {
+                    tracker.user_error_at_row(
+                        Some(ORIGIN),
+                        entry_group.metadata.row,
+                        "Duplicate `references` entry in `Appendix`",
+                    );
+                    continue;
+                }
+                if let Some(sections) =
+                    identify_sections("references", &entry_group.sections, tracker, &["references"])
+                    && let Some(sec) = section(&sections, "references")
+                {
+                    parsed.references = parse_required_resource_references(sec, tracker)
+                        .map(|arguments| ReferencesSection { arguments });
+                }
+            }
+            "metadata" => {
+                if !spec.metadata {
+                    tracker.user_error_at_row(
+                        Some(ORIGIN),
+                        entry_group.metadata.row,
+                        "Unexpected appendix group `metadata`",
+                    );
+                    continue;
+                }
+                if !seen.insert("metadata") {
+                    tracker.user_error_at_row(
+                        Some(ORIGIN),
+                        entry_group.metadata.row,
+                        "Duplicate `metadata` entry in `Appendix`",
+                    );
+                    continue;
+                }
+                if let Some(sections) =
+                    identify_sections("metadata", &entry_group.sections, tracker, &["metadata"])
+                    && let Some(sec) = section(&sections, "metadata")
+                {
+                    parsed.metadata =
+                        parse_required_groups(sec, "metadata", tracker, parse_metadata_item_group)
+                            .map(|arguments| MetadataSection { arguments });
+                }
+            }
+            other => {
+                tracker.user_error_at_row(
+                    Some(ORIGIN),
+                    entry_group.metadata.row,
+                    format!("Unexpected appendix group `{other}`"),
+                );
+            }
+        }
+    }
+
+    parsed
 }
 
 fn parse_required_disambiguates_heading(
@@ -4888,8 +4969,9 @@ when:
 . y_ is \integer
 to: x_ \.real.+./ y_
 else: x_
-Documented:
-. written: "x_? + y_?"
+Appendix:
+. documented:
+  . written: "x_? + y_?"
 "#,
         );
 
@@ -4915,8 +4997,9 @@ Documented:
 [x_ + y_]
 Disambiguates:
 else: x_ :-: y_
-Documented:
-. written: "x_? + y_?"
+Appendix:
+. documented:
+  . written: "x_? + y_?"
 "#,
         );
 
@@ -4939,8 +5022,9 @@ Declares: n
 Requires:
 . capability: n_ + m_ :=> n_ \.natural.+./ m_
 . definition: \natural.0 is \natural
-Documented:
-. called: "natural"
+Appendix:
+. documented:
+  . called: "natural"
 "#,
         );
 
@@ -4981,9 +5065,10 @@ extends: X is \thing
         let (_, diagnostics) = parse_with_diagnostics(
             r#"[\sequence]
 Declares: x(i_)
-Documented:
-. writing: x
-  as: "x"
+Appendix:
+. documented:
+  . writing: x
+    as: "x"
 "#,
         );
 
@@ -5022,25 +5107,26 @@ Enables:
   capability: plus(x_, y_) :=> x + y
   written:
   . "+"
-Documented:
-. [docs.written]
-  written:
-  . "plus"
-Justification:
-. for: (:proof.label:)
-  have:
-  . x = x
-  asserting:
-  . x = x
-Aliases:
-. [alias.expr]
-  alias: plus(x_, y_) :=> x + y
-  written:
-  . "+"
-References:
-. $book.plus
-Metadata:
-. version: "0.9"
+Appendix:
+. documented:
+  . [docs.written]
+    written:
+    . "plus"
+. justification:
+  . for: (:proof.label:)
+    have:
+    . x = x
+    asserting:
+    . x = x
+. aliases:
+  . [alias.expr]
+    alias: plus(x_, y_) :=> x + y
+    written:
+    . "+"
+. references:
+  . $book.plus
+. metadata:
+  . version: "0.9"
 
 [\structure.connection]
 Declares: T
@@ -5048,57 +5134,63 @@ Enables:
 . [conn.plus]
   view:
   as: y := X is \bar
-Documented:
-. [docs.called]
-  called:
-  . "addition"
-Justification:
-. for: (:proof.by:)
-  have:
-  . y = y
-  asserting:
-  . y = y
-Aliases:
-. [alias.spec]
-  alias: x_ "in" X :-> x is \element
-Metadata:
-. version: "1.0"
+Appendix:
+. documented:
+  . [docs.called]
+    called:
+    . "addition"
+. justification:
+  . for: (:proof.by:)
+    have:
+    . y = y
+    asserting:
+    . y = y
+. aliases:
+  . [alias.spec]
+    alias: x_ "in" X :-> x is \element
+. metadata:
+  . version: "1.0"
 
 [\structure.writing]
 Declares: plus(x_, y_)
-Documented:
-. [docs.writing]
-  writing: plus(x, y)
-  as: "x? + y?"
-. writing: plus(x_, y_)
-  as: "\operatorname{plus}(x?, y?)"
+Appendix:
+. documented:
+  . [docs.writing]
+    writing: plus(x, y)
+    as: "x? + y?"
+  . writing: plus(x_, y_)
+    as: "\operatorname{plus}(x?, y?)"
 
 [\structure.overview]
 Declares: O
-Documented:
-. [docs.overview]
-  overview: "Binary operation on X"
+Appendix:
+. documented:
+  . [docs.overview]
+    overview: "Binary operation on X"
 
 [\structure.description]
 Declares: P
-Documented:
-. [docs.description]
-  description: "Longer prose for readers"
+Appendix:
+. documented:
+  . [docs.description]
+    description: "Longer prose for readers"
 
 [\structure.related]
 Declares: R
-Documented:
-. [docs.related]
-  related:
-  . "group"
-  . "ring"
+Appendix:
+. documented:
+  . [docs.related]
+    related:
+    . "group"
+    . "ring"
 
 [\structure.discoverer]
 Declares: D
-Documented:
-. [docs.discoverer]
-  discoverer:
-  . "Gauss"
+Appendix:
+. documented:
+  . [docs.discoverer]
+    discoverer:
+    . "Gauss"
 
 [\constant]
 Defines: zero is \element
@@ -5401,12 +5493,13 @@ that:
 Declares: t
 satisfies:
 . (.*' := `*`.)[:1:]
-Documented:
-. called: "thing"
-Justification:
-. for: (:1:)
-  have: *' := `*`
-  asserting: t = t
+Appendix:
+. documented:
+  . called: "thing"
+. justification:
+  . for: (:1:)
+    have: *' := `*`
+    asserting: t = t
 "#,
         );
 
@@ -5428,8 +5521,9 @@ Justification:
 Declares: X
 Enables:
 . capability: x_ "in" X :-> \\abstract
-Documented:
-. called: "set"
+Appendix:
+. documented:
+  . called: "set"
 "#,
         );
 
@@ -5457,8 +5551,9 @@ Enables:
 . view:
   as: r := X is \rational
   signifies: X \.embedded.to./ r
-Documented:
-. called: "set"
+Appendix:
+. documented:
+  . called: "set"
 "#,
         );
 
@@ -5486,8 +5581,9 @@ Enables:
   signifies: x \:isomorphic.to?:/ p
 . view:
   as: y := b is \group
-Documented:
-. written: "P?"
+Appendix:
+. documented:
+  . written: "P?"
 "#,
         );
 
@@ -5518,8 +5614,9 @@ Declares: n
 Enables:
 . view: unexpected
   as: k := n is \integer
-Documented:
-. called: "integer"
+Appendix:
+. documented:
+  . called: "integer"
 "#,
         );
 
@@ -5539,8 +5636,9 @@ Declares: n
 Enables:
 . viewable:
   as: r is \rational
-Documented:
-. written: "\operatorname{integer}"
+Appendix:
+. documented:
+  . written: "\operatorname{integer}"
 "#,
         );
 
@@ -5561,8 +5659,9 @@ Enables:
 . connection:
   to: s := \as.set{n} is \set
   represents: \\encoding
-Documented:
-. written: "\operatorname{integer}"
+Appendix:
+. documented:
+  . written: "\operatorname{integer}"
 "#,
         );
 
@@ -5581,8 +5680,9 @@ Documented:
             r#"
 [\statement]
 States:
-References:
-. $bad.ref
+Appendix:
+. references:
+  . $bad.ref
 that:
 . x = x
 
@@ -5598,7 +5698,7 @@ SectionTitle: "Recovered"
                 .as_message()
                 .expect("expected message event")
                 .message
-                .contains("Expected `that` but found `References`")
+                .contains("Expected `that` but found `Appendix`")
         );
     }
 
@@ -5614,8 +5714,9 @@ and: b is \real
 when:
 . a = b
 specifies: a = b
-Documented:
-. description: "a and b name the same value."
+Appendix:
+. documented:
+  . description: "a and b name the same value."
 "#,
         );
 
@@ -5729,8 +5830,9 @@ Related:
   specifies: "Closely connected subjects."
 . to: "\function:on:to"
   specifies: "Functions studied here."
-Documented:
-. called: "Real Analysis"
+Appendix:
+. documented:
+  . called: "Real Analysis"
 "##,
         );
 
@@ -5797,8 +5899,9 @@ Topic: "A topic with no heading."
             r#"
 [#real.analysis]
 Topic: "Analysis over the real numbers."
-Documented:
-. description: "Not allowed here."
+Appendix:
+. documented:
+  . description: "Not allowed here."
 "#,
         );
 
@@ -5885,8 +5988,9 @@ when:
 to:
 . \bar{a, b}
 . \baz:with{b}:and{a}
-References:
-. $book.foo
+Appendix:
+. references:
+  . $book.foo
 Id: "11111111-1111-4111-8111-111111111111"
 "#,
         );
@@ -5971,15 +6075,16 @@ then:
             r#"
 Theorem:
 then: x = x
-Documented:
-. called: "reflexivity"
 Proof: "By reflexivity."
-Aliases:
-. alias: reflect(x_) :=> x_
-Writing:
-. "x :~> x"
-References:
-. $book.ref
+Appendix:
+. documented:
+  . called: "reflexivity"
+. aliases:
+  . alias: reflect(x_) :=> x_
+. writing:
+  . "x :~> x"
+. references:
+  . $book.ref
 Id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
 "#,
         );
@@ -6407,13 +6512,14 @@ when:
 Enables:
 . [symbol]
   capability: f(x_) :=> x
-Aliases:
-. [alias]
-  alias: f(x_) :=> x
-References:
-. $elements
-Metadata:
-. version: "1.0"
+Appendix:
+. aliases:
+  . [alias]
+    alias: f(x_) :=> x
+. references:
+  . $elements
+. metadata:
+  . version: "1.0"
 
 [\statement]
 States:
@@ -7044,11 +7150,12 @@ Writing:
             r#"
 [\natural]
 Declares: n
-Documented:
-. called: "natural"
-Writing:
-. "pi :~> \varpi"
-. "e :~> \mathrm{e}"
+Appendix:
+. documented:
+  . called: "natural"
+. writing:
+  . "pi :~> \varpi"
+  . "e :~> \mathrm{e}"
 "#,
         );
 
@@ -7070,10 +7177,11 @@ Writing:
             r#"
 [\natural]
 Declares: n
-Documented:
-. called: "natural"
-Writing:
-. pi :~> \varpi
+Appendix:
+. documented:
+  . called: "natural"
+. writing:
+  . pi :~> \varpi
 "#,
         );
 
@@ -7110,23 +7218,24 @@ iff:
   . y = y
   iff:
   . x = x
-Documented:
-. [axiom.written]
-  written:
-  . "axiom"
-Justification:
-. for: (:axiom.justified:)
-  have:
-  . y = y
-  asserting:
-  . y = y
-Aliases:
-. [axiom.alias]
-  alias: axiom(x_) :=> x
-References:
-. $axiom.ref
-Metadata:
-. version: "1.0"
+Appendix:
+. documented:
+  . [axiom.written]
+    written:
+    . "axiom"
+. justification:
+  . for: (:axiom.justified:)
+    have:
+    . y = y
+    asserting:
+    . y = y
+. aliases:
+  . [axiom.alias]
+    alias: axiom(x_) :=> x
+. references:
+  . $axiom.ref
+. metadata:
+  . version: "1.0"
 
 Theorem:
 then:
@@ -7230,11 +7339,12 @@ then:
             r#"
 Theorem:
 then: (x = x)[:1:]
-References:
-. "$royden.real.analysis"
-. "$royden.real.analysis:page{4}"
-. for: (:1:)
-  entry: $royden.real.analysis:page{10}
+Appendix:
+. references:
+  . "$royden.real.analysis"
+  . "$royden.real.analysis:page{4}"
+  . for: (:1:)
+    entry: $royden.real.analysis:page{10}
 "#,
         );
 
@@ -7280,12 +7390,13 @@ expresses:
       then: X "in"? I
 Enables:
 . capability: X_ "in" omega :-> X_ is \set
-Documented:
-. written: "\omega"
-Justification:
-. for: (:1:)
-  have: A is \(inductive)::set
-  by: \axiom.of.infinity
+Appendix:
+. documented:
+  . written: "\omega"
+. justification:
+  . for: (:1:)
+    have: A is \(inductive)::set
+    by: \axiom.of.infinity
 Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
 "#,
         );
@@ -7402,8 +7513,9 @@ expresses:
 Example:
 . "A prose example item."
 . x = x
-Writing:
-. "x :~> X"
+Appendix:
+. writing:
+  . "x :~> X"
 "#,
         );
 
@@ -7496,15 +7608,16 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
             r#"
 [\pair]
 Declares: P
-Documented:
-. called: "pair"
-Justification:
-. for: (:step:)
-  have: x = x
-  by: \some.thm
-  because:
-  . "by reflexivity"
-  . x = x
+Appendix:
+. documented:
+  . called: "pair"
+. justification:
+  . for: (:step:)
+    have: x = x
+    by: \some.thm
+    because:
+    . "by reflexivity"
+    . x = x
 "#,
         );
 
@@ -7527,13 +7640,14 @@ Justification:
             r#"
 [\pair]
 Declares: P
-Documented:
-. called: "pair"
-Justification:
-. [step]
-  have: x = x
-  by: \some.thm
-  because: "by assumption"
+Appendix:
+. documented:
+  . called: "pair"
+. justification:
+  . [step]
+    have: x = x
+    by: \some.thm
+    because: "by assumption"
 "#,
         );
 

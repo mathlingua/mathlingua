@@ -4,14 +4,16 @@ Accepts a whole two-dimensional variadic selection in a command requirement.
 == begin:input ==
 [\matrix]
 Declares: X
-Documented:
-. called: "matrix"
+Appendix:
+. documented:
+  . called: "matrix"
 
 [\matrix:of{x[(i_, j_) := (1,1)...(m,n)]}]
 Defines: X is \matrix
 when: x[..., ...] is \\statement
-Documented:
-. called: "matrix of"
+Appendix:
+. documented:
+  . called: "matrix of"
 
 Theorem:
 given: P, Q, R, S is \\statement

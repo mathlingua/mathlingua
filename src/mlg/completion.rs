@@ -80,7 +80,11 @@ pub fn complete_with_signatures(
     if is_bullet_prefix(&before) {
         return bullet_completions(&lines, line, &before);
     }
-    section_completions(&lines, line, &before)
+    let sections = section_completions(&lines, line, &before);
+    if !sections.is_empty() {
+        return sections;
+    }
+    formulation_keyword_completions(&before)
 }
 
 /// Harvest the command signatures declared by top-level `[...]` headings in
@@ -144,15 +148,7 @@ const GROUPS: &[GroupSpec] = &[
     },
     GroupSpec {
         head: "Example",
-        sections: &[
-            ("Example", true),
-            ("Justification", false),
-            ("Aliases", false),
-            ("Writing", false),
-            ("References", false),
-            ("Metadata", false),
-            ("Id", false),
-        ],
+        sections: &[("Example", true), ("Appendix", false), ("Id", false)],
     },
     GroupSpec {
         head: "Declares",
@@ -165,12 +161,7 @@ const GROUPS: &[GroupSpec] = &[
             ("satisfies", false),
             ("Requires", false),
             ("Enables", false),
-            ("Documented", false),
-            ("Justification", false),
-            ("Aliases", false),
-            ("Writing", false),
-            ("References", false),
-            ("Metadata", false),
+            ("Appendix", false),
             ("Id", false),
         ],
     },
@@ -185,12 +176,7 @@ const GROUPS: &[GroupSpec] = &[
             ("expresses", false),
             ("Requires", false),
             ("Enables", false),
-            ("Documented", false),
-            ("Justification", false),
-            ("Aliases", false),
-            ("Writing", false),
-            ("References", false),
-            ("Metadata", false),
+            ("Appendix", false),
             ("Id", false),
         ],
     },
@@ -204,12 +190,7 @@ const GROUPS: &[GroupSpec] = &[
             ("expresses", false),
             ("Requires", false),
             ("Enables", false),
-            ("Documented", false),
-            ("Justification", false),
-            ("Aliases", false),
-            ("Writing", false),
-            ("References", false),
-            ("Metadata", false),
+            ("Appendix", false),
             ("Id", false),
         ],
     },
@@ -225,12 +206,7 @@ const GROUPS: &[GroupSpec] = &[
             ("satisfies", false),
             ("Requires", false),
             ("Enables", false),
-            ("Documented", false),
-            ("Justification", false),
-            ("Aliases", false),
-            ("Writing", false),
-            ("References", false),
-            ("Metadata", false),
+            ("Appendix", false),
             ("Id", false),
         ],
     },
@@ -243,12 +219,7 @@ const GROUPS: &[GroupSpec] = &[
             ("that", true),
             ("Requires", false),
             ("Enables", false),
-            ("Documented", false),
-            ("Justification", false),
-            ("Aliases", false),
-            ("Writing", false),
-            ("References", false),
-            ("Metadata", false),
+            ("Appendix", false),
             ("Id", false),
         ],
     },
@@ -271,12 +242,7 @@ const GROUPS: &[GroupSpec] = &[
             ("when", false),
             ("to", false),
             ("else", false),
-            ("Documented", false),
-            ("Justification", false),
-            ("Aliases", false),
-            ("Writing", false),
-            ("References", false),
-            ("Metadata", false),
+            ("Appendix", false),
             ("Id", false),
         ],
     },
@@ -303,9 +269,7 @@ const GROUPS: &[GroupSpec] = &[
             ("using", false),
             ("when", false),
             ("to", true),
-            ("Documented", false),
-            ("Justification", false),
-            ("References", false),
+            ("Appendix", false),
             ("Id", false),
         ],
     },
@@ -315,7 +279,7 @@ const GROUPS: &[GroupSpec] = &[
             ("Topic", true),
             ("within", false),
             ("Related", false),
-            ("Documented", false),
+            ("Appendix", false),
             ("Id", false),
         ],
     },
@@ -328,12 +292,7 @@ const RELATION_UNDIRECTED: &[Section] = &[
     ("and", true),
     ("when", false),
     ("specifies", false),
-    ("Documented", false),
-    ("Justification", false),
-    ("Aliases", false),
-    ("Writing", false),
-    ("References", false),
-    ("Metadata", false),
+    ("Appendix", false),
     ("Id", false),
 ];
 
@@ -344,12 +303,7 @@ const RELATION_DIRECTED: &[Section] = &[
     ("to", true),
     ("when", false),
     ("specifies", false),
-    ("Documented", false),
-    ("Justification", false),
-    ("Aliases", false),
-    ("Writing", false),
-    ("References", false),
-    ("Metadata", false),
+    ("Appendix", false),
     ("Id", false),
 ];
 
@@ -362,12 +316,7 @@ const THEOREM_LIKE_AXIOM: &[Section] = &[
     ("where", false),
     ("then", true),
     ("iff", false),
-    ("Documented", false),
-    ("Justification", false),
-    ("Aliases", false),
-    ("Writing", false),
-    ("References", false),
-    ("Metadata", false),
+    ("Appendix", false),
     ("Id", false),
 ];
 
@@ -377,13 +326,8 @@ const THEOREM_LIKE_THEOREM: &[Section] = &[
     ("where", false),
     ("then", true),
     ("iff", false),
-    ("Documented", false),
     ("Proof", false),
-    ("Justification", false),
-    ("Aliases", false),
-    ("Writing", false),
-    ("References", false),
-    ("Metadata", false),
+    ("Appendix", false),
     ("Id", false),
 ];
 
@@ -393,12 +337,7 @@ const THEOREM_LIKE_CONJECTURE: &[Section] = &[
     ("where", false),
     ("then", true),
     ("iff", false),
-    ("Documented", false),
-    ("Justification", false),
-    ("Aliases", false),
-    ("Writing", false),
-    ("References", false),
-    ("Metadata", false),
+    ("Appendix", false),
     ("Id", false),
 ];
 
@@ -487,6 +426,14 @@ const NESTED_GROUPS: &[(&str, &[Section])] = &[
     ),
     ("by", &[("by", true), ("comment", false)]),
     ("zero", &[("zero", true), ("is", true)]),
+    ("decimal", &[("decimal", true), ("is", true)]),
+    (
+        "zeroOrPositiveInt",
+        &[("zeroOrPositiveInt", true), ("is", true)],
+    ),
+    ("positiveInt", &[("positiveInt", true), ("is", true)]),
+    ("int", &[("int", true), ("is", true)]),
+    ("to", &[("to", true), ("specifies", true)]),
     (
         "for",
         &[
@@ -504,7 +451,15 @@ const NESTED_GROUPS: &[(&str, &[Section])] = &[
 /// can start there. Mirrors the per-section item dispatchers in the parser.
 fn item_starters(section: &str) -> Option<&'static [&'static str]> {
     Some(match section {
-        "Documented" => &[
+        "Appendix" => &[
+            "documented",
+            "justification",
+            "aliases",
+            "writing",
+            "references",
+            "metadata",
+        ],
+        "documented" => &[
             "written",
             "called",
             "adjective",
@@ -517,14 +472,182 @@ fn item_starters(section: &str) -> Option<&'static [&'static str]> {
         ],
         "Enables" => &["capability", "from", "view"],
         "Requires" => &["capability", "definition"],
-        "Justification" => &["for", "have"],
-        "References" => &["for"],
-        "Metadata" => &["version"],
-        "Aliases" => &["alias"],
+        "justification" => &["for", "have"],
+        "references" => &["for"],
+        "metadata" => &["version"],
+        "aliases" => &["alias"],
         "Specify" => &["decimal", "zeroOrPositiveInt", "positiveInt", "int"],
+        "Resource" => &[
+            "title",
+            "author",
+            "offset",
+            "url",
+            "homepage",
+            "type",
+            "edition",
+            "editor",
+            "institution",
+            "journal",
+            "publisher",
+            "volume",
+            "month",
+            "year",
+            "description",
+        ],
+        "Related" => &["to"],
+        "Proof" => &[
+            "for",
+            "have",
+            "by",
+            "label",
+            "let",
+            "if",
+            "forAll",
+            "exists",
+            "existsUnique",
+            "allOf",
+            "anyOf",
+            "oneOf",
+            "not",
+            "equivalently",
+            "piecewise",
+        ],
+        "Example" => CLAUSE_STARTERS,
         _ => return None,
     })
 }
+
+/// Built-in `\\...` types, specifiers, and clause/variadic commands.
+/// Tuple is `(label, snippet_or_plain, is_snippet, detail)`.
+const BUILTIN_COMMANDS: &[(&str, &str, bool, &str)] = &[
+    // Built-in types & specifiers
+    ("\\\\expression", "\\\\expression", false, "builtin type"),
+    ("\\\\statement", "\\\\statement", false, "builtin type"),
+    (
+        "\\\\specification",
+        "\\\\specification",
+        false,
+        "builtin type",
+    ),
+    ("\\\\type", "\\\\type", false, "builtin type"),
+    ("\\\\anything", "\\\\anything", false, "builtin type"),
+    ("\\\\abstract", "\\\\abstract", false, "builtin specifier"),
+    ("\\\\encoding", "\\\\encoding", false, "builtin specifier"),
+    ("\\\\dynamic", "\\\\dynamic", false, "builtin specifier"),
+    // Built-in clause & variadic commands
+    (
+        "\\\\not{P}",
+        "\\\\\\\\not{${1:P}}",
+        true,
+        "builtin clause",
+    ),
+    (
+        "\\\\and{P, Q}",
+        "\\\\\\\\and{${1:P}, ${2:Q}}",
+        true,
+        "builtin clause",
+    ),
+    (
+        "\\\\allOf{P, Q}",
+        "\\\\\\\\allOf{${1:P}, ${2:Q}}",
+        true,
+        "builtin clause",
+    ),
+    (
+        "\\\\or{P, Q}",
+        "\\\\\\\\or{${1:P}, ${2:Q}}",
+        true,
+        "builtin clause",
+    ),
+    (
+        "\\\\anyOf{P, Q}",
+        "\\\\\\\\anyOf{${1:P}, ${2:Q}}",
+        true,
+        "builtin clause",
+    ),
+    (
+        "\\\\oneOf{P, Q}",
+        "\\\\\\\\oneOf{${1:P}, ${2:Q}}",
+        true,
+        "builtin clause",
+    ),
+    (
+        "\\\\exists{x}:suchThat{P}",
+        "\\\\\\\\exists{${1:x}}:suchThat{${2:P}}",
+        true,
+        "builtin clause",
+    ),
+    (
+        "\\\\existsUnique{x}:suchThat{P}",
+        "\\\\\\\\existsUnique{${1:x}}:suchThat{${2:P}}",
+        true,
+        "builtin clause",
+    ),
+    (
+        "\\\\forAll{x}:where{P}:then{Q}",
+        "\\\\\\\\forAll{${1:x}}:where{${2:P}}:then{${3:Q}}",
+        true,
+        "builtin clause",
+    ),
+    (
+        "\\\\if{P}:then{Q}",
+        "\\\\\\\\if{${1:P}}:then{${2:Q}}",
+        true,
+        "builtin clause",
+    ),
+    (
+        "\\\\have{P}:iff{Q}",
+        "\\\\\\\\have{${1:P}}:iff{${2:Q}}",
+        true,
+        "builtin clause",
+    ),
+    (
+        "\\\\let{x}:where{P}:then{Q}",
+        "\\\\\\\\let{${1:x}}:where{${2:P}}:then{${3:Q}}",
+        true,
+        "builtin clause",
+    ),
+    (
+        "\\\\piecewise:if{P}:then{A}:else{B}",
+        "\\\\\\\\piecewise:if{${1:P}}:then{${2:A}}:else{${3:B}}",
+        true,
+        "builtin expression",
+    ),
+    (
+        "\\\\map{f}{xs}",
+        "\\\\\\\\map{${1:f}}{${2:xs}}",
+        true,
+        "builtin variadic",
+    ),
+    (
+        "\\\\leftReduce{f}{xs}",
+        "\\\\\\\\leftReduce{${1:f}}{${2:xs}}",
+        true,
+        "builtin variadic",
+    ),
+    (
+        "\\\\rightReduce{f}{xs}",
+        "\\\\\\\\rightReduce{${1:f}}{${2:xs}}",
+        true,
+        "builtin variadic",
+    ),
+];
+
+/// Inline formulation keywords suggested when typing inside an expression or
+/// clause body.
+const FORMULATION_KEYWORDS: &[&str] = &[
+    "is",
+    "is?",
+    "as",
+    "via",
+    "extends",
+    "where",
+    "suchThat",
+    "in",
+    "then",
+    "else",
+    "iff",
+];
 
 fn group_spec(head: &str) -> Option<&'static GroupSpec> {
     GROUPS.iter().find(|g| g.head == head)
@@ -556,9 +679,9 @@ fn heading_kind(lines: &[&str], heading: usize) -> Option<String> {
     section_header(next).map(|(_, label)| label.to_string())
 }
 
-/// If the text just before the cursor is a `\`-command being typed, return the
-/// matching command completions; `None` when the cursor is not in a command
-/// context (so section / bullet completion can take over).
+/// If the text just before the cursor is a `\`-command or `\\`-builtin being
+/// typed, return the matching completions; `None` when the cursor is not in a
+/// command context (so section / bullet completion can take over).
 fn command_completions(before: &str, signatures: &[Signature]) -> Option<Vec<CompletionCandidate>> {
     let typed = command_prefix(before)?;
     let replace_chars = typed.chars().count();
@@ -581,15 +704,33 @@ fn command_completions(before: &str, signatures: &[Signature]) -> Option<Vec<Com
             kind: CandidateKind::Command,
         });
     }
+
+    for &(label, insert, snippet, detail) in BUILTIN_COMMANDS {
+        if !label.starts_with(typed) || !seen.insert(label) {
+            continue;
+        }
+        candidates.push(CompletionCandidate {
+            label: label.to_string(),
+            insert: insert.to_string(),
+            detail: detail.to_string(),
+            snippet,
+            replace_chars,
+            kind: CandidateKind::Command,
+        });
+    }
+
     Some(candidates)
 }
 
-/// The `\`-command fragment ending at the cursor, including the leading `\`, or
-/// `None` if the run of characters before the cursor is not a command being
-/// typed (no `\`, or interrupted by whitespace / an argument delimiter).
+/// The `\`-command or `\\`-builtin fragment ending at the cursor, including the
+/// leading `\` or `\\`, or `None` if the run of characters before the cursor is
+/// not a command being typed.
 fn command_prefix(before: &str) -> Option<&str> {
     for (index, ch) in before.char_indices().rev() {
         if ch == '\\' {
+            if index > 0 && before.as_bytes()[index - 1] == b'\\' {
+                return Some(&before[index - 1..]);
+            }
             return Some(&before[index..]);
         }
         if !is_command_char(ch) {
@@ -597,6 +738,39 @@ fn command_prefix(before: &str) -> Option<&str> {
         }
     }
     None
+}
+
+/// Suggest inline formulation keywords (`is`, `as`, `via`, ...) when typing a
+/// word inside an expression or clause line.
+fn formulation_keyword_completions(before: &str) -> Vec<CompletionCandidate> {
+    if before.trim().is_empty() {
+        return Vec::new();
+    }
+    let mut start = before.len();
+    for (index, ch) in before.char_indices().rev() {
+        if ch.is_ascii_alphanumeric() || matches!(ch, '_' | '?') {
+            start = index;
+        } else {
+            break;
+        }
+    }
+    let prefix = &before[start..];
+    if prefix.is_empty() {
+        return Vec::new();
+    }
+    let replace_chars = prefix.chars().count();
+    FORMULATION_KEYWORDS
+        .iter()
+        .filter(|kw| kw.starts_with(prefix))
+        .map(|kw| CompletionCandidate {
+            label: (*kw).to_string(),
+            insert: (*kw).to_string(),
+            detail: "keyword".to_string(),
+            snippet: false,
+            replace_chars,
+            kind: CandidateKind::Section,
+        })
+        .collect()
 }
 
 /// Characters that may appear in a command signature after the leading `\`:
@@ -730,13 +904,13 @@ fn bullet_head(line: &str) -> Option<(usize, &str)> {
     parse_labeled(rest).map(|label| (indent_of(line), label))
 }
 
-fn candidate(label: &str, detail: String) -> CompletionCandidate {
+fn candidate(label: &str, detail: String, replace_chars: usize) -> CompletionCandidate {
     CompletionCandidate {
         label: label.to_string(),
         insert: format!("{label}:"),
         detail,
         snippet: false,
-        replace_chars: 0,
+        replace_chars,
         kind: CandidateKind::Section,
     }
 }
@@ -746,6 +920,7 @@ fn candidate(label: &str, detail: String) -> CompletionCandidate {
 fn bullet_completions(lines: &[&str], line: usize, before: &str) -> Vec<CompletionCandidate> {
     let bullet_indent = indent_of(before);
     let prefix = before.trim_start().trim_start_matches('.').trim_start();
+    let replace_chars = prefix.chars().count();
 
     // Find the section that owns this bullet: the nearest non-bullet header
     // above at the same-or-shallower indent (stopping at an item boundary).
@@ -757,6 +932,11 @@ fn bullet_completions(lines: &[&str], line: usize, before: &str) -> Vec<Completi
         }
         if let Some((indent, label)) = section_header(l) {
             if indent <= bullet_indent {
+                owner = Some(label);
+                break;
+            }
+        } else if let Some((indent, label)) = bullet_head(l) {
+            if indent < bullet_indent {
                 owner = Some(label);
                 break;
             }
@@ -781,7 +961,7 @@ fn bullet_completions(lines: &[&str], line: usize, before: &str) -> Vec<Completi
             } else {
                 format!("{kind} group")
             };
-            candidate(s, detail)
+            candidate(s, detail, replace_chars)
         })
         .collect()
 }
@@ -798,6 +978,7 @@ fn section_completions(lines: &[&str], line: usize, before: &str) -> Vec<Complet
     {
         return Vec::new();
     }
+    let replace_chars = prefix.chars().count();
 
     let (head, present_above, present_all) = if indent == 0 {
         gather_top_level(lines, line)
@@ -811,7 +992,7 @@ fn section_completions(lines: &[&str], line: usize, before: &str) -> Vec<Complet
         if indent == 0 {
             return top_level_heads()
                 .filter(|h| h.starts_with(prefix))
-                .map(|h| candidate(h, "group".to_string()))
+                .map(|h| candidate(h, "group".to_string(), replace_chars))
                 .collect();
         }
         return Vec::new();
@@ -847,7 +1028,7 @@ fn section_completions(lines: &[&str], line: usize, before: &str) -> Vec<Complet
         .filter(|(_, (name, _))| name.starts_with(prefix))
         .map(|(_, (name, required))| {
             let req = if *required { "required" } else { "optional" };
-            candidate(name, format!("{req} section of {head}"))
+            candidate(name, format!("{req} section of {head}"), replace_chars)
         })
         .collect();
 
@@ -861,6 +1042,7 @@ fn section_completions(lines: &[&str], line: usize, before: &str) -> Vec<Complet
         candidates.push(candidate(
             "from",
             "required section of Relation".to_string(),
+            replace_chars,
         ));
     }
     candidates
@@ -986,7 +1168,7 @@ mod tests {
         assert!(got.contains(&"using".to_string()));
         assert!(got.contains(&"when".to_string()));
         assert!(got.contains(&"specifies".to_string()));
-        assert!(got.contains(&"Documented".to_string()));
+        assert!(got.contains(&"Appendix".to_string()));
         // the head itself is not re-offered
         assert!(!got.contains(&"Defines".to_string()));
     }
@@ -998,7 +1180,7 @@ mod tests {
         assert!(!got.contains(&"using".to_string())); // using is before when
         assert!(!got.contains(&"when".to_string())); // already present
         assert!(got.contains(&"expresses".to_string()));
-        assert!(got.contains(&"Id".to_string()));
+        assert!(got.contains(&"Appendix".to_string()));
     }
 
     #[test]
@@ -1056,8 +1238,8 @@ mod tests {
 
     #[test]
     fn bullet_in_documented_suggests_item_groups() {
-        let text = "Defines: f\nDocumented:\n. ";
-        let got = labels(&complete(text, 2, 2));
+        let text = "Defines: f\nAppendix:\n. documented:\n  . ";
+        let got = labels(&complete(text, 3, 4));
         assert!(got.contains(&"written".to_string()));
         assert!(got.contains(&"called".to_string()));
         assert!(!got.contains(&"forAll".to_string()));
@@ -1191,12 +1373,66 @@ mod tests {
     #[test]
     fn command_completion_backslash_offers_all() {
         let text = "[\\domain{R}]\nDefines: D\n[\\range{R}]\nDefines: N\n\n\\";
-        let mut got = labels(&complete(text, 5, 1));
-        got.sort();
+        let got = labels(&complete(text, 5, 1));
+        assert!(got.contains(&"\\domain{R}".to_string()));
+        assert!(got.contains(&"\\range{R}".to_string()));
+        assert!(got.contains(&"\\\\statement".to_string()));
+        assert!(got.contains(&"\\\\forAll{x}:where{P}:then{Q}".to_string()));
+    }
+
+    #[test]
+    fn builtin_double_backslash_completion() {
+        let text = "[\\domain{R}]\nDefines: D\n\n\\\\";
+        let all_builtins = labels(&complete(text, 3, 2));
+        assert!(all_builtins.contains(&"\\\\abstract".to_string()));
+        assert!(all_builtins.contains(&"\\\\statement".to_string()));
+        assert!(all_builtins.contains(&"\\\\forAll{x}:where{P}:then{Q}".to_string()));
+        assert!(!all_builtins.contains(&"\\domain{R}".to_string()));
+
+        let text_filtered = "Declares: X\n. \\\\fo";
+        let items = complete(text_filtered, 1, 6);
+        assert_eq!(items.len(), 1);
+        assert_eq!(items[0].label, "\\\\forAll{x}:where{P}:then{Q}");
+        assert_eq!(items[0].replace_chars, 4);
+        assert!(items[0].snippet);
+    }
+
+    #[test]
+    fn declares_blank_next_line_offers_all_sections() {
+        let text = "Declares:\n";
+        let got = labels(&complete(text, 1, 0));
         assert_eq!(
             got,
-            vec!["\\domain{R}".to_string(), "\\range{R}".to_string()]
+            vec![
+                "using",
+                "when",
+                "extends",
+                "specifies",
+                "satisfies",
+                "Requires",
+                "Enables",
+                "Appendix",
+                "Id",
+            ]
         );
+    }
+
+    #[test]
+    fn resource_bullet_offers_resource_fields() {
+        let text = "Resource:\n. ";
+        let got = labels(&complete(text, 1, 2));
+        assert!(got.contains(&"title".to_string()));
+        assert!(got.contains(&"author".to_string()));
+        assert!(got.contains(&"url".to_string()));
+    }
+
+    #[test]
+    fn inline_formulation_keyword_completion() {
+        let text = "Declares: X\nwhen:\n. X i";
+        let got = labels(&complete(text, 2, 5));
+        assert!(got.contains(&"is".to_string()));
+        assert!(got.contains(&"is?".to_string()));
+        assert!(got.contains(&"in".to_string()));
     }
 
     #[test]

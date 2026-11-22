@@ -8,8 +8,9 @@ Example:
 ```mlg
 [\function:on{A}:to{B}]
 Declares: f(x__) ::= y_
-Documented:
-. called: \"function\"
+Appendix:
+. documented:
+  . called: \"function\"
 Id: \"123\"
 ```
 "

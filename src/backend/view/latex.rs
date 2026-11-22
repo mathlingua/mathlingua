@@ -907,14 +907,16 @@ mod tests {
     fn latex_check_reports_warning_for_command_with_invalid_written_expansion() {
         let source = r#"[\thing]
 Declares: value
-Documented:
-. called: "thing"
+Appendix:
+. documented:
+  . called: "thing"
 
 [\broken]
 Defines: value
 when: value is \thing
-Documented:
-. written: "\invalid{latex"
+Appendix:
+. documented:
+  . written: "\invalid{latex"
 
 Theorem:
 then:
@@ -958,15 +960,15 @@ then:
             .iter()
             .find(|m| {
                 m.message.starts_with("For `\\broken`:")
-                    && matches!(&m.location, Some(EventLocation::File { span: Some(span), .. }) if span.start.row == Some(13))
+                    && matches!(&m.location, Some(EventLocation::File { span: Some(span), .. }) if span.start.row == Some(15))
             })
             .expect("expected warning for `\\broken` in Theorem");
 
         assert!(cmd_warning.message.contains("KaTeX parse error:"));
 
-        // Location of `. 1 + \broken + 2` is line 14 (0-based row 13), column of `\broken` is 6
+        // Location of `. 1 + \broken + 2` is line 16 (0-based row 15), column of `\broken` is 6
         if let Some(EventLocation::File { span: Some(span), .. }) = &cmd_warning.location {
-            assert_eq!(span.start.row, Some(13));
+            assert_eq!(span.start.row, Some(15));
             assert_eq!(span.start.column, Some(6));
         } else {
             panic!("expected file location with span on warning");
@@ -1027,14 +1029,16 @@ then:
     fn latex_check_reports_warning_for_text_entry_with_command_formulation_error() {
         let source = r#"[\thing]
 Declares: value
-Documented:
-. called: "thing"
+Appendix:
+. documented:
+  . called: "thing"
 
 [\broken]
 Defines: value
 when: value is \thing
-Documented:
-. written: "\invalid{latex"
+Appendix:
+. documented:
+  . written: "\invalid{latex"
 
 Text:
 . "Reference {. \broken .} in prose."
@@ -1074,13 +1078,13 @@ Text:
             .iter()
             .find(|m| {
                 m.message.starts_with("For `\\broken`:")
-                    && matches!(&m.location, Some(EventLocation::File { span: Some(span), .. }) if span.start.row == Some(12))
+                    && matches!(&m.location, Some(EventLocation::File { span: Some(span), .. }) if span.start.row == Some(14))
             })
-            .expect("expected warning for `\\broken` in text on line 13");
+            .expect("expected warning for `\\broken` in text on line 15");
 
         assert!(cmd_warning.message.contains("KaTeX parse error:"));
         if let Some(EventLocation::File { span: Some(span), .. }) = &cmd_warning.location {
-            assert_eq!(span.start.row, Some(12));
+            assert_eq!(span.start.row, Some(14));
             assert_eq!(span.start.column, Some(16));
         }
     }

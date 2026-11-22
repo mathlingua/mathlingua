@@ -6,8 +6,9 @@ Accepts one capability requirement on a Declares item.
 Declares: X
 Requires:
 . capability: x_ "in" X :-> \\abstract
-Documented:
-. called: "set"
+Appendix:
+. documented:
+  . called: "set"
 == end:input ==
 == begin:output ==
 == end:output ==

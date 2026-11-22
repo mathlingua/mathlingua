@@ -385,19 +385,10 @@ function CardIcon() {
 }
 
 /** Returns true for support sections hidden behind the card expander. */
-function isSupportSection(groupKind: string, section: SectionView): boolean {
-  // An item-level `Writing:` section only tunes how identifiers render, so it is
-  // support content. The collection-wide `Writing:` group's leading section
-  // carries the group's whole point, so it stays visible.
-  if (section.label === "Writing") {
-    return groupKind !== "Writing";
-  }
-
+function isSupportSection(_groupKind: string, section: SectionView): boolean {
   return (
-    section.label === "Documented" ||
-    section.label === "References" ||
+    section.label === "Appendix" ||
     section.label === "Provides" ||
-    section.label === "Justification" ||
     section.label === "Id"
   );
 }

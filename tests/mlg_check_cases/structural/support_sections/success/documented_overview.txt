@@ -4,9 +4,10 @@ Accepts one overview entry in a Documented section.
 == begin:input ==
 [\item]
 Declares: x
-Documented:
-. called: "item"
-. overview: "A short overview."
+Appendix:
+. documented:
+  . called: "item"
+  . overview: "A short overview."
 == end:input ==
 == begin:output ==
 == end:output ==

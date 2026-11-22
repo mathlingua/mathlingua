@@ -4,8 +4,9 @@ Rejects a Refines item that has no adjective rendering in Documented.
 == begin:input ==
 [\thing]
 Declares: x
-Documented:
-. called: "thing"
+Appendix:
+. documented:
+  . called: "thing"
 
 [\(special)::thing]
 Refines: x

@@ -4,14 +4,16 @@ Accepts a command expression containing only the second optional tail from a two
 == begin:input ==
 [\thing]
 Declares: value
-Documented:
-. called: "thing"
+Appendix:
+. documented:
+  . called: "thing"
 
 [\foo:?baz{A}:?bar{B}]
 Defines: A ::= B "defines" B
 when: A, B is \thing
-Documented:
-. called: "foo"
+Appendix:
+. documented:
+  . called: "foo"
 
 Theorem:
 given: a, b is \thing

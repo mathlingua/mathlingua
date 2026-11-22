@@ -4,8 +4,9 @@ Accepts one formulation clause in an Example section; the preceding declaration 
 == begin:input ==
 [\set]
 Declares: X
-Documented:
-. called: "set"
+Appendix:
+. documented:
+  . called: "set"
 
 Example:
 . forAll: x is \set

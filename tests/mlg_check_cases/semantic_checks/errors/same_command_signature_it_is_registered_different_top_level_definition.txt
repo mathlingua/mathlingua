@@ -4,14 +4,16 @@ Rejects the same parameterless command signature when two different top-level de
 == begin:input ==
 [\same]
 Defines: x is \\anything
-Documented:
-. called: "same"
+Appendix:
+. documented:
+  . called: "same"
 
 [\same]
 Theorem:
 then: 1 = 1
-Documented:
-. called: "same"
+Appendix:
+. documented:
+  . called: "same"
 == end:input ==
 == begin:output ==
 error: Duplicate command signature `\same` in Theorem; previously defined as Defines in case.mlg:1:2

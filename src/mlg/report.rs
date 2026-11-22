@@ -475,7 +475,7 @@ mod tests {
     #[test]
     fn a_source_containing_a_fence_uses_a_longer_one() {
         // The extracted item embeds its own ```mlg fence in quoted text.
-        let source = "Declares: S\nDocumented:\n. written: \"```mlg\\nx\\n```\"";
+        let source = "Declares: S\nAppendix:\n. documented:\n  . written: \"```mlg\\nx\\n```\"";
 
         assert_eq!(fence_for(source), "````");
     }

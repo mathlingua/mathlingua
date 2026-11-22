@@ -10,8 +10,9 @@ Related:
   specifies: "Closely connected subjects."
 . to: "\function:on:to"
   specifies: "Functions studied here."
-Documented:
-. called: "Real Analysis"
+Appendix:
+. documented:
+  . called: "Real Analysis"
 
 [#complex.analysis]
 Topic: "Analysis over the complex numbers."

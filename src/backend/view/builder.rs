@@ -496,12 +496,23 @@ fn theorem_proof_text(
         .filter(|text| !text.trim().is_empty())
 }
 
+fn appendix_sub_section<'a>(sections: &'a [ProtoSection], label: &str) -> Option<&'a ProtoSection> {
+    let appendix = sections.iter().find(|section| section.label == "Appendix")?;
+    appendix.arguments.iter().find_map(|argument| match argument {
+        ProtoArgument::Group(group) => group
+            .sections
+            .iter()
+            .find(|section| section.label == label),
+        _ => None,
+    })
+}
+
 fn collect_reference_label_links(
     sections: &[ProtoSection],
     registry: &RenderRegistry,
 ) -> HashMap<String, String> {
     let mut links = HashMap::new();
-    let Some(references) = sections.iter().find(|section| section.label == "References") else {
+    let Some(references) = appendix_sub_section(sections, "references") else {
         return links;
     };
     for argument in &references.arguments {
@@ -613,7 +624,10 @@ fn render_declared_references_in_text(
     registry: &RenderRegistry,
 ) -> String {
     let mut raw_sources: Vec<&str> = Vec::new();
-    if let Some(references) = sections.iter().find(|section| section.label == "References") {
+    if let Some(references) = appendix_sub_section(sections, "references") {
+        if let Some(inline) = references.inline_argument.as_deref() {
+            raw_sources.push(inline);
+        }
         for argument in &references.arguments {
             match argument {
                 ProtoArgument::Formulation(formulation) => {
@@ -676,10 +690,8 @@ fn escape_markdown_link_label(text: &str) -> String {
 /// registry — so only later `Writing:` sections are treated as item-level
 /// overrides. Entries whose body is not a plain-name `:~>` alias are skipped.
 fn collect_item_writing_overrides(sections: &[ProtoSection]) -> Vec<(String, String)> {
-    sections
-        .iter()
-        .skip(1)
-        .filter(|section| section.label == "Writing")
+    appendix_sub_section(sections, "writing")
+        .into_iter()
         .flat_map(|section| {
             let inline = section
                 .inline_argument
@@ -741,10 +753,7 @@ fn theorem_like_heading_latex(
 /// A `written:` nested inside a `called:` group counts as the written form too, so
 /// that both spellings of "documented with both forms" title a card the same way.
 fn documented_title_forms(sections: &[ProtoSection]) -> (Option<String>, Option<String>) {
-    let Some(documented) = sections
-        .iter()
-        .find(|section| section.label == "Documented")
-    else {
+    let Some(documented) = appendix_sub_section(sections, "documented") else {
         return (None, None);
     };
 
@@ -918,10 +927,7 @@ fn page_view(kind: &str, sections: &[ProtoSection], registry: &RenderRegistry) -
 }
 
 fn documented_description_text(group: &ProtoGroup) -> Option<String> {
-    let descriptions = group
-        .sections
-        .iter()
-        .find(|section| section.label == "Documented")?
+    let descriptions = appendix_sub_section(&group.sections, "documented")?
         .arguments
         .iter()
         .filter_map(|argument| match argument {
@@ -1040,7 +1046,7 @@ fn argument_view(
     match argument {
         ProtoArgument::Formulation(formulation) => {
             let row = formulation.metadata.row;
-            if matches!(section_label, "References" | "entry")
+            if matches!(section_label, "references" | "entry")
                 && let Some(mut reference) = reference_argument_view(&formulation.text, registry)
             {
                 if let ArgumentView::Reference { label, .. } = &mut reference {
@@ -1067,7 +1073,7 @@ fn argument_view(
             }
         }
         ProtoArgument::Text(text) => {
-            if matches!(section_label, "References" | "entry")
+            if matches!(section_label, "references" | "entry")
                 && let Some(mut reference) = reference_argument_view(&text.text, registry)
             {
                 if let ArgumentView::Reference { label, .. } = &mut reference {
@@ -1075,10 +1081,10 @@ fn argument_view(
                 }
                 return reference;
             }
-            // A collection-wide `Writing:` alias is authored as quoted text (its
-            // body may be arbitrary LaTeX), so render the alias from the stripped
-            // contents rather than treating it as a documented template.
-            let latex = if section_label == "Writing" {
+            // A collection-wide `Writing:` or appendix `writing:` alias is authored
+            // as quoted text (its body may be arbitrary LaTeX), so render the alias
+            // from the stripped contents rather than treating it as a documented template.
+            let latex = if matches!(section_label, "Writing" | "writing") {
                 strip_quoted_text(&text.text)
                     .as_deref()
                     .and_then(|inner| render_writing_alias_latex(inner, registry))
@@ -1100,7 +1106,7 @@ fn argument_view(
                 .sections
                 .into_iter()
                 .map(|section| {
-                    let context = if section_label == "Documented" {
+                    let context = if section_label == "documented" {
                         SectionContext::Documented
                     } else {
                         SectionContext::Default
@@ -1188,7 +1194,7 @@ mod tests {
     fn collection_view_title_at(root: &Path) -> String {
         let content = root.join("content");
         let file = content.join("sets.mlg");
-        let source = "[\\set]\nDeclares: S\nDocumented:\n. called: \"set\"\n";
+        let source = "[\\set]\nDeclares: S\nAppendix:\n. documented:\n  . called: \"set\"\n";
 
         fs::create_dir_all(&content).unwrap();
         fs::write(&file, source).unwrap();
@@ -1244,7 +1250,7 @@ mod tests {
         let root = temp_dir.path().join("repo");
         let content = root.join("content");
         let file = content.join("sets.mlg");
-        let source = "[\\set]\nDeclares: S\nDocumented:\n. called:\n  . \"set\"\n";
+        let source = "[\\set]\nDeclares: S\nAppendix:\n. documented:\n  . called:\n    . \"set\"\n";
 
         fs::create_dir_all(&content).unwrap();
         fs::write(&file, source).unwrap();
@@ -1384,13 +1390,15 @@ that:
         let file = content.join("groups.mlg");
         let source = r#"[\group]
 Declares: G
-Documented:
-. called: "group"
+Appendix:
+. documented:
+  . called: "group"
 
 [\(finite)::group]
 Refines: G ::= (X, *, e)
-Documented:
-. adjective: "finite"
+Appendix:
+. documented:
+  . adjective: "finite"
 "#;
 
         fs::create_dir_all(&content).unwrap();
@@ -1429,9 +1437,10 @@ Documented:
         let file = content.join("sets.mlg");
         let source = r#"[\membership]
 Declares: X
-Documented:
-. called: "membership of $x_?$ in $X?$"
-. written: "x_? \in X?"
+Appendix:
+. documented:
+  . called: "membership of $x_?$ in $X?$"
+  . written: "x_? \in X?"
 "#;
 
         fs::create_dir_all(&content).unwrap();
@@ -1450,11 +1459,15 @@ Documented:
         let mut event_log = EventLog::new();
         let view = build_collection_view(&root, &[parsed_file], &[], &[], &mut event_log)
             .expect("expected view");
-        let documented = view.files[0].items[0]
+        let appendix = view.files[0].items[0]
             .sections
             .iter()
-            .find(|section| section.label == "Documented")
-            .expect("expected documented section");
+            .find(|section| section.label == "Appendix")
+            .expect("expected Appendix section");
+        let ArgumentView::Group { sections: doc_sections, .. } = &appendix.arguments[0] else {
+            panic!("expected documented group");
+        };
+        let documented = &doc_sections[0];
         let ArgumentView::Group { sections, .. } = &documented.arguments[0] else {
             panic!("expected called group");
         };
@@ -1477,14 +1490,15 @@ Documented:
         let file = content.join("sets.mlg");
         let source = r#"[\set]
 Declares: X
-Documented:
-. called: "set"
-. description: "Some text
-                          Some indented text
-                          \[
-                              \some.math
-                          \]
-                          "
+Appendix:
+. documented:
+  . called: "set"
+  . description: "Some text
+                            Some indented text
+                            \[
+                                \some.math
+                            \]
+                            "
 Id: "11111111-1111-4111-8111-111111111111"
 "#;
 
@@ -1519,11 +1533,15 @@ Id: "11111111-1111-4111-8111-111111111111"
             Some("Some text\nSome indented text\n\\[\n    \\some.math\n\\]")
         );
 
-        let documented = view.files[0].items[1]
+        let appendix = view.files[0].items[1]
             .sections
             .iter()
-            .find(|section| section.label == "Documented")
-            .expect("expected documented section");
+            .find(|section| section.label == "Appendix")
+            .expect("expected Appendix section");
+        let ArgumentView::Group { sections: doc_sections, .. } = &appendix.arguments[0] else {
+            panic!("expected documented group");
+        };
+        let documented = &doc_sections[0];
         let ArgumentView::Group { sections, .. } = &documented.arguments[1] else {
             panic!("expected description group");
         };
@@ -1593,8 +1611,9 @@ Id: "11111111-1111-4111-8111-111111111111"
 
 [#real.analysis]
 Topic: "Analysis over the real numbers."
-Documented:
-. called: "Real Variable Theory"
+Appendix:
+. documented:
+  . called: "Real Variable Theory"
 Id: "22222222-2222-4222-8222-222222222222"
 "#;
 
@@ -1641,14 +1660,16 @@ Id: "22222222-2222-4222-8222-222222222222"
         let file = content.join("sets.mlg");
         let source = r#"[\set]
 Declares: X
-Documented:
-. called: "set"
+Appendix:
+. documented:
+  . called: "set"
 
 
 [\nonempty.set]
 Declares: X is \set
-Documented:
-. called: "non-empty set"
+Appendix:
+. documented:
+  . called: "non-empty set"
 "#;
 
         fs::create_dir_all(&content).unwrap();
@@ -1688,15 +1709,17 @@ that:
 . allOf:
   . A
   . B
-Documented:
-. written: "A? \text{ and } B?"
+Appendix:
+. documented:
+  . written: "A? \text{ and } B?"
 
 
 [\axiom.of.choice]
 Axiom:
 then: X = X
-Documented:
-. called: "axiom of choice"
+Appendix:
+. documented:
+  . called: "axiom of choice"
 
 
 [\axiom.of.unordered.pair]
@@ -1744,14 +1767,15 @@ then: X = X
         let source = r#"Theorem:
 given: x is \natural
 then: x = x
-Documented:
-. called: "reflexivity"
 Proof:
 . "Because {.x = x.}; see $book.ref."
-Writing:
-. "x :~> \xi"
-References:
-. $book.ref
+Appendix:
+. documented:
+  . called: "reflexivity"
+. writing:
+  . "x :~> \xi"
+. references:
+  . $book.ref
 Id: "11111111-1111-4111-8111-111111111111"
 
 
@@ -1809,8 +1833,9 @@ Id: "22222222-2222-4222-8222-222222222222"
         let source = r#"Theorem:
 given: a is \\expression
 then: a = a
-Documented:
-. called: "Commutativity"
+Appendix:
+. documented:
+  . called: "Commutativity"
 Id: "11111111-1111-4111-8111-111111111111"
 
 
@@ -1821,8 +1846,9 @@ Id: "22222222-2222-4222-8222-222222222222"
 
 Conjecture:
 then: Y = Y
-Documented:
-. called: "Twin prime conjecture"
+Appendix:
+. documented:
+  . called: "Twin prime conjecture"
 Id: "33333333-3333-4333-8333-333333333333"
 "#;
 
@@ -1864,33 +1890,37 @@ Id: "33333333-3333-4333-8333-333333333333"
         let file = content.join("thm.mlg");
         let source = r#"Theorem:
 then: X = X
-Documented:
-. called: "Reflexivity"
-. written: "X = X"
+Appendix:
+. documented:
+  . called: "Reflexivity"
+  . written: "X = X"
 Id: "11111111-1111-4111-8111-111111111111"
 
 
 Theorem:
 then: Y = Y
-Documented:
-. written: "Y = Y"
-. called: "Reflexivity again"
+Appendix:
+. documented:
+  . written: "Y = Y"
+  . called: "Reflexivity again"
 Id: "22222222-2222-4222-8222-222222222222"
 
 
 Theorem:
 then: Z = Z
-Documented:
-. written: "Z = Z"
+Appendix:
+. documented:
+  . written: "Z = Z"
 Id: "33333333-3333-4333-8333-333333333333"
 
 
 Theorem:
 then: W = W
-Documented:
-. called: "Nested"
-  written:
-  . "W = W"
+Appendix:
+. documented:
+  . called: "Nested"
+    written:
+    . "W = W"
 Id: "44444444-4444-4444-8444-444444444444"
 "#;
 
@@ -2116,8 +2146,9 @@ Id: "11111111-1111-4111-8111-111111111111"
 Declares: X
 satisfies:
 . pi = pi
-Writing:
-. "pi :~> \varpi"
+Appendix:
+. writing:
+  . "pi :~> \varpi"
 Id: "22222222-2222-4222-8222-222222222222"
 "#;
 
@@ -2166,9 +2197,10 @@ forAll:
 . [somelabel]: x is \real
 then:
 . [abc]: x > 0
-Documented:
-. overview:
-  . [mytext]: "A labeled prose description."
+Appendix:
+. documented:
+  . overview:
+    . [mytext]: "A labeled prose description."
 Id: "11111111-1111-4111-8111-111111111111"
 "#;
 
@@ -2215,11 +2247,15 @@ Id: "11111111-1111-4111-8111-111111111111"
             other => panic!("expected formulation argument, got {other:?}"),
         }
 
-        let documented = theorem
+        let appendix = theorem
             .sections
             .iter()
-            .find(|section| section.label == "Documented")
-            .expect("expected a Documented section");
+            .find(|section| section.label == "Appendix")
+            .expect("expected an Appendix section");
+        let ArgumentView::Group { sections: doc_sections, .. } = &appendix.arguments[0] else {
+            panic!("expected documented group");
+        };
+        let documented = &doc_sections[0];
         let ArgumentView::Group { sections, .. } = &documented.arguments[0] else {
             panic!("expected overview group");
         };
@@ -2244,9 +2280,10 @@ Id: "11111111-1111-4111-8111-111111111111"
         let file = content.join("references.mlg");
         let source = r#"Theorem:
 then: x = x
-References:
-. "$royden.real.analysis"
-. "$royden.real.analysis:page{4}"
+Appendix:
+. references:
+  . "$royden.real.analysis"
+  . "$royden.real.analysis:page{4}"
 Id: "fb5d306e-e1ed-4970-ba0e-03884d28ae7b"
 
 
@@ -2276,11 +2313,15 @@ Id: "32dd9150-8f43-46ee-aa6c-97809fc9ea8d"
         let view = build_collection_view(&root, &[parsed_file], &[], &[], &mut event_log)
             .expect("expected view");
 
-        let references = view.files[0].items[0]
+        let appendix = view.files[0].items[0]
             .sections
             .iter()
-            .find(|section| section.label == "References")
-            .expect("expected References section");
+            .find(|section| section.label == "Appendix")
+            .expect("expected Appendix section");
+        let ArgumentView::Group { sections: ref_sections, .. } = &appendix.arguments[0] else {
+            panic!("expected references group");
+        };
+        let references = &ref_sections[0];
         assert_eq!(references.arguments.len(), 2);
         assert_eq!(
             references.arguments[0],

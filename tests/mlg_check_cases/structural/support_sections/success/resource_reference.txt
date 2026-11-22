@@ -9,8 +9,9 @@ Resource:
 Theorem:
 given: x is \\anything
 then: x = x
-References:
-. $source
+Appendix:
+. references:
+  . $source
 == end:input ==
 == begin:output ==
 == end:output ==

@@ -6,8 +6,9 @@ Rejects one extra parenthesized value in a command reference whose curly argumen
 States:
 when: A is \\anything
 that: 1 = 1
-Documented:
-. called: "some function"
+Appendix:
+. documented:
+  . called: "some function"
 
 Theorem:
 given: A, x, y, z is \\anything

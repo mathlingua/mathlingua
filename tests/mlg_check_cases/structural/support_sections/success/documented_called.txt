@@ -4,8 +4,9 @@ Accepts one called entry in a Documented section.
 == begin:input ==
 [\item]
 Declares: x
-Documented:
-. called: "item"
+Appendix:
+. documented:
+  . called: "item"
 == end:input ==
 == begin:output ==
 == end:output ==

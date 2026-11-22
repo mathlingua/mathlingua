@@ -18,22 +18,23 @@ iff:
   . y = y
   iff:
   . x = x
-Documented:
-. called: "Every element equals itself"
-. [axiom.written]
-  written:
-  . "axiom"
-Justification:
-. [axiom.justified]
-  for: (:logic.if:)
-  have:
-  . x = x
-  asserting:
-  . x = x
-Aliases:
-. [axiom.alias]
-  alias: axiom(x_) :=> x
-References:
-. $axiom.ref
-Metadata:
-. version: "1.0"
+Appendix:
+. documented:
+  . called: "Every element equals itself"
+  . [axiom.written]
+    written:
+    . "axiom"
+. justification:
+  . [axiom.justified]
+    for: (:logic.if:)
+    have:
+    . x = x
+    asserting:
+    . x = x
+. aliases:
+  . [axiom.alias]
+    alias: axiom(x_) :=> x
+. references:
+  . $axiom.ref
+. metadata:
+  . version: "1.0"

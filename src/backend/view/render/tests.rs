@@ -26,7 +26,7 @@ fn registry_for(source: &str) -> super::RenderRegistry {
 /// placeholder `A?`, `A+?`, or `A-?`, so the result is the substituted value alone.
 fn rendered_with_modifier(modifier: &str, argument: &str) -> String {
     let registry = registry_for(&format!(
-        "[\\f:of{{A}}]\nDeclares: X\nDocumented:\n. written: \"A{modifier}?\"\n"
+        "[\\f:of{{A}}]\nDeclares: X\nAppendix:\n. documented:\n  . written: \"A{modifier}?\"\n"
     ));
 
     render_formulation_latex(&format!(r#"\f:of{{{argument}}}"#), &registry)
@@ -52,8 +52,9 @@ fn renders_command_expressions_from_written_templates() {
     let registry = registry_for(
         r#"[\empty.set]
 Defines: X is \set
-Documented:
-. written: "\emptyset"
+Appendix:
+. documented:
+  . written: "\emptyset"
 "#,
     );
 
@@ -73,8 +74,9 @@ specifies:
 . R is \set
 . 0 is \natural
 . succ is (_ is \natural) -> (_ is \natural)
-Documented:
-. written: "\mathbb{R}"
+Appendix:
+. documented:
+  . written: "\mathbb{R}"
 "#,
     );
 
@@ -97,8 +99,9 @@ fn renders_variadic_command_arguments_in_written_templates() {
     let registry = registry_for(
         r#"[\sequence:of{x...n}]
 Declares: S
-Documented:
-. written: "x? \; (n?)"
+Appendix:
+. documented:
+  . written: "x? \; (n?)"
 "#,
     );
 
@@ -114,26 +117,30 @@ fn renders_the_most_specific_mapping_parameter_overload() {
         r#"[\integral{f(x_, y_)}:d{f.x_}]
 Axiom:
 then: P
-Documented:
-. called: "first parameter integral"
+Appendix:
+. documented:
+  . called: "first parameter integral"
 
 [\integral{f(x_, y_)}:d{f.y_}]
 Axiom:
 then: P
-Documented:
-. called: "second parameter integral"
+Appendix:
+. documented:
+  . called: "second parameter integral"
 
 [\integral{f(x_[i_:=1...n])}:d{f.x1?_, f.x2?_}]
 Axiom:
 then: P
-Documented:
-. called: "two parameter integral"
+Appendix:
+. documented:
+  . called: "two parameter integral"
 
 [\integral{f(x_[i_:=1...n])}:d{f.x_[i_[j_:=1...m]]}]
 Axiom:
 then: P
-Documented:
-. called: "variadic parameter integral"
+Appendix:
+. documented:
+  . called: "variadic parameter integral"
 "#,
     );
 
@@ -162,8 +169,9 @@ fn mapping_parameter_written_templates_render_the_body_and_selected_parameter() 
     let registry = registry_for(
         r#"[\d{f(x_, y_)}:d{f.x_}]
 Defines: g(x_, y_) is \function
-Documented:
-. written: "\frac{d}{d x_?} f?"
+Appendix:
+. documented:
+  . written: "\frac{d}{d x_?} f?"
 "#,
     );
 
@@ -220,20 +228,23 @@ fn renders_variadic_parameters_and_slices_symbolically() {
         r#"[\plain{x...}]
 States:
 that: x... = x...
-Documented:
-. written: "x?"
+Appendix:
+. documented:
+  . written: "x?"
 
 [\one{x[i_ := 1...n]}]
 States:
 that: x[1...i_...n] = x[1...i_...n]
-Documented:
-. written: "x?"
+Appendix:
+. documented:
+  . written: "x?"
 
 [\zero{x[i_ := 0...n]}]
 States:
 that: x[0...i_...n] = x[0...i_...n]
-Documented:
-. written: "x?"
+Appendix:
+. documented:
+  . written: "x?"
 "#,
     );
 
@@ -324,32 +335,37 @@ fn renders_two_dimensional_variadics_and_matrix_templates() {
         r#"[\matrix{x[(i_, j_) := (1,1)...(m,n)]}]
 Axiom:
 then: P
-Documented:
-. written: "\left[ x?{{...,...}\\} \right]"
+Appendix:
+. documented:
+  . written: "\left[ x?{{...,...}\\} \right]"
 
 [\matrix.prefix{x[(i_, j_) := (1,1)...(m,n)]}]
 Axiom:
 then: P
-Documented:
-. written: "x?{R...{...C}}"
+Appendix:
+. documented:
+  . written: "x?{R...{...C}}"
 
 [\matrix.postfix{x[(i_, j_) := (1,1)...(m,n)]}]
 Axiom:
 then: P
-Documented:
-. written: "x?{{C...}...R}"
+Appendix:
+. documented:
+  . written: "x?{{C...}...R}"
 
 [\matrix.both{x[(i_, j_) := (1,1)...(m,n)]}]
 Axiom:
 then: P
-Documented:
-. written: "x?{L...{...C...}...R}"
+Appendix:
+. documented:
+  . written: "x?{L...{...C...}...R}"
 
 [\matrix.bmatrix{x[(i_, j_) := (1,1)...(m,n)]}]
 Axiom:
 then: P
-Documented:
-. written: "\begin{bmatrix} x?{{...&...}...\\} \end{bmatrix}"
+Appendix:
+. documented:
+  . written: "\begin{bmatrix} x?{{...&...}...\\} \end{bmatrix}"
 "#,
     );
 
@@ -403,32 +419,37 @@ fn renders_variadic_written_and_called_join_notation() {
         r#"[\post{x...}]
 States:
 that: x... = x...
-Documented:
-. written: "x?{...A}"
+Appendix:
+. documented:
+  . written: "x?{...A}"
 
 [\pre{x...}]
 States:
 that: x... = x...
-Documented:
-. written: "x?{B...}"
+Appendix:
+. documented:
+  . written: "x?{B...}"
 
 [\between{x...}]
 States:
 that: x... = x...
-Documented:
-. written: "x?{...\text{ and }...}"
+Appendix:
+. documented:
+  . written: "x?{...\text{ and }...}"
 
 [\called{x...}]
 States:
 that: x... = x...
-Documented:
-. called: "all of $x?{...\text{ and }...}$"
+Appendix:
+. documented:
+  . called: "all of $x?{...\text{ and }...}$"
 
 [\paren{x...}]
 States:
 that: x... = x...
-Documented:
-. written: "x+?{...C...}"
+Appendix:
+. documented:
+  . written: "x+?{...C...}"
 "#,
     );
 
@@ -460,8 +481,9 @@ fn renders_command_context_assignments_as_visible_given_values() {
         r#"[\axiom.of.extension]
 Axiom:
 then: P
-Documented:
-. called: "axiom of extension"
+Appendix:
+. documented:
+  . called: "axiom of extension"
 "#,
     );
 
@@ -477,8 +499,9 @@ fn renders_command_context_assignments_as_visible_using_values() {
         r#"[\ordered.pair]
 Declares: p
 using: A, B is \set
-Documented:
-. called: "ordered pair"
+Appendix:
+. documented:
+  . called: "ordered pair"
 "#,
     );
 
@@ -497,9 +520,10 @@ when: A, B is \set
 Enables:
 . capability: R(a_, b_) :-> (a_, b_) "in" R
   written: "a_? \: R \: b_?"
-Documented:
-. called: "relation from $A?$ to $B?$"
-. written: "R? \subseteq A? \times B?"
+Appendix:
+. documented:
+  . called: "relation from $A?$ to $B?$"
+  . written: "R? \subseteq A? \times B?"
 "#,
     );
 
@@ -517,8 +541,9 @@ Declares: x
 Enables:
 . capability: x.inv :=> \group.inverse:of{x}:in{G}
   written: "x+?^{-1}"
-Documented:
-. called: "group element"
+Appendix:
+. documented:
+  . called: "group element"
 "#,
     );
 
@@ -553,9 +578,10 @@ fn renders_is_statements_from_called_templates() {
     let registry = registry_for(
         r#"[\function:on{A}:to{B}]
 Declares: f(x__)
-Documented:
-. called: "function on $A?$ to $B?$"
-. written: "f? : A? \rightarrow B?"
+Appendix:
+. documented:
+  . called: "function on $A?$ to $B?$"
+  . written: "f? : A? \rightarrow B?"
 "#,
     );
 
@@ -570,9 +596,10 @@ fn renders_is_predicates_with_called_when_written_contains_subject() {
     let registry = registry_for(
         r#"[\function:on{A}:to{B}]
 Declares: f(x__)
-Documented:
-. called: "function on $A?$ to $B?$"
-. written: "f? : A? \rightarrow B?"
+Appendix:
+. documented:
+  . called: "function on $A?$ to $B?$"
+  . written: "f? : A? \rightarrow B?"
 "#,
     );
 
@@ -587,8 +614,9 @@ fn renders_called_templates_as_text_when_called_is_present() {
     let registry = registry_for(
         r#"[\group]
 Declares: G ::= (X, *, e)
-Documented:
-. called: "group"
+Appendix:
+. documented:
+  . called: "group"
 "#,
     );
 
@@ -607,9 +635,10 @@ fn renders_comma_separated_is_or_spec_subjects_with_called_commands() {
     let registry = registry_for(
         r#"[\set]
 Declares: X
-Documented:
-. called: "set"
-. written: "\operatorname{Set}"
+Appendix:
+. documented:
+  . called: "set"
+  . written: "\operatorname{Set}"
 "#,
     );
 
@@ -624,8 +653,9 @@ fn renders_is_via_statements_from_called_templates() {
     let registry = registry_for(
         r#"[\set]
 Declares: X
-Documented:
-. called: "set"
+Appendix:
+. documented:
+  . called: "set"
 "#,
     );
 
@@ -676,13 +706,15 @@ fn renders_structural_spec_literal_types() {
     let registry = registry_for(
         r#"[\natural]
 Declares: n
-Documented:
-. written: "\mathbb{N}"
+Appendix:
+. documented:
+  . written: "\mathbb{N}"
 
 [\reals]
 Declares: x
-Documented:
-. written: "\mathbb{R}"
+Appendix:
+. documented:
+  . written: "\mathbb{R}"
 "#,
     );
 
@@ -741,8 +773,9 @@ fn uses_written_as_called_form_when_called_is_missing() {
     let registry = registry_for(
         r#"[\empty.set]
 Defines: X is \set
-Documented:
-. written: "\emptyset"
+Appendix:
+. documented:
+  . written: "\emptyset"
 "#,
     );
 
@@ -765,9 +798,10 @@ fn renders_called_templates_with_math_substitutions() {
     let registry = registry_for(
         r#"[\field:over{V}]
 Declares: F
-Documented:
-. called: "field over $V?$"
-. written: "\mathsf{Field}_{V?}"
+Appendix:
+. documented:
+  . called: "field over $V?$"
+  . written: "\mathsf{Field}_{V?}"
 "#,
     );
 
@@ -782,22 +816,25 @@ fn renders_refined_command_types_from_called_templates() {
     let registry = registry_for(
         r#"[\function:on{A}:to{B}]
 Declares: f(x__)
-Documented:
-. called: "function on $A?$ to $B?$"
-  written:
-  . "f? \: : \: A? \rightarrow B?"
+Appendix:
+. documented:
+  . called: "function on $A?$ to $B?$"
+    written:
+    . "f? \: : \: A? \rightarrow B?"
 
 [\(bounded)::function:on{A}:to{B}]
 Refines: f(x__)
-Documented:
-. adjective: "bounded"
-. written: "\operatorname{Bounded}"
+Appendix:
+. documented:
+  . adjective: "bounded"
+  . written: "\operatorname{Bounded}"
 
 [\(continuous)::function:on{A}:to{B}]
 Refines: f(x__)
-Documented:
-. adjective: "continuous"
-. written: "\operatorname{Continuous}"
+Appendix:
+. documented:
+  . adjective: "continuous"
+  . written: "\operatorname{Continuous}"
 "#,
     );
 
@@ -822,14 +859,16 @@ fn renders_refined_predicates_and_missing_placeholders_without_question_marks() 
     let registry = registry_for(
         r#"[\function:?on{A}:?to{B}]
 Declares: f(x__)
-Documented:
-. called: "function on $A?$ to $B?$"
-. written: "f? \: : \: A? \rightarrow B?"
+Appendix:
+. documented:
+  . called: "function on $A?$ to $B?$"
+  . written: "f? \: : \: A? \rightarrow B?"
 
 [\(injective)::function:?on{A}:?to{B}]
 Refines: f(x__)
-Documented:
-. adjective: "injective"
+Appendix:
+. documented:
+  . adjective: "injective"
 "#,
     );
 
@@ -851,9 +890,10 @@ fn renders_definition_group_headings_from_both_documented_forms() {
     let registry = registry_for(
         r#"[\function:on{A}:to{B}]
 Declares: f(x__)
-Documented:
-. called: "function on $A?$ to $B?$"
-. written: "f? \: : \: A? \rightarrow B?"
+Appendix:
+. documented:
+  . called: "function on $A?$ to $B?$"
+  . written: "f? \: : \: A? \rightarrow B?"
 "#,
     );
 
@@ -873,9 +913,10 @@ fn definition_group_heading_order_is_called_then_written_however_they_are_listed
     let registry = registry_for(
         r#"[\function:on{A}:to{B}]
 Declares: f(x__)
-Documented:
-. written: "f? \: : \: A? \rightarrow B?"
-. called: "function on $A?$ to $B?$"
+Appendix:
+. documented:
+  . written: "f? \: : \: A? \rightarrow B?"
+  . called: "function on $A?$ to $B?$"
 "#,
     );
 
@@ -906,8 +947,9 @@ fn destructured_parameters_render_as_base_names_in_titles_with_separate_destruct
     let registry = registry_for(
         r#"[H ::= (X', *', e') \:submagma:/ G ::= (X, *, e)]
 Declares: H ::= (X', *', e')
-Documented:
-. written: "H? \leq G?"
+Appendix:
+. documented:
+  . written: "H? \leq G?"
 "#,
     );
 
@@ -935,8 +977,9 @@ fn renders_plain_called_placeholders_in_group_headings() {
     let registry = registry_for(
         r#"[A \:subset:/ B]
 Declares: A
-Documented:
-. called: "A? subset of B?"
+Appendix:
+. documented:
+  . called: "A? subset of B?"
 "#,
     );
 
@@ -951,9 +994,10 @@ fn renders_definition_group_heading_forms_without_capitalizing() {
     let registry = registry_for(
         r#"[\set]
 Declares: X
-Documented:
-. called: "set"
-. written: "\operatorname{Set}"
+Appendix:
+. documented:
+  . called: "set"
+  . written: "\operatorname{Set}"
 "#,
     );
 
@@ -972,17 +1016,19 @@ fn renders_refines_group_headings_from_refinement_and_refined_called_text() {
     let registry = registry_for(
         r#"[\function:on{A}:to{B}]
 Declares: f(x__)
-Documented:
-. called: "function on $A?$ to $B?$"
-. written: "f? \: : \: A? \rightarrow B?"
+Appendix:
+. documented:
+  . called: "function on $A?$ to $B?$"
+  . written: "f? \: : \: A? \rightarrow B?"
 
 [\(continuous)::function:on{A}:to{B}]
 Refines: f
-Documented:
-. adjective:
-  . "continuous"
-  . "unbroken"
-. written: "\operatorname{Continuous}"
+Appendix:
+. documented:
+  . adjective:
+    . "continuous"
+    . "unbroken"
+  . written: "\operatorname{Continuous}"
 "#,
     );
 
@@ -1002,22 +1048,25 @@ fn renders_dynamic_refined_tail_as_the_enclosing_refines_base() {
     let registry = registry_for(
         r#"[\function:?on{A}:?to{B}]
 Declares: f(x__) ::= y_
-Documented:
-. called: "function@[A]{ on $A?$}@[B]{ to $B?}$"
+Appendix:
+. documented:
+  . called: "function@[A]{ on $A?$}@[B]{ to $B?}$"
 
 [\(injective)::function:?on{A}:?to{B}]
 Refines: f
-Documented:
-. adjective:
-  . "injective"
-  . "one-to-one"
+Appendix:
+. documented:
+  . adjective:
+    . "injective"
+    . "one-to-one"
 
 [\(surjective)::function:?on{A}:?to{B}]
 Refines: f
-Documented:
-. adjective:
-  . "surjective"
-  . "onto"
+Appendix:
+. documented:
+  . adjective:
+    . "surjective"
+    . "onto"
 "#,
     );
 
@@ -1039,8 +1088,9 @@ fn refines_display_keeps_explicit_types_and_infix_refinements_unchanged() {
     let registry = registry_for(
         r#"[\group]
 Declares: G
-Documented:
-. called: "group"
+Appendix:
+. documented:
+  . called: "group"
 "#,
     );
 
@@ -1063,8 +1113,9 @@ fn refines_display_adds_the_base_type_to_operator_targets() {
     let registry = registry_for(
         r#"[\binary.operation:on{X}]
 Declares: x_ * y_
-Documented:
-. called: "binary operation on $X?$"
+Appendix:
+. documented:
+  . called: "binary operation on $X?$"
 "#,
     );
 
@@ -1083,14 +1134,16 @@ fn renders_refined_spec_infix_headings_and_expressions() {
     let registry = registry_for(
         r#"[A \:subset:/ B]
 Declares: A
-Documented:
-. called: "$A?$ subset of $B?$"
+Appendix:
+. documented:
+  . called: "$A?$ subset of $B?$"
 
 [A \:(nonempty)::subset:/ B]
 Refines: A
-Documented:
-. adjective: "nonempty"
-. written: "A? \subsetneq B?"
+Appendix:
+. documented:
+  . adjective: "nonempty"
+  . written: "A? \subsetneq B?"
 "#,
     );
 
@@ -1114,28 +1167,33 @@ fn renders_implicit_refined_spec_infix_adjectives_after_the_base() {
     let registry = registry_for(
         r#"[\set]
 Declares: X
-Documented:
-. called: "set"
+Appendix:
+. documented:
+  . called: "set"
 
 [\(a)::set]
 Refines: X
-Documented:
-. adjective: "alpha"
+Appendix:
+. documented:
+  . adjective: "alpha"
 
 [\(b)::set]
 Refines: X
-Documented:
-. adjective: "beta"
+Appendix:
+. documented:
+  . adjective: "beta"
 
 [\(c)::set]
 Refines: X
-Documented:
-. adjective: "gamma"
+Appendix:
+. documented:
+  . adjective: "gamma"
 
 [A \:subset:/ B]
 Declares: A
-Documented:
-. called: "$A?$ subset of $B?$"
+Appendix:
+. documented:
+  . called: "$A?$ subset of $B?$"
 "#,
     );
 
@@ -1227,12 +1285,13 @@ fn renders_documented_mapping_writing_templates() {
     let registry = registry_for(
         r#"[\real.sequence]
 Declares: X ::= x(i_) ::= y_
-Documented:
-. called: "real sequence"
-. writing: x(i)
-  as: "x?_{i?}"
-. writing: x(i_)
-  as: "\left\{x?\right\}_{i_?=1}^{\infty}"
+Appendix:
+. documented:
+  . called: "real sequence"
+  . writing: x(i)
+    as: "x?_{i?}"
+  . writing: x(i_)
+    as: "\left\{x?\right\}_{i_?=1}^{\infty}"
 "#,
     );
 
@@ -1298,9 +1357,10 @@ fn renders_conditional_written_templates_for_optional_infix_tail() {
     let registry = registry_for(
         r#"[A \.intersect:?within{U}./ B]
 Declares: I
-Documented:
-. called: "intersection"
-. written: "A? \cap@[U]{_{U?}} B?"
+Appendix:
+. documented:
+  . called: "intersection"
+  . written: "A? \cap@[U]{_{U?}} B?"
 "#,
     );
 
@@ -1323,8 +1383,9 @@ that:
 . allOf:
   . A
   . B
-Documented:
-. written: "A? \text{ and } B?"
+Appendix:
+. documented:
+  . written: "A? \text{ and } B?"
 "#,
     );
 
@@ -1342,8 +1403,9 @@ States:
 when: P is \\statement
 that:
 . not: P
-Documented:
-. written: "\neg P+?"
+Appendix:
+. documented:
+  . written: "\neg P+?"
 
 [P \.and./ Q]
 States:
@@ -1352,8 +1414,9 @@ that:
 . allOf:
   . P
   . Q
-Documented:
-. written: "P? \text{ and } Q?"
+Appendix:
+. documented:
+  . written: "P? \text{ and } Q?"
 "#,
     );
     registry.link_references = true;
@@ -1399,21 +1462,24 @@ fn renders_conditional_templates_with_fallbacks_multiple_vars_and_nesting() {
     let registry = registry_for(
         r#"[\decorate:?with{U}]
 Declares: D
-Documented:
-. called: "decorated"
-. written: "d@[U]{_{U?}}:{_X}"
+Appendix:
+. documented:
+  . called: "decorated"
+  . written: "d@[U]{_{U?}}:{_X}"
 
 [\both{x}:?and{y}]
 Declares: B
-Documented:
-. called: "both"
-. written: "@[x, y]{x? + y?}:{missing}"
+Appendix:
+. documented:
+  . called: "both"
+  . written: "@[x, y]{x? + y?}:{missing}"
 
 [\nest{x}:?with{y}]
 Declares: N
-Documented:
-. called: "nested"
-. written: "@[x]{x? + @[y]{y?}:{*}}:{0}"
+Appendix:
+. documented:
+  . called: "nested"
+  . written: "@[x]{x? + @[y]{y?}:{*}}:{0}"
 "#,
     );
 
@@ -1448,9 +1514,10 @@ fn renders_conditionals_in_called_templates() {
     let registry = registry_for(
         r#"[\ambient:?within{U}]
 Declares: A
-Documented:
-. called: "ambient@[U]{ within $U?$}:{ without ambient}"
-. written: "\operatorname{Ambient}@[U]{_{U?}}"
+Appendix:
+. documented:
+  . called: "ambient@[U]{ within $U?$}:{ without ambient}"
+  . written: "\operatorname{Ambient}@[U]{_{U?}}"
 "#,
     );
 
@@ -1476,9 +1543,10 @@ fn written_that_is_a_whole_unbound_conditional_falls_back_to_called() {
     let registry = registry_for(
         r#"[\function:?on{A}:?to{B}]
 Declares: f(x__)
-Documented:
-. called: "func@[A]{ on $A?$}@[B]{ to $B?$}"
-. written: "@[A, B]{f? : A? \rightarrow B?}"
+Appendix:
+. documented:
+  . called: "func@[A]{ on $A?$}@[B]{ to $B?$}"
+  . written: "@[A, B]{f? : A? \rightarrow B?}"
 "#,
     );
 
@@ -1514,8 +1582,9 @@ fn renders_soft_build_marker_as_space() {
     let registry = registry_for(
         r#"[\set]
 Declares: X
-Documented:
-. called: "set"
+Appendix:
+. documented:
+  . called: "set"
 "#,
     );
 
@@ -1607,8 +1676,9 @@ fn a_name_followed_by_plus_or_minus_is_still_ordinary_text() {
     let registry = registry_for(
         r#"[\g:of{A}:and{B}]
 Declares: X
-Documented:
-. written: "A?-B? \: A?+B?"
+Appendix:
+. documented:
+  . written: "A?-B? \: A?+B?"
 "#,
     );
 
@@ -1625,9 +1695,10 @@ fn a_composed_card_title_does_not_change_how_the_item_is_named_inline() {
     let registry = registry_for(
         r#"[\empty.set]
 Declares: X
-Documented:
-. called: "empty set"
-. written: "\emptyset"
+Appendix:
+. documented:
+  . called: "empty set"
+  . written: "\emptyset"
 "#,
     );
 
@@ -1654,10 +1725,11 @@ fn a_written_nested_inside_called_pairs_with_it_in_the_title() {
     let registry = registry_for(
         r#"[\function:on{A}:to{B}]
 Declares: f(x__)
-Documented:
-. called: "function on $A?$ to $B?$"
-  written:
-  . "f? \: : \: A? \rightarrow B?"
+Appendix:
+. documented:
+  . called: "function on $A?$ to $B?$"
+    written:
+    . "f? \: : \: A? \rightarrow B?"
 "#,
     );
 
@@ -1681,14 +1753,16 @@ fn written_placeholder_with_underscore_matches_header_parameter() {
         r#"
 [\set.successor:of{X}]
 Defines: Y
-Documented:
-. called: "set successor"
+Appendix:
+. documented:
+  . called: "set successor"
 
 [\von.neumann.S(n_)]
 Defines: S(n_)
-Documented:
-. written: "S(n_?)"
-. called: "Von Neumann Successor"
+Appendix:
+. documented:
+  . written: "S(n_?)"
+  . called: "Von Neumann Successor"
 "#,
     );
 

@@ -5,23 +5,25 @@ Accepts a have:by: Justification entry with because clauses and text.
 [\thm]
 Theorem:
 then: 1 = 1
-Documented:
-. called: "thm"
+Appendix:
+. documented:
+  . called: "thm"
 
 [\pair]
 Declares: P ::= (A, B)
 specifies:
 . A is \\anything
 . (.B is \\anything.)[:second:]
-Documented:
-. called: "pair"
-Justification:
-. [second]
-  have: B is \\anything
-  by: \thm
-  because:
-  . B is \\anything
-  . "by construction"
+Appendix:
+. documented:
+  . called: "pair"
+. justification:
+  . [second]
+    have: B is \\anything
+    by: \thm
+    because:
+    . B is \\anything
+    . "by construction"
 == end:input ==
 == begin:output ==
 == end:output ==

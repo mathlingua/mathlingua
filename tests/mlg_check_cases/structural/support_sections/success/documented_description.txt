@@ -4,9 +4,10 @@ Accepts one description entry in a Documented section.
 == begin:input ==
 [\item]
 Declares: x
-Documented:
-. called: "item"
-. description: "A longer description."
+Appendix:
+. documented:
+  . called: "item"
+  . description: "A longer description."
 == end:input ==
 == begin:output ==
 == end:output ==

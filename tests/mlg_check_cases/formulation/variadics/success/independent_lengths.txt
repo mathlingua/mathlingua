@@ -8,8 +8,9 @@ when:
 . x[1...n] is \\statement
 . y[1...m] is \\statement
 that: x[1...n] = x[1...n]
-Documented:
-. called: "independent lengths"
+Appendix:
+. documented:
+  . called: "independent lengths"
 
 Theorem:
 given: P, Q, R is \\statement

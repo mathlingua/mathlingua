@@ -16,11 +16,12 @@ Theorem:
 given: x
 then:
 . (x = x)[:2:]
-References:
-. for: (:2:)
-  entry: $some.book
-. for: (:2:)
-  entry: $other.book
+Appendix:
+. references:
+  . for: (:2:)
+    entry: $some.book
+  . for: (:2:)
+    entry: $other.book
 == end:input ==
 == begin:output ==
 error: Duplicate reference label `2` in `References:`

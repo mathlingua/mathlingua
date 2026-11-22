@@ -4,8 +4,9 @@ Rejects use of an ordinary binary operator when no Disambiguates entry or type-p
 == begin:input ==
 [\number]
 Declares: n
-Documented:
-. called: "number"
+Appendix:
+. documented:
+  . called: "number"
 
 Theorem:
 given: x, y is \number

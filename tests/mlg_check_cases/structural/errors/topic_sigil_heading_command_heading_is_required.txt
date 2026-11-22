@@ -4,8 +4,9 @@ Rejects a topic-sigil heading where a command heading is required.
 == begin:input ==
 [#sets]
 Declares: X
-Documented:
-. called: "set"
+Appendix:
+. documented:
+  . called: "set"
 == end:input ==
 == begin:output ==
 error: Invalid command heading: command header must start with `\`

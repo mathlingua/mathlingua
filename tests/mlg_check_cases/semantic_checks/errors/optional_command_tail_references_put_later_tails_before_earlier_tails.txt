@@ -5,8 +5,9 @@ Rejects optional command-tail references that put later tails before earlier tai
 [\foo:?baz{A}:?bar{B}]
 Defines: A ::= B "defines" B
 when: A, B is \\anything
-Documented:
-. called: "foo"
+Appendix:
+. documented:
+  . called: "foo"
 
 Theorem:
 then: \foo:bar{2}:baz{1}

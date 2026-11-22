@@ -6,8 +6,9 @@ Rejects a command reference whose curly and parenthesized argument-group shapes 
 States:
 when: A, B is \\anything
 that: 1 = 1
-Documented:
-. called: "foo"
+Appendix:
+. documented:
+  . called: "foo"
 
 Theorem:
 given: A, x, z is \\anything

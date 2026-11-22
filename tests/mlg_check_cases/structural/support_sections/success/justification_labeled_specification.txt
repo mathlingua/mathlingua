@@ -7,12 +7,13 @@ Declares: P ::= (A, B)
 specifies:
 . A is \\anything
 . (.B is \\anything.)[:second:]
-Documented:
-. called: "pair"
-Justification:
-. for: (:second:)
-  have: B is \\anything
-  asserting: B is \\anything
+Appendix:
+. documented:
+  . called: "pair"
+. justification:
+  . for: (:second:)
+    have: B is \\anything
+    asserting: B is \\anything
 == end:input ==
 == begin:output ==
 == end:output ==

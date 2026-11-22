@@ -4,8 +4,9 @@ Accepts one written entry in a Documented section.
 == begin:input ==
 [\item]
 Declares: x
-Documented:
-. written: "x?"
+Appendix:
+. documented:
+  . written: "x?"
 == end:input ==
 == begin:output ==
 == end:output ==

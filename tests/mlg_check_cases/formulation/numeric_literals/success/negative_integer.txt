@@ -4,8 +4,9 @@ Accepts a negative integer literal at the nominal type configured by the int Spe
 == begin:input ==
 [\integer]
 Declares: x
-Documented:
-. called: "integer"
+Appendix:
+. documented:
+  . called: "integer"
 
 Specify:
 . int:
@@ -15,8 +16,9 @@ Specify:
 States:
 when: x is \integer
 that: x = x
-Documented:
-. called: "accept"
+Appendix:
+. documented:
+  . called: "accept"
 
 Theorem:
 then: \accept{-1}

@@ -4,10 +4,11 @@ Rejects documented mapping writing attached to a Declares target that is not a m
 == begin:input ==
 [\thing]
 Declares: X
-Documented:
-. called: "thing"
-. writing: f(x)
-  as: "f(x)"
+Appendix:
+. documented:
+  . called: "thing"
+  . writing: f(x)
+    as: "f(x)"
 == end:input ==
 == begin:output ==
 error: Documented `writing:` is only allowed when `Declares:` targets a mapping

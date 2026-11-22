@@ -4,21 +4,24 @@ Accepts function-named postfix operator syntax and resolves it through a matchin
 == begin:input ==
 [\real]
 Declares: x
-Documented:
-. called: "real"
+Appendix:
+. documented:
+  . called: "real"
 
 [\postfix.real{x}]
 Defines: y is \real
 when: x is \real
-Documented:
-. called: "postfix real"
+Appendix:
+. documented:
+  . called: "postfix real"
 
 [x_ |f]
 Disambiguates:
 when: x_ is \real
 to: \postfix.real{x_}
-Documented:
-. written: "x_? |f"
+Appendix:
+. documented:
+  . written: "x_? |f"
 
 Theorem:
 given: r is \real

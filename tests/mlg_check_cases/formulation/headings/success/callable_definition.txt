@@ -4,21 +4,24 @@ Accepts callable command headings whose placeholder parameters are repeated in t
 == begin:input ==
 [\natural]
 Declares: N
-Documented:
-. called: "natural"
+Appendix:
+. documented:
+  . called: "natural"
 
 [\natural.constructor]
 Declares: succ(n_) ::= m_
 specifies:
 . n_ is \natural
 . m_ is \natural
-Documented:
-. called: "natural constructor"
+Appendix:
+. documented:
+  . called: "natural constructor"
 
 [\natural.succ(n_)]
 Defines: succ(n_) is \natural.constructor
-Documented:
-. called: "successor"
+Appendix:
+. documented:
+  . called: "successor"
 == end:input ==
 == begin:output ==
 == end:output ==

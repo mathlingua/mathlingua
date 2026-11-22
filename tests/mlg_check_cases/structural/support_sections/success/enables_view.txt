@@ -4,16 +4,18 @@ Accepts one view rule in an Enables section.
 == begin:input ==
 [\target]
 Declares: t
-Documented:
-. called: "target"
+Appendix:
+. documented:
+  . called: "target"
 
 [\source]
 Declares: s
 Enables:
 . view:
   as: t := s is \target
-Documented:
-. called: "source"
+Appendix:
+. documented:
+  . called: "source"
 == end:input ==
 == begin:output ==
 == end:output ==

@@ -4,10 +4,11 @@ Rejects an unknown child group within Metadata.
 == begin:input ==
 [\set]
 Declares: X
-Documented:
-. called: "set"
-Metadata:
-. mystery: "value"
+Appendix:
+. documented:
+  . called: "set"
+. metadata:
+  . mystery: "value"
 == end:input ==
 == begin:output ==
 error: Unexpected metadata group `mystery`

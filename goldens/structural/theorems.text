@@ -11,5 +11,6 @@ given:
 . X is \set
 then:
 . x = x
-Documented:
-. called: "Binary operation preserves equality"
+Appendix:
+. documented:
+  . called: "Binary operation preserves equality"

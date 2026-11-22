@@ -6,8 +6,9 @@ Rejects a plain spec-infix heading on a States entry because only Declares may d
 States:
 when: A, B is \\anything
 that: A = A
-Documented:
-. called: "related"
+Appendix:
+. documented:
+  . called: "related"
 == end:input ==
 == begin:output ==
 error: Spec-infix headings may only be used with Declares entries

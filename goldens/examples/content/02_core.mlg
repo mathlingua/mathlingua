@@ -8,8 +8,9 @@
 Declares: X
 Requires:
 . capability: x_ "in" X :-> \\abstract
-Documented:
-. called: "set"
+Appendix:
+. documented:
+  . called: "set"
 Id: "5c194a16-3f2b-4a32-9a03-6fbafb40a8df"
 
 
@@ -18,8 +19,9 @@ Id: "5c194a16-3f2b-4a32-9a03-6fbafb40a8df"
 [\element:of{X}]
 Declares: x "in" X
 when: X is \set
-Documented:
-. called: "element of $X?$"
+Appendix:
+. documented:
+  . called: "element of $X?$"
 Id: "85df16c5-71d3-4e68-b87c-bbb3a85e2df8"
 
 
@@ -28,8 +30,9 @@ Id: "85df16c5-71d3-4e68-b87c-bbb3a85e2df8"
 [\function:on{A}:to{B}]
 Declares: f(x__) is (_ "in" A) -> (_ "in" B)
 when: A, B is \set
-Documented:
-. called: "function from $A?$ to $B?$"
+Appendix:
+. documented:
+  . called: "function from $A?$ to $B?$"
 Id: "98fa5602-43ab-4c75-b505-1795fa6884c8"
 
 
@@ -37,8 +40,9 @@ Id: "98fa5602-43ab-4c75-b505-1795fa6884c8"
 [A \.cross./ B]
 Defines: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
 when: A, B is \set
-Documented:
-. called: "cross product of $A?$ and $B?$"
+Appendix:
+. documented:
+  . called: "cross product of $A?$ and $B?$"
 Id: "674ead6f-ab2b-4682-b1a2-1921630d7b52"
 
 
@@ -47,8 +51,9 @@ Id: "674ead6f-ab2b-4682-b1a2-1921630d7b52"
 [\operation:on{X}]
 Declares: x_ * y_ is \function:on{X \.cross./ X}:to{X}
 when: X is \set
-Documented:
-. called: "operation on $X?$"
+Appendix:
+. documented:
+  . called: "operation on $X?$"
 Id: "da1c3fe8-35fc-46b0-95ff-63ec39bfd5ef"
 
 
@@ -56,6 +61,7 @@ Id: "da1c3fe8-35fc-46b0-95ff-63ec39bfd5ef"
 [\identity:on{X}]
 Defines: f(x__) is \function:on{X}:to{X}
 when: X is \set
-Documented:
-. called: "the identity on $X?$"
+Appendix:
+. documented:
+  . called: "the identity on $X?$"
 Id: "3c86ff2d-f2e5-4b70-acb6-5c8502af9fe4"

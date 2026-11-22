@@ -45,8 +45,9 @@ square brackets, followed by one or more sections.
 Declares: f(x__)
 when:
 . A, B is \set
-Documented:
-. called: "function from $A?$ to $B?$"
+Appendix:
+. documented:
+  . called: "function from $A?$ to $B?$"
 ```
 
 Headings identify local labels, commands, people, or resources depending on the
@@ -790,8 +791,9 @@ with a command. Its target may name the type it extends with an `is` relation.
 ```text
 [\set]
 Declares: X
-Documented:
-. called: "set"
+Appendix:
+. documented:
+  . called: "set"
 ```
 
 Optional sections, in order:
@@ -804,12 +806,13 @@ specifies:
 satisfies:
 Requires:
 Enables:
-Documented:
-Justification:
-Aliases:
-Writing:
-References:
-Metadata:
+Appendix:
+. documented:
+. justification:
+. aliases:
+. writing:
+. references:
+. metadata:
 ```
 
 (`Declares`, `Defines`, `Realizes`, and `Refines` each have a `specifies:`
@@ -828,8 +831,9 @@ optional `:=` definition, or both.
 ```text
 [\foo{s}]
 Defines: x is \bar{s}
-Documented:
-. called: "foo"
+Appendix:
+. documented:
+  . called: "foo"
 ```
 
 It accepts `abstractly:`, `using:`, `when:`, `specifies:`, `expresses:`, and the
@@ -920,8 +924,9 @@ rest).
 ```text
 [\(continuous)::function:on{A}:to{B}]
 Refines: f(x__)
-Documented:
-. adjective: "continuous"
+Appendix:
+. documented:
+  . adjective: "continuous"
 ```
 
 Its target may repeat the base `Declares:` target exactly or omit trailing
@@ -947,9 +952,10 @@ the heading, just as it is for an ordinary refined command:
 [A \:(nonempty)::subset:/ B]
 Refines: A
 when: B is \set
-Documented:
-. adjective: "nonempty"
-. written: "A? \subset_{+} B?"
+Appendix:
+. documented:
+  . adjective: "nonempty"
+  . written: "A? \subset_{+} B?"
 ```
 
 The refined operator can then be used in declarations and expressions:
@@ -994,8 +1000,9 @@ verifies the body is consistent with the marker:
 Refines: G(x__)
 implicitly:
 specifies: G is \(finite)::magma
-Documented:
-. adjective: "finite"
+Appendix:
+. documented:
+  . adjective: "finite"
 ```
 
 - `implicitly:` — the group merely restates the inherited definition. The body
@@ -1032,9 +1039,10 @@ that:
 . forAll: x, y is \element.of{S}
   then:
   . x * y = y * x
-Documented:
-. called: "commutative"
-. description: "Order does not matter."
+Appendix:
+. documented:
+  . called: "commutative"
+  . description: "Order does not matter."
 ```
 
 ## Theorem-Like Groups
@@ -1228,10 +1236,11 @@ quoted form `"$book.chapter"` is accepted too), as well as label-specific
 `for:`/`entry:` groups:
 
 ```text
-References:
-. $book.overview
-. for: (:ref1:)
-  entry: $book.chapter:page{42}
+Appendix:
+. references:
+  . $book.overview
+  . for: (:ref1:)
+    entry: $book.chapter:page{42}
 ```
 
 where `for:` takes one or more label references (`(:ref1:)`) and `entry:` takes
@@ -1257,11 +1266,12 @@ form with each placeholder replaced by its ordinary name:
 ```text
 [\real.sequence]
 Declares: X ::= x(i_)
-Documented:
-. writing: x(i)
-  as: "x?_{i?}"
-. writing: x(i_)
-  as: "\left\{x?\right\}_{i_?=1}^{\infty}"
+Appendix:
+. documented:
+  . writing: x(i)
+    as: "x?_{i?}"
+  . writing: x(i_)
+    as: "\left\{x?\right\}_{i_?=1}^{\infty}"
 ```
 
 The ordinary form (`x(i)`) renders invocations such as `x(j)`, substituting
@@ -1357,10 +1367,11 @@ named identifiers render — layered on top of the collection-wide `Writing:` gr
 ```text
 [\natural]
 Declares: n
-Documented:
-. called: "natural"
-Writing:
-. "pi :~> \varpi"
+Appendix:
+. documented:
+  . called: "natural"
+. writing:
+  . "pi :~> \varpi"
 ```
 
 ## Checks Performed by `mlg check`
@@ -1758,8 +1769,9 @@ used in an `is` statement.
 [\function:on{A}:to{B}]
 Declares: f(x__)
 when: A, B is \set
-Documented:
-. called: "function"
+Appendix:
+. documented:
+  . called: "function"
 ```
 
 A later reference to `\function:on{G}:to{G}` in either an expression or a type
@@ -1844,8 +1856,9 @@ Declares: G ::= (X, *, e) is \set via X
 specifies:
 . * is \function:on{X}:to{X}
 . e "in" G
-Documented:
-. called: "group"
+Appendix:
+. documented:
+  . called: "group"
 ```
 
 This means that if the checker knows `G is \group`, it can prove `G is \set`.
@@ -1935,8 +1948,9 @@ the right-hand side of an `is` statement:
 [\function:on{A}:to{B}]
 Declares: f(x__) is (_ "in" A) -> (_ "in" B)
 when: A, B is \set
-Documented:
-. called: "function"
+Appendix:
+. documented:
+  . called: "function"
 ```
 
 The input side contains one or more specs and the output side contains exactly
@@ -1993,8 +2007,9 @@ membership to type facts or other spec facts.
 Declares: R
 Requires:
 . capability: x_ "in" R :-> x is \real
-Documented:
-. called: "reals"
+Appendix:
+. documented:
+  . called: "reals"
 ```
 
 If the context contains `R is \reals` and `r "in" R`, the checker can reduce the
@@ -2026,8 +2041,9 @@ Requires:
 Enables:
 . from: Y ::= {y__ : ...}
   capability: x_ "in" X :<->: x_ memberOf Y
-Documented:
-. called: "set"
+Appendix:
+. documented:
+  . called: "set"
 ```
 
 If a value is introduced as `A := \set@{x_ : x_ is \real}`, the checker
@@ -2224,15 +2240,17 @@ prose-fragment scanning.
 substitution markers such as `$A?$`.
 
 ```text
-Documented:
-. called: "function on $A?$ to $B?$"
+Appendix:
+. documented:
+  . called: "function on $A?$ to $B?$"
 ```
 
 `written:` entries provide math-mode rendering templates.
 
 ```text
-Documented:
-. written: "f? \: : \: A? \rightarrow B?"
+Appendix:
+. documented:
+  . written: "f? \: : \: A? \rightarrow B?"
 ```
 
 A template placeholder may use either the source placeholder spelling or its
@@ -2341,9 +2359,10 @@ rather than as a second, competing title.
 ```text
 [\empty.set]
 Declares: X
-Documented:
-. called: "empty set"
-. written: "\emptyset"
+Appendix:
+. documented:
+  . called: "empty set"
+  . written: "\emptyset"
 ```
 
 That card is titled "Empty set  $\emptyset$" (with `$\emptyset$` muted). An item

@@ -4,10 +4,11 @@ Accepts one item-local Writing alias.
 == begin:input ==
 [\item]
 Declares: x
-Documented:
-. called: "item"
-Writing:
-. "item :~> \\operatorname{item}"
+Appendix:
+. documented:
+  . called: "item"
+. writing:
+  . "item :~> \\operatorname{item}"
 == end:input ==
 == begin:output ==
 == end:output ==

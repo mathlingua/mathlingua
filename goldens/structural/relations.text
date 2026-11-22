@@ -12,5 +12,6 @@ and: s is \real
 when:
 . r = s
 specifies: r = s
-Documented:
-. description: "r and s name the same value."
+Appendix:
+. documented:
+  . description: "r and s name the same value."

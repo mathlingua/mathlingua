@@ -4,21 +4,24 @@ Accepts an Equivalent item whose to section names two existing commands.
 == begin:input ==
 [\left]
 Defines: x is \\anything
-Documented:
-. called: "left"
+Appendix:
+. documented:
+  . called: "left"
 
 [\right]
 Defines: x is \\anything
-Documented:
-. called: "right"
+Appendix:
+. documented:
+  . called: "right"
 
 [\same]
 Equivalent:
 to:
 . \left
 . \right
-Documented:
-. called: "same"
+Appendix:
+. documented:
+  . called: "same"
 == end:input ==
 == begin:output ==
 == end:output ==

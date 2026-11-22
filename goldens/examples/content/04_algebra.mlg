@@ -8,8 +8,9 @@
 [\magma]
 Declares: M ::= (X, *) is \set via X
 specifies: * is \operation:on{M}
-Documented:
-. called: "magma"
+Appendix:
+. documented:
+  . called: "magma"
 Id: "0e5be05c-2b6d-48cc-8dec-d656eb6bb8b7"
 
 
@@ -18,8 +19,9 @@ Id: "0e5be05c-2b6d-48cc-8dec-d656eb6bb8b7"
 [\monoid]
 Declares: M ::= (X, *, e) is \magma via (X, *)
 specifies: e "in" X
-Documented:
-. called: "monoid"
+Appendix:
+. documented:
+  . called: "monoid"
 Id: "b41b952a-239a-49de-b27a-a896f0494b30"
 
 
@@ -27,16 +29,18 @@ Id: "b41b952a-239a-49de-b27a-a896f0494b30"
 -- `X`, `*` and `e` all inherit their types here and no `specifies:` is needed.
 [\group]
 Declares: G ::= (X, *, e) is \monoid via (X, *, e)
-Documented:
-. called: "group"
+Appendix:
+. documented:
+  . called: "group"
 Id: "bc7fdaea-a45a-4569-8607-78555d8a03eb"
 
 
 -- A refinement preserves its base type's component types.
 [\(abelian)::group]
 Refines: G ::= (X, *, e)
-Documented:
-. adjective: "abelian"
+Appendix:
+. documented:
+  . adjective: "abelian"
 Id: "9ed8036e-561f-4fb9-80bf-2bd214428bc7"
 
 
@@ -48,8 +52,9 @@ Declares: R ::= (X, +, *, 0, 1)
 specifies:
 . R is \(abelian)::group via (X, +, 0)
 . R is \monoid via (X, *, 1)
-Documented:
-. called: "ring"
+Appendix:
+. documented:
+  . called: "ring"
 Id: "a73b420d-f146-4142-bf5d-270916506a47"
 
 
@@ -61,8 +66,9 @@ Declares: B ::= (X, *, +)
 extends:
 . B is \magma via (X, *)
 . B is \magma via (X, +)
-Documented:
-. called: "bimagma"
+Appendix:
+. documented:
+  . called: "bimagma"
 Id: "fde4a779-17a4-48a3-997b-ad20380eb324"
 
 
@@ -75,8 +81,9 @@ then:
 . G is? \set
 . X is? \set
 . e "in"? X
-Documented:
-. called: "a group is a set"
+Appendix:
+. documented:
+  . called: "a group is a set"
 Id: "da7562a6-f7e7-4e0e-ba84-30ed132faeb1"
 
 
@@ -89,6 +96,7 @@ then:
 . X is? \set
 . 0 "in"? X
 . 1 "in"? X
-Documented:
-. called: "a ring inherits both subtype views"
+Appendix:
+. documented:
+  . called: "a ring inherits both subtype views"
 Id: "60f94c0e-e5c7-40cb-b082-f2ab7bb0f6db"

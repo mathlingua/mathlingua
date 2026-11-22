@@ -4,26 +4,30 @@ Accepts a concrete destructured Defines item whose components receive values dir
 == begin:input ==
 [\thing]
 Declares: x
-Documented:
-. called: "thing"
+Appendix:
+. documented:
+  . called: "thing"
 
 [\first]
 Defines: a is \thing
-Documented:
-. called: "first"
+Appendix:
+. documented:
+  . called: "first"
 
 [\second]
 Defines: b is \thing
-Documented:
-. called: "second"
+Appendix:
+. documented:
+  . called: "second"
 
 [\pair]
 Defines: P ::= (x, y)
 specifies:
 . x := \first
 . y := \second
-Documented:
-. called: "pair"
+Appendix:
+. documented:
+  . called: "pair"
 == end:input ==
 == begin:output ==
 

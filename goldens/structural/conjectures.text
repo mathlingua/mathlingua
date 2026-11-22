@@ -16,17 +16,18 @@ then:
 . x = x
 iff:
 . y = y
-Documented:
-. called: "A plausible result"
-Justification:
-. [conjecture.evidence]
-  for: (:logic.not:)
-  have: x = x
-  asserting: x = x
-Aliases:
-. [conjecture.alias]
-  alias: conjecture(x_) :=> x
-References:
-. $conjecture.ref
-Metadata:
-. version: "1.0"
+Appendix:
+. documented:
+  . called: "A plausible result"
+. justification:
+  . [conjecture.evidence]
+    for: (:logic.not:)
+    have: x = x
+    asserting: x = x
+. aliases:
+  . [conjecture.alias]
+    alias: conjecture(x_) :=> x
+. references:
+  . $conjecture.ref
+. metadata:
+  . version: "1.0"

@@ -4,15 +4,17 @@
 
 [\natural]
 Declares: n
-Documented:
-. called: "natural number"
+Appendix:
+. documented:
+  . called: "natural number"
 Id: "1a102108-da2b-47b8-9435-8dce9a5d5f36"
 
 
 [\real]
 Declares: r
-Documented:
-. called: "real number"
+Appendix:
+. documented:
+  . called: "real number"
 Id: "a6deadf6-fcfa-4de9-bf31-d9fce2181151"
 
 
@@ -21,31 +23,35 @@ Id: "a6deadf6-fcfa-4de9-bf31-d9fce2181151"
 -- state its type.
 [\zero]
 Defines: z is \natural
-Documented:
-. called: "zero"
+Appendix:
+. documented:
+  . called: "zero"
 Id: "d5c731fe-427f-4ccd-bb74-e2a576ac565d"
 
 
 [\one]
 Defines: u is \natural
-Documented:
-. called: "one"
+Appendix:
+. documented:
+  . called: "one"
 Id: "8e3440d0-13a0-428a-98c2-252004727775"
 
 
 [n \.natural.plus./ m]
 Defines: s is \natural
 when: n, m is \natural
-Documented:
-. written: "n? + m?"
+Appendix:
+. documented:
+  . written: "n? + m?"
 Id: "f994c277-b741-484e-9024-b2818fae4a9b"
 
 
 [r \.real.plus./ s]
 Defines: t is \real
 when: r, s is \real
-Documented:
-. written: "r? + s?"
+Appendix:
+. documented:
+  . written: "r? + s?"
 Id: "b8441c4c-a230-4ac1-a540-3edebae751f8"
 
 
@@ -53,8 +59,9 @@ Id: "b8441c4c-a230-4ac1-a540-3edebae751f8"
 -- target must be requirement-free — here, a command taking no arguments.
 [\unspecified.sum]
 Defines: g is \real
-Documented:
-. called: "unspecified sum"
+Appendix:
+. documented:
+  . called: "unspecified sum"
 Id: "969760a2-f402-4b97-b227-b578f7095d1e"
 
 
@@ -67,6 +74,7 @@ to: x_ \.natural.plus./ y_
 when: x_, y_ is \real
 to: x_ \.real.plus./ y_
 else: x_ :+: y_
-Documented:
-. called: "plus"
+Appendix:
+. documented:
+  . called: "plus"
 Id: "173a6ede-2b98-4da4-a5b0-40b44635add7"

@@ -4,21 +4,24 @@ Rejects a concrete Defines component that states only a type and supplies no val
 == begin:input ==
 [\set]
 Declares: X
-Documented:
-. called: "set"
+Appendix:
+. documented:
+  . called: "set"
 
 [\empty.set]
 Defines: E := \set@{x : ...}
-Documented:
-. called: "empty set"
+Appendix:
+. documented:
+  . called: "empty set"
 
 [\concrete.pair]
 Defines: P ::= (A, B)
 specifies:
 . A := \empty.set
 . B is \set
-Documented:
-. called: "concrete pair"
+Appendix:
+. documented:
+  . called: "concrete pair"
 == end:input ==
 == begin:output ==
 error: `B` states a specification but no value; define it with `:=`, define it in `expresses:`, or mark this `Defines:` `abstractly:`

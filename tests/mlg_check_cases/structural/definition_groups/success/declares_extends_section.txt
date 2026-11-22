@@ -4,14 +4,16 @@ Accepts one supertype declaration in an extends section.
 == begin:input ==
 [\base]
 Declares: x
-Documented:
-. called: "base"
+Appendix:
+. documented:
+  . called: "base"
 
 [\child]
 Declares: x
 extends: x is \base
-Documented:
-. called: "child"
+Appendix:
+. documented:
+  . called: "child"
 == end:input ==
 == begin:output ==
 == end:output ==

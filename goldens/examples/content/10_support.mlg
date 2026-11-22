@@ -4,15 +4,16 @@
 -- `Documented:` carries all of an item's human-facing text and rendering.
 [\documented.showcase]
 Declares: X ::= x(i_)
-Documented:
-. called: "documented showcase"
-. written: "\operatorname{showcase}"
-. writing: x(i)
-  as: "x?_{i?}"
-. overview: "A one-line summary."
-. description: "A longer description of the idea."
-. related: "#algebra"
-. discoverer: "@emmy.noether"
+Appendix:
+. documented:
+  . called: "documented showcase"
+  . written: "\operatorname{showcase}"
+  . writing: x(i)
+    as: "x?_{i?}"
+  . overview: "A one-line summary."
+  . description: "A longer description of the idea."
+  . related: "#algebra"
+  . discoverer: "@emmy.noether"
 Id: "0b81f148-f5c4-411d-bbaa-6f5dd4566db6"
 
 
@@ -24,8 +25,9 @@ Declares: X
 Requires:
 . capability: x_ "in" X :-> \\abstract
 . definition: \zero is \natural
-Documented:
-. called: "requires showcase"
+Appendix:
+. documented:
+  . called: "requires showcase"
 Id: "b4643f0c-2a8e-4b8c-9c45-daf810276e37"
 
 
@@ -40,8 +42,9 @@ Enables:
   capability: x_ "in" G :-> x_ memberOf Y
 . view:
   as: S := \unit.set is \set
-Documented:
-. called: "enables showcase"
+Appendix:
+. documented:
+  . called: "enables showcase"
 Id: "80bdeb53-b07a-411c-b7e2-7bd81e2059cb"
 
 
@@ -52,12 +55,13 @@ Declares: X ::= (A, B)
 specifies:
 . A is \set
 . (.B is \set.)[:carrier:]
-Documented:
-. called: "justification showcase"
-Justification:
-. for: (:carrier:)
-  have: B is \set
-  asserting: B is \set
+Appendix:
+. documented:
+  . called: "justification showcase"
+. justification:
+  . for: (:carrier:)
+    have: B is \set
+    asserting: B is \set
 Id: "decbcbc2-aa62-430f-aa16-d044ea928c10"
 
 
@@ -67,17 +71,18 @@ Id: "decbcbc2-aa62-430f-aa16-d044ea928c10"
 [\alias.showcase]
 Declares: G ::= (X, *) is \set via X
 specifies: * is \operation:on{G}
-Documented:
-. called: "alias showcase"
-Aliases:
-. alias: twice(x_) :=> x_ * x_
-  written: "x_?^{2}"
-Writing:
-. "carrier :~> \mathrm{carrier}"
-References:
-. $bourbaki.algebra
-Metadata:
-. version: "1.0"
+Appendix:
+. documented:
+  . called: "alias showcase"
+. aliases:
+  . alias: twice(x_) :=> x_ * x_
+    written: "x_?^{2}"
+. writing:
+  . "carrier :~> \mathrm{carrier}"
+. references:
+  . $bourbaki.algebra
+. metadata:
+  . version: "1.0"
 Id: "9b8fdb86-1a09-4859-83ac-dc03c3d46fd2"
 
 
@@ -88,6 +93,7 @@ given:
 . y is \element:of{X}
 where: y "in" G
 then: y is? \element:of{X}
-Documented:
-. called: "a capability reduces membership"
+Appendix:
+. documented:
+  . called: "a capability reduces membership"
 Id: "6f2caf05-a403-49ae-9ffd-28530e77efec"

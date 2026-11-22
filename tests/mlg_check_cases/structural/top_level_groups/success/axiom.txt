@@ -6,8 +6,9 @@ Accepts a named Axiom item with its required then section.
 Axiom:
 given: x is \\anything
 then: x = x
-Documented:
-. called: "reflexive"
+Appendix:
+. documented:
+  . called: "reflexive"
 == end:input ==
 == begin:output ==
 == end:output ==

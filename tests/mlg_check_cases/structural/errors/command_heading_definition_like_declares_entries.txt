@@ -3,8 +3,9 @@ Requires a command heading for definition-like Declares entries.
 == end:description ==
 == begin:input ==
 Declares: X
-Documented:
-. called: "something"
+Appendix:
+. documented:
+  . called: "something"
 == end:input ==
 == begin:output ==
 error: Expected command heading

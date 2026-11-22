@@ -4,9 +4,10 @@ Accepts one related entry in a Documented section.
 == begin:input ==
 [\item]
 Declares: x
-Documented:
-. called: "item"
-. related: "#related-topic"
+Appendix:
+. documented:
+  . called: "item"
+  . related: "#related-topic"
 == end:input ==
 == begin:output ==
 == end:output ==

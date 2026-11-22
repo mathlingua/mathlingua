@@ -4,14 +4,16 @@ Rejects direct `is` and spec-infix specifications for the same subject in one wh
 == begin:input ==
 [\set]
 Declares: X
-Documented:
-. called: "set"
+Appendix:
+. documented:
+  . called: "set"
 
 [A \:subset:/ B]
 Declares: A is \set
 when: B is \set
-Documented:
-. called: "subset"
+Appendix:
+. documented:
+  . called: "subset"
 
 [\bad{A}:in{B}]
 Declares: X
@@ -19,8 +21,9 @@ when:
 . B is \set
 . A is \set
 . A \:subset:/ B
-Documented:
-. called: "bad"
+Appendix:
+. documented:
+  . called: "bad"
 == end:input ==
 == begin:output ==
 error: Subject `A` is specified more than once in the same `when:` scope (`is` and `spec-infix specification`); choose exactly one of `is`, a quoted specification, a spec-infix specification, or `:=`

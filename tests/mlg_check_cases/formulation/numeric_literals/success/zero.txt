@@ -4,8 +4,9 @@ Accepts a zero literal at the nominal type configured by the zeroOrPositiveInt S
 == begin:input ==
 [\whole]
 Declares: x
-Documented:
-. called: "whole"
+Appendix:
+. documented:
+  . called: "whole"
 
 Specify:
 . zeroOrPositiveInt:
@@ -15,8 +16,9 @@ Specify:
 States:
 when: x is \whole
 that: x = x
-Documented:
-. called: "accept"
+Appendix:
+. documented:
+  . called: "accept"
 
 Theorem:
 then: \accept{0}

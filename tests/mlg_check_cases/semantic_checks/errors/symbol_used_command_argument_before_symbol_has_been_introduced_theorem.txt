@@ -4,14 +4,16 @@ Rejects a symbol used in a command argument before that symbol has been introduc
 == begin:input ==
 [\set]
 Declares: X
-Documented:
-. called: "set"
+Appendix:
+. documented:
+  . called: "set"
 
 [\function:on{A}:to{B}]
 Declares: f(x__)
 when: A, B is \set
-Documented:
-. called: "function"
+Appendix:
+. documented:
+  . called: "function"
 
 Theorem:
 given:

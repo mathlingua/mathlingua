@@ -4,14 +4,16 @@ Rejects an inferred command parameter when the same name is already introduced i
 == begin:input ==
 [\set]
 Declares: X
-Documented:
-. called: "set"
+Appendix:
+. documented:
+  . called: "set"
 
 [\function:on{A}:to{B}]
 Declares: f(x__)
 when: A, B is \set
-Documented:
-. called: "function"
+Appendix:
+. documented:
+  . called: "function"
 
 Theorem:
 given:

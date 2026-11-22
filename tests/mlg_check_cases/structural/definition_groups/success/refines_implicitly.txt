@@ -4,26 +4,30 @@ Accepts an implicitly marked Refines item that names the corresponding refinemen
 == begin:input ==
 [\base]
 Declares: x
-Documented:
-. called: "base"
+Appendix:
+. documented:
+  . called: "base"
 
 [\child]
 Declares: x is \base
-Documented:
-. called: "child"
+Appendix:
+. documented:
+  . called: "child"
 
 [\(special)::base]
 Refines: x
 satisfies: x is \base
-Documented:
-. adjective: "special"
+Appendix:
+. documented:
+  . adjective: "special"
 
 [\(special)::child]
 Refines: x
 implicitly:
 specifies: x is \(special)::base
-Documented:
-. adjective: "special"
+Appendix:
+. documented:
+  . adjective: "special"
 == end:input ==
 == begin:output ==
 == end:output ==

@@ -4,8 +4,9 @@ Accepts a mapping literal whose parameter type is stated explicitly.
 == begin:input ==
 [\real]
 Declares: x
-Documented:
-. called: "real"
+Appendix:
+. documented:
+  . called: "real"
 
 Theorem:
 given: f := (x_ is \real) => x_

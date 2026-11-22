@@ -6,8 +6,9 @@ Accepts the built-in map command over a ranged variadic slice.
 States:
 when: x[1...n] is \\statement
 that: \\map{x[1...i_...n]}:to{x[i_]}
-Documented:
-. called: "map each"
+Appendix:
+. documented:
+  . called: "map each"
 
 Theorem:
 given: P, Q is \\statement

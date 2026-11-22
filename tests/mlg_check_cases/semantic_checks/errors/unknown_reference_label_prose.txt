@@ -12,9 +12,10 @@ given: x
 then:
 . (x = x)[:2:]
 Proof: "This is ''some text with a source''[:2:] and see (:99:)"
-References:
-. for: (:2:)
-  entry: $some.book
+Appendix:
+. references:
+  . for: (:2:)
+    entry: $some.book
 == end:input ==
 == begin:output ==
 error: Unknown reference label `99`

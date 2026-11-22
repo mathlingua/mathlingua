@@ -4,21 +4,24 @@ Accepts two independent supertype declarations in an extends section.
 == begin:input ==
 [\first.type]
 Declares: x
-Documented:
-. called: "first type"
+Appendix:
+. documented:
+  . called: "first type"
 
 [\second.type]
 Declares: x
-Documented:
-. called: "second type"
+Appendix:
+. documented:
+  . called: "second type"
 
 [\child]
 Declares: x
 extends:
 . x is \first.type
 . x is \second.type
-Documented:
-. called: "child"
+Appendix:
+. documented:
+  . called: "child"
 == end:input ==
 == begin:output ==
 == end:output ==

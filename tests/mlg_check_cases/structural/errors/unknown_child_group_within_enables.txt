@@ -6,8 +6,9 @@ Rejects an unknown child group within Enables.
 Declares: X
 Enables:
 . mystery: X
-Documented:
-. called: "set"
+Appendix:
+. documented:
+  . called: "set"
 == end:input ==
 == begin:output ==
 error: Unexpected enables group `mystery`

@@ -286,7 +286,7 @@ mod tests {
     #[test]
     fn records_id_kind_and_definition_flag_and_source() {
         let source = format!(
-            "[\\set]\nDeclares: A\nDocumented:\n. called: \"set\"\nId: \"{A}\"\n\n\n\
+            "[\\set]\nDeclares: A\nAppendix:\n. documented:\n  . called: \"set\"\nId: \"{A}\"\n\n\n\
              Theorem:\nthen: A = A\nId: \"{B}\"\n"
         );
         let items = build_release_items(&[parsed("a.mlg", &source)]);
@@ -298,7 +298,7 @@ mod tests {
         assert_eq!(declares.header.as_deref(), Some("\\set"));
         assert_eq!(
             declares.source,
-            format!("[\\set]\nDeclares: A\nDocumented:\n. called: \"set\"\nId: \"{A}\"")
+            format!("[\\set]\nDeclares: A\nAppendix:\n. documented:\n  . called: \"set\"\nId: \"{A}\"")
         );
 
         let theorem = item(&items, B);
@@ -314,7 +314,7 @@ mod tests {
     fn captures_bracket_headers_and_page_previews() {
         let source = format!(
             "Title: \"Intro to Sets\"\nId: \"{A}\"\n\n\n\
-             [A \\:subset:/ B]\nDeclares: A\nDocumented:\n. called: \"subset\"\nId: \"{B}\"\n"
+             [A \\:subset:/ B]\nDeclares: A\nAppendix:\n. documented:\n  . called: \"subset\"\nId: \"{B}\"\n"
         );
         let items = build_release_items(&[parsed("a.mlg", &source)]);
 
@@ -330,10 +330,10 @@ mod tests {
     #[test]
     fn item_source_by_id_extracts_the_matching_item_slice() {
         let source = format!(
-            "[\\b]\nDeclares: B\nDocumented:\n. called: \"b\"\nId: \"{B}\"\n\n\n\
-             [\\a]\nDeclares: A\nDocumented:\n. called: \"a\"\nId: \"{A}\"\n"
+            "[\\b]\nDeclares: B\nAppendix:\n. documented:\n  . called: \"b\"\nId: \"{B}\"\n\n\n\
+             [\\a]\nDeclares: A\nAppendix:\n. documented:\n  . called: \"a\"\nId: \"{A}\"\n"
         );
-        let expected = format!("[\\a]\nDeclares: A\nDocumented:\n. called: \"a\"\nId: \"{A}\"");
+        let expected = format!("[\\a]\nDeclares: A\nAppendix:\n. documented:\n  . called: \"a\"\nId: \"{A}\"");
 
         assert_eq!(
             item_source_by_id(&source, A).as_deref(),
@@ -345,11 +345,11 @@ mod tests {
     #[test]
     fn resolves_uses_and_excludes_self() {
         let defs = format!(
-            "[\\b]\nDeclares: B\nDocumented:\n. called: \"b\"\nId: \"{B}\"\n\n\n\
-             [\\c]\nDeclares: C\nDocumented:\n. called: \"c\"\nId: \"{C}\"\n"
+            "[\\b]\nDeclares: B\nAppendix:\n. documented:\n  . called: \"b\"\nId: \"{B}\"\n\n\n\
+             [\\c]\nDeclares: C\nAppendix:\n. documented:\n  . called: \"c\"\nId: \"{C}\"\n"
         );
         let a = format!(
-            "[\\a]\nDeclares: A is \\b\nDocumented:\n. called: \"uses \\c\"\nId: \"{A}\"\n"
+            "[\\a]\nDeclares: A is \\b\nAppendix:\n. documented:\n  . called: \"uses \\c\"\nId: \"{A}\"\n"
         );
         let items = build_release_items(&[parsed("defs.mlg", &defs), parsed("a.mlg", &a)]);
 
@@ -362,14 +362,14 @@ mod tests {
     #[test]
     fn deduplicates_shared_dependencies_within_an_item() {
         let defs = format!(
-            "[\\b]\nDeclares: B\nDocumented:\n. called: \"b\"\nId: \"{B}\"\n\n\n\
-             [\\c]\nDeclares: C\nDocumented:\n. called: \"c\"\nId: \"{C}\"\n"
+            "[\\b]\nDeclares: B\nAppendix:\n. documented:\n  . called: \"b\"\nId: \"{B}\"\n\n\n\
+             [\\c]\nDeclares: C\nAppendix:\n. documented:\n  . called: \"c\"\nId: \"{C}\"\n"
         );
         // `\b` referenced twice; it must appear once in `uses`.
         let a = format!(
-            "[\\a]\nDeclares: A is \\b\nsatisfies: A is \\b\nDocumented:\n. called: \"\\c\"\nId: \"{A}\"\n"
+            "[\\a]\nDeclares: A is \\b\nsatisfies: A is \\b\nAppendix:\n. documented:\n  . called: \"\\c\"\nId: \"{A}\"\n"
         );
-        let d = format!("[\\d]\nDeclares: D is \\b\nDocumented:\n. called: \"\\c\"\nId: \"{D}\"\n");
+        let d = format!("[\\d]\nDeclares: D is \\b\nAppendix:\n. documented:\n  . called: \"\\c\"\nId: \"{D}\"\n");
         let items = build_release_items(&[
             parsed("defs.mlg", &defs),
             parsed("a.mlg", &a),

@@ -15,24 +15,25 @@ Enables:
 . capability: plus(x_, y_) :=> x + y
   written:
   . "+"
-Documented:
-. called: "naturals"
-Justification:
-. [proof.label]
-  for: (:proof.label:)
-  have:
-  . x = x
-  asserting:
-  . x = x
-Aliases:
-. [alias.expr]
-  alias: plus(x_, y_) :=> x + y
-  written:
-  . "+"
-References:
-. $book.naturals
-Metadata:
-. version: "1.0"
+Appendix:
+. documented:
+  . called: "naturals"
+. justification:
+  . [proof.label]
+    for: (:proof.label:)
+    have:
+    . x = x
+    asserting:
+    . x = x
+. aliases:
+  . [alias.expr]
+    alias: plus(x_, y_) :=> x + y
+    written:
+    . "+"
+. references:
+  . $book.naturals
+. metadata:
+  . version: "1.0"
 Id: "declares-abstract"
 
 [\von.neumann.naturals]
@@ -60,22 +61,23 @@ Enables:
 . capability: plus(x_, y_) :=> x + y
   written:
   . "+"
-Documented:
-. called: "von Neumann naturals"
-Justification:
-. [proof.label]
-  for: (:proof.label:)
-  have:
-  . x = x
-  asserting:
-  . x = x
-Aliases:
-. [alias.expr]
-  alias: plus(x_, y_) :=> x + y
-  written:
-  . "+"
-References:
-. $book.naturals
-Metadata:
-. version: "1.0"
+Appendix:
+. documented:
+  . called: "von Neumann naturals"
+. justification:
+  . [proof.label]
+    for: (:proof.label:)
+    have:
+    . x = x
+    asserting:
+    . x = x
+. aliases:
+  . [alias.expr]
+    alias: plus(x_, y_) :=> x + y
+    written:
+    . "+"
+. references:
+  . $book.naturals
+. metadata:
+  . version: "1.0"
 Id: "realizes"

@@ -1013,8 +1013,8 @@ mod tests {
     /// `\a` (Declares A) uses `\b` (Declares B); `called` controls A's content.
     fn defs_source(a_called: &str) -> String {
         format!(
-            "[\\b]\nDeclares: B\nDocumented:\n. called: \"b\"\nId: \"{B_ID}\"\n\n\n\
-             [\\a]\nDeclares: A is \\b\nDocumented:\n. called: \"{a_called}\"\nId: \"{A_ID}\"\n"
+            "[\\b]\nDeclares: B\nAppendix:\n. documented:\n  . called: \"b\"\nId: \"{B_ID}\"\n\n\n\
+             [\\a]\nDeclares: A is \\b\nAppendix:\n. documented:\n  . called: \"{a_called}\"\nId: \"{A_ID}\"\n"
         )
     }
 
@@ -1123,8 +1123,8 @@ mod tests {
         assert!(report.contains("(1 changed, 1 propagated)"), "{report}");
         assert!(report.contains("Diffs"), "{report}");
         // Only A's contents changed; the diff shows the old and new `called` lines.
-        assert!(report.contains("- . called: \"a\""), "{report}");
-        assert!(report.contains("+ . called: \"a changed\""), "{report}");
+        assert!(report.contains("-   . called: \"a\""), "{report}");
+        assert!(report.contains("+   . called: \"a changed\""), "{report}");
     }
 
     fn report_text(result: &ReleaseResult) -> String {

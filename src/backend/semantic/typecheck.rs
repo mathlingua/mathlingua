@@ -3381,7 +3381,7 @@ fn collect_prose_defined_labels(text: &str, labels: &mut BTreeSet<String>) {
 
 fn collect_proto_group_defined_labels(group: &ProtoGroup, labels: &mut BTreeSet<String>) {
     for section in &group.sections {
-        if matches!(section.label.as_str(), "Justification" | "References") {
+        if matches!(section.label.as_str(), "justification" | "references") {
             continue;
         }
         if let Some(text) = section

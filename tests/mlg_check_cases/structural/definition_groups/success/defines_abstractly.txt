@@ -4,8 +4,9 @@ Accepts an abstractly marker on a Defines item whose typed components intentiona
 == begin:input ==
 [\thing]
 Declares: x
-Documented:
-. called: "thing"
+Appendix:
+. documented:
+  . called: "thing"
 
 [\abstract.pair]
 Defines: P ::= (x, y)
@@ -13,8 +14,9 @@ abstractly:
 specifies:
 . x is \thing
 . y is \thing
-Documented:
-. called: "abstract pair"
+Appendix:
+. documented:
+  . called: "abstract pair"
 == end:input ==
 == begin:output ==
 

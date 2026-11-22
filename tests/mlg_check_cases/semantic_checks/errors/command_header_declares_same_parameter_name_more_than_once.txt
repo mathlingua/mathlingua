@@ -5,8 +5,9 @@ Rejects a command header that declares the same parameter name more than once.
 [\pair{A, A}]
 Declares: X
 when: A is \\anything
-Documented:
-. called: "pair"
+Appendix:
+. documented:
+  . called: "pair"
 == end:input ==
 == begin:output ==
 error: Symbol `A` has already been defined

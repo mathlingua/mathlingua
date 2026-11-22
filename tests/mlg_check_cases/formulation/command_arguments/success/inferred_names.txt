@@ -6,14 +6,16 @@ Accepts inferred command arguments and introduces their names with the types req
 Declares: X
 Enables:
 . capability: x_ "in" X :-> \\abstract
-Documented:
-. called: "set"
+Appendix:
+. documented:
+  . called: "set"
 
 [\function:on{A}:to{B}]
 Declares: f(x__)
 when: A, B is \set
-Documented:
-. called: "function"
+Appendix:
+. documented:
+  . called: "function"
 
 Theorem:
 given:

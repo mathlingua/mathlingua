@@ -6,8 +6,9 @@ Accepts a rectangular two-dimensional command argument for a two-dimensional var
 States:
 when: x[i, j] is \\statement
 that: x[i, j] = x[i, j]
-Documented:
-. called: "matrix statement"
+Appendix:
+. documented:
+  . called: "matrix statement"
 
 Theorem:
 given: P, Q, R, S is \\statement

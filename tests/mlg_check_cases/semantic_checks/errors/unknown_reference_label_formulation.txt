@@ -11,9 +11,10 @@ Theorem:
 given: x
 then:
 . (x = x)[:2:]
-References:
-. for: (:3:)
-  entry: $some.book
+Appendix:
+. references:
+  . for: (:3:)
+    entry: $some.book
 == end:input ==
 == begin:output ==
 error: Unknown reference label `3`

@@ -64,13 +64,15 @@ A concise high-level reference for the Mathlingua language. For in-depth specifi
 | `expresses:` | `expresses: P` | Logical expression that a definition or realization equates to |
 | `Requires:` | `Requires:` | Prerequisites (capabilities or definitions) needed to use an entry |
 | `Enables:` | `Enables:` | Capabilities, views, or conversions provided by an entry |
-| `Documented:` | `Documented:` | Human-readable documentation (`called:`, `written:`, `description:`, etc.) |
-| `Justification:` | `Justification:` | Deductive steps discharging formulation labels (`[:label:]`) |
-| `Aliases:` | `Aliases:` | Alternative notation aliases (`:=>`, `:->`, `:<->:`) |
-| `References:` | `References:` | Citations to external resources (`$resource` or `. [label]: $resource`) |
 | `Proof:` | `Proof: "..."` | Informal or formal proof body for a theorem |
-| `Metadata:` | `Metadata:` | Versioning metadata (`version:`) |
-| `Id:` | `Id: "uuid"` | Unique UUID identifier for any top-level item |
+| `Appendix:` | `Appendix:` | Container for auxiliary sections (`documented:`, `justification:`, `aliases:`, `writing:`, `references:`, `metadata:`) |
+| `. documented:` | `. documented:` | Human-readable documentation inside `Appendix:` (`called:`, `written:`, `description:`, etc.) |
+| `. justification:` | `. justification:` | Deductive steps inside `Appendix:` discharging formulation labels (`[:label:]`) |
+| `. aliases:` | `. aliases:` | Alternative notation aliases inside `Appendix:` (`:=>`, `:->`, `:<->:`) |
+| `. writing:` | `. writing:` | Item-scoped LaTeX rendering overrides inside `Appendix:` (`"name :~> body"`) |
+| `. references:` | `. references:` | Citations to external resources inside `Appendix:` (`$resource` or `for:` / `entry:`) |
+| `. metadata:` | `. metadata:` | Versioning metadata inside `Appendix:` (`version:`) |
+| `Id:` | `Id: "uuid"` | Unique UUID identifier as the final section of any top-level item |
 | <a id="headings-and-headers"></a>**Headings and Headers** | | |
 | Command Heading | `[\function:on{A}:to{B}]` | Identifies group by full command pattern with inputs |
 | Operator Heading | `[a \:(nonempty)::subset:/ b]` | Identifies group by infix operator or spec-infix pattern |
@@ -105,8 +107,8 @@ A concise high-level reference for the Mathlingua language. For in-depth specifi
 | Tuple | `(a, b)` | Ordered sequence of two or more elements |
 | Variadic / Slice | `x...` / `x[1...n]` | Represents an arbitrary sequence of arguments or array slice |
 | Inferred Symbol | `x?` / `x?_` | Parameter whose value is inferred from context |
-| Inline Label | `(x + y)[:label:]` | Labels a grouped formulation (referenced via `(:label:)` in `Justification:`, `References:`, or prose) |
-| Label Reference | `(:label:)` / `(:l1, l2:)` | Refers to a defined label in `Justification: . for:`, `References: . for:`, or prose |
+| Inline Label | `(x + y)[:label:]` | Labels a grouped formulation (referenced via `(:label:)` in `Appendix:` `justification:`, `references:`, or prose) |
+| Label Reference | `(:label:)` / `(:l1, l2:)` | Refers to a defined label in `Appendix:` `justification:` `. for:`, `references:` `. for:`, or prose |
 | Line Label | `. [label]: x + y` | Labels a single-line formulation or text argument in a section |
 | <a id="builtin-types-and-commands"></a>**Builtin Types and Commands** | | |
 | Builtin Types | `\\type`, `\\statement`, `\\expression`, `\\specification`, `\\anything` | Language primitive types for classification and constraints |
@@ -119,7 +121,7 @@ A concise high-level reference for the Mathlingua language. For in-depth specifi
 | Inline Formulation | `{. x + y .}` | Embeds an inline math expression inside prose text |
 | Display Formulation | `{{. x + y .}}` | Embeds a centered display math expression inside prose text |
 | Theorem Reference | `{: \thm :}` | Links to a theorem, axiom, or conjecture within prose |
-| Labeled Prose Quote | `''quote''[:ref:]` | Labels a quoted phrase in prose (can be cited via `References: . for: (:ref:)`) |
+| Labeled Prose Quote | `''quote''[:ref:]` | Labels a quoted phrase in prose (can be cited via `Appendix:` `. references:` `. for: (:ref:)`) |
 | Scoped Context | `<<scope>> ... <</scope>>` | Constrains mathematical context and notations within prose |
 | <a id="command-line-interface-cli"></a>**Command-Line Interface (CLI)** | | |
 | Check | `mlg check` | Type-checks and validates all `.mlg` files in the collection |

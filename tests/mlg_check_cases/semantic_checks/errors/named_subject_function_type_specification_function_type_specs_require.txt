@@ -4,14 +4,16 @@ Rejects a named subject in a function-type specification because function type s
 == begin:input ==
 [\set]
 Declares: X
-Documented:
-. called: "set"
+Appendix:
+. documented:
+  . called: "set"
 
 [\function:on{A}:to{B}]
 Declares: f(x__) is (x "in" A) -> (_ "in" B)
 when: A, B is \set
-Documented:
-. called: "function"
+Appendix:
+. documented:
+  . called: "function"
 == end:input ==
 == begin:output ==
 error: Function type specs must use `_` as their subject

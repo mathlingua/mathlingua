@@ -4,14 +4,16 @@ Accepts `satisfies` with an anonymous specification literal inside a set-builder
 == begin:input ==
 [\real]
 Declares: x
-Documented:
-. called: "real"
+Appendix:
+. documented:
+  . called: "real"
 
 [\collect{S}]
 Declares: y
 when: S is \\expression
-Documented:
-. called: "collect"
+Appendix:
+. documented:
+  . called: "collect"
 
 Theorem:
 given: a is \\anything

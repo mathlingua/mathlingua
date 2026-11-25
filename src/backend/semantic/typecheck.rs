@@ -1547,6 +1547,9 @@ fn type_info_from_parts(
         outputs,
         substitutions: context.substitutions,
         defined_subject: defines.map(|statement| primary_subject_key(&statement.subject)),
+        defined_value: defines
+            .and_then(|statement| statement.definition.as_ref())
+            .map(|definition| key_for_expression(definition)),
         described: described.map(described_target_subject_key),
         described_subject_shape,
         described_expansion_shape,
@@ -3746,7 +3749,9 @@ fn validate_top_level_item_types(
                 registry,
                 event_log,
             );
-            validate_defines_target_symbol_specifications(group, path, locator, event_log);
+            validate_defines_target_symbol_specifications(
+                group, path, locator, registry, event_log,
+            );
             validate_defines_specifies_items(group, path, locator, event_log);
             validate_optional_enables(
                 &group.enables,
@@ -7565,6 +7570,7 @@ fn validate_defines_target_symbol_specifications(
     group: &DefinesGroup,
     path: &Path,
     locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
     event_log: &mut EventLog,
 ) {
     let mut covered = BTreeSet::new();
@@ -7575,7 +7581,9 @@ fn validate_defines_target_symbol_specifications(
         &header_when_parameters(&group.heading),
         &mut covered,
     );
-    collect_declaration_statement_covered_symbols(&group.defines.argument, &mut covered);
+    if declaration_states_type_with_registry(&group.defines.argument, registry) {
+        collect_is_subject_covered_symbols(&group.defines.argument.subject, &mut covered);
+    }
     collect_direct_defines_bindings(
         &group.defines.argument,
         &mut covered,
@@ -7612,11 +7620,12 @@ fn validate_defines_target_symbol_specifications(
         }
     }
 
-    // The `Defines:` value is assigned but states no type — a bare `X := {…}` with no
-    // `is` and no top-level `\ty@value` build. Report that precisely (and mark the
-    // targets covered so the generic "missing definition" message does not also fire).
+    // The `Defines:` value is assigned but states no type — e.g. a bare `X := {…}`
+    // with no `is`, no top-level `\ty@value` build, and not assigned from a `Defines:`
+    // command value. Report that precisely (and mark the targets covered so the
+    // generic "missing definition" message does not also fire).
     if group.defines.argument.definition.is_some()
-        && !declaration_states_type(&group.defines.argument)
+        && !declaration_states_type_with_registry(&group.defines.argument, registry)
         && group.specifies.is_none()
     {
         for symbol in declaration_target_symbols(&group.defines.argument) {
@@ -8204,6 +8213,46 @@ fn declaration_states_type(statement: &DeclarationStatement) -> bool {
                 .map(|definition| &definition.kind),
             Some(ExpressionKind::Coercion { .. })
         )
+}
+
+/// Whether a declaration determines the type of its subject, either directly
+/// (via `is`/spec or a top-level `\ty@value` coercion) or by assigning a
+/// `Defines:`/`Realizes:` command expression (`Y := \cmd{...}` or
+/// `Y := A \.op./ B`).
+fn declaration_states_type_with_registry(
+    statement: &DeclarationStatement,
+    registry: &SignatureRegistry,
+) -> bool {
+    if declaration_states_type(statement) {
+        return true;
+    }
+    let Some(definition) = statement.definition.as_ref() else {
+        return false;
+    };
+    expression_is_defined_command_value(definition, registry)
+}
+
+fn expression_is_defined_command_value(
+    expression: &Expression,
+    registry: &SignatureRegistry,
+) -> bool {
+    match &expression.kind {
+        ExpressionKind::Grouped { expression, .. } | ExpressionKind::Labeled { expression, .. } => {
+            expression_is_defined_command_value(expression, registry)
+        }
+        ExpressionKind::Command(command) => {
+            let shape = shape_for_command_expression(command);
+            let signature = resolved_command_signature(&shape, registry);
+            signature_has_kind(&signature, DefinitionKind::Defines, registry)
+                || signature_has_kind(&signature, DefinitionKind::Realizes, registry)
+        }
+        ExpressionKind::InfixCommand { command, .. } => {
+            let shape = shape_for_infix_command(command);
+            signature_has_kind(&shape.signature, DefinitionKind::Defines, registry)
+                || signature_has_kind(&shape.signature, DefinitionKind::Realizes, registry)
+        }
+        _ => false,
+    }
 }
 
 fn collect_is_subject_covered_symbols(subject: &IsSubject, covered: &mut BTreeSet<String>) {
@@ -20130,18 +20179,28 @@ fn defined_output_facts_for_key(
     context: &TypeContext,
     registry: &SignatureRegistry,
 ) -> Vec<TypeFact> {
+    let mut visited = HashSet::new();
+    defined_output_facts_for_key_guarded(key, context, registry, &mut visited)
+}
+
+fn defined_output_facts_for_key_guarded(
+    key: &str,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+    visited: &mut HashSet<String>,
+) -> Vec<TypeFact> {
     let key = context.normalize_key(key);
     let mut result = Vec::new();
 
     if let Some((signature, actuals)) = command_signature_and_actuals_from_key(&key) {
-        result.extend(defined_output_facts_for_signature(
-            &signature, &actuals, &key, context, registry,
+        result.extend(defined_output_facts_for_signature_guarded(
+            &signature, &actuals, &key, context, registry, visited,
         ));
     }
 
     if let Some((signature, actuals)) = infix_command_signature_and_actuals_from_key(&key) {
-        result.extend(defined_output_facts_for_signature(
-            &signature, &actuals, &key, context, registry,
+        result.extend(defined_output_facts_for_signature_guarded(
+            &signature, &actuals, &key, context, registry, visited,
         ));
     }
 
@@ -20217,10 +20276,32 @@ fn defined_output_facts_for_signature(
     context: &TypeContext,
     registry: &SignatureRegistry,
 ) -> Vec<TypeFact> {
+    let mut visited = HashSet::new();
+    defined_output_facts_for_signature_guarded(
+        signature,
+        actuals,
+        key,
+        context,
+        registry,
+        &mut visited,
+    )
+}
+
+fn defined_output_facts_for_signature_guarded(
+    signature: &str,
+    actuals: &[String],
+    key: &str,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+    visited: &mut HashSet<String>,
+) -> Vec<TypeFact> {
+    if !visited.insert(signature.to_owned()) {
+        return Vec::new();
+    }
     let Some(info) = registry.type_infos.get(signature) else {
         return Vec::new();
     };
-    if info.outputs.is_empty() {
+    if info.outputs.is_empty() && info.defined_value.is_none() {
         return Vec::new();
     }
 
@@ -20252,7 +20333,8 @@ fn defined_output_facts_for_signature(
         );
     }
 
-    info.outputs
+    let mut result: Vec<TypeFact> = info
+        .outputs
         .iter()
         .flat_map(|output| {
             let mut substitutions = base_substitutions.clone();
@@ -20266,7 +20348,25 @@ fn defined_output_facts_for_signature(
             .into_iter()
             .map(|fact| output_context.normalize_fact(&fact))
         })
-        .collect()
+        .collect();
+
+    if result.is_empty()
+        && let Some(defined_value) = &info.defined_value
+    {
+        let instantiated_value =
+            output_context.normalize_key(&substitute_key(defined_value, &base_substitutions));
+        for fact in defined_output_facts_for_key_guarded(
+            &instantiated_value,
+            &output_context,
+            registry,
+            visited,
+        ) {
+            let sub_map = HashMap::from([(fact_subject(&fact).to_owned(), key.to_owned())]);
+            result.push(output_context.normalize_fact(&substitute_fact(&fact, &sub_map)));
+        }
+    }
+
+    result
 }
 
 fn actual_arg_groups_for_key(key: &str) -> Option<Vec<ArgGroupShape>> {

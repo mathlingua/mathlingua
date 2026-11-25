@@ -112,6 +112,10 @@ pub(super) struct DefinitionTypeInfo {
     /// facts can refer back to this owner and must replace it when the command
     /// is destructured or accessed directly.
     pub(super) defined_subject: Option<String>,
+    /// Normalized key of the `:=` expression on a `Defines:`/`Realizes:` target
+    /// (when present), so a target that omits `is <type>` and assigns a defined
+    /// command value (`Y := \cmd{...}`) inherits that command's output facts.
+    pub(super) defined_value: Option<String>,
     pub(super) described: Option<String>,
     /// The structural shape of the subject in the `Declares:` target, normalized
     /// so a named form such as `G ::= (X, *, e)` is represented as a name subject

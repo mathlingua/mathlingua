@@ -3722,6 +3722,68 @@ then:
     }
 
     #[test]
+    fn check_accepts_defines_assignment_inheriting_type_from_defined_command() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("defines-inherits-command-type.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+Declares: X
+Enables:
+. capability: x_ "in" X :-> \\abstract
+Appendix:
+. called: "set"
+
+[\set:of{X...}]
+Defines: Y is \set
+when: X... is \\anything
+expresses:
+. let: A is \\anything
+  then:
+  . have: A "in"? Y
+    iff: A = X...
+Appendix:
+. written: "\left \{ X?{...,...} \right \}"
+
+[\set.successor:of{X}]
+Defines: Y := \set:of{X, \set:of{X}}
+when: X is \set
+Appendix:
+. called: "set successor of $X?$"
+. written: "X? \cup \{X?\}"
+
+[\pair.of{A}{B}]
+Defines: P := \set.successor:of{A}
+when: A, B is \set
+Appendix:
+. called: "pair of $A?$ and $B?$"
+
+Theorem:
+given:
+. A, B is \set
+then:
+. \set.successor:of{A} is? \set
+. \pair.of{A}{B} is? \set
+"#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("defines-inherits-command-type.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_accepts_command_build_literals() {
         // `\cmd@<literal>` builds a value of the command's type inline. Here a set is
         // built from a collection literal and used where a `\set` is expected.

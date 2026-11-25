@@ -13958,6 +13958,511 @@ Appendix:
     }
 
     #[test]
+    fn check_unifies_using_symbol_from_caller_facts_and_propagates_output() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("unify-using.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+Declares: X
+Enables:
+. capability: x_ "in" X :-> \\abstract
+Appendix:
+. called: "set"
+
+[\reals]
+Defines: R is \set
+Appendix:
+. called: "reals"
+
+[A \:subset:/ B]
+Declares: A is \set
+when: B is \set
+Appendix:
+. written: "A? \subseteq B?"
+
+[A \.union./ B]
+Defines: C \:subset:/ U
+using: U is \set
+when:
+. A \:subset:/ U
+. B \:subset:/ U
+expresses: \set@{c_ : c_ "in" U | c_ "in"? A}
+Appendix:
+. written: "A? \cup B?"
+
+Theorem:
+given:
+. A \:subset:/ \reals
+. B \:subset:/ \reals
+then:
+. let:
+  . C := A \.union./ B
+  then:
+  . C \:subset?:/ \reals
+"#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("unify-using.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_reports_strict_unification_conflict_for_using_symbol() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("unify-using-conflict.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+Declares: X
+Enables:
+. capability: x_ "in" X :-> \\abstract
+Appendix:
+. called: "set"
+
+[\rationals]
+Defines: Q is \set
+Appendix:
+. called: "rationals"
+
+[\reals]
+Defines: R is \set
+Appendix:
+. called: "reals"
+
+[A \:subset:/ B]
+Declares: A is \set
+when: B is \set
+Appendix:
+. called: "subset of $B?$"
+
+[A \.union./ B]
+Defines: C is \set
+using: U is \set
+when:
+. A \:subset:/ U
+. B \:subset:/ U
+expresses: \set@{c_ : c_ "in" U | c_ "in"? A}
+Appendix:
+. written: "A? \cup B?"
+
+Theorem:
+given:
+. A \:subset:/ \rationals
+. B \:subset:/ \reals
+then:
+. let:
+  . C := A \.union./ B
+  then:
+  . C is? \set
+"#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("unify-using-conflict.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert!(
+            user_events(&event_log).iter().any(|event| {
+                event.as_message().is_some_and(|message| {
+                    message.message.contains(
+                        "Unification conflict for implicit symbol `U` in command `\\.union./`",
+                    )
+                })
+            }),
+            "expected unification conflict error, got {:#?}",
+            user_events(&event_log)
+        );
+    }
+
+    #[test]
+    fn check_resolves_unification_conflict_with_asserting_witness() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("unify-using-asserting.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+Declares: X
+Enables:
+. capability: x_ "in" X :-> \\abstract
+Appendix:
+. called: "set"
+
+[\rationals]
+Defines: Q is \set
+Appendix:
+. called: "rationals"
+
+[\reals]
+Defines: R is \set
+Appendix:
+. called: "reals"
+
+[A \:subset:/ B]
+Declares: A is \set
+when: B is \set
+Appendix:
+. called: "subset of $B?$"
+
+[A \.union./ B]
+Defines: C is \set
+using: U is \set
+when:
+. A \:subset:/ U
+. B \:subset:/ U
+expresses: \set@{c_ : c_ "in" U | c_ "in"? A}
+Appendix:
+. written: "A? \cup B?"
+
+Theorem:
+given:
+. A \:subset:/ \rationals
+. B \:subset:/ \reals
+then:
+. have:
+  . let:
+    . C := A \.union./ B
+    then:
+    . C is? \set
+  asserting: A \:subset?:/ \reals
+"#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("unify-using-asserting.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_checks_bound_using_hole_type_requirement() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("unify-using-bad-type.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+Declares: X
+Appendix:
+. called: "set"
+
+[\group]
+Declares: G
+extends: \set
+Appendix:
+. called: "group"
+
+[A \:subset:/ B]
+Declares: A is \set
+when: B is \set
+Appendix:
+. called: "subset of $B?$"
+
+[A \.group.union./ B]
+Defines: C is \set
+using: U is \group
+when:
+. A \:subset:/ U
+. B \:subset:/ U
+Appendix:
+. written: "A? \cup_G B?"
+
+Theorem:
+given:
+. S is \set
+. A, B \:subset:/ S
+then:
+. let:
+  . C := A \.group.union./ B
+  then:
+  . C is? \set
+"#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("unify-using-bad-type.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert!(
+            user_events(&event_log).iter().any(|event| {
+                event.as_message().is_some_and(|message| {
+                    message.message
+                        == "Could not establish requirement `S is \\group` for command `\\.group.union./`"
+                })
+            }),
+            "expected bound hole type check error, got {:#?}",
+            user_events(&event_log)
+        );
+    }
+
+    #[test]
+    fn check_reports_unification_conflict_for_omitted_optional_tail_hole() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("unify-optional-tail-conflict.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+Declares: X
+Appendix:
+. called: "set"
+
+[A \:subset:/ B]
+Declares: A is \set
+when: B is \set
+Appendix:
+. called: "subset of $B?$"
+
+[A \.combine:?within{U}./ B]
+Defines: C is \set
+when:
+. U is \set
+. A \:subset:/ U
+. B \:subset:/ U
+Appendix:
+. written: "A? \star B?"
+
+Theorem:
+given:
+. X, Y is \set
+. A \:subset:/ X
+. B \:subset:/ Y
+then:
+. let:
+  . C := A \.combine./ B
+  then:
+  . C is? \set
+"#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("unify-optional-tail-conflict.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert!(
+            user_events(&event_log).iter().any(|event| {
+                event.as_message().is_some_and(|message| {
+                    message.message.contains(
+                        "Unification conflict for implicit symbol `U` in command `\\.combine./`",
+                    )
+                })
+            }),
+            "expected optional tail unification conflict error, got {:#?}",
+            user_events(&event_log)
+        );
+    }
+
+    #[test]
+    fn check_unifies_inferred_hole_in_infix_spec_and_reports_conflict() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("unify-inferred-infix.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+Declares: X
+Appendix:
+. called: "set"
+
+[A \:subset:/ B]
+Declares: A is \set
+when: B is \set
+Appendix:
+. called: "subset of $B?$"
+
+[A \.join./ B]
+Defines: C is \set
+when:
+. A \:subset:/ U?
+. B \:subset:/ U
+Appendix:
+. written: "A? \vee B?"
+
+Theorem:
+given:
+. X, Y is \set
+. A \:subset:/ X
+. B \:subset:/ Y
+then:
+. let:
+  . C := A \.join./ B
+  then:
+  . C is? \set
+"#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("unify-inferred-infix.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert!(
+            user_events(&event_log).iter().any(|event| {
+                event.as_message().is_some_and(|message| {
+                    message.message.contains(
+                        "Unification conflict for implicit symbol `U` in command `\\.join./`",
+                    )
+                })
+            }),
+            "expected inferred infix hole unification conflict, got {:#?}",
+            user_events(&event_log)
+        );
+    }
+
+    #[test]
+    fn check_reports_incompatible_types_on_unsolved_hole_and_accepts_compatible_types() {
+        let temp_dir = TestDir::new();
+        let bad_file = temp_dir.path().join("unsolved-hole-incompatible.mlg");
+
+        write_mlg_fixture(
+            &bad_file,
+            r#"[\set]
+Declares: X
+Appendix:
+. called: "set"
+
+[\number]
+Declares: n
+Appendix:
+. called: "number"
+
+[A \:tagged.by:/ N]
+Declares: A is \set
+when: N is \number
+Appendix:
+. written: "A? \triangleleft N?"
+
+[\tag{A}:?with{U}]
+Defines: B is \set
+when:
+. U is \set
+. A \:tagged.by:/ U
+Appendix:
+. called: "tag"
+
+Theorem:
+given: A is \set
+then: \tag{A} is? \set
+"#,
+        )
+        .unwrap();
+
+        let mut bad_log = EventLog::new();
+        let bad_result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("unsolved-hole-incompatible.mlg")],
+            &mut bad_log,
+        );
+
+        assert_eq!(bad_result.files_checked, 1);
+        assert!(
+            user_events(&bad_log).iter().any(|event| {
+                event.as_message().is_some_and(|message| {
+                    message.message.contains(
+                        "Type conflict for implicit symbol `U` in command `\\tag`: incompatible types",
+                    )
+                })
+            }),
+            "expected incompatible type error on unsolved hole, got {:#?}",
+            user_events(&bad_log)
+        );
+
+        let good_dir = TestDir::new();
+        let good_file = good_dir.path().join("unsolved-hole-compatible.mlg");
+
+        write_mlg_fixture(
+            &good_file,
+            r#"[\set]
+Declares: X
+Appendix:
+. called: "set"
+
+[\group]
+Declares: G
+Enables:
+. view:
+  as: S := G is \set
+Appendix:
+. called: "group"
+
+[A \:subset:/ B]
+Declares: A is \set
+when: B is \set
+Appendix:
+. written: "A? \subseteq B?"
+
+[\tag{A}:?with{U}]
+Defines: B is \set
+when:
+. U is \group
+. A \:subset:/ U
+Appendix:
+. called: "tag"
+
+Theorem:
+given: A is \set
+then: \tag{A} is? \set
+"#,
+        )
+        .unwrap();
+
+        let mut good_log = EventLog::new();
+        let good_result = check_in(
+            good_dir.path(),
+            &[PathBuf::from("unsolved-hole-compatible.mlg")],
+            &mut good_log,
+        );
+
+        assert_eq!(good_result.files_checked, 1);
+        assert_eq!(
+            user_events(&good_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_accepts_complex_view_expression() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("relationships.mlg");

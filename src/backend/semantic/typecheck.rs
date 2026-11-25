@@ -1,6 +1,6 @@
 use super::*;
 use crate::frontend::formulation::parse_declaration_statement;
-use std::collections::{BTreeSet, HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::rc::Rc;
 
 pub(super) fn collect_numeric_specifications(
@@ -1592,21 +1592,76 @@ fn set_element_type_facts(
 }
 
 /// The `?`-suffixed inferred parameter names appearing in a definition's `when:`
-/// requirements (e.g. `A`, `B` in `g is \function:on{A?}:to{B?}`).
+/// requirements (e.g. `A`, `B` in `g is \function:on{A?}:to{B?}`, or `U` in
+/// `A \:subset:/ U?`).
 fn collect_inferred_parameter_names(when: Option<&WhenSection>) -> Vec<String> {
     let mut names = Vec::new();
     if let Some(when) = when {
         for clause in &when.arguments {
             if let Clause::Declaration(statement) = clause
-                && let Some(DeclarationRelation::Is(ty)) = &statement.relation
+                && let Some(relation) = &statement.relation
             {
-                collect_inferred_names_in_type_expression(ty, &mut names);
+                match relation {
+                    DeclarationRelation::Is(ty) => {
+                        collect_inferred_names_in_type_expression(ty, &mut names);
+                    }
+                    DeclarationRelation::Spec { target, .. } => {
+                        collect_inferred_names_in_expression(target, &mut names);
+                    }
+                    DeclarationRelation::InfixSpec { spec, target } => {
+                        for arg in infix_spec_arguments(spec) {
+                            collect_inferred_names_in_expression(arg, &mut names);
+                        }
+                        collect_inferred_names_in_expression(target, &mut names);
+                    }
+                }
             }
         }
     }
     names.sort();
     names.dedup();
     names
+}
+
+fn collect_inferred_names_in_expression(expression: &Expression, names: &mut Vec<String>) {
+    match &expression.kind {
+        ExpressionKind::InferredName(name) => names.push(name.clone()),
+        ExpressionKind::Command(command) => {
+            for argument in command_expression_arguments(command) {
+                collect_inferred_names_in_expression(argument, names);
+            }
+        }
+        ExpressionKind::InfixCommand {
+            left,
+            command,
+            right,
+        } => {
+            collect_inferred_names_in_expression(left, names);
+            for argument in infix_command_arguments(command) {
+                collect_inferred_names_in_expression(argument, names);
+            }
+            collect_inferred_names_in_expression(right, names);
+        }
+        ExpressionKind::Grouped { expression, .. } | ExpressionKind::Labeled { expression, .. } => {
+            collect_inferred_names_in_expression(expression, names);
+        }
+        ExpressionKind::Coercion { value, ty, .. } => {
+            collect_inferred_names_in_expression(value, names);
+            collect_inferred_names_in_type_expression(ty, names);
+        }
+        ExpressionKind::IsType { subject, ty } => {
+            collect_inferred_names_in_expression(subject, names);
+            collect_inferred_names_in_type_expression(ty, names);
+        }
+        ExpressionKind::MemberOf {
+            subject,
+            collection,
+        } => {
+            collect_inferred_names_in_expression(subject, names);
+            collect_inferred_names_in_expression(collection, names);
+        }
+        _ => {}
+    }
 }
 
 fn collect_inferred_names_in_type_expression(ty: &TypeExpression, names: &mut Vec<String>) {
@@ -10296,6 +10351,11 @@ fn collect_clause_assumptions(clause: &Clause, context: &mut TypeContext) {
                 collect_clause_assumptions(clause, context);
             }
         }
+        Clause::Have(group) => {
+            for clause in &group.have.arguments {
+                collect_clause_assumptions(clause, context);
+            }
+        }
         _ => {}
     }
 }
@@ -10399,11 +10459,39 @@ fn declare_inferred_parameters(
                 );
             }
             DeclarationRelation::Spec { target, .. } => {
-                declare_inferred_parameters_in_expression(
-                    target, context, path, locator, registry, event_log,
-                );
+                if let ExpressionKind::InferredName(name) = &target.kind {
+                    declare_bare_inferred_name(name, context, path, locator, event_log);
+                } else {
+                    declare_inferred_parameters_in_expression(
+                        target, context, path, locator, registry, event_log,
+                    );
+                }
             }
-            DeclarationRelation::InfixSpec { target, .. } => {
+            DeclarationRelation::InfixSpec { spec, target } => {
+                let active_spec = active_infix_spec(spec, context);
+                let shape = shape_for_infix_spec(&active_spec);
+                let mut arguments: Vec<&Expression> = Vec::new();
+                // Positional slot 0 is the subject of the infix spec; pass a
+                // placeholder expression if we only need to inject inferred
+                // parameters in `spec` args and `target`.
+                let spec_args = infix_spec_arguments(&active_spec);
+                arguments.extend(spec_args.iter().copied());
+                arguments.push(target);
+                inject_infix_spec_inferred_parameters(
+                    &shape.signature,
+                    &primary_subject_key(&statement.subject),
+                    &arguments,
+                    context,
+                    path,
+                    locator,
+                    registry,
+                    event_log,
+                );
+                for arg in spec_args {
+                    declare_inferred_parameters_in_expression(
+                        arg, context, path, locator, registry, event_log,
+                    );
+                }
                 declare_inferred_parameters_in_expression(
                     target, context, path, locator, registry, event_log,
                 );
@@ -10575,6 +10663,110 @@ fn declare_inferred_parameters_in_expression(
             );
         }
         _ => {}
+    }
+}
+
+fn declare_bare_inferred_name(
+    name: &str,
+    context: &mut TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    if context.has_name(name) {
+        emit_error(
+            event_log,
+            path,
+            locator.locate_symbol(name),
+            format!("Inferred parameter `{name}` is already introduced"),
+        );
+        return;
+    }
+    context.declare_name(name.to_owned());
+    context.declare_defined_symbol(name.to_owned());
+}
+
+/// Declares inferred parameters (`X?`) appearing in the tail arguments or
+/// right-hand target of a spec-infix declaration (`A \:subset:/ U?`) and injects
+/// the corresponding typing requirements from the infix spec's definition.
+fn inject_infix_spec_inferred_parameters(
+    signature: &str,
+    subject_key: &str,
+    trailing_arguments: &[&Expression],
+    context: &mut TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    if !trailing_arguments
+        .iter()
+        .any(|argument| matches!(argument.kind, ExpressionKind::InferredName(_)))
+    {
+        return;
+    }
+    let Some(info) = registry.type_infos.get(signature) else {
+        for argument in trailing_arguments {
+            if let ExpressionKind::InferredName(name) = &argument.kind {
+                declare_bare_inferred_name(name, context, path, locator, event_log);
+            }
+        }
+        return;
+    };
+
+    let mut actuals = Vec::with_capacity(trailing_arguments.len() + 1);
+    actuals.push(context.normalize_key(subject_key));
+    for argument in trailing_arguments {
+        actuals.push(context.normalize_key(&effective_key_for_expression(
+            argument, context, registry,
+        )));
+    }
+    let substitutions = info
+        .parameters
+        .iter()
+        .zip(&actuals)
+        .map(|(name, actual)| (name.clone(), actual.clone()))
+        .collect::<HashMap<_, _>>();
+
+    let mut introduced_parameters = Vec::new();
+    for (offset, argument) in trailing_arguments.iter().enumerate() {
+        let ExpressionKind::InferredName(name) = &argument.kind else {
+            continue;
+        };
+        if context.has_name(name) {
+            emit_error(
+                event_log,
+                path,
+                locator.locate_symbol(name),
+                format!("Inferred parameter `{name}` is already introduced"),
+            );
+            continue;
+        }
+        context.declare_name(name.clone());
+        context.declare_defined_symbol(name.clone());
+        if let Some(parameter) = info.parameters.get(offset + 1) {
+            introduced_parameters.push(parameter.clone());
+        }
+    }
+
+    for requirement in &info.requirements {
+        if info
+            .hidden_parameters
+            .iter()
+            .any(|name| fact_mentions_name(requirement, name))
+            || info
+                .using_parameters
+                .iter()
+                .any(|name| fact_mentions_name(requirement, name))
+        {
+            continue;
+        }
+        if introduced_parameters
+            .iter()
+            .any(|parameter| parameter == fact_subject(requirement))
+        {
+            context.add_fact(substitute_fact(requirement, &substitutions));
+        }
     }
 }
 
@@ -16087,15 +16279,12 @@ fn check_command_requirements(
         position,
         event_log,
     );
+
+    let initial_holes = collect_unbound_holes(info, &substitutions);
     for (left, right) in &info.substitutions {
-        if info
-            .hidden_parameters
+        if initial_holes
             .iter()
             .any(|name| key_mentions_name(left, name) || key_mentions_name(right, name))
-            || info.using_parameters.iter().any(|name| {
-                !substitutions.contains_key(name)
-                    && (key_mentions_name(left, name) || key_mentions_name(right, name))
-            })
         {
             continue;
         }
@@ -16105,29 +16294,58 @@ fn check_command_requirements(
         );
     }
 
+    let solve_result = solve_command_holes(
+        info,
+        &initial_holes,
+        &mut substitutions,
+        &requirement_context,
+        registry,
+        true,
+    );
+
+    // Register any definition substitutions whose holes were just solved.
+    if !initial_holes.is_empty() {
+        for (left, right) in &info.substitutions {
+            if solve_result
+                .unsolved_holes
+                .iter()
+                .any(|name| key_mentions_name(left, name) || key_mentions_name(right, name))
+            {
+                continue;
+            }
+            requirement_context.add_substitution(
+                substitute_key(left, &substitutions),
+                substitute_key(right, &substitutions),
+            );
+        }
+    }
+
+    let mut conflicted_holes = BTreeSet::new();
+    for conflict in &solve_result.conflicts {
+        conflicted_holes.insert(conflict.hole.clone());
+        emit_error(
+            event_log,
+            path,
+            position,
+            format!(
+                "Unification conflict for implicit symbol `{}` in command `{signature}`: conflicting values `{}` and `{}`",
+                conflict.hole, conflict.first_value, conflict.second_value,
+            ),
+        );
+    }
+
     for requirement in &info.requirements {
-        if info
-            .hidden_parameters
+        if conflicted_holes
             .iter()
             .any(|name| fact_mentions_name(requirement, name))
-            || info.using_parameters.iter().any(|name| {
-                !substitutions.contains_key(name) && fact_mentions_name(requirement, name)
-            })
         {
             continue;
         }
-        // Solve any inferred parameters this requirement mentions (e.g. `A`/`B`
-        // in `g is \function:on{A?}:to{B?}`) by unifying it against a fact already
-        // known about the subject, so later requirements can use the solved value.
-        if !info.inferred_parameters.is_empty() {
-            let partial = substitute_fact(requirement, &substitutions);
-            infer_parameters_from_requirement(
-                &partial,
-                &info.inferred_parameters,
-                &requirement_context,
-                registry,
-                &mut substitutions,
-            );
+        let mentions_unsolved_non_inferred = solve_result.unsolved_holes.iter().any(|name| {
+            !info.inferred_parameters.contains(name) && fact_mentions_name(requirement, name)
+        });
+        if mentions_unsolved_non_inferred {
+            continue;
         }
         for instantiated in instantiate_variadic_fact(
             requirement,
@@ -16162,6 +16380,27 @@ fn check_command_requirements(
                 );
             }
         }
+    }
+
+    // Even when a hole remains unassigned (no concrete value was forced by any
+    // fact in scope), verify that all type constraints accumulated on that hole
+    // are mutually compatible.
+    for hole in &solve_result.unsolved_holes {
+        if conflicted_holes.contains(hole) {
+            continue;
+        }
+        check_unsolved_hole_type_compatibility(
+            hole,
+            signature,
+            info,
+            &substitutions,
+            &solve_result.unsolved_holes,
+            &requirement_context,
+            registry,
+            path,
+            position,
+            event_log,
+        );
     }
 }
 
@@ -16731,91 +16970,851 @@ fn format_two_dimensional_parameter_slice(parameter: &VariadicParameter) -> Stri
     )
 }
 
-/// Binds inferred parameters mentioned by an `is` requirement by unifying its
-/// type key against the type key of a fact already known about the same subject.
-/// For `p is \function:on{A}:to{B}` and a known `p is \function:on{X}:to{Y}`, this
-/// binds `A := X`, `B := Y` into `substitutions`.
-fn infer_parameters_from_requirement(
-    requirement: &TypeFact,
-    inferred: &[String],
+/// A strict unification conflict where constraints pin the same implicit hole
+/// to two distinct normalized values.
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct HoleUnificationConflict {
+    hole: String,
+    first_value: String,
+    second_value: String,
+}
+
+#[derive(Clone, Debug, Default)]
+struct HoleSolveResult {
+    unsolved_holes: BTreeSet<String>,
+    conflicts: Vec<HoleUnificationConflict>,
+}
+
+/// Collects all unbound implicit symbols ("holes") for a command use:
+/// - `?`-suffixed inferred parameters (`inferred_parameters`)
+/// - omitted optional-tail parameters (`hidden_parameters`)
+/// - unbound definition-local `using:` parameters (`using_parameters`)
+///
+/// All three kinds are treated uniformly by the constraint unifier.
+fn collect_unbound_holes(
+    info: &DefinitionTypeInfo,
+    substitutions: &HashMap<String, String>,
+) -> BTreeSet<String> {
+    let mut holes = BTreeSet::new();
+    for name in info
+        .inferred_parameters
+        .iter()
+        .chain(&info.hidden_parameters)
+        .chain(&info.using_parameters)
+    {
+        if !substitutions.contains_key(name) {
+            holes.insert(name.clone());
+        }
+    }
+    holes
+}
+
+/// Solves implicit holes (`X?`, omitted optional tails, and unbound `using:`
+/// symbols) by strict constraint unification against known facts in `context`.
+///
+/// - Holes are matched across all `TypeFact` forms (`Is`, `RefinedIs`,
+///   `InfixSpec`, `Spec`, `MemberOf`, `FunctionType`), expanding known facts
+///   through `extends:`, `Refines:`, `view: as:`, `Equivalent:`, and (in the
+///   future) `means: is:`.
+/// - Candidate-set backtracking handles relations with multiple witnesses in
+///   scope (e.g. `A \:subset:/ \naturals` and `A \:subset:/ \reals`).
+/// - If constraints force a hole to two distinct normalized values, a strict
+///   `HoleUnificationConflict` is recorded.
+/// - Holes not pinned by any matching constraint remain in `unsolved_holes`
+///   (and are subsequently checked for pairwise type compatibility).
+fn solve_command_holes(
+    info: &DefinitionTypeInfo,
+    initial_holes: &BTreeSet<String>,
+    substitutions: &mut HashMap<String, String>,
     context: &TypeContext,
     registry: &SignatureRegistry,
-    substitutions: &mut HashMap<String, String>,
-) {
+    allow_defined_outputs: bool,
+) -> HoleSolveResult {
+    let mut unsolved_holes = initial_holes.clone();
+    let mut conflicts = Vec::new();
+    if unsolved_holes.is_empty() {
+        return HoleSolveResult {
+            unsolved_holes,
+            conflicts,
+        };
+    }
+
+    let max_rounds = unsolved_holes.len() + 2;
+    for _ in 0..max_rounds {
+        if unsolved_holes.is_empty() {
+            break;
+        }
+        let mut active_constraints: Vec<(TypeFact, Vec<HashMap<String, String>>)> = Vec::new();
+        for requirement in &info.requirements {
+            let partial = substitute_fact(requirement, substitutions);
+            if !unsolved_holes
+                .iter()
+                .any(|hole| fact_mentions_name(&partial, hole))
+            {
+                continue;
+            }
+            // A constraint whose subject is itself an unsolved hole (e.g.
+            // `U is \set`) constrains the hole's type rather than pinning it
+            // to an arbitrary symbol in scope.
+            if unsolved_holes.contains(fact_subject(&partial)) {
+                continue;
+            }
+            let candidates = match_requirement_against_context(
+                &partial,
+                &unsolved_holes,
+                context,
+                registry,
+                allow_defined_outputs,
+            );
+            if !candidates.is_empty() {
+                active_constraints.push((partial, candidates));
+            }
+        }
+
+        if active_constraints.is_empty() {
+            break;
+        }
+
+        match solve_active_hole_constraints(
+            &active_constraints,
+            &info.requirements,
+            substitutions,
+            context,
+            registry,
+        ) {
+            Ok(solution) => {
+                if solution.is_empty() {
+                    break;
+                }
+                for (name, value) in solution {
+                    substitutions.insert(name.clone(), value);
+                    unsolved_holes.remove(&name);
+                }
+            }
+            Err(found_conflicts) => {
+                for conflict in found_conflicts {
+                    if !conflicts.iter().any(|existing: &HoleUnificationConflict| {
+                        existing.hole == conflict.hole
+                    }) {
+                        conflicts.push(conflict);
+                    }
+                }
+                break;
+            }
+        }
+    }
+
+    HoleSolveResult {
+        unsolved_holes,
+        conflicts,
+    }
+}
+
+/// Gathers all candidate hole-binding maps produced by unifying `requirement`
+/// against known facts for `requirement`'s subject in `context` (expanded via
+/// `extends:`, `Refines:`, `view: as:`, `Equivalent:`, and defined outputs).
+fn match_requirement_against_context(
+    requirement: &TypeFact,
+    holes: &BTreeSet<String>,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+    allow_defined_outputs: bool,
+) -> Vec<HashMap<String, String>> {
+    let subject_key = context.normalize_key(fact_subject(requirement));
+    let mut queue: Vec<TypeFact> = context
+        .facts
+        .iter()
+        .filter(|fact| context.normalize_key(fact_subject(fact)) == subject_key)
+        .cloned()
+        .collect();
+    if allow_defined_outputs {
+        queue.extend(defined_output_facts_for_key(&subject_key, context, registry));
+        queue.extend(defined_value_view_facts_for_key(
+            &subject_key,
+            context,
+            registry,
+        ));
+    }
+
+    let mut seen = HashSet::new();
+    let mut candidates: Vec<HashMap<String, String>> = Vec::new();
+
+    while let Some(raw_fact) = queue.pop() {
+        let fact = context.normalize_fact(&raw_fact);
+        if !seen.insert(fact.clone()) {
+            continue;
+        }
+
+        if let Some(bindings) = unify_fact_with_holes(requirement, &fact, holes, context)
+            && !bindings.is_empty()
+            && !candidates.contains(&bindings)
+        {
+            candidates.push(bindings);
+        }
+
+        // Expand through `extends:`, `Refines:`, `view: as:`, and `Equivalent:`
+        // (and, in the future, `means: is:` via `expand_means_is_facts`).
+        queue.extend(reduce_extension_fact(&fact, context, registry));
+        queue.extend(reduce_refined_fact_with_options(
+            &fact, context, registry, true,
+        ));
+        queue.extend(viewable_facts_from_fact(&fact, context, registry));
+        queue.extend(equivalence_facts_from_fact(&fact, context, registry));
+    }
+
+    candidates
+}
+
+/// Produces equivalent `TypeFact`s for `fact` from registered `Equivalent:`
+/// classes so unification can match across equivalent command signatures.
+fn equivalence_facts_from_fact(
+    fact: &TypeFact,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+) -> Vec<TypeFact> {
     let TypeFact::Is {
         subject,
         ty,
         signature,
-    } = requirement
+    } = fact
     else {
-        return;
+        return Vec::new();
     };
-    let has_unsolved = inferred
-        .iter()
-        .any(|name| !substitutions.contains_key(name) && key_mentions_name(ty, name));
-    if !has_unsolved {
-        return;
-    }
-    let subject_key = context.normalize_key(subject);
-
-    // Gather the subject's `is` facts, expanding through extension rules so that,
-    // e.g., `* is \binary.operation:on{X}` also yields `* is \function:on{…}` for
-    // matching against `\function:on{A}:to{B}`.
-    let mut queue: Vec<TypeFact> = context
-        .facts
-        .iter()
-        .filter(|fact| {
-            matches!(fact, TypeFact::Is { subject, .. } if context.normalize_key(subject) == subject_key)
-        })
-        .cloned()
-        .collect();
-    let mut seen = HashSet::new();
-    while let Some(fact) = queue.pop() {
-        if !seen.insert(fact.clone()) {
+    let Some(actuals) = actuals_for_type_key(signature, ty) else {
+        return Vec::new();
+    };
+    let mut result = Vec::new();
+    for class in &registry.equivalence_classes {
+        let Some(from_member) = class.member(signature) else {
+            continue;
+        };
+        if from_member.params.len() != actuals.len() {
             continue;
         }
-        if let TypeFact::Is {
-            ty: fact_ty,
-            signature: fact_signature,
-            ..
-        } = &fact
-            && fact_signature == signature
-            && let Some(bindings) = unify_command_type_keys(ty, fact_ty, inferred)
-        {
-            for (name, value) in bindings {
-                substitutions
-                    .entry(name)
-                    .or_insert_with(|| context.normalize_key(&value));
+        let param_map = from_member
+            .params
+            .iter()
+            .zip(&actuals)
+            .map(|(param, actual)| (param.as_str(), context.normalize_key(actual)))
+            .collect::<HashMap<_, _>>();
+        for other in &class.members {
+            if other.signature == *signature {
+                continue;
             }
-            return;
+            let Some(other_info) = registry.type_infos.get(&other.signature) else {
+                continue;
+            };
+            let subst = other
+                .params
+                .iter()
+                .filter_map(|param| {
+                    param_map
+                        .get(param.as_str())
+                        .map(|val| (param.clone(), val.clone()))
+                })
+                .collect::<HashMap<_, _>>();
+            let other_ty = substitute_key(&other_info.type_key, &subst);
+            result.push(TypeFact::Is {
+                subject: subject.clone(),
+                ty: other_ty,
+                signature: other.signature.clone(),
+            });
         }
-        queue.extend(reduce_extension_fact(&fact, context, registry));
+    }
+    result
+}
+
+/// Unifies a requirement `pattern` (containing holes) against a concrete
+/// `actual` fact about the same subject, returning the hole bindings on match.
+fn unify_fact_with_holes(
+    pattern: &TypeFact,
+    actual: &TypeFact,
+    holes: &BTreeSet<String>,
+    context: &TypeContext,
+) -> Option<HashMap<String, String>> {
+    let mut bindings = HashMap::new();
+    let matched = match (pattern, actual) {
+        (
+            TypeFact::Is {
+                ty: req_ty,
+                signature: req_sig,
+                ..
+            },
+            TypeFact::Is {
+                ty: act_ty,
+                signature: act_sig,
+                ..
+            },
+        ) => req_sig == act_sig && unify_term_key(req_ty, act_ty, holes, context, &mut bindings),
+        (
+            TypeFact::RefinedIs {
+                ty: req_ty,
+                signature: req_sig,
+                base_ty: req_base_ty,
+                base_signature: req_base_sig,
+                ..
+            },
+            TypeFact::RefinedIs {
+                ty: act_ty,
+                signature: act_sig,
+                base_ty: act_base_ty,
+                base_signature: act_base_sig,
+                ..
+            },
+        ) => {
+            req_sig == act_sig
+                && req_base_sig == act_base_sig
+                && unify_term_key(req_ty, act_ty, holes, context, &mut bindings)
+                && unify_term_key(req_base_ty, act_base_ty, holes, context, &mut bindings)
+        }
+        (
+            TypeFact::InfixSpec {
+                signature: req_sig,
+                args: req_args,
+                target: req_target,
+                ..
+            },
+            TypeFact::InfixSpec {
+                signature: act_sig,
+                args: act_args,
+                target: act_target,
+                ..
+            },
+        ) => {
+            req_sig == act_sig
+                && req_args.len() == act_args.len()
+                && req_args
+                    .iter()
+                    .zip(act_args)
+                    .all(|(r, a)| unify_term_key(r, a, holes, context, &mut bindings))
+                && unify_term_key(req_target, act_target, holes, context, &mut bindings)
+        }
+        (
+            TypeFact::Spec {
+                operator: req_op,
+                target: req_target,
+                ..
+            },
+            TypeFact::Spec {
+                operator: act_op,
+                target: act_target,
+                ..
+            },
+        ) => req_op == act_op && unify_term_key(req_target, act_target, holes, context, &mut bindings),
+        (
+            TypeFact::MemberOf {
+                collection: req_col,
+                ..
+            },
+            TypeFact::MemberOf {
+                collection: act_col,
+                ..
+            },
+        ) => unify_term_key(req_col, act_col, holes, context, &mut bindings),
+        (
+            TypeFact::FunctionType {
+                inputs: req_inputs,
+                output: req_output,
+                variadic_tuple_input: req_var,
+                ..
+            },
+            TypeFact::FunctionType {
+                inputs: act_inputs,
+                output: act_output,
+                variadic_tuple_input: act_var,
+                ..
+            },
+        ) => {
+            req_var == act_var
+                && req_inputs.len() == act_inputs.len()
+                && req_inputs.iter().zip(act_inputs).all(|(r, a)| {
+                    unify_function_type_fact_spec(r, a, holes, context, &mut bindings)
+                })
+                && unify_function_type_fact_spec(
+                    req_output,
+                    act_output,
+                    holes,
+                    context,
+                    &mut bindings,
+                )
+        }
+        _ => false,
+    };
+    matched.then_some(bindings)
+}
+
+fn unify_function_type_fact_spec(
+    pattern: &FunctionTypeFactSpec,
+    actual: &FunctionTypeFactSpec,
+    holes: &BTreeSet<String>,
+    context: &TypeContext,
+    bindings: &mut HashMap<String, String>,
+) -> bool {
+    match (pattern, actual) {
+        (
+            FunctionTypeFactSpec::Is {
+                ty: req_ty,
+                signature: req_sig,
+            },
+            FunctionTypeFactSpec::Is {
+                ty: act_ty,
+                signature: act_sig,
+            },
+        ) => req_sig == act_sig && unify_term_key(req_ty, act_ty, holes, context, bindings),
+        (
+            FunctionTypeFactSpec::Spec {
+                operator: req_op,
+                target: req_target,
+            },
+            FunctionTypeFactSpec::Spec {
+                operator: act_op,
+                target: act_target,
+            },
+        ) => req_op == act_op && unify_term_key(req_target, act_target, holes, context, bindings),
+        _ => false,
     }
 }
 
-/// Unifies two command-type keys (`\function:on{A}:to{B}` vs
-/// `\function:on{X}:to{Y}`), binding each inferred-parameter argument to the
-/// corresponding concrete argument. Returns `None` when the keys have different
-/// shapes or a non-inferred argument disagrees.
-fn unify_command_type_keys(
-    required: &str,
+/// Recursively unifies a pattern term key (which may be a hole name or a
+/// compound command-type key containing holes inside `{...}` groups) against an
+/// actual term key. Enforces strict consistency when the same hole appears more
+/// than once.
+fn unify_term_key(
+    pattern: &str,
     actual: &str,
-    inferred: &[String],
-) -> Option<Vec<(String, String)>> {
-    let (base_required, args_required) = command_type_key_args(required);
-    let (base_actual, args_actual) = command_type_key_args(actual);
-    if base_required != base_actual || args_required.len() != args_actual.len() {
-        return None;
+    holes: &BTreeSet<String>,
+    context: &TypeContext,
+    bindings: &mut HashMap<String, String>,
+) -> bool {
+    let pattern_trimmed = pattern.trim();
+    let actual_norm = context.normalize_key(actual.trim());
+    if holes.contains(pattern_trimmed) {
+        if let Some(existing) = bindings.get(pattern_trimmed) {
+            return existing == &actual_norm;
+        }
+        bindings.insert(pattern_trimmed.to_owned(), actual_norm);
+        return true;
     }
-    let mut bindings = Vec::new();
-    for (required_arg, actual_arg) in args_required.iter().zip(&args_actual) {
-        if inferred.iter().any(|name| name == required_arg) {
-            bindings.push((required_arg.clone(), actual_arg.clone()));
-        } else if required_arg != actual_arg {
-            return None;
+
+    let (base_required, args_required) = command_type_key_args(pattern_trimmed);
+    let (base_actual, args_actual) = command_type_key_args(&actual_norm);
+    if !args_required.is_empty()
+        && base_required == base_actual
+        && args_required.len() == args_actual.len()
+    {
+        return args_required
+            .iter()
+            .zip(&args_actual)
+            .all(|(r, a)| unify_term_key(r, a, holes, context, bindings));
+    }
+
+    context.normalize_key(pattern_trimmed) == actual_norm
+}
+
+/// Backtracking solver over active hole constraints.
+///
+/// Finds a consistent assignment choosing one candidate map per active
+/// constraint. If multiple consistent assignments exist, prefers one whose
+/// instantiated requirements all hold in `context`. If no consistent assignment
+/// exists, returns the conflicting hole(s) and their disagreeing values.
+fn solve_active_hole_constraints(
+    active_constraints: &[(TypeFact, Vec<HashMap<String, String>>)],
+    all_requirements: &[TypeFact],
+    base_substitutions: &HashMap<String, String>,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+) -> Result<HashMap<String, String>, Vec<HoleUnificationConflict>> {
+    const MAX_SOLUTIONS: usize = 64;
+    let mut solutions: Vec<HashMap<String, String>> = Vec::new();
+    let mut current: HashMap<String, String> = HashMap::new();
+
+    fn backtrack(
+        index: usize,
+        active_constraints: &[(TypeFact, Vec<HashMap<String, String>>)],
+        current: &mut HashMap<String, String>,
+        solutions: &mut Vec<HashMap<String, String>>,
+        max_solutions: usize,
+    ) {
+        if solutions.len() >= max_solutions {
+            return;
+        }
+        if index == active_constraints.len() {
+            solutions.push(current.clone());
+            return;
+        }
+        for candidate in &active_constraints[index].1 {
+            let compatible = candidate
+                .iter()
+                .all(|(k, v)| current.get(k).is_none_or(|existing| existing == v));
+            if !compatible {
+                continue;
+            }
+            let added: Vec<String> = candidate
+                .keys()
+                .filter(|k| !current.contains_key(*k))
+                .cloned()
+                .collect();
+            for (k, v) in candidate {
+                current.entry(k.clone()).or_insert_with(|| v.clone());
+            }
+            backtrack(index + 1, active_constraints, current, solutions, max_solutions);
+            for k in added {
+                current.remove(&k);
+            }
         }
     }
-    Some(bindings)
+
+    backtrack(0, active_constraints, &mut current, &mut solutions, MAX_SOLUTIONS);
+
+    if let Some(first) = solutions.first() {
+        if solutions.len() == 1 {
+            return Ok(first.clone());
+        }
+        // When multiple candidate assignments are mutually consistent (e.g.
+        // `A, B \:subset:/ S1` and `A, B \:subset:/ S2`), prefer one whose
+        // instantiated requirements all hold (e.g. `S2 is \group`).
+        for solution in &solutions {
+            let mut merged = base_substitutions.clone();
+            merged.extend(solution.iter().map(|(k, v)| (k.clone(), v.clone())));
+            let all_ok = all_requirements.iter().all(|req| {
+                let instantiated = substitute_fact(req, &merged);
+                if solution.keys().any(|k| fact_mentions_name(req, k)) {
+                    prove_fact_or_literal(&instantiated, context, registry, 0)
+                } else {
+                    true
+                }
+            });
+            if all_ok {
+                return Ok(solution.clone());
+            }
+        }
+        return Ok(first.clone());
+    }
+
+    // No consistent assignment exists: identify each hole whose per-constraint
+    // candidate sets have an empty intersection.
+    let mut per_hole_sets: BTreeMap<String, Vec<BTreeSet<String>>> = BTreeMap::new();
+    for (_, candidates) in active_constraints {
+        let mut constraint_hole_values: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
+        for candidate in candidates {
+            for (hole, value) in candidate {
+                constraint_hole_values
+                    .entry(hole.clone())
+                    .or_default()
+                    .insert(value.clone());
+            }
+        }
+        for (hole, values) in constraint_hole_values {
+            per_hole_sets.entry(hole).or_default().push(values);
+        }
+    }
+
+    let mut conflicts = Vec::new();
+    for (hole, sets) in &per_hole_sets {
+        let Some(first_set) = sets.first() else {
+            continue;
+        };
+        let mut intersection = first_set.clone();
+        let mut disagreeing_set = None;
+        for next_set in &sets[1..] {
+            let next_intersection: BTreeSet<String> = intersection
+                .intersection(next_set)
+                .cloned()
+                .collect();
+            if next_intersection.is_empty() {
+                disagreeing_set = Some((intersection.clone(), next_set.clone()));
+                break;
+            }
+            intersection = next_intersection;
+        }
+        if let Some((left, right)) = disagreeing_set
+            && let (Some(v1), Some(v2)) = (left.iter().next(), right.iter().next())
+        {
+            conflicts.push(HoleUnificationConflict {
+                hole: hole.clone(),
+                first_value: v1.clone(),
+                second_value: v2.clone(),
+            });
+        }
+    }
+
+    if conflicts.is_empty() {
+        // Fallback when conflicts arise only across multi-hole joint tuples.
+        if let Some((hole, sets)) = per_hole_sets.iter().next() {
+            let mut distinct = BTreeSet::new();
+            for set in sets {
+                distinct.extend(set.iter().cloned());
+            }
+            let mut iter = distinct.into_iter();
+            let first_value = iter.next().unwrap_or_default();
+            let second_value = iter.next().unwrap_or_else(|| first_value.clone());
+            conflicts.push(HoleUnificationConflict {
+                hole: hole.clone(),
+                first_value,
+                second_value,
+            });
+        }
+    }
+
+    Err(conflicts)
+}
+
+/// Checks that all type constraints accumulated on an unsolved hole are
+/// mutually compatible under `extends:`, `Refines:`, `view: as:`, `Equivalent:`,
+/// and (in the future) `means: is:`.
+fn check_unsolved_hole_type_compatibility(
+    hole: &str,
+    signature: &str,
+    info: &DefinitionTypeInfo,
+    substitutions: &HashMap<String, String>,
+    unsolved_holes: &BTreeSet<String>,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+    path: &Path,
+    position: Option<SourcePosition>,
+    event_log: &mut EventLog,
+) {
+    let mut type_constraints: Vec<TypeFact> = Vec::new();
+    for requirement in &info.requirements {
+        let partial = substitute_fact(requirement, substitutions);
+        if fact_subject(&partial) == hole {
+            let is_ground_type_constraint = match &partial {
+                TypeFact::Is { ty, .. } => !unsolved_holes
+                    .iter()
+                    .any(|other| key_mentions_name(ty, other)),
+                TypeFact::RefinedIs { ty, base_ty, .. } => !unsolved_holes
+                    .iter()
+                    .any(|other| {
+                        key_mentions_name(ty, other) || key_mentions_name(base_ty, other)
+                    }),
+                _ => false,
+            };
+            if is_ground_type_constraint && !type_constraints.contains(&partial) {
+                type_constraints.push(partial);
+                continue;
+            }
+        }
+        // Also collect type constraints induced by a command or spec-infix
+        // requirement where `hole` appears in a parameter slot (e.g.
+        // `A \:subset:/ U` induces `U is \set` from `\:subset:/`'s `when:`).
+        if fact_mentions_name(&partial, hole) {
+            for induced in induced_hole_type_constraints(&partial, hole, unsolved_holes, registry) {
+                if !type_constraints.contains(&induced) {
+                    type_constraints.push(induced);
+                }
+            }
+        }
+    }
+
+    for i in 0..type_constraints.len() {
+        for j in (i + 1)..type_constraints.len() {
+            if !type_facts_compatible(
+                &type_constraints[i],
+                &type_constraints[j],
+                context,
+                registry,
+            ) {
+                emit_error(
+                    event_log,
+                    path,
+                    position,
+                    format!(
+                        "Type conflict for implicit symbol `{hole}` in command `{signature}`: incompatible types `{}` and `{}`",
+                        type_fact_type_display(&type_constraints[i]),
+                        type_fact_type_display(&type_constraints[j]),
+                    ),
+                );
+                return;
+            }
+        }
+    }
+}
+
+fn type_fact_type_display(fact: &TypeFact) -> &str {
+    match fact {
+        TypeFact::Is { ty, .. } | TypeFact::RefinedIs { ty, .. } => ty.as_str(),
+        _ => "",
+    }
+}
+
+/// Extracts ground `Is` / `RefinedIs` type constraints on `hole` induced by a
+/// command or spec-infix requirement in which `hole` occupies a parameter slot.
+fn induced_hole_type_constraints(
+    requirement: &TypeFact,
+    hole: &str,
+    unsolved_holes: &BTreeSet<String>,
+    registry: &SignatureRegistry,
+) -> Vec<TypeFact> {
+    let Some((sig, actuals)) = command_fact_signature_and_actuals(requirement) else {
+        return Vec::new();
+    };
+    let Some(target_info) = registry.type_infos.get(&sig) else {
+        return Vec::new();
+    };
+    let subst = target_info
+        .parameters
+        .iter()
+        .zip(&actuals)
+        .map(|(param, actual)| (param.clone(), actual.clone()))
+        .collect::<HashMap<_, _>>();
+    let mut induced = Vec::new();
+    for req in &target_info.requirements {
+        let instantiated = substitute_fact(req, &subst);
+        if fact_subject(&instantiated) != hole {
+            continue;
+        }
+        let is_ground = match &instantiated {
+            TypeFact::Is { ty, .. } => !unsolved_holes
+                .iter()
+                .any(|other| key_mentions_name(ty, other)),
+            TypeFact::RefinedIs { ty, base_ty, .. } => !unsolved_holes
+                .iter()
+                .any(|other| key_mentions_name(ty, other) || key_mentions_name(base_ty, other)),
+            _ => false,
+        };
+        if is_ground && !induced.contains(&instantiated) {
+            induced.push(instantiated);
+        }
+    }
+    induced
+}
+
+fn rebind_type_fact_subject(fact: &TypeFact, subject: &str) -> TypeFact {
+    match fact {
+        TypeFact::Is { ty, signature, .. } => TypeFact::Is {
+            subject: subject.to_owned(),
+            ty: ty.clone(),
+            signature: signature.clone(),
+        },
+        TypeFact::RefinedIs {
+            ty,
+            signature,
+            base_ty,
+            base_signature,
+            ..
+        } => TypeFact::RefinedIs {
+            subject: subject.to_owned(),
+            ty: ty.clone(),
+            signature: signature.clone(),
+            base_ty: base_ty.clone(),
+            base_signature: base_signature.clone(),
+        },
+        other => other.clone(),
+    }
+}
+
+fn base_is_fact(fact: &TypeFact) -> Option<TypeFact> {
+    match fact {
+        TypeFact::Is { .. } => Some(fact.clone()),
+        TypeFact::RefinedIs {
+            subject,
+            base_ty,
+            base_signature,
+            ..
+        } => Some(TypeFact::Is {
+            subject: subject.clone(),
+            ty: base_ty.clone(),
+            signature: base_signature.clone(),
+        }),
+        _ => None,
+    }
+}
+
+/// Checks whether two type constraints on the same unsolved hole are compatible.
+///
+/// Two types `T1` and `T2` are compatible if any of the following holds:
+/// 1. Either is `\\anything`, or they are identical.
+/// 2. `T1` implies `T2` or `T2` implies `T1` via `prove_fact` (which checks
+///    `extends:`, `Refines:`, `Enables: view: as:`, `Equivalent:`, and casts).
+/// 3. At least one is a refinement (`Refines:`) and their underlying base types
+///    are compatible (e.g. `\(finite)::set` and `\(nonempty)::set`).
+/// 4. There exists a declared type in `registry` that satisfies both `T1` and
+///    `T2` (a common subtype / viewable witness).
+///
+/// NOTE (Future `means: is:` hook):
+/// When `means: is:` is added (stating that type A can be treated as type B),
+/// plug its rules into `fact_implies_with_options` (and, if needed,
+/// `match_requirement_against_context`). Because `type_facts_compatible`
+/// delegates implication and common-witness checks to `prove_fact`, any
+/// `means: is:` edges registered there will automatically make A and B
+/// compatible (or equivalent) for both bound and unsolved holes.
+fn type_facts_compatible(
+    first: &TypeFact,
+    second: &TypeFact,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+) -> bool {
+    const PROBE_SUBJECT: &str = "__hole_probe__";
+    let f1 = rebind_type_fact_subject(first, PROBE_SUBJECT);
+    let f2 = rebind_type_fact_subject(second, PROBE_SUBJECT);
+    if f1 == f2 {
+        return true;
+    }
+
+    let is_top = |fact: &TypeFact| {
+        matches!(
+            fact,
+            TypeFact::Is { signature, .. } if signature == "\\\\anything"
+        )
+    };
+    if is_top(&f1) || is_top(&f2) {
+        return true;
+    }
+
+    // Check direct/transitive implication in either direction (covers
+    // `extends:`, `Refines:`, `view: as:`, `Equivalent:`, and future
+    // `means: is:`).
+    let mut probe1 = context.clone();
+    probe1.declare_name(PROBE_SUBJECT.to_owned());
+    probe1.add_fact(f1.clone());
+    if prove_fact(&f2, &probe1, registry) {
+        return true;
+    }
+
+    let mut probe2 = context.clone();
+    probe2.declare_name(PROBE_SUBJECT.to_owned());
+    probe2.add_fact(f2.clone());
+    if prove_fact(&f1, &probe2, registry) {
+        return true;
+    }
+
+    // Two refinements of compatible base types (e.g. `\(finite)::set` and
+    // `\(nonempty)::set`, or a refinement and a subtype of its base) are
+    // compatible.
+    if (matches!(f1, TypeFact::RefinedIs { .. }) || matches!(f2, TypeFact::RefinedIs { .. }))
+        && let (Some(b1), Some(b2)) = (base_is_fact(&f1), base_is_fact(&f2))
+        && (b1 != f1 || b2 != f2)
+        && type_facts_compatible(&b1, &b2, context, registry)
+    {
+        return true;
+    }
+
+    // Check whether any zero-parameter declared type in the collection implies
+    // both `f1` and `f2` (common subtype or multi-view witness).
+    for (cand_sig, entry) in &registry.definitions {
+        if entry.kind != DefinitionKind::Declares {
+            continue;
+        }
+        let Some(cand_info) = registry.type_infos.get(cand_sig) else {
+            continue;
+        };
+        if !cand_info.parameters.is_empty() {
+            continue;
+        }
+        let cand_fact = TypeFact::Is {
+            subject: PROBE_SUBJECT.to_owned(),
+            ty: cand_info.type_key.clone(),
+            signature: cand_sig.clone(),
+        };
+        let mut probe = context.clone();
+        probe.declare_name(PROBE_SUBJECT.to_owned());
+        probe.add_fact(cand_fact);
+        if prove_fact(&f1, &probe, registry) && prove_fact(&f2, &probe, registry) {
+            return true;
+        }
+    }
+
+    false
 }
 
 /// Splits a command-type key into its base (with `{...}` argument groups removed)
@@ -17894,6 +18893,16 @@ fn fact_implies_with_options(
     if equivalence_fact_implies_required(&fact, required, context, registry) {
         return true;
     }
+
+    // NOTE (Future `means: is:` hook):
+    // When `means: is:` (declaring that type A can be treated as type B) is
+    // implemented, expand/check `means: is:` rules here alongside `extends:`,
+    // `view: as:`, and `Equivalent:`. Doing so will automatically integrate
+    // `means: is:` into:
+    //   - `prove_fact` / bound-hole requirement checking, and
+    //   - `type_facts_compatible` for unsolved-hole compatibility checking.
+    // Also mirror the expansion in `match_requirement_against_context` so
+    // unification can match constraints across `means: is:` edges.
 
     for extended in reduce_extension_fact(&fact, context, registry) {
         if fact_implies_with_options(&extended, required, context, registry, seen, allow_viewable) {
@@ -19218,8 +20227,21 @@ fn defined_output_facts_for_signature(
     let actual_arg_groups = actual_arg_groups_for_key(key);
     let (mut base_substitutions, variadic_actuals) =
         command_parameter_substitutions(info, actuals, actual_arg_groups.as_deref(), context);
+    let initial_holes = collect_unbound_holes(info, &base_substitutions);
+    if !initial_holes.is_empty() {
+        let _ = solve_command_holes(
+            info,
+            &initial_holes,
+            &mut base_substitutions,
+            context,
+            registry,
+            false,
+        );
+    }
     for (index, name) in info.hidden_parameters.iter().enumerate() {
-        base_substitutions.insert(name.clone(), "#".repeat(index + 1));
+        base_substitutions
+            .entry(name.clone())
+            .or_insert_with(|| "#".repeat(index + 1));
     }
 
     let mut output_context = context.clone();

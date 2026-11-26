@@ -15,7 +15,8 @@ mod validation;
 mod walk;
 pub use check::{
     check_documents, check_documents_collecting_all_type_info,
-    check_documents_collecting_type_info,
+    check_documents_collecting_all_type_info_with_options, check_documents_collecting_type_info,
+    check_documents_collecting_type_info_with_options,
 };
 pub use definition::{DefinitionSite, find_definition};
 pub use rename::{

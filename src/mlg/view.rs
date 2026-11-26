@@ -42,7 +42,18 @@ pub fn view_with_options(
     focus_file: Option<PathBuf>,
     listener: Option<Box<dyn EventLogListener>>,
 ) -> ViewResult {
-    view_with_watch(cwd, port, watch, focus_file, listener)
+    view_with_watch(cwd, port, watch, focus_file, false, listener)
+}
+
+pub fn view_with_read_only(
+    cwd: &Path,
+    port: u16,
+    watch: bool,
+    focus_file: Option<PathBuf>,
+    read_only: bool,
+    listener: Option<Box<dyn EventLogListener>>,
+) -> ViewResult {
+    view_with_watch(cwd, port, watch, focus_file, read_only, listener)
 }
 
 pub(super) fn view_in(
@@ -50,6 +61,7 @@ pub(super) fn view_in(
     port: u16,
     watch: bool,
     initial_focus_file: Option<PathBuf>,
+    read_only: bool,
     event_log: &mut EventLog,
 ) -> io::Result<()> {
     // Reserve the port before doing collection-wide parsing and rendering. This
@@ -61,7 +73,7 @@ pub(super) fn view_in(
     let starting_event_count = event_log.events().len();
     event_log.user_status_start(Some(ORIGIN), format!("Starting viewer at {url} …"));
 
-    let mut collection = SourceCollection::load(cwd, event_log, ORIGIN);
+    let mut collection = SourceCollection::load_with_options(cwd, event_log, ORIGIN, read_only);
     if collection.source_files().is_empty() {
         if !watch {
             return finish_view_setup_with_possible_errors(event_log);
@@ -156,6 +168,7 @@ pub(super) fn view_in(
         Arc::clone(&stop_refresh),
         url.clone(),
         watch,
+        read_only,
         refresh_sender,
     );
 
@@ -218,6 +231,7 @@ fn view_with_watch(
     port: u16,
     watch: bool,
     focus_file: Option<PathBuf>,
+    read_only: bool,
     listener: Option<Box<dyn EventLogListener>>,
 ) -> ViewResult {
     let mut event_log = EventLog::new();
@@ -226,7 +240,7 @@ fn view_with_watch(
     }
 
     let starting_event_count = event_log.events().len();
-    let io_ok = view_in(cwd, port, watch, focus_file, &mut event_log).is_ok();
+    let io_ok = view_in(cwd, port, watch, focus_file, read_only, &mut event_log).is_ok();
     let successful = io_ok && (watch || no_errors_since(&event_log, starting_event_count));
 
     ViewResult {
@@ -469,6 +483,7 @@ fn temporary_view_data_path(path: &Path) -> PathBuf {
     path.with_extension(format!("json.tmp-{}-{unique}", std::process::id()))
 }
 
+#[allow(clippy::too_many_arguments)]
 fn spawn_view_data_refresher(
     cwd: PathBuf,
     view_data_path: PathBuf,
@@ -478,6 +493,7 @@ fn spawn_view_data_refresher(
     stop: Arc<AtomicBool>,
     url: String,
     watch: bool,
+    read_only: bool,
     diagnostics: Sender<ViewRefreshMessage>,
 ) -> JoinHandle<io::Result<()>> {
     thread::spawn(move || {
@@ -532,7 +548,7 @@ fn spawn_view_data_refresher(
             }
             let current_focus = focus_file.lock().ok().and_then(|guard| guard.clone());
             let refresh_result = if force_full {
-                rebuild_collection_view_data_into(&cwd, &mut cached_view, &view_data_path)
+                rebuild_collection_view_data_into(&cwd, &mut cached_view, &view_data_path, read_only)
             } else {
                 match current_focus {
                     Some(ref target_file) if !cached_view.files.is_empty() => {
@@ -541,9 +557,15 @@ fn spawn_view_data_refresher(
                             target_file,
                             &mut cached_view,
                             &view_data_path,
+                            read_only,
                         )
                     }
-                    _ => rebuild_collection_view_data_into(&cwd, &mut cached_view, &view_data_path),
+                    _ => rebuild_collection_view_data_into(
+                        &cwd,
+                        &mut cached_view,
+                        &view_data_path,
+                        read_only,
+                    ),
                 }
             };
             VIEW_DATA_BUILDING.store(false, Ordering::SeqCst);
@@ -640,10 +662,11 @@ fn rebuild_focused_file_view_data(
     target_file: &Path,
     cached_view: &mut CollectionView,
     view_data_path: &Path,
+    read_only: bool,
 ) -> io::Result<ViewDataRefresh> {
     let mut event_log = EventLog::new();
     let starting_event_count = event_log.events().len();
-    let mut collection = SourceCollection::load(cwd, &mut event_log, ORIGIN);
+    let mut collection = SourceCollection::load_with_options(cwd, &mut event_log, ORIGIN, read_only);
     let resolved_target =
         collection.run_single_file_view_check_passes(target_file, &mut event_log, ORIGIN);
 
@@ -656,7 +679,7 @@ fn rebuild_focused_file_view_data(
     }
 
     let Some(update) = collection.build_single_file_view(&resolved_target, &mut event_log) else {
-        return rebuild_collection_view_data_into(cwd, cached_view, view_data_path);
+        return rebuild_collection_view_data_into(cwd, cached_view, view_data_path, read_only);
     };
 
     match update {
@@ -668,7 +691,12 @@ fn rebuild_focused_file_view_data(
             {
                 *existing = file_view;
             } else {
-                return rebuild_collection_view_data_into(cwd, cached_view, view_data_path);
+                return rebuild_collection_view_data_into(
+                    cwd,
+                    cached_view,
+                    view_data_path,
+                    read_only,
+                );
             }
         }
         SingleFileViewUpdate::CollectionPreface {
@@ -691,7 +719,12 @@ fn rebuild_focused_file_view_data(
                 existing.preface = preface;
                 existing.preface_source = preface_source;
             } else {
-                return rebuild_collection_view_data_into(cwd, cached_view, view_data_path);
+                return rebuild_collection_view_data_into(
+                    cwd,
+                    cached_view,
+                    view_data_path,
+                    read_only,
+                );
             }
         }
     }
@@ -704,10 +737,11 @@ fn rebuild_collection_view_data_into(
     cwd: &Path,
     cached_view: &mut CollectionView,
     view_data_path: &Path,
+    read_only: bool,
 ) -> io::Result<ViewDataRefresh> {
     let mut event_log = EventLog::new();
     let starting_event_count = event_log.events().len();
-    let mut collection = SourceCollection::load(cwd, &mut event_log, ORIGIN);
+    let mut collection = SourceCollection::load_with_options(cwd, &mut event_log, ORIGIN, read_only);
     collection.run_view_check_passes(&mut event_log, ORIGIN);
 
     if has_blocking_user_issues_since(&event_log, starting_event_count) {
@@ -740,7 +774,7 @@ fn rebuild_collection_view_data(cwd: &Path, view_data_path: &Path) -> io::Result
         directories: Vec::new(),
         files: Vec::new(),
     };
-    rebuild_collection_view_data_into(cwd, &mut dummy, view_data_path)
+    rebuild_collection_view_data_into(cwd, &mut dummy, view_data_path, false)
 }
 
 fn parse_query_param(url: &str, key: &str) -> Option<String> {

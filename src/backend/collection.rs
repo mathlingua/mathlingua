@@ -1,7 +1,7 @@
 use crate::backend::config::{CONFIG_FILE, validate_config_file};
 use crate::backend::semantic::{
-    CollectionTypeInfo, DocumentTypeInfo, check_documents_collecting_all_type_info,
-    check_documents_collecting_type_info,
+    CollectionTypeInfo, DocumentTypeInfo, check_documents_collecting_all_type_info_with_options,
+    check_documents_collecting_type_info_with_options,
 };
 use crate::backend::view::{
     CollectionView, SingleFileViewUpdate, build_collection_view_with_cached_proto_groups,
@@ -53,6 +53,15 @@ impl SourceFileFilter {
 
 impl SourceCollection {
     pub(crate) fn load(root: &Path, event_log: &mut EventLog, origin: &str) -> Self {
+        Self::load_with_options(root, event_log, origin, false)
+    }
+
+    pub(crate) fn load_with_options(
+        root: &Path,
+        event_log: &mut EventLog,
+        origin: &str,
+        read_only: bool,
+    ) -> Self {
         let root = normalize_path(root);
         let root = match find_collection_root(&root) {
             Some(collection_root) => {
@@ -68,21 +77,27 @@ impl SourceCollection {
         );
 
         let source_files = resolve_collection_source_files(&root, event_log, origin);
-        let loaded_source_files =
-            ensure_source_file_ids(&source_files.source_files, event_log, origin);
-        let preface_paths = source_files
-            .preface_files
-            .iter()
-            .map(|(_, preface)| preface.clone())
-            .collect::<Vec<_>>();
-        let _ = ensure_source_file_ids(&preface_paths, event_log, origin);
-        Self::new(root, source_files, loaded_source_files)
+        let loaded_source_files = if read_only {
+            load_source_files_read_only(&source_files.source_files)
+        } else {
+            let (loaded, _) =
+                ensure_source_file_ids(&source_files.source_files, event_log, origin);
+            let preface_paths = source_files
+                .preface_files
+                .iter()
+                .map(|(_, preface)| preface.clone())
+                .collect::<Vec<_>>();
+            let _ = ensure_source_file_ids(&preface_paths, event_log, origin);
+            loaded
+        };
+        Self::new(root, source_files, loaded_source_files, read_only)
     }
 
     fn new(
         root: PathBuf,
         source_files: SourceFileDiscovery,
         loaded_source_files: BTreeMap<PathBuf, LoadedProtoSource>,
+        read_only: bool,
     ) -> Self {
         Self {
             root,
@@ -97,6 +112,7 @@ impl SourceCollection {
             loaded_source_files,
             proto_groups: BTreeMap::new(),
             view_type_info: CollectionTypeInfo::new(),
+            read_only,
         }
     }
 
@@ -127,7 +143,8 @@ impl SourceCollection {
         self.parse_structural(event_log, origin);
         self.check_text_fences(event_log, origin);
         let files = self.semantic_files();
-        self.view_type_info = check_documents_collecting_all_type_info(&files, event_log);
+        self.view_type_info =
+            check_documents_collecting_all_type_info_with_options(&files, event_log, self.read_only);
     }
 
     /// Runs check passes while retaining expression types only for `target_file`.
@@ -294,7 +311,12 @@ impl SourceCollection {
         type_info_for: Option<&Path>,
     ) -> DocumentTypeInfo {
         let files = self.semantic_files();
-        check_documents_collecting_type_info(&files, event_log, type_info_for)
+        check_documents_collecting_type_info_with_options(
+            &files,
+            event_log,
+            type_info_for,
+            self.read_only,
+        )
     }
 
     fn semantic_files(&self) -> Vec<ParsedSourceFile> {
@@ -349,6 +371,20 @@ pub(crate) fn collection_source_files(
     origin: &str,
 ) -> Vec<PathBuf> {
     resolve_collection_source_files(root, event_log, origin).source_files
+}
+
+/// Inserts missing UUID `Id:` sections into all source and preface files of the
+/// collection rooted at `root`, returning how many files were updated.
+pub(crate) fn ensure_collection_ids(
+    root: &Path,
+    event_log: &mut EventLog,
+    origin: &str,
+) -> usize {
+    let source_files = resolve_collection_source_files(root, event_log, origin);
+    let mut all_paths = source_files.source_files;
+    all_paths.extend(source_files.preface_files.into_iter().map(|(_, p)| p));
+    let (_, updated) = ensure_source_file_ids(&all_paths, event_log, origin);
+    updated
 }
 
 pub(crate) fn find_collection_root(start: &Path) -> Option<PathBuf> {
@@ -472,11 +508,22 @@ fn collection_source_root(root: &Path) -> PathBuf {
     }
 }
 
+fn load_source_files_read_only(files: &[PathBuf]) -> BTreeMap<PathBuf, LoadedProtoSource> {
+    let mut loaded_files = BTreeMap::new();
+    for file in files {
+        let Ok(source) = fs::read_to_string(file) else {
+            continue;
+        };
+        loaded_files.insert(file.clone(), parse_proto_source(source));
+    }
+    loaded_files
+}
+
 fn ensure_source_file_ids(
     files: &[PathBuf],
     event_log: &mut EventLog,
     origin: &str,
-) -> BTreeMap<PathBuf, LoadedProtoSource> {
+) -> (BTreeMap<PathBuf, LoadedProtoSource>, usize) {
     let mut records = Vec::new();
     let mut used_ids = BTreeSet::new();
 
@@ -492,12 +539,16 @@ fn ensure_source_file_ids(
     }
 
     let mut loaded_files = BTreeMap::new();
+    let mut updated_count = 0usize;
     for (file, mut loaded) in records {
         if let Some(updated) =
             source_with_generated_ids(&loaded.source, &loaded.groups, &mut used_ids)
         {
             match fs::write(&file, &updated) {
-                Ok(()) => loaded = parse_proto_source(updated),
+                Ok(()) => {
+                    loaded = parse_proto_source(updated);
+                    updated_count += 1;
+                }
                 Err(error) => event_log.user_error_at_path(
                     Some(origin),
                     file.clone(),
@@ -508,7 +559,7 @@ fn ensure_source_file_ids(
         loaded_files.insert(file, loaded);
     }
 
-    loaded_files
+    (loaded_files, updated_count)
 }
 
 fn parse_proto_source(source: String) -> LoadedProtoSource {
@@ -1158,6 +1209,7 @@ pub(crate) struct SourceCollection {
     loaded_source_files: BTreeMap<PathBuf, LoadedProtoSource>,
     proto_groups: BTreeMap<PathBuf, Vec<ProtoGroup>>,
     view_type_info: CollectionTypeInfo,
+    read_only: bool,
 }
 
 #[cfg(test)]

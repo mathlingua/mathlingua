@@ -27,7 +27,22 @@ pub fn check_documents_collecting_type_info(
     event_log: &mut EventLog,
     type_info_for: Option<&Path>,
 ) -> DocumentTypeInfo {
-    let mut all = check_documents_collecting_type_infos(files, event_log, type_info_for, false);
+    check_documents_collecting_type_info_with_options(files, event_log, type_info_for, false)
+}
+
+pub fn check_documents_collecting_type_info_with_options(
+    files: &[ParsedSourceFile],
+    event_log: &mut EventLog,
+    type_info_for: Option<&Path>,
+    allow_missing_ids: bool,
+) -> DocumentTypeInfo {
+    let mut all = check_documents_collecting_type_infos(
+        files,
+        event_log,
+        type_info_for,
+        false,
+        allow_missing_ids,
+    );
     type_info_for
         .and_then(|target| all.keys().find(|path| is_same_file(target, path)).cloned())
         .and_then(|path| all.remove(&path))
@@ -40,7 +55,15 @@ pub fn check_documents_collecting_all_type_info(
     files: &[ParsedSourceFile],
     event_log: &mut EventLog,
 ) -> CollectionTypeInfo {
-    check_documents_collecting_type_infos(files, event_log, None, true)
+    check_documents_collecting_all_type_info_with_options(files, event_log, false)
+}
+
+pub fn check_documents_collecting_all_type_info_with_options(
+    files: &[ParsedSourceFile],
+    event_log: &mut EventLog,
+    allow_missing_ids: bool,
+) -> CollectionTypeInfo {
+    check_documents_collecting_type_infos(files, event_log, None, true, allow_missing_ids)
 }
 
 pub(super) fn collect_document_definitions(
@@ -278,8 +301,9 @@ fn check_documents_collecting_type_infos(
     event_log: &mut EventLog,
     type_info_for: Option<&Path>,
     collect_all: bool,
+    allow_missing_ids: bool,
 ) -> CollectionTypeInfo {
-    validate_top_level_item_ids(files, event_log);
+    validate_top_level_item_ids(files, event_log, allow_missing_ids);
     validate_top_level_writing_count(files, event_log);
     validate_documented_mapping_writing(files, event_log);
 
@@ -498,13 +522,20 @@ fn mapping_form_label(mapping: &MappingFormParts, placeholders: bool) -> String 
     format!("{}({arguments})", mapping.name)
 }
 
-fn validate_top_level_item_ids(files: &[ParsedSourceFile], event_log: &mut EventLog) {
+fn validate_top_level_item_ids(
+    files: &[ParsedSourceFile],
+    event_log: &mut EventLog,
+    allow_missing_ids: bool,
+) {
     let mut seen: HashMap<String, (PathBuf, usize)> = HashMap::new();
 
     for file in files {
         for id in &file.item_ids {
             let row = id.id_row.unwrap_or(id.group_row);
             let Some(value) = id.value.as_ref() else {
+                if id.id_row.is_none() && allow_missing_ids {
+                    continue;
+                }
                 let message = if id.id_row.is_some() {
                     "`Id:` section must contain a quoted UUID"
                 } else {

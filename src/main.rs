@@ -2,9 +2,9 @@ use clap::Parser;
 use mlg::cli::{Cli, Command};
 use mlg::events::{ColorMode, EventConsoleWriter, EventFilter, EventLogListener};
 use mlg::{
-    check, check_diagnostics_report, check_diagnostics_schema, clean, debug, export, extract,
-    format, init, lsp, release, report, search, structure, version, view_with_options, watch_check,
-    whte_rbt_obj,
+    check_diagnostics_report, check_diagnostics_schema, check_with_options, clean, debug, export,
+    extract, format_with_options, init, lsp_with_options, release, report, search, structure,
+    version, view_with_read_only, watch_check_with_options, whte_rbt_obj,
 };
 use serde::Serialize;
 use std::io::{self, Write};
@@ -17,20 +17,27 @@ fn main() {
     let cwd = std::env::current_dir().unwrap_or_else(|_| ".".into());
 
     let successful = match cli.command {
-        Command::Check(args) if args.watch => {
-            watch_check(&cwd, &args.paths, Some(console_listener(filter, &cwd)))
-        }
+        Command::Check(args) if args.watch => watch_check_with_options(
+            &cwd,
+            &args.paths,
+            args.read_only,
+            Some(console_listener(filter, &cwd)),
+        ),
         Command::Check(args) if args.diagnostic_schema => {
             write_json_stdout(&check_diagnostics_schema())
         }
         Command::Check(args) if args.json => {
-            let result = check(&cwd, &args.paths, None);
+            let result = check_with_options(&cwd, &args.paths, args.read_only, None);
             let report = check_diagnostics_report(&result, &cwd);
             write_json_stdout(&report) && result.successful
         }
-        Command::Check(args) => {
-            check(&cwd, &args.paths, Some(console_listener(filter, &cwd))).successful
-        }
+        Command::Check(args) => check_with_options(
+            &cwd,
+            &args.paths,
+            args.read_only,
+            Some(console_listener(filter, &cwd)),
+        )
+        .successful,
         Command::Clean => clean(&cwd, Some(console_listener(filter, &cwd))).successful,
         Command::Debug => debug(Some(console_listener(filter, &cwd))).successful,
         Command::Export(args) => {
@@ -46,9 +53,11 @@ fn main() {
         Command::Extract(args) => {
             extract(&cwd, &[args.id], Some(console_listener(filter, &cwd))).successful
         }
-        Command::Format => format(&cwd, Some(console_listener(filter, &cwd))).successful,
+        Command::Format(args) => {
+            format_with_options(&cwd, args.ids, Some(console_listener(filter, &cwd))).successful
+        }
         Command::Init => init(&cwd, Some(console_listener(filter, &cwd))).successful,
-        Command::Lsp => lsp().successful,
+        Command::Lsp(args) => lsp_with_options(args.read_only).successful,
         Command::Release(args) => {
             let released = release(
                 &cwd,
@@ -95,11 +104,12 @@ fn main() {
             }
         }
         Command::Version => version(Some(console_listener(filter, &cwd))).successful,
-        Command::View(args) => view_with_options(
+        Command::View(args) => view_with_read_only(
             &cwd,
             args.port,
             args.watch,
             args.focus_file,
+            args.read_only,
             Some(console_listener(filter, &cwd)),
         )
         .successful,

@@ -102,13 +102,13 @@ pub enum Command {
     Extract(ExtractArgs),
 
     /// Reformat `.mlg` source files to the configured print margin
-    Format,
+    Format(FormatArgs),
 
     /// Scaffold a new collection here (`mlg.json` and a `content/` directory)
     Init,
 
     #[command(hide = true)]
-    Lsp,
+    Lsp(LspArgs),
 
     /// Record a new release in the collection's metadata
     Release(ReleaseArgs),
@@ -148,8 +148,26 @@ pub struct CheckArgs {
     #[arg(long, default_value_t = false)]
     pub watch: bool,
 
+    /// Check without formatting files or inserting missing `Id:` sections on disk.
+    #[arg(long = "read-only", default_value_t = false)]
+    pub read_only: bool,
+
     #[arg(value_name = "PATH")]
     pub paths: Vec<PathBuf>,
+}
+
+#[derive(Clone, Debug, Args, PartialEq, Eq)]
+pub struct FormatArgs {
+    /// Also generate and insert missing `Id:` sections on top-level items.
+    #[arg(long, default_value_t = false)]
+    pub ids: bool,
+}
+
+#[derive(Clone, Debug, Args, PartialEq, Eq)]
+pub struct LspArgs {
+    /// Run checks in read-only mode without formatting files or inserting `Id:` sections.
+    #[arg(long = "read-only", default_value_t = false)]
+    pub read_only: bool,
 }
 
 #[derive(Clone, Debug, Args, PartialEq, Eq)]
@@ -209,6 +227,10 @@ pub struct ViewArgs {
     /// Internal option: only refresh the rendered view for this specific file path.
     #[arg(long = "focus-file", hide = true)]
     pub focus_file: Option<PathBuf>,
+
+    /// Load and watch files without inserting missing `Id:` sections on disk.
+    #[arg(long = "read-only", default_value_t = false)]
+    pub read_only: bool,
 }
 
 #[derive(Clone, Debug, Args, PartialEq, Eq)]
@@ -235,7 +257,7 @@ pub struct StructureArgs {
 mod tests {
     use super::{
         CheckArgs, Cli, CliEventAudience, CliEventLevel, Command, ExportArgs, ExtractArgs,
-        ReleaseArgs, ReportArgs, ViewArgs,
+        FormatArgs, LspArgs, ReleaseArgs, ReportArgs, ViewArgs,
     };
     use clap::{CommandFactory, Parser};
     use std::path::PathBuf;
@@ -255,6 +277,7 @@ mod tests {
                 json: false,
                 diagnostic_schema: false,
                 watch: false,
+                read_only: false,
                 paths,
             }) if paths.is_empty()
         ));
@@ -270,6 +293,7 @@ mod tests {
                 json: false,
                 diagnostic_schema: false,
                 watch: false,
+                read_only: false,
                 paths,
             })
                 if paths == vec![PathBuf::from("content"), PathBuf::from("notes/example.mlg")]
@@ -279,12 +303,33 @@ mod tests {
     #[test]
     fn parses_format() {
         let cli = Cli::parse_from(["mlg", "format"]);
-        assert!(matches!(cli.command, Command::Format));
+        assert!(matches!(cli.command, Command::Format(FormatArgs { ids: false })));
+    }
+
+    #[test]
+    fn parses_format_ids() {
+        let cli = Cli::parse_from(["mlg", "format", "--ids"]);
+        assert!(matches!(cli.command, Command::Format(FormatArgs { ids: true })));
+    }
+
+    #[test]
+    fn parses_lsp_read_only() {
+        let cli = Cli::parse_from(["mlg", "lsp", "--read-only"]);
+        assert!(matches!(
+            cli.command,
+            Command::Lsp(LspArgs { read_only: true })
+        ));
     }
 
     #[test]
     fn parses_check_json_flags() {
-        let cli = Cli::parse_from(["mlg", "check", "--json", "--diagnostic-schema"]);
+        let cli = Cli::parse_from([
+            "mlg",
+            "check",
+            "--json",
+            "--diagnostic-schema",
+            "--read-only",
+        ]);
 
         assert!(matches!(
             cli.command,
@@ -292,6 +337,7 @@ mod tests {
                 json: true,
                 diagnostic_schema: true,
                 watch: false,
+                read_only: true,
                 paths,
             }) if paths.is_empty()
         ));
@@ -506,13 +552,14 @@ mod tests {
                 port: 4000,
                 watch: false,
                 focus_file: None,
+                read_only: false,
             })
         ));
     }
 
     #[test]
     fn parses_view_watch() {
-        let cli = Cli::parse_from(["mlg", "view", "--watch"]);
+        let cli = Cli::parse_from(["mlg", "view", "--watch", "--read-only"]);
 
         assert!(matches!(
             cli.command,
@@ -520,6 +567,7 @@ mod tests {
                 port: 3000,
                 watch: true,
                 focus_file: None,
+                read_only: true,
             })
         ));
     }
@@ -534,6 +582,7 @@ mod tests {
                 port: 3000,
                 watch: true,
                 focus_file: Some(path),
+                read_only: false,
             }) if path == PathBuf::from("content/a.mlg")
         ));
 

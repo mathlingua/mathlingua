@@ -1,4 +1,6 @@
-use crate::backend::collection::{collection_source_files, find_collection_root};
+use crate::backend::collection::{
+    collection_source_files, ensure_collection_ids, find_collection_root,
+};
 use crate::backend::config::{
     CONFIG_FILE, Config, DEFAULT_MARGIN, legacy_margin_field_message, uses_legacy_margin_field,
 };
@@ -18,13 +20,24 @@ pub struct FormatResult {
 /// `cwd`: ensure exactly two blank lines between top-level items, and reflow inline
 /// `"..."` text values to the configured print margin.
 pub fn format(cwd: &Path, listener: Option<Box<dyn EventLogListener>>) -> FormatResult {
+    format_with_options(cwd, false, listener)
+}
+
+/// Normalize `.mlg` source formatting for the collection rooted at (or above)
+/// `cwd`. When `insert_ids` is true, missing top-level `Id:` sections are also
+/// generated and inserted before formatting.
+pub fn format_with_options(
+    cwd: &Path,
+    insert_ids: bool,
+    listener: Option<Box<dyn EventLogListener>>,
+) -> FormatResult {
     let mut event_log = EventLog::new();
     if let Some(listener) = listener {
         event_log.add_boxed_listener(listener);
     }
 
     let starting_event_count = event_log.events().len();
-    let io_ok = format_in(cwd, &mut event_log).is_ok();
+    let io_ok = format_in(cwd, insert_ids, &mut event_log).is_ok();
     let successful = io_ok && no_errors_since(&event_log, starting_event_count);
 
     FormatResult {
@@ -96,7 +109,7 @@ enum Piece {
     },
 }
 
-fn format_in(cwd: &Path, event_log: &mut EventLog) -> io::Result<()> {
+fn format_in(cwd: &Path, insert_ids: bool, event_log: &mut EventLog) -> io::Result<()> {
     let start = cwd.canonicalize().unwrap_or_else(|_| cwd.to_path_buf());
     let Some(root) = find_collection_root(&start) else {
         event_log.user_error(
@@ -106,9 +119,25 @@ fn format_in(cwd: &Path, event_log: &mut EventLog) -> io::Result<()> {
         return Err(io::Error::other("no collection root"));
     };
 
+    let ids_updated = if insert_ids {
+        ensure_collection_ids(&root, event_log, ORIGIN)
+    } else {
+        0
+    };
+
     let Some(formatted) = format_collection(&root, event_log, ORIGIN) else {
         return Err(io::Error::other("stale margin field"));
     };
+
+    if ids_updated > 0 {
+        event_log.user_log(
+            Some(ORIGIN),
+            match ids_updated {
+                1 => "Inserted Id sections in 1 file".to_string(),
+                n => format!("Inserted Id sections in {n} files"),
+            },
+        );
+    }
 
     event_log.user_log(
         Some(ORIGIN),

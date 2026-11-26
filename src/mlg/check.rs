@@ -87,7 +87,16 @@ pub fn check(
     paths: &[PathBuf],
     listener: Option<Box<dyn EventLogListener>>,
 ) -> CheckResult {
-    check_collecting_type_info(cwd, paths, listener, None)
+    check_with_options(cwd, paths, false, listener)
+}
+
+pub fn check_with_options(
+    cwd: &Path,
+    paths: &[PathBuf],
+    read_only: bool,
+    listener: Option<Box<dyn EventLogListener>>,
+) -> CheckResult {
+    check_collecting_type_info_with_options(cwd, paths, listener, None, read_only)
 }
 
 /// Rechecks the selected files whenever the collection's source inputs change.
@@ -99,6 +108,15 @@ pub fn watch_check(
     paths: &[PathBuf],
     listener: Option<Box<dyn EventLogListener>>,
 ) -> ! {
+    watch_check_with_options(cwd, paths, false, listener)
+}
+
+pub fn watch_check_with_options(
+    cwd: &Path,
+    paths: &[PathBuf],
+    read_only: bool,
+    listener: Option<Box<dyn EventLogListener>>,
+) -> ! {
     let mut event_log = EventLog::new();
     if let Some(listener) = listener {
         event_log.add_boxed_listener(listener);
@@ -107,7 +125,7 @@ pub fn watch_check(
 
     loop {
         event_log.clear_events();
-        check_in_collecting_type_info(cwd, paths, &mut event_log, None);
+        check_in_collecting_type_info(cwd, paths, &mut event_log, None, read_only);
         event_log.user_status_start(Some(ORIGIN), "Watching for changes …");
 
         // Ignore changes made by format-on-check during this pass, then wait for
@@ -123,11 +141,22 @@ pub fn watch_check(
 ///
 /// The language server uses this so a save produces both the diagnostics and the
 /// type information it serves until the next save, from a single check.
+#[cfg(test)]
 pub fn check_collecting_type_info(
     cwd: &Path,
     paths: &[PathBuf],
     listener: Option<Box<dyn EventLogListener>>,
     type_info_for: Option<&Path>,
+) -> CheckResult {
+    check_collecting_type_info_with_options(cwd, paths, listener, type_info_for, false)
+}
+
+pub fn check_collecting_type_info_with_options(
+    cwd: &Path,
+    paths: &[PathBuf],
+    listener: Option<Box<dyn EventLogListener>>,
+    type_info_for: Option<&Path>,
+    read_only: bool,
 ) -> CheckResult {
     let mut event_log = EventLog::new();
     if let Some(listener) = listener {
@@ -136,7 +165,7 @@ pub fn check_collecting_type_info(
 
     let starting_event_count = event_log.events().len();
     let (summary, type_info, render_registry) =
-        check_in_collecting_type_info(cwd, paths, &mut event_log, type_info_for);
+        check_in_collecting_type_info(cwd, paths, &mut event_log, type_info_for, read_only);
     let successful = no_errors_since(&event_log, starting_event_count);
 
     CheckResult {
@@ -301,6 +330,7 @@ fn check_in_collecting_type_info(
     paths: &[PathBuf],
     event_log: &mut EventLog,
     type_info_for: Option<&Path>,
+    read_only: bool,
 ) -> (CheckSummary, DocumentTypeInfo, RenderRegistry) {
     let begin = event_log.begin_marker("check_in", Some(ORIGIN));
     let starting_event_count = event_log.events().len();
@@ -310,9 +340,11 @@ fn check_in_collecting_type_info(
         format!("Checking {} explicit path(s)", paths.len()),
     );
 
-    format_before_checking(cwd, event_log);
+    if !read_only {
+        format_before_checking(cwd, event_log);
+    }
 
-    let mut collection = SourceCollection::load(cwd, event_log, ORIGIN);
+    let mut collection = SourceCollection::load_with_options(cwd, event_log, ORIGIN, read_only);
     let diagnostic_filter = collection.diagnostic_filter(cwd, paths, event_log, ORIGIN);
     let files_checked = diagnostic_filter.selected_file_count(&collection);
 
@@ -489,7 +521,7 @@ fn format_issue_count(issue_count: usize) -> String {
 
 #[cfg(test)]
 pub(super) fn check_in(cwd: &Path, paths: &[PathBuf], event_log: &mut EventLog) -> CheckSummary {
-    check_in_collecting_type_info(cwd, paths, event_log, None).0
+    check_in_collecting_type_info(cwd, paths, event_log, None, false).0
 }
 
 #[cfg(test)]
@@ -15253,6 +15285,47 @@ then:
         assert!(
             invalid_log.has_errors(),
             "expected unknown symbol in suchThat: to be diagnosed"
+        );
+    }
+
+    #[test]
+    fn check_read_only_does_not_format_or_insert_ids_and_format_ids_does() {
+        let temp_dir = TestDir::new();
+        fs::write(
+            temp_dir.path().join("mlg.json"),
+            crate::backend::config::default_config_contents(),
+        )
+        .unwrap();
+        let file = temp_dir.path().join("readonly.mlg");
+        let original = "Title: \"Hello\"\n\n\n\n[\x5cset]\nDeclares: X\nAppendix:\n. called: \"set\"\n";
+        fs::write(&file, original).unwrap();
+
+        let result = super::check_with_options(temp_dir.path(), &[], true, None);
+        assert!(
+            result.successful,
+            "read-only check should pass even without Id: sections: {:#?}",
+            user_events(&result.event_log)
+        );
+        let after_read_only = fs::read_to_string(&file).unwrap();
+        assert_eq!(
+            after_read_only, original,
+            "read-only check must not format or insert Id: sections on disk"
+        );
+
+        let formatted = crate::mlg::format::format_with_options(temp_dir.path(), true, None);
+        assert!(
+            formatted.successful,
+            "format --ids should succeed: {:#?}",
+            user_events(&formatted.event_log)
+        );
+        let after_format_ids = fs::read_to_string(&file).unwrap();
+        assert!(
+            after_format_ids.contains("Id: \""),
+            "format --ids should insert missing Id: sections:\n{after_format_ids}"
+        );
+        assert!(
+            !after_format_ids.contains("\n\n\n\n"),
+            "format --ids should normalize blank lines:\n{after_format_ids}"
         );
     }
 }

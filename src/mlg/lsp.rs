@@ -5,7 +5,9 @@ use crate::backend::view::{
 };
 use crate::events::EventLog;
 use crate::frontend::ProtoParser;
-use crate::mlg::check::{CheckDiagnostic, check_collecting_type_info, check_diagnostics_report};
+use crate::mlg::check::{
+    CheckDiagnostic, check_collecting_type_info_with_options, check_diagnostics_report,
+};
 use crate::mlg::completion::{
     CandidateKind, CompletionCandidate, Signature, collect_signatures, complete_with_signatures,
 };
@@ -39,6 +41,10 @@ pub struct LspResult {
 }
 
 pub fn lsp() -> LspResult {
+    lsp_with_options(false)
+}
+
+pub fn lsp_with_options(read_only: bool) -> LspResult {
     let (connection, io_threads) = Connection::stdio();
 
     let server_capabilities = serde_json::to_value(ServerCapabilities {
@@ -87,7 +93,7 @@ pub fn lsp() -> LspResult {
     let workspace_root = initial_workspace_root(&init_params);
     let snippets = snippet_support(&init_params);
     let work_done_progress = work_done_progress_support(&init_params);
-    let mut state = ServerState::new(workspace_root, snippets, work_done_progress);
+    let mut state = ServerState::new(workspace_root, snippets, work_done_progress, read_only);
 
     for msg in &connection.receiver {
         match msg {
@@ -148,10 +154,17 @@ struct ServerState {
     /// Checks waiting for the editor to acknowledge their progress token.
     pending_checks: HashMap<RequestId, PendingCheck>,
     next_progress_id: u64,
+    /// When true, checks run in read-only mode without formatting or inserting `Id:` sections.
+    read_only: bool,
 }
 
 impl ServerState {
-    fn new(workspace_root: Option<PathBuf>, snippets: bool, work_done_progress: bool) -> Self {
+    fn new(
+        workspace_root: Option<PathBuf>,
+        snippets: bool,
+        work_done_progress: bool,
+        read_only: bool,
+    ) -> Self {
         Self {
             workspace_root,
             last_diagnostic_files: HashSet::new(),
@@ -163,6 +176,7 @@ impl ServerState {
             work_done_progress,
             pending_checks: HashMap::new(),
             next_progress_id: 1,
+            read_only,
         }
     }
 
@@ -551,7 +565,13 @@ impl ServerState {
         uri: &Url,
         file: &Path,
     ) {
-        let result = check_collecting_type_info(root, &[], None, Some(file));
+        let result = check_collecting_type_info_with_options(
+            root,
+            &[],
+            None,
+            Some(file),
+            self.read_only,
+        );
         self.type_info.insert(uri.clone(), result.type_info.clone());
         self.edited_since_check.remove(uri);
 
@@ -1012,7 +1032,7 @@ mod tests {
         use super::ServerState;
         use lsp_types::Url;
 
-        let mut state = ServerState::new(None, true, true);
+        let mut state = ServerState::new(None, true, true, false);
         let uri = Url::parse("file:///workspace/test.mlg").unwrap();
         let initial_text = r#"Theorem:
 when:

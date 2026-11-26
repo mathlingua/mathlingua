@@ -25,7 +25,7 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
             }
             walk_optional_is_or_specs(&group.using, visit);
             walk_optional_clauses(&group.when, visit);
-            walk_optional_clauses(&group.assumes, visit);
+            walk_optional_clauses(&group.assuming, visit);
             if let Some(section) = &group.extends {
                 for item in &section.arguments {
                     walk_declaration_statement(&item.statement, visit);
@@ -49,7 +49,7 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
             walk_declaration_statement(&group.defines.argument, visit);
             walk_optional_is_or_specs(&group.using, visit);
             walk_optional_clauses(&group.when, visit);
-            walk_optional_clauses(&group.assumes, visit);
+            walk_optional_clauses(&group.assuming, visit);
             walk_optional_specifies(&group.specifies, visit);
             if let Some(section) = &group.expresses {
                 for clause in &section.arguments {
@@ -65,7 +65,7 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
             walk_declaration_statement(&group.realizes.argument, visit);
             walk_optional_is_or_specs(&group.using, visit);
             walk_optional_clauses(&group.when, visit);
-            walk_optional_clauses(&group.assumes, visit);
+            walk_optional_clauses(&group.assuming, visit);
             walk_optional_specifies(&group.specifies, visit);
             if let Some(section) = &group.expresses {
                 for clause in &section.arguments {
@@ -81,7 +81,7 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
             walk_declaration_statement(&group.refines.argument, visit);
             walk_optional_is_or_specs(&group.using, visit);
             walk_optional_clauses(&group.when, visit);
-            walk_optional_clauses(&group.assumes, visit);
+            walk_optional_clauses(&group.assuming, visit);
             if let Some(section) = &group.specifies
                 && !declaration_has_dynamic_refined_tail(&section.argument)
             {
@@ -96,7 +96,7 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
         TopLevelItem::States(group) => {
             walk_optional_is_or_specs(&group.using, visit);
             walk_optional_clauses(&group.when, visit);
-            walk_optional_clauses(&group.assumes, visit);
+            walk_optional_clauses(&group.assuming, visit);
             for clause in &group.that.arguments {
                 walk_clause(clause, visit);
             }
@@ -161,7 +161,7 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
             walk_relation_subject(first, visit);
             walk_relation_subject(second, visit);
             walk_optional_clauses(&group.when, visit);
-            walk_optional_clauses(&group.assumes, visit);
+            walk_optional_clauses(&group.assuming, visit);
             if let Some(RelationSpecifies::Statement(clause)) =
                 group.specifies.as_ref().map(|m| &m.argument)
             {
@@ -173,7 +173,7 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
         TopLevelItem::Equivalent(group) => {
             walk_optional_is_or_specs(&group.using, visit);
             walk_optional_clauses(&group.when, visit);
-            walk_optional_clauses(&group.assumes, visit);
+            walk_optional_clauses(&group.assuming, visit);
             for expression in &group.to.arguments {
                 walk_expression(expression, visit);
             }

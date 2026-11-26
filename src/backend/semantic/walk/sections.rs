@@ -12,8 +12,8 @@ impl ClauseSection for WhenSection {
     }
 }
 
-impl ClauseSection for AssumesSection {
-    /// Returns the clauses in an `assumes:` section.
+impl ClauseSection for AssumingSection {
+    /// Returns the clauses in an `assuming:` section.
     fn clauses(&self) -> &[Clause] {
         &self.arguments
     }

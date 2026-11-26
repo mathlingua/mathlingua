@@ -14951,9 +14951,9 @@ Appendix:
     }
 
     #[test]
-    fn check_assumes_on_definitions_satisfies_when_requirements_without_asserting() {
+    fn check_assuming_on_definitions_satisfies_when_requirements_without_asserting() {
         let temp_dir = TestDir::new();
-        let file = temp_dir.path().join("assumes-definitions.mlg");
+        let file = temp_dir.path().join("assuming-definitions.mlg");
 
         write_mlg_fixture(
             &file,
@@ -14983,7 +14983,7 @@ Appendix:
 Defines: y := \interior:of{A}
 using: U is \set
 when: A is \set
-assumes: A \:subset?:/ U
+assuming: A \:subset?:/ U
 Appendix:
 . called: "from defines"
 
@@ -14991,7 +14991,7 @@ Appendix:
 Declares: D is \set
 using: U is \set
 when: A is \set
-assumes: A \:subset?:/ U
+assuming: A \:subset?:/ U
 satisfies:
 . D = \interior:of{A}
 Appendix:
@@ -15001,7 +15001,7 @@ Appendix:
 Refines: X
 using: U is \set
 when: A is \set
-assumes: A \:subset?:/ U
+assuming: A \:subset?:/ U
 satisfies:
 . X = \interior:of{A}
 Appendix:
@@ -15011,7 +15011,7 @@ Appendix:
 States:
 using: U is \set
 when: A is \set
-assumes: A \:subset?:/ U
+assuming: A \:subset?:/ U
 that:
 . \interior:of{A} = \interior:of{A}
 Appendix:
@@ -15022,7 +15022,7 @@ using: U is \set
 between: A is \set
 and: B is \set
 when: B is \set
-assumes: A \:subset?:/ U
+assuming: A \:subset?:/ U
 specifies:
 . \interior:of{A} = B
 "#,
@@ -15032,7 +15032,7 @@ specifies:
         let mut event_log = EventLog::new();
         let result = check_in(
             temp_dir.path(),
-            &[PathBuf::from("assumes-definitions.mlg")],
+            &[PathBuf::from("assuming-definitions.mlg")],
             &mut event_log,
         );
 
@@ -15045,9 +15045,9 @@ specifies:
     }
 
     #[test]
-    fn check_missing_assumes_still_fails_when_requirement_is_unestablished() {
+    fn check_missing_assuming_still_fails_when_requirement_is_unestablished() {
         let temp_dir = TestDir::new();
-        let file = temp_dir.path().join("missing-assumes.mlg");
+        let file = temp_dir.path().join("missing-assuming.mlg");
 
         write_mlg_fixture(
             &file,
@@ -15088,13 +15088,13 @@ Appendix:
         let mut event_log = EventLog::new();
         check_in(
             temp_dir.path(),
-            &[PathBuf::from("missing-assumes.mlg")],
+            &[PathBuf::from("missing-assuming.mlg")],
             &mut event_log,
         );
 
         assert!(
             event_log.has_errors(),
-            "expected error when assumes: is omitted"
+            "expected error when assuming: is omitted"
         );
     }
 
@@ -15196,9 +15196,9 @@ then:
     }
 
     #[test]
-    fn check_assumes_and_such_that_support_predicate_kinds_conjunctions_and_validate_symbols() {
+    fn check_assuming_and_such_that_support_predicate_kinds_conjunctions_and_validate_symbols() {
         let temp_dir = TestDir::new();
-        let valid = temp_dir.path().join("assumes-predicates.mlg");
+        let valid = temp_dir.path().join("assuming-predicates.mlg");
 
         write_mlg_fixture(
             &valid,
@@ -15222,7 +15222,7 @@ Defines: y := \pick:from{X}:element{x}
 when:
 . X is \set
 . x is \\object
-assumes:
+assuming:
 . allOf:
   . X is? \set
   . x "in"? X
@@ -15246,7 +15246,7 @@ then:
         let mut event_log = EventLog::new();
         let result = check_in(
             temp_dir.path(),
-            &[PathBuf::from("assumes-predicates.mlg")],
+            &[PathBuf::from("assuming-predicates.mlg")],
             &mut event_log,
         );
 
@@ -15257,7 +15257,7 @@ then:
             user_events(&event_log)
         );
 
-        let invalid = temp_dir.path().join("assumes-invalid-symbol.mlg");
+        let invalid = temp_dir.path().join("assuming-invalid-symbol.mlg");
         write_mlg_fixture(
             &invalid,
             r#"[\set]
@@ -15279,7 +15279,7 @@ then:
         let mut invalid_log = EventLog::new();
         check_in(
             temp_dir.path(),
-            &[PathBuf::from("assumes-invalid-symbol.mlg")],
+            &[PathBuf::from("assuming-invalid-symbol.mlg")],
             &mut invalid_log,
         );
         assert!(

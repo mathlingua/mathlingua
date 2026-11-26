@@ -245,7 +245,7 @@ arguments_section!(UsingSection, DeclarationStatement);
 
 arguments_section!(WhenSection, Clause);
 
-arguments_section!(AssumesSection, Clause);
+arguments_section!(AssumingSection, Clause);
 
 arguments_section!(ExtendsSection, ExtendsItem);
 
@@ -681,7 +681,7 @@ pub struct DeclaresGroup {
     pub declares: DeclaresSection,
     pub using: Option<UsingSection>,
     pub when: Option<WhenSection>,
-    pub assumes: Option<AssumesSection>,
+    pub assuming: Option<AssumingSection>,
     pub extends: Option<ExtendsSection>,
     pub specifies: Option<DeclaresSpecifiesSection>,
     pub satisfies: Option<SatisfiesSection>,
@@ -704,7 +704,7 @@ pub struct DefinesGroup {
     pub abstractly: bool,
     pub using: Option<UsingSection>,
     pub when: Option<WhenSection>,
-    pub assumes: Option<AssumesSection>,
+    pub assuming: Option<AssumingSection>,
     pub specifies: Option<DefinesSpecifiesSection>,
     pub expresses: Option<ExpressesSection>,
     pub requires: Option<RequiresSection>,
@@ -730,7 +730,7 @@ pub struct RealizesGroup {
     pub realizes: RealizesSection,
     pub using: Option<UsingSection>,
     pub when: Option<WhenSection>,
-    pub assumes: Option<AssumesSection>,
+    pub assuming: Option<AssumingSection>,
     pub specifies: Option<DefinesSpecifiesSection>,
     pub expresses: Option<ExpressesSection>,
     pub requires: Option<RequiresSection>,
@@ -763,7 +763,7 @@ pub struct RefinesGroup {
     pub refinement_kind: Option<RefinementKind>,
     pub using: Option<UsingSection>,
     pub when: Option<WhenSection>,
-    pub assumes: Option<AssumesSection>,
+    pub assuming: Option<AssumingSection>,
     pub specifies: Option<RefinesSpecifiesSection>,
     pub satisfies: Option<SatisfiesSection>,
     pub requires: Option<RequiresSection>,
@@ -781,7 +781,7 @@ pub struct StatesGroup {
     pub heading: CommandHeader,
     pub using: Option<UsingSection>,
     pub when: Option<WhenSection>,
-    pub assumes: Option<AssumesSection>,
+    pub assuming: Option<AssumingSection>,
     pub that: ThatSection,
     pub requires: Option<RequiresSection>,
     pub enables: Option<EnablesSection>,
@@ -802,7 +802,7 @@ pub struct EquivalentGroup {
     pub heading: CommandHeader,
     pub using: Option<UsingSection>,
     pub when: Option<WhenSection>,
-    pub assumes: Option<AssumesSection>,
+    pub assuming: Option<AssumingSection>,
     pub to: EquivalentToSection,
     pub justification: Option<JustificationSection>,
     pub documented: Option<DocumentedSection>,
@@ -906,7 +906,7 @@ pub struct RelationGroup {
     pub using: Option<UsingSection>,
     pub endpoints: RelationEndpoints,
     pub when: Option<WhenSection>,
-    pub assumes: Option<AssumesSection>,
+    pub assuming: Option<AssumingSection>,
     pub specifies: Option<RelationSpecifiesSection>,
     pub justification: Option<JustificationSection>,
     pub documented: Option<DocumentedSection>,

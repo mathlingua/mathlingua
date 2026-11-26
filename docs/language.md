@@ -1070,12 +1070,12 @@ for checking `then:` and `iff:` without needing to repeat it in an `asserting:`
 group.
 
 Similarly, definitions (`Declares`, `Defines`, `Realizes`, `Refines`, `States`,
-`Equivalent`) and `Relation` accept an optional `assumes:` section immediately
-after `when:` containing one or more clauses. Clauses in `assumes:` are
+`Equivalent`) and `Relation` accept an optional `assuming:` section immediately
+after `when:` containing one or more clauses. Clauses in `assuming:` are
 validated and implicitly asserted in the definition's checking context (just
 like `suchThat:` and `asserting:`), without adding caller-side `when:`
 requirements. For example, if a callee requires `A \:subset:/ U`, a definition
-with `using: U is \set`, `when: A is \set`, and `assumes: A \:subset?:/ U` can
+with `using: U is \set`, `when: A is \set`, and `assuming: A \:subset?:/ U` can
 invoke it directly without a `have: ... asserting:` escape hatch.
 
 A theorem's optional `Proof:` appears after `Documented:` and before the

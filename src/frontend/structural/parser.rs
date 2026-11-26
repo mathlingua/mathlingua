@@ -2948,7 +2948,7 @@ pub(in crate::frontend::structural::parser) fn parse_declares(
             "Declares",
             "using?",
             "when?",
-            "assumes?",
+            "assuming?",
             "extends?",
             "specifies?",
             "satisfies?",
@@ -2997,9 +2997,9 @@ pub(in crate::frontend::structural::parser) fn parse_declares(
             parse_required_clauses(section, "when", tracker)
                 .map(|arguments| WhenSection { arguments })
         }),
-        assumes: sections.get("assumes").copied().and_then(|section| {
-            parse_required_clauses(section, "assumes", tracker)
-                .map(|arguments| AssumesSection { arguments })
+        assuming: sections.get("assuming").copied().and_then(|section| {
+            parse_required_clauses(section, "assuming", tracker)
+                .map(|arguments| AssumingSection { arguments })
         }),
         specifies: sections.get("specifies").copied().and_then(|section| {
             parse_required_specify_items(section, tracker)
@@ -3045,7 +3045,7 @@ pub(in crate::frontend::structural::parser) fn parse_defines(
             "abstractly?",
             "using?",
             "when?",
-            "assumes?",
+            "assuming?",
             "specifies?",
             "expresses?",
             "Requires?",
@@ -3079,9 +3079,9 @@ pub(in crate::frontend::structural::parser) fn parse_defines(
             parse_required_clauses(section, "when", tracker)
                 .map(|arguments| WhenSection { arguments })
         }),
-        assumes: sections.get("assumes").copied().and_then(|section| {
-            parse_required_clauses(section, "assumes", tracker)
-                .map(|arguments| AssumesSection { arguments })
+        assuming: sections.get("assuming").copied().and_then(|section| {
+            parse_required_clauses(section, "assuming", tracker)
+                .map(|arguments| AssumingSection { arguments })
         }),
         specifies: sections.get("specifies").copied().and_then(|section| {
             parse_required_specify_items(section, tracker)
@@ -3127,7 +3127,7 @@ pub(in crate::frontend::structural::parser) fn parse_realizes(
             "Realizes",
             "using?",
             "when?",
-            "assumes?",
+            "assuming?",
             "specifies?",
             "expresses?",
             "Requires?",
@@ -3160,9 +3160,9 @@ pub(in crate::frontend::structural::parser) fn parse_realizes(
             parse_required_clauses(section, "when", tracker)
                 .map(|arguments| WhenSection { arguments })
         }),
-        assumes: sections.get("assumes").copied().and_then(|section| {
-            parse_required_clauses(section, "assumes", tracker)
-                .map(|arguments| AssumesSection { arguments })
+        assuming: sections.get("assuming").copied().and_then(|section| {
+            parse_required_clauses(section, "assuming", tracker)
+                .map(|arguments| AssumingSection { arguments })
         }),
         specifies: sections.get("specifies").copied().and_then(|section| {
             parse_required_specify_items(section, tracker)
@@ -3209,7 +3209,7 @@ pub(in crate::frontend::structural::parser) fn parse_refines(
             "explicitly?",
             "using?",
             "when?",
-            "assumes?",
+            "assuming?",
             "specifies?",
             "satisfies?",
             "Requires?",
@@ -3245,9 +3245,9 @@ pub(in crate::frontend::structural::parser) fn parse_refines(
             parse_required_clauses(section, "when", tracker)
                 .map(|arguments| WhenSection { arguments })
         }),
-        assumes: sections.get("assumes").copied().and_then(|section| {
-            parse_required_clauses(section, "assumes", tracker)
-                .map(|arguments| AssumesSection { arguments })
+        assuming: sections.get("assuming").copied().and_then(|section| {
+            parse_required_clauses(section, "assuming", tracker)
+                .map(|arguments| AssumingSection { arguments })
         }),
         specifies: sections.get("specifies").copied().and_then(|section| {
             parse_required_formulation(
@@ -3296,7 +3296,7 @@ pub(in crate::frontend::structural::parser) fn parse_states(
             "States",
             "using?",
             "when?",
-            "assumes?",
+            "assuming?",
             "that",
             "Requires?",
             "Enables?",
@@ -3322,9 +3322,9 @@ pub(in crate::frontend::structural::parser) fn parse_states(
             parse_required_clauses(section, "when", tracker)
                 .map(|arguments| WhenSection { arguments })
         }),
-        assumes: sections.get("assumes").copied().and_then(|section| {
-            parse_required_clauses(section, "assumes", tracker)
-                .map(|arguments| AssumesSection { arguments })
+        assuming: sections.get("assuming").copied().and_then(|section| {
+            parse_required_clauses(section, "assuming", tracker)
+                .map(|arguments| AssumingSection { arguments })
         }),
         that: ThatSection {
             arguments: parse_required_clauses(section(&sections, "that")?, "that", tracker)?,
@@ -3364,7 +3364,7 @@ pub(in crate::frontend::structural::parser) fn parse_equivalent(
             "Equivalent",
             "using?",
             "when?",
-            "assumes?",
+            "assuming?",
             "to",
             "Appendix?",
             "Id?",
@@ -3388,9 +3388,9 @@ pub(in crate::frontend::structural::parser) fn parse_equivalent(
             parse_required_clauses(section, "when", tracker)
                 .map(|arguments| WhenSection { arguments })
         }),
-        assumes: sections.get("assumes").copied().and_then(|section| {
-            parse_required_clauses(section, "assumes", tracker)
-                .map(|arguments| AssumesSection { arguments })
+        assuming: sections.get("assuming").copied().and_then(|section| {
+            parse_required_clauses(section, "assuming", tracker)
+                .map(|arguments| AssumingSection { arguments })
         }),
         to: EquivalentToSection {
             arguments: parse_required_formulations(
@@ -3427,7 +3427,7 @@ pub(in crate::frontend::structural::parser) fn parse_relation(
             "from",
             "to",
             "when?",
-            "assumes?",
+            "assuming?",
             "specifies?",
             "Appendix?",
             "Id?",
@@ -3439,7 +3439,7 @@ pub(in crate::frontend::structural::parser) fn parse_relation(
             "between",
             "and",
             "when?",
-            "assumes?",
+            "assuming?",
             "specifies?",
             "Appendix?",
             "Id?",
@@ -3501,9 +3501,9 @@ pub(in crate::frontend::structural::parser) fn parse_relation(
             parse_required_clauses(section, "when", tracker)
                 .map(|arguments| WhenSection { arguments })
         }),
-        assumes: sections.get("assumes").copied().and_then(|section| {
-            parse_required_clauses(section, "assumes", tracker)
-                .map(|arguments| AssumesSection { arguments })
+        assuming: sections.get("assuming").copied().and_then(|section| {
+            parse_required_clauses(section, "assuming", tracker)
+                .map(|arguments| AssumingSection { arguments })
         }),
         specifies: sections.get("specifies").copied().and_then(|section| {
             parse_required_relation_specifies(section, tracker)

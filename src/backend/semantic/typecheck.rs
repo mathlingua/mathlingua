@@ -2539,7 +2539,7 @@ fn validate_equivalent_item(
         event_log,
     );
     assume_optional_asserted_clauses(
-        &group.assumes,
+        &group.assuming,
         &mut context,
         path,
         locator,
@@ -3625,7 +3625,7 @@ fn validate_top_level_item_types(
             );
             assume_destructured_parameter_components(&group.heading, &mut context, registry);
             assume_optional_asserted_clauses(
-                &group.assumes,
+                &group.assuming,
                 &mut context,
                 path,
                 locator,
@@ -3749,7 +3749,7 @@ fn validate_top_level_item_types(
             );
             assume_destructured_parameter_components(&group.heading, &mut context, registry);
             assume_optional_asserted_clauses(
-                &group.assumes,
+                &group.assuming,
                 &mut context,
                 path,
                 locator,
@@ -3854,7 +3854,7 @@ fn validate_top_level_item_types(
             );
             assume_destructured_parameter_components(&group.heading, &mut context, registry);
             assume_optional_asserted_clauses(
-                &group.assumes,
+                &group.assuming,
                 &mut context,
                 path,
                 locator,
@@ -3960,7 +3960,7 @@ fn validate_top_level_item_types(
                 registry,
             );
             assume_optional_asserted_clauses(
-                &group.assumes,
+                &group.assuming,
                 &mut context,
                 path,
                 locator,
@@ -4046,7 +4046,7 @@ fn validate_top_level_item_types(
                 event_log,
             );
             assume_optional_asserted_clauses(
-                &group.assumes,
+                &group.assuming,
                 &mut context,
                 path,
                 locator,
@@ -4187,7 +4187,7 @@ fn validate_top_level_item_types(
                 event_log,
             );
             assume_optional_asserted_clauses(
-                &group.assumes,
+                &group.assuming,
                 &mut context,
                 path,
                 locator,
@@ -4254,8 +4254,8 @@ fn validate_local_specification_scopes(
                 event_log,
             );
             validate_optional_clause_scope(
-                group.assumes.as_ref().map(|section| &section.arguments[..]),
-                "assumes:",
+                group.assuming.as_ref().map(|section| &section.arguments[..]),
+                "assuming:",
                 path,
                 locator,
                 event_log,
@@ -4304,8 +4304,8 @@ fn validate_local_specification_scopes(
                 event_log,
             );
             validate_optional_clause_scope(
-                group.assumes.as_ref().map(|section| &section.arguments[..]),
-                "assumes:",
+                group.assuming.as_ref().map(|section| &section.arguments[..]),
+                "assuming:",
                 path,
                 locator,
                 event_log,
@@ -4351,8 +4351,8 @@ fn validate_local_specification_scopes(
                 event_log,
             );
             validate_optional_clause_scope(
-                group.assumes.as_ref().map(|section| &section.arguments[..]),
-                "assumes:",
+                group.assuming.as_ref().map(|section| &section.arguments[..]),
+                "assuming:",
                 path,
                 locator,
                 event_log,
@@ -4398,8 +4398,8 @@ fn validate_local_specification_scopes(
                 event_log,
             );
             validate_optional_clause_scope(
-                group.assumes.as_ref().map(|section| &section.arguments[..]),
-                "assumes:",
+                group.assuming.as_ref().map(|section| &section.arguments[..]),
+                "assuming:",
                 path,
                 locator,
                 event_log,
@@ -4440,8 +4440,8 @@ fn validate_local_specification_scopes(
                 event_log,
             );
             validate_optional_clause_scope(
-                group.assumes.as_ref().map(|section| &section.arguments[..]),
-                "assumes:",
+                group.assuming.as_ref().map(|section| &section.arguments[..]),
+                "assuming:",
                 path,
                 locator,
                 event_log,
@@ -4506,8 +4506,8 @@ fn validate_local_specification_scopes(
                 event_log,
             );
             validate_optional_clause_scope(
-                group.assumes.as_ref().map(|section| &section.arguments[..]),
-                "assumes:",
+                group.assuming.as_ref().map(|section| &section.arguments[..]),
+                "assuming:",
                 path,
                 locator,
                 event_log,
@@ -4529,8 +4529,8 @@ fn validate_local_specification_scopes(
                 event_log,
             );
             validate_optional_clause_scope(
-                group.assumes.as_ref().map(|section| &section.arguments[..]),
-                "assumes:",
+                group.assuming.as_ref().map(|section| &section.arguments[..]),
+                "assuming:",
                 path,
                 locator,
                 event_log,
@@ -6843,8 +6843,8 @@ fn collect_top_level_item_referenced_labels(
                     collect_clause_referenced_labels(clause, labels);
                 }
             }
-            if let Some(assumes) = &group.assumes {
-                for clause in &assumes.arguments {
+            if let Some(assuming) = &group.assuming {
+                for clause in &assuming.arguments {
                     collect_clause_referenced_labels(clause, labels);
                 }
             }
@@ -6866,8 +6866,8 @@ fn collect_top_level_item_referenced_labels(
                     collect_clause_referenced_labels(clause, labels);
                 }
             }
-            if let Some(assumes) = &group.assumes {
-                for clause in &assumes.arguments {
+            if let Some(assuming) = &group.assuming {
+                for clause in &assuming.arguments {
                     collect_clause_referenced_labels(clause, labels);
                 }
             }
@@ -6894,8 +6894,8 @@ fn collect_top_level_item_referenced_labels(
                     collect_clause_referenced_labels(clause, labels);
                 }
             }
-            if let Some(assumes) = &group.assumes {
-                for clause in &assumes.arguments {
+            if let Some(assuming) = &group.assuming {
+                for clause in &assuming.arguments {
                     collect_clause_referenced_labels(clause, labels);
                 }
             }
@@ -6922,8 +6922,8 @@ fn collect_top_level_item_referenced_labels(
                     collect_clause_referenced_labels(clause, labels);
                 }
             }
-            if let Some(assumes) = &group.assumes {
-                for clause in &assumes.arguments {
+            if let Some(assuming) = &group.assuming {
+                for clause in &assuming.arguments {
                     collect_clause_referenced_labels(clause, labels);
                 }
             }
@@ -6947,8 +6947,8 @@ fn collect_top_level_item_referenced_labels(
                     collect_clause_referenced_labels(clause, labels);
                 }
             }
-            if let Some(assumes) = &group.assumes {
-                for clause in &assumes.arguments {
+            if let Some(assuming) = &group.assuming {
+                for clause in &assuming.arguments {
                     collect_clause_referenced_labels(clause, labels);
                 }
             }
@@ -7059,8 +7059,8 @@ fn collect_top_level_item_referenced_labels(
                     collect_clause_referenced_labels(clause, labels);
                 }
             }
-            if let Some(assumes) = &group.assumes {
-                for clause in &assumes.arguments {
+            if let Some(assuming) = &group.assuming {
+                for clause in &assuming.arguments {
                     collect_clause_referenced_labels(clause, labels);
                 }
             }
@@ -7079,8 +7079,8 @@ fn collect_top_level_item_referenced_labels(
                     collect_clause_referenced_labels(clause, labels);
                 }
             }
-            if let Some(assumes) = &group.assumes {
-                for clause in &assumes.arguments {
+            if let Some(assuming) = &group.assuming {
+                for clause in &assuming.arguments {
                     collect_clause_referenced_labels(clause, labels);
                 }
             }
@@ -7134,8 +7134,8 @@ fn validate_declares_justification_usage(
             collect_clause_referenced_labels(clause, &mut referenced);
         }
     }
-    if let Some(assumes) = &group.assumes {
-        for clause in &assumes.arguments {
+    if let Some(assuming) = &group.assuming {
+        for clause in &assuming.arguments {
             collect_clause_referenced_labels(clause, &mut referenced);
         }
     }
@@ -7185,7 +7185,7 @@ fn validate_declares_justification_usage(
     }
 }
 
-/// Assumes every clause of an optional `assumes:` or `suchThat:` section as true
+/// Assumes every clause of an optional `assuming:` or `suchThat:` section as true
 /// via [`assume_asserted_clause`].
 fn assume_optional_asserted_clauses<T>(
     section: &Option<T>,
@@ -7204,7 +7204,7 @@ fn assume_optional_asserted_clauses<T>(
     }
 }
 
-/// Assumes an `asserting:`, `assumes:`, or `suchThat:` clause as true. Unlike
+/// Assumes an `asserting:`, `assuming:`, or `suchThat:` clause as true. Unlike
 /// [`assume_clause`], predicate questions (`A \:subset?:/ B`, `x "in"? X`,
 /// `A is? \set`, `P is? \\statement`, `f is? \function.injective`) are validated
 /// and taken as their underlying facts so downstream type checks can rely on them
@@ -7294,7 +7294,7 @@ fn check_asserted_predicate_expression(
     }
 }
 
-/// The fact an `asserting:`, `assumes:`, or `suchThat:` item states. Like
+/// The fact an `asserting:`, `assuming:`, or `suchThat:` item states. Like
 /// [`fact_from_expression_in_context`], but predicate questions (`A \:subset?:/ B`,
 /// `x "in"? X`, `A is? \set`, `P is? \\statement`, `f is? \function.injective`)
 /// yield their underlying facts rather than being ignored as mere predicates.

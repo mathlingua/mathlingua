@@ -5,17 +5,17 @@ and CLI behavior implemented in this repository. It is intentionally rule-focuse
 each section captures not only the feature, but also the conditions under which
 the feature is valid.
 
-## Optional `assumes:` And `suchThat:` Implicit Type-Checking Assertions
+## Optional `assuming:` And `suchThat:` Implicit Type-Checking Assertions
 
-- **Definitions & Relations (`assumes:`)**: `Declares`, `Defines`, `Realizes`,
+- **Definitions & Relations (`assuming:`)**: `Declares`, `Defines`, `Realizes`,
   `Refines`, `States`, `Equivalent`, and `Relation` now accept an optional
-  `assumes:` section immediately after `when:` taking one or more clauses.
+  `assuming:` section immediately after `when:` taking one or more clauses.
 - **Propositions & Quantifiers (`suchThat:`)**: `Axiom`, `Theorem`,
   `Conjecture`, `forAll:` (and inline `\\forAll{...}:where{...}:suchThat{...}:then{...}`)
   now accept an optional `suchThat:` section immediately after `where:` taking
   one or more clauses. `exists:` and `existsUnique:` (and `\\exists` /
   `\\existsUnique`) continue to accept optional `suchThat:`.
-- **Implicit Assertions Extending `asserting:`**: Clauses in `assumes:` and
+- **Implicit Assertions Extending `asserting:`**: Clauses in `assuming:` and
   `suchThat:` are validated and asserted into the checking context via
   `assume_asserted_clause` (extending `have:`/`asserting:` groups). Predicate
   forms (`A \:subset?:/ U`, `x "in"? X`, `A is? \set`, `P is? \\statement`,

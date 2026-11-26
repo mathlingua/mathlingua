@@ -140,9 +140,11 @@ pub(super) fn view_in(
         return Err(error);
     }
     VIEW_DATA_VERSION.store(1, Ordering::SeqCst);
+    VIEW_DATA_BUILDING.store(false, Ordering::SeqCst);
+    VIEW_DATA_BLOCKED.store(false, Ordering::SeqCst);
 
     let (refresh_sender, refresh_receiver) = mpsc::channel();
-    let (trigger_sender, trigger_receiver) = mpsc::channel();
+    let (trigger_sender, trigger_receiver) = mpsc::channel::<RefreshRequest>();
     let focus_file = Arc::new(Mutex::new(initial_focus_file));
     let stop_refresh = Arc::new(AtomicBool::new(false));
     let refresh_thread = spawn_view_data_refresher(
@@ -185,9 +187,20 @@ const COLLECTION_VERSION_URL: &str = "/api/version";
 
 const COLLECTION_FOCUS_URL: &str = "/api/focus";
 
+const COLLECTION_REFRESH_URL: &str = "/api/refresh";
+
 static NEXT_VIEW_SESSION_DIR_ID: AtomicUsize = AtomicUsize::new(0);
 
 static VIEW_DATA_VERSION: AtomicUsize = AtomicUsize::new(1);
+
+static VIEW_DATA_BUILDING: AtomicBool = AtomicBool::new(false);
+
+static VIEW_DATA_BLOCKED: AtomicBool = AtomicBool::new(false);
+
+enum RefreshRequest {
+    Focused,
+    Full(Option<Sender<bool>>),
+}
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 enum ViewDataRefresh {
@@ -261,7 +274,7 @@ fn run_view_server(
     view_data_path: &Path,
     index: &[u8],
     focus_file: &Arc<Mutex<Option<PathBuf>>>,
-    trigger_sender: &Sender<()>,
+    trigger_sender: &Sender<RefreshRequest>,
     refresh_receiver: &Receiver<ViewRefreshMessage>,
     event_log: &mut EventLog,
 ) -> io::Result<()> {
@@ -285,7 +298,7 @@ fn serve_view_request(
     view_data_path: &Path,
     index: &[u8],
     focus_file: &Arc<Mutex<Option<PathBuf>>>,
-    trigger_sender: &Sender<()>,
+    trigger_sender: &Sender<RefreshRequest>,
 ) -> io::Result<()> {
     let url_path = request.url().split('?').next().unwrap_or("/");
 
@@ -300,7 +313,7 @@ fn serve_view_request(
         if let Ok(mut guard) = focus_file.lock() {
             *guard = next_focus;
         }
-        let _ = trigger_sender.send(());
+        let _ = trigger_sender.send(RefreshRequest::Focused);
         return request.respond(
             response(
                 b"{\"ok\":true}".to_vec(),
@@ -309,6 +322,31 @@ fn serve_view_request(
             )?
             .with_header(header("Cache-Control", "no-store")?),
         );
+    }
+
+    if url_path == COLLECTION_REFRESH_URL {
+        if request.method() != &Method::Post {
+            return request
+                .respond(Response::empty(StatusCode(405)).with_header(header("Allow", "POST")?));
+        }
+        let (done_tx, done_rx) = mpsc::channel();
+        let _ = trigger_sender.send(RefreshRequest::Full(Some(done_tx)));
+        thread::spawn(move || {
+            let updated = done_rx.recv_timeout(Duration::from_secs(30)).unwrap_or(false);
+            let version = VIEW_DATA_VERSION.load(Ordering::SeqCst);
+            let building = VIEW_DATA_BUILDING.load(Ordering::SeqCst);
+            let blocked = VIEW_DATA_BLOCKED.load(Ordering::SeqCst);
+            let body = format!(
+                "{{\"ok\":true,\"updated\":{updated},\"version\":{version},\"building\":{building},\"blocked\":{blocked}}}"
+            )
+            .into_bytes();
+            if let Ok(resp) = response(body, StatusCode(200), "application/json; charset=utf-8")
+                .and_then(|resp| Ok(resp.with_header(header("Cache-Control", "no-store")?)))
+            {
+                let _ = request.respond(resp);
+            }
+        });
+        return Ok(());
     }
 
     if !matches!(request.method(), Method::Get | Method::Head) {
@@ -331,7 +369,12 @@ fn serve_view_request(
 
     if url_path == COLLECTION_VERSION_URL {
         let version = VIEW_DATA_VERSION.load(Ordering::SeqCst);
-        let body = format!("{{\"version\":{version}}}").into_bytes();
+        let building = VIEW_DATA_BUILDING.load(Ordering::SeqCst);
+        let blocked = VIEW_DATA_BLOCKED.load(Ordering::SeqCst);
+        let body = format!(
+            "{{\"version\":{version},\"building\":{building},\"blocked\":{blocked}}}"
+        )
+        .into_bytes();
         return request.respond(
             response(body, StatusCode(200), "application/json; charset=utf-8")?
                 .with_header(header("Cache-Control", "no-store")?),
@@ -431,7 +474,7 @@ fn spawn_view_data_refresher(
     view_data_path: PathBuf,
     mut cached_view: CollectionView,
     focus_file: Arc<Mutex<Option<PathBuf>>>,
-    trigger_receiver: Receiver<()>,
+    trigger_receiver: Receiver<RefreshRequest>,
     stop: Arc<AtomicBool>,
     url: String,
     watch: bool,
@@ -441,17 +484,37 @@ fn spawn_view_data_refresher(
         let mut watcher = SourceWatcher::new(&cwd);
 
         while !stop.load(Ordering::Relaxed) {
-            let triggered = trigger_receiver
-                .recv_timeout(Duration::from_millis(80))
-                .is_ok();
-            while trigger_receiver.try_recv().is_ok() {}
+            let mut triggered = false;
+            let mut force_full = false;
+            let mut waiters: Vec<Sender<bool>> = Vec::new();
+
+            if let Ok(req) = trigger_receiver.recv_timeout(Duration::from_millis(80)) {
+                triggered = true;
+                if let RefreshRequest::Full(reply) = req {
+                    force_full = true;
+                    if let Some(tx) = reply {
+                        waiters.push(tx);
+                    }
+                }
+            }
+            while let Ok(req) = trigger_receiver.try_recv() {
+                triggered = true;
+                if let RefreshRequest::Full(reply) = req {
+                    force_full = true;
+                    if let Some(tx) = reply {
+                        waiters.push(tx);
+                    }
+                }
+            }
 
             if !triggered && !watcher.changed() {
                 continue;
             }
             watcher.reset();
+            VIEW_DATA_BUILDING.store(true, Ordering::SeqCst);
             if watch {
                 if diagnostics.send(ViewRefreshMessage::Clear).is_err() {
+                    VIEW_DATA_BUILDING.store(false, Ordering::SeqCst);
                     break;
                 }
                 let event = Event::user_status(
@@ -463,24 +526,34 @@ fn spawn_view_data_refresher(
                     .send(ViewRefreshMessage::Events(vec![event]))
                     .is_err()
                 {
+                    VIEW_DATA_BUILDING.store(false, Ordering::SeqCst);
                     break;
                 }
             }
             let current_focus = focus_file.lock().ok().and_then(|guard| guard.clone());
-            let refresh_result = match current_focus {
-                Some(ref target_file) if !cached_view.files.is_empty() => {
-                    rebuild_focused_file_view_data(
-                        &cwd,
-                        target_file,
-                        &mut cached_view,
-                        &view_data_path,
-                    )
+            let refresh_result = if force_full {
+                rebuild_collection_view_data_into(&cwd, &mut cached_view, &view_data_path)
+            } else {
+                match current_focus {
+                    Some(ref target_file) if !cached_view.files.is_empty() => {
+                        rebuild_focused_file_view_data(
+                            &cwd,
+                            target_file,
+                            &mut cached_view,
+                            &view_data_path,
+                        )
+                    }
+                    _ => rebuild_collection_view_data_into(&cwd, &mut cached_view, &view_data_path),
                 }
-                _ => rebuild_collection_view_data_into(&cwd, &mut cached_view, &view_data_path),
             };
+            VIEW_DATA_BUILDING.store(false, Ordering::SeqCst);
             match refresh_result {
                 Ok(ViewDataRefresh::Updated) => {
+                    VIEW_DATA_BLOCKED.store(false, Ordering::SeqCst);
                     VIEW_DATA_VERSION.fetch_add(1, Ordering::SeqCst);
+                    for tx in waiters {
+                        let _ = tx.send(true);
+                    }
                     if watch {
                         let event = Event::user_status(
                             format!("Viewer updated — {url}"),
@@ -496,6 +569,10 @@ fn spawn_view_data_refresher(
                     }
                 }
                 Ok(ViewDataRefresh::Blocked(mut events)) => {
+                    VIEW_DATA_BLOCKED.store(true, Ordering::SeqCst);
+                    for tx in waiters {
+                        let _ = tx.send(false);
+                    }
                     if watch {
                         events.push(
                             Event::user_status(
@@ -513,6 +590,10 @@ fn spawn_view_data_refresher(
                     }
                 }
                 Err(error) => {
+                    VIEW_DATA_BLOCKED.store(true, Ordering::SeqCst);
+                    for tx in waiters {
+                        let _ = tx.send(false);
+                    }
                     let event = Event::user_error(format!(
                         "Rendered view was not updated because the view data could not be written: {error}"
                     ))

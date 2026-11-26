@@ -469,8 +469,13 @@ pub(crate) fn render_builtin_command_expression(
         "existsUnique" => render_builtin_quantifier("\\exists!", &head, &tail("suchThat")),
         "forAll" => {
             let where_ = tail("where");
+            let such_that = tail("suchThat");
             let then = tail("then");
             let mut rendered = render_builtin_quantifier("\\forall", &head, &where_);
+            if !such_that.is_empty() {
+                rendered.push_str(" \\textrm{ such that } ");
+                rendered.push_str(&such_that.join(" \\textrm{ and } "));
+            }
             if !then.is_empty() {
                 rendered.push_str(" \\textrm{ then } ");
                 rendered.push_str(&then.join(" \\textrm{ and } "));

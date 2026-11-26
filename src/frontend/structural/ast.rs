@@ -245,6 +245,8 @@ arguments_section!(UsingSection, DeclarationStatement);
 
 arguments_section!(WhenSection, Clause);
 
+arguments_section!(AssumesSection, Clause);
+
 arguments_section!(ExtendsSection, ExtendsItem);
 
 arguments_section!(DeclaresSpecifiesSection, IsOrViaItem);
@@ -679,6 +681,7 @@ pub struct DeclaresGroup {
     pub declares: DeclaresSection,
     pub using: Option<UsingSection>,
     pub when: Option<WhenSection>,
+    pub assumes: Option<AssumesSection>,
     pub extends: Option<ExtendsSection>,
     pub specifies: Option<DeclaresSpecifiesSection>,
     pub satisfies: Option<SatisfiesSection>,
@@ -701,6 +704,7 @@ pub struct DefinesGroup {
     pub abstractly: bool,
     pub using: Option<UsingSection>,
     pub when: Option<WhenSection>,
+    pub assumes: Option<AssumesSection>,
     pub specifies: Option<DefinesSpecifiesSection>,
     pub expresses: Option<ExpressesSection>,
     pub requires: Option<RequiresSection>,
@@ -726,6 +730,7 @@ pub struct RealizesGroup {
     pub realizes: RealizesSection,
     pub using: Option<UsingSection>,
     pub when: Option<WhenSection>,
+    pub assumes: Option<AssumesSection>,
     pub specifies: Option<DefinesSpecifiesSection>,
     pub expresses: Option<ExpressesSection>,
     pub requires: Option<RequiresSection>,
@@ -758,6 +763,7 @@ pub struct RefinesGroup {
     pub refinement_kind: Option<RefinementKind>,
     pub using: Option<UsingSection>,
     pub when: Option<WhenSection>,
+    pub assumes: Option<AssumesSection>,
     pub specifies: Option<RefinesSpecifiesSection>,
     pub satisfies: Option<SatisfiesSection>,
     pub requires: Option<RequiresSection>,
@@ -775,6 +781,7 @@ pub struct StatesGroup {
     pub heading: CommandHeader,
     pub using: Option<UsingSection>,
     pub when: Option<WhenSection>,
+    pub assumes: Option<AssumesSection>,
     pub that: ThatSection,
     pub requires: Option<RequiresSection>,
     pub enables: Option<EnablesSection>,
@@ -795,6 +802,7 @@ pub struct EquivalentGroup {
     pub heading: CommandHeader,
     pub using: Option<UsingSection>,
     pub when: Option<WhenSection>,
+    pub assumes: Option<AssumesSection>,
     pub to: EquivalentToSection,
     pub justification: Option<JustificationSection>,
     pub documented: Option<DocumentedSection>,
@@ -806,6 +814,7 @@ pub struct AxiomGroup {
     pub heading: Option<CommandHeader>,
     pub given: Option<GivenSection>,
     pub where_: Option<WhereSection>,
+    pub such_that: Option<SuchThatSection>,
     pub then: ThenSection,
     pub iff: Option<IffSection>,
     pub justification: Option<JustificationSection>,
@@ -821,6 +830,7 @@ pub struct TheoremGroup {
     pub heading: Option<CommandHeader>,
     pub given: Option<GivenSection>,
     pub where_: Option<WhereSection>,
+    pub such_that: Option<SuchThatSection>,
     pub then: ThenSection,
     pub iff: Option<IffSection>,
     pub justification: Option<JustificationSection>,
@@ -850,6 +860,7 @@ pub struct ConjectureGroup {
     pub heading: Option<CommandHeader>,
     pub given: Option<GivenSection>,
     pub where_: Option<WhereSection>,
+    pub such_that: Option<SuchThatSection>,
     pub then: ThenSection,
     pub iff: Option<IffSection>,
     pub justification: Option<JustificationSection>,
@@ -895,6 +906,7 @@ pub struct RelationGroup {
     pub using: Option<UsingSection>,
     pub endpoints: RelationEndpoints,
     pub when: Option<WhenSection>,
+    pub assumes: Option<AssumesSection>,
     pub specifies: Option<RelationSpecifiesSection>,
     pub justification: Option<JustificationSection>,
     pub documented: Option<DocumentedSection>,
@@ -982,6 +994,7 @@ pub struct ForAllGroup {
     pub heading: Option<LabelHeader>,
     pub for_all: ForAllSection,
     pub where_: Option<WhereSection>,
+    pub such_that: Option<SuchThatSection>,
     pub then: ThenSection,
 }
 

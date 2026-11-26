@@ -1040,9 +1040,10 @@ Appendix:
 ## Theorem-Like Groups
 
 `Axiom`, `Theorem`, and `Conjecture` share the same assertion shape. `then:` is
-required. `given:`, `where:`, `iff:`, and support sections are optional. A
-`Conjecture:` records an unproved statement. Its optional `Justification:` can
-capture supporting rationale or evidence, but does not claim a proof.
+required. `given:`, `where:`, `suchThat:`, `iff:`, and support sections are
+optional. A `Conjecture:` records an unproved statement. Its optional
+`Justification:` can capture supporting rationale or evidence, but does not
+claim a proof.
 
 The head section (`Axiom:`/`Theorem:`/`Conjecture:`) takes no argument. A
 result's name is given in `Documented:` `called:`, exactly as for the definition
@@ -1061,7 +1062,21 @@ then:
 Items in `given:` introduce available type/spec facts and declared symbols for
 the theorem body. Theorem-like `given:` sections accept refined command type
 expressions. Items in `where:` are local assumptions or declarations available
-while checking `then:` and `iff:`.
+while checking `then:` and `iff:`. Items in `suchThat:` are validated and
+implicitly asserted as true (extending `asserting:` in `have:` groups): any
+predicate statement such as `A \:subset?:/ U`, `x "in"? X`, or `A is? \set`
+establishes its underlying type fact (`A \:subset:/ U`, `x "in" X`, `A is \set`)
+for checking `then:` and `iff:` without needing to repeat it in an `asserting:`
+group.
+
+Similarly, definitions (`Declares`, `Defines`, `Realizes`, `Refines`, `States`,
+`Equivalent`) and `Relation` accept an optional `assumes:` section immediately
+after `when:` containing one or more clauses. Clauses in `assumes:` are
+validated and implicitly asserted in the definition's checking context (just
+like `suchThat:` and `asserting:`), without adding caller-side `when:`
+requirements. For example, if a callee requires `A \:subset:/ U`, a definition
+with `using: U is \set`, `when: A is \set`, and `assumes: A \:subset?:/ U` can
+invoke it directly without a `have: ... asserting:` escape hatch.
 
 A theorem's optional `Proof:` appears after `Documented:` and before the
 remaining support sections (`Justification:`, `Aliases:`, `Writing:`,
@@ -1104,10 +1119,11 @@ expressions.
 - **`allOf`** — checks all children; when assumed, gathers facts from children.
 - **`anyOf`** — checks all children.
 - **`oneOf`** — checks all children.
-- **`exists`** — creates a child context from its declaration and assumes
-  optional `suchThat:` clauses.
+- **`exists`** — creates a child context from its declaration and asserts
+  optional `suchThat:` clauses (including `?` predicates as underlying facts).
 - **`existsUnique`** — same as `exists`, with unique-existence intent.
-- **`forAll`** — creates a child context, assumes `where:`, checks `then:`.
+- **`forAll`** — creates a child context, assumes `where:`, asserts optional
+  `suchThat:` clauses (including `?` predicates), and checks `then:`.
 - **`let`** — introduces one or more local bindings in a child context, assumes
   an optional `where:` guard, and checks `then:` with those bindings and
   assumptions available.
@@ -1131,8 +1147,9 @@ a statement position: `\\not`, `\\and`/`\\allOf`, `\\or`/`\\anyOf`,
 by semicolons; the accepted tails are:
 
 - `\\exists` and `\\existsUnique`: optional `:suchThat{...}`
-- `\\forAll` and `\\let`: optional `:where{...}` and required
+- `\\forAll`: optional `:where{...}`, optional `:suchThat{...}`, and required
   `:then{...}`
+- `\\let`: optional `:where{...}` and required `:then{...}`
 - `\\if`: optional `:then{...}`
 - `\\have`: required `:iff{...}`
 - `\\piecewise`: optional `:if{...}`, required `:then{...}`, and optional

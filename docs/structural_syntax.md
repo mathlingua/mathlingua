@@ -290,20 +290,20 @@ An empty document is supported by the current implementation because `Document.i
 - **`Text`** — `TextGroup`, heading: none. Sections: `Text: OpenText`
 - **`Writing`** — `TopLevelWritingGroup`, heading: none. Sections: `Writing: WritingAlias+` (each alias is a double-quoted string of the form `"name :~> body"`; the LHS must be a `Name` and the body is raw LaTeX)
 - **`Disambiguates`** — `DisambiguatesGroup`, heading: operator/function form. Sections: `Disambiguates:`, zero or more ordered `when: Clause+`/`to: Expression` branches, `else?: Expression`, `Appendix?: AppendixItem+`
-- **`Declares`** — `DeclaresGroup`, heading: command. Sections: `Declares: DeclaresTarget [via FormOrDeclaration]`, `using?: DeclarationStatement+`, `when?: Clause+`, `extends?: ExtendsItem+`, `specifies?: IsOrViaItem+`, `satisfies?: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Appendix?: AppendixItem+`. `DeclaresTarget` is tried as a `FormOrDeclaration` first, then as a `DeclarationStatement` whose `is` relation may name a refined command, allowing typed or value-bearing targets such as `X := value is \set`. That relation is what the definition extends (see `language.md`), and an `is` relation may be followed by `via <FormOrDeclaration>`, stored on the section rather than the target. An `ExtendsItem` is the same `DeclarationStatement [via FormOrDeclaration]` pair; the `extends?:` section spells out the same clauses and exists to allow more than one, so a target that states a relation and an `extends?:` section are mutually exclusive. `extends_clauses` in `structural::ast` normalizes the two spellings into one borrowed list that every consumer works from
-- **`Defines`** — `DefinesGroup`, heading: command. Sections: `Defines: DeclarationStatement`, `abstractly?` (marker, no arguments), `using?: DeclarationStatement+`, `when?: Clause+`, `specifies?: IsOrViaItem+`, `expresses?: Clause`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Appendix?: AppendixItem+`. `abstractly:` is stored as `DefinesGroup::abstractly`; it marks the `specifies:` items that state a specification without a value as abstract, for a `RealizesGroup` to supply
-- **`Realizes`** — `RealizesGroup`, heading: command. Sections: `Realizes: DeclarationStatement`, `using?: DeclarationStatement+`, `when?: Clause+`, `specifies?: IsOrViaItem+`, `expresses?: Clause`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Appendix?: AppendixItem+`. The target names the realized declaration with `:=` (`Realizes: Nb := \naturals`), which must be a `Defines` marked `abstractly:`; `specifies:` must supply every symbol that declaration left abstract
-- **`Refines`** — `RefinesGroup`, heading: refined command or refined spec-infix command (for example, `[A \:(nonempty)::subset:/ B]`). Sections: `Refines: RefinedDeclarationStatement`, `implicitly?` (marker, no arguments), `explicitly?` (marker, no arguments), `using?: DeclarationStatement+`, `when?: Clause+`, `specifies?: RefinedDeclarationStatement`, `satisfies?: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Appendix?: AppendixItem+`. The `Refines:` target may repeat the base `Declares:` target or omit its expansion and then its subject structure down to a bare name; every included shape must match the base. `implicitly:`/`explicitly:` are optional, mutually exclusive, zero-argument marker sections stored as an `Option<RefinementKind>` (`Implicit`/`Explicit`); see the validation rules under `Refines` refinement markers in `language.md`
-- **`States`** — `StatesGroup`, heading: command. Sections: `States:` (marker, no arguments), `using?: DeclarationStatement+`, `when?: Clause+`, `that: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Appendix?: AppendixItem+`
-- **`Axiom`** — `AxiomGroup`, heading: command?. Sections: `Axiom:`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Appendix?: AppendixItem+`
-- **`Theorem`** — `TheoremGroup`, heading: command?. Sections: `Theorem:`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Proof?: OpenText`, `Appendix?: AppendixItem+`
+- **`Declares`** — `DeclaresGroup`, heading: command. Sections: `Declares: DeclaresTarget [via FormOrDeclaration]`, `using?: DeclarationStatement+`, `when?: Clause+`, `assumes?: Clause+`, `extends?: ExtendsItem+`, `specifies?: IsOrViaItem+`, `satisfies?: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Appendix?: AppendixItem+`. `DeclaresTarget` is tried as a `FormOrDeclaration` first, then as a `DeclarationStatement` whose `is` relation may name a refined command, allowing typed or value-bearing targets such as `X := value is \set`. That relation is what the definition extends (see `language.md`), and an `is` relation may be followed by `via <FormOrDeclaration>`, stored on the section rather than the target. An `ExtendsItem` is the same `DeclarationStatement [via FormOrDeclaration]` pair; the `extends?:` section spells out the same clauses and exists to allow more than one, so a target that states a relation and an `extends?:` section are mutually exclusive. `extends_clauses` in `structural::ast` normalizes the two spellings into one borrowed list that every consumer works from
+- **`Defines`** — `DefinesGroup`, heading: command. Sections: `Defines: DeclarationStatement`, `abstractly?` (marker, no arguments), `using?: DeclarationStatement+`, `when?: Clause+`, `assumes?: Clause+`, `specifies?: IsOrViaItem+`, `expresses?: Clause`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Appendix?: AppendixItem+`. `abstractly:` is stored as `DefinesGroup::abstractly`; it marks the `specifies:` items that state a specification without a value as abstract, for a `RealizesGroup` to supply
+- **`Realizes`** — `RealizesGroup`, heading: command. Sections: `Realizes: DeclarationStatement`, `using?: DeclarationStatement+`, `when?: Clause+`, `assumes?: Clause+`, `specifies?: IsOrViaItem+`, `expresses?: Clause`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Appendix?: AppendixItem+`. The target names the realized declaration with `:=` (`Realizes: Nb := \naturals`), which must be a `Defines` marked `abstractly:`; `specifies:` must supply every symbol that declaration left abstract
+- **`Refines`** — `RefinesGroup`, heading: refined command or refined spec-infix command (for example, `[A \:(nonempty)::subset:/ B]`). Sections: `Refines: RefinedDeclarationStatement`, `implicitly?` (marker, no arguments), `explicitly?` (marker, no arguments), `using?: DeclarationStatement+`, `when?: Clause+`, `assumes?: Clause+`, `specifies?: RefinedDeclarationStatement`, `satisfies?: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Appendix?: AppendixItem+`. The `Refines:` target may repeat the base `Declares:` target or omit its expansion and then its subject structure down to a bare name; every included shape must match the base. `implicitly:`/`explicitly:` are optional, mutually exclusive, zero-argument marker sections stored as an `Option<RefinementKind>` (`Implicit`/`Explicit`); see the validation rules under `Refines` refinement markers in `language.md`
+- **`States`** — `StatesGroup`, heading: command. Sections: `States:` (marker, no arguments), `using?: DeclarationStatement+`, `when?: Clause+`, `assumes?: Clause+`, `that: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Appendix?: AppendixItem+`
+- **`Axiom`** — `AxiomGroup`, heading: command?. Sections: `Axiom:`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `suchThat?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Appendix?: AppendixItem+`
+- **`Theorem`** — `TheoremGroup`, heading: command?. Sections: `Theorem:`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `suchThat?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Proof?: OpenText`, `Appendix?: AppendixItem+`
 - **`Example`** — `ExampleGroup`, heading: command?. Sections: `Example: ExampleItem*`, `Appendix?: AppendixItem+` (accepts `justification:`, `aliases:`, `writing:`, `references:`, `metadata:`). Each `ExampleItem` is quoted `OpenText`, a declaration or expression, or a nested clause group; items retain their source order
-- **`Conjecture`** — `ConjectureGroup`, heading: command?. Sections: `Conjecture:`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Appendix?: AppendixItem+`. It records a theorem-shaped statement that is not claimed to have a proof
+- **`Conjecture`** — `ConjectureGroup`, heading: command?. Sections: `Conjecture:`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `suchThat?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Appendix?: AppendixItem+`. It records a theorem-shaped statement that is not claimed to have a proof
 - **`Person`** — `PersonGroup`, heading: author. Sections: `Person: OpenText+`, `biography?: OpenText`
 - **`Resource`** — `ResourceGroup`, heading: resource. Sections: `Resource: ResourceItem+`
 - **`Specify`** — `SpecifyGroup`, heading: none. Sections: `Specify: SpecifyItem+`
-- **`Relation`** — `RelationGroup`, heading: none. Sections: `Relation: OpenText*`, `using?: DeclarationStatement+`, either `between: RelationSubject` / `and: RelationSubject` (undirected) or `from: RelationSubject` / `to: RelationSubject` (directed), `when?: Clause+`, `specifies?: RelationSpecifies`, `Appendix?: AppendixItem+`
-- **`Equivalent`** — `EquivalentGroup`, heading: command. Sections: `Equivalent:` (marker, no arguments), `using?: DeclarationStatement+`, `when?: Clause+`, `to: Expression+`, `Appendix?: AppendixItem+` (accepts documentation entries, `justification:`, `references:`)
+- **`Relation`** — `RelationGroup`, heading: none. Sections: `Relation: OpenText*`, `using?: DeclarationStatement+`, either `between: RelationSubject` / `and: RelationSubject` (undirected) or `from: RelationSubject` / `to: RelationSubject` (directed), `when?: Clause+`, `assumes?: Clause+`, `specifies?: RelationSpecifies`, `Appendix?: AppendixItem+`
+- **`Equivalent`** — `EquivalentGroup`, heading: command. Sections: `Equivalent:` (marker, no arguments), `using?: DeclarationStatement+`, `when?: Clause+`, `assumes?: Clause+`, `to: Expression+`, `Appendix?: AppendixItem+` (accepts documentation entries, `justification:`, `references:`)
 - **`Topic`** — `TopicGroup`, heading: topic. Sections: `Topic: OpenText*`, `within?: OpenText`, `Related?: TopicRelatedItem+`, `Appendix?: AppendixItem+` (accepts `called:` only)
 
 Notes:
@@ -468,7 +468,7 @@ If a clause section contains:
 - **`oneOf`** — `OneOfGroup`, heading: label?. Sections: `oneOf: Clause+`
 - **`exists`** — `ExistsGroup`, heading: label?. Sections: `exists: BindingOrSpec`, `suchThat?: Clause+`
 - **`existsUnique`** — `ExistsUniqueGroup`, heading: label?. Sections: `existsUnique: BindingOrSpec`, `suchThat?: Clause+`
-- **`forAll`** — `ForAllGroup`, heading: label?. Sections: `forAll: BindingOrSpec`, `where?: Clause+`, `then: Clause+`
+- **`forAll`** — `ForAllGroup`, heading: label?. Sections: `forAll: BindingOrSpec`, `where?: Clause+`, `suchThat?: Clause+`, `then: Clause+`
 - **`let`** — `LetGroup`, heading: label?. Sections: `let: BindingOrSpec`, `where?: Clause+`, `then: Clause+`
 - **`if`** — `IfGroup`, heading: label?. Sections: `if: Clause+`, `then: Clause+`
 - **`have`** — `IffGroup`, heading: label?. Sections: `have: Clause+`, `iff: Clause+`. A `have:` group without `iff:` is instead a `HaveGroup` (`Clause::Have`): `have: Clause+`, `asserting?: Clause+`, `by?: Expression+`, `because?: BecauseItem+` — an escape hatch that checks the `have:` item using the surrounding facts plus any `asserting:` items (also accepted as a `specifies:` item). `by:` and `because:` (accepting text or clauses) are justification the checker only reference-validates, never proves.
@@ -768,6 +768,7 @@ unconditional fallback.
 Declares: <DeclaresTargetUnion> [via <FormOrDeclaration>]
 using?: <DeclarationStatement>+
 when?: <ClauseUnion>+
+assumes?: <ClauseUnion>+
 extends?: <DeclarationStatement [via <FormOrDeclaration>]>+
 specifies?: <IsOrViaItemUnion>+
 satisfies?: <ClauseUnion>+
@@ -782,6 +783,7 @@ Defines: <DeclarationStatement>
 abstractly?:
 using?: <DeclarationStatement>+
 when?: <ClauseUnion>+
+assumes?: <ClauseUnion>+
 specifies?: <IsOrViaItemUnion>+
 expresses?: <ClauseUnion>
 Requires?: <RequiresItemUnion>+
@@ -794,6 +796,7 @@ Appendix?: <AppendixItemUnion>+
 Realizes: <DeclarationStatement>
 using?: <DeclarationStatement>+
 when?: <ClauseUnion>+
+assumes?: <ClauseUnion>+
 specifies?: <IsOrViaItemUnion>+
 expresses?: <ClauseUnion>
 Requires?: <RequiresItemUnion>+
@@ -808,6 +811,7 @@ implicitly?:
 explicitly?:
 using?: <DeclarationStatement>+
 when?: <ClauseUnion>+
+assumes?: <ClauseUnion>+
 specifies?: <RefinedDeclarationStatement>
 satisfies?: <ClauseUnion>+
 Requires?: <RequiresItemUnion>+
@@ -820,6 +824,7 @@ Appendix?: <AppendixItemUnion>+
 States:
 using?: <DeclarationStatement>+
 when?: <ClauseUnion>+
+assumes?: <ClauseUnion>+
 that: <ClauseUnion>+
 Requires?: <RequiresItemUnion>+
 Enables?: <EnablesItemUnion>+
@@ -831,6 +836,7 @@ Appendix?: <AppendixItemUnion>+
 Axiom:
 given?: <RefinedDeclarationStatement>+
 where?: <ClauseUnion>+
+suchThat?: <ClauseUnion>+
 then: <ClauseUnion>+
 iff?: <ClauseUnion>+
 Appendix?: <AppendixItemUnion>+
@@ -841,6 +847,7 @@ Appendix?: <AppendixItemUnion>+
 Theorem:
 given?: <RefinedDeclarationStatement>+
 where?: <ClauseUnion>+
+suchThat?: <ClauseUnion>+
 then: <ClauseUnion>+
 iff?: <ClauseUnion>+
 Proof?: <OpenText>
@@ -862,6 +869,7 @@ ExampleItemUnion ::= OpenText | ClauseUnion
 Conjecture:
 given?: <RefinedDeclarationStatement>+
 where?: <ClauseUnion>+
+suchThat?: <ClauseUnion>+
 then: <ClauseUnion>+
 iff?: <ClauseUnion>+
 Appendix?: <AppendixItemUnion>+
@@ -900,6 +908,7 @@ using?: <DeclarationStatement>+
 between: <RelationSubject>
 and: <RelationSubject>
 when?: <ClauseUnion>+
+assumes?: <ClauseUnion>+
 specifies?: <RelationSpecifies>
 Appendix?: <AppendixItemUnion>+
 ```
@@ -912,6 +921,7 @@ using?: <DeclarationStatement>+
 from: <RelationSubject>
 to: <RelationSubject>
 when?: <ClauseUnion>+
+assumes?: <ClauseUnion>+
 specifies?: <RelationSpecifies>
 Appendix?: <AppendixItemUnion>+
 ```
@@ -937,6 +947,7 @@ references and a prose `specifies:` are recorded, not proven).
 Equivalent:
 using?: <DeclarationStatement>+
 when?: <ClauseUnion>+
+assumes?: <ClauseUnion>+
 to: <Expression>+
 Appendix?: <AppendixItemUnion>+
 ```
@@ -1218,6 +1229,7 @@ suchThat?: <ClauseUnion>+
 [LabelHeader]?
 forAll: <BindingOrSpecUnion>
 where?: <ClauseUnion>+
+suchThat?: <ClauseUnion>+
 then: <ClauseUnion>+
 ```
 

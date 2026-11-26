@@ -84,6 +84,11 @@ pub(in crate::backend::semantic) fn walk_clause(
                     walk_clause(clause, visit);
                 }
             }
+            if let Some(section) = &group.such_that {
+                for clause in &section.arguments {
+                    walk_clause(clause, visit);
+                }
+            }
             for clause in &group.then.arguments {
                 walk_clause(clause, visit);
             }

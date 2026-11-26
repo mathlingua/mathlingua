@@ -156,6 +156,7 @@ const GROUPS: &[GroupSpec] = &[
             ("Declares", true),
             ("using", false),
             ("when", false),
+            ("assumes", false),
             ("extends", false),
             ("specifies", false),
             ("satisfies", false),
@@ -172,6 +173,7 @@ const GROUPS: &[GroupSpec] = &[
             ("abstractly", false),
             ("using", false),
             ("when", false),
+            ("assumes", false),
             ("specifies", false),
             ("expresses", false),
             ("Requires", false),
@@ -186,6 +188,7 @@ const GROUPS: &[GroupSpec] = &[
             ("Realizes", true),
             ("using", false),
             ("when", false),
+            ("assumes", false),
             ("specifies", false),
             ("expresses", false),
             ("Requires", false),
@@ -202,6 +205,7 @@ const GROUPS: &[GroupSpec] = &[
             ("explicitly", false),
             ("using", false),
             ("when", false),
+            ("assumes", false),
             ("specifies", false),
             ("satisfies", false),
             ("Requires", false),
@@ -216,6 +220,7 @@ const GROUPS: &[GroupSpec] = &[
             ("States", true),
             ("using", false),
             ("when", false),
+            ("assumes", false),
             ("that", true),
             ("Requires", false),
             ("Enables", false),
@@ -268,6 +273,7 @@ const GROUPS: &[GroupSpec] = &[
             ("Equivalent", true),
             ("using", false),
             ("when", false),
+            ("assumes", false),
             ("to", true),
             ("Appendix", false),
             ("Id", false),
@@ -291,6 +297,7 @@ const RELATION_UNDIRECTED: &[Section] = &[
     ("between", true),
     ("and", true),
     ("when", false),
+    ("assumes", false),
     ("specifies", false),
     ("Appendix", false),
     ("Id", false),
@@ -302,6 +309,7 @@ const RELATION_DIRECTED: &[Section] = &[
     ("from", true),
     ("to", true),
     ("when", false),
+    ("assumes", false),
     ("specifies", false),
     ("Appendix", false),
     ("Id", false),
@@ -314,6 +322,7 @@ const THEOREM_LIKE_AXIOM: &[Section] = &[
     ("Axiom", true),
     ("given", false),
     ("where", false),
+    ("suchThat", false),
     ("then", true),
     ("iff", false),
     ("Appendix", false),
@@ -324,6 +333,7 @@ const THEOREM_LIKE_THEOREM: &[Section] = &[
     ("Theorem", true),
     ("given", false),
     ("where", false),
+    ("suchThat", false),
     ("then", true),
     ("iff", false),
     ("Proof", false),
@@ -335,6 +345,7 @@ const THEOREM_LIKE_CONJECTURE: &[Section] = &[
     ("Conjecture", true),
     ("given", false),
     ("where", false),
+    ("suchThat", false),
     ("then", true),
     ("iff", false),
     ("Appendix", false),
@@ -362,6 +373,8 @@ const CLAUSE_STARTERS: &[&str] = &[
 /// group.
 const CLAUSE_SECTIONS: &[&str] = &[
     "when",
+    "assumes",
+    "asserting",
     "then",
     "where",
     "have",
@@ -386,7 +399,12 @@ const NESTED_GROUPS: &[(&str, &[Section])] = &[
     ),
     (
         "forAll",
-        &[("forAll", true), ("where", false), ("then", true)],
+        &[
+            ("forAll", true),
+            ("where", false),
+            ("suchThat", false),
+            ("then", true),
+        ],
     ),
     ("let", &[("let", true), ("where", false), ("then", true)]),
     ("if", &[("if", true), ("then", true)]),
@@ -1248,7 +1266,7 @@ mod tests {
     fn next_section_inside_forall_skips_present() {
         let text = "Theorem:\nthen:\n. forAll: x\n  where: y\n  ";
         let got = labels(&complete(text, 4, 2));
-        assert_eq!(got, vec!["then".to_string()]);
+        assert_eq!(got, vec!["suchThat".to_string(), "then".to_string()]);
     }
 
     #[test]
@@ -1378,6 +1396,7 @@ mod tests {
             vec![
                 "using",
                 "when",
+                "assumes",
                 "extends",
                 "specifies",
                 "satisfies",
@@ -1387,6 +1406,14 @@ mod tests {
                 "Id",
             ]
         );
+    }
+
+    #[test]
+    fn theorem_offers_such_that_after_where() {
+        let text = "Theorem:\ngiven: X\nwhere: X is \\set\n";
+        let got = labels(&complete(text, 3, 0));
+        assert!(got.contains(&"suchThat".to_string()));
+        assert!(got.contains(&"then".to_string()));
     }
 
     #[test]

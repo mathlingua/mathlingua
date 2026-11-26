@@ -14917,6 +14917,344 @@ Appendix:
             user_events(&event_log)
         );
     }
+
+    #[test]
+    fn check_assumes_on_definitions_satisfies_when_requirements_without_asserting() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("assumes-definitions.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+Declares: X
+Requires:
+. capability: x_ "in" X :-> \\abstract
+Appendix:
+. written: "\operatorname{set}"
+
+[A \:subset:/ B]
+Declares: A is \set
+when: B is \set
+Requires:
+. capability: x_ "in" A :-> x_ "in" B
+Appendix:
+. called: "subset of $B?$"
+
+[\interior:of{A}]
+Defines: I is \set
+using: U is \set
+when: A \:subset:/ U
+Appendix:
+. called: "interior"
+
+[\from.defines:of{A}]
+Defines: y := \interior:of{A}
+using: U is \set
+when: A is \set
+assumes: A \:subset?:/ U
+Appendix:
+. called: "from defines"
+
+[\from.declares:of{A}]
+Declares: D is \set
+using: U is \set
+when: A is \set
+assumes: A \:subset?:/ U
+satisfies:
+. D = \interior:of{A}
+Appendix:
+. called: "from declares"
+
+[\(nice)::set:of{A}]
+Refines: X
+using: U is \set
+when: A is \set
+assumes: A \:subset?:/ U
+satisfies:
+. X = \interior:of{A}
+Appendix:
+. adjective: "nice"
+
+[\from.states:of{A}]
+States:
+using: U is \set
+when: A is \set
+assumes: A \:subset?:/ U
+that:
+. \interior:of{A} = \interior:of{A}
+Appendix:
+. called: "from states"
+
+Relation:
+using: U is \set
+between: A is \set
+and: B is \set
+when: B is \set
+assumes: A \:subset?:/ U
+specifies:
+. \interior:of{A} = B
+"#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("assumes-definitions.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert!(
+            !event_log.has_errors(),
+            "unexpected check errors: {:#?}",
+            user_events(&event_log)
+        );
+    }
+
+    #[test]
+    fn check_missing_assumes_still_fails_when_requirement_is_unestablished() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("missing-assumes.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+Declares: X
+Requires:
+. capability: x_ "in" X :-> \\abstract
+Appendix:
+. written: "\operatorname{set}"
+
+[A \:subset:/ B]
+Declares: A is \set
+when: B is \set
+Requires:
+. capability: x_ "in" A :-> x_ "in" B
+Appendix:
+. called: "subset of $B?$"
+
+[\interior:of{A}]
+Defines: I is \set
+using: U is \set
+when: A \:subset:/ U
+Appendix:
+. called: "interior"
+
+[\from.defines:of{A}]
+Defines: y is \set
+using: U is \set
+when: A is \set
+specifies:
+. y := \interior:of{A}
+Appendix:
+. called: "from defines"
+"#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("missing-assumes.mlg")],
+            &mut event_log,
+        );
+
+        assert!(
+            event_log.has_errors(),
+            "expected error when assumes: is omitted"
+        );
+    }
+
+    #[test]
+    fn check_such_that_on_propositions_and_quantifiers_asserts_facts() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("such-that-propositions-quantifiers.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+Declares: X
+Requires:
+. capability: x_ "in" X :-> \\abstract
+Appendix:
+. written: "\operatorname{set}"
+
+[A \:subset:/ B]
+Declares: A is \set
+when: B is \set
+Requires:
+. capability: x_ "in" A :-> x_ "in" B
+Appendix:
+. called: "subset of $B?$"
+
+[\interior:of{A}]
+Defines: I is \set
+using: U is \set
+when: A \:subset:/ U
+Appendix:
+. called: "interior"
+
+Theorem:
+given:
+. U is \set
+. A
+where:
+. A is \set
+suchThat:
+. A \:subset?:/ U
+then:
+. \interior:of{A} = \interior:of{A}
+
+Axiom:
+given:
+. U is \set
+. A is \set
+suchThat:
+. A \:subset?:/ U
+then:
+. \interior:of{A} = \interior:of{A}
+
+Conjecture:
+given:
+. U is \set
+. A is \set
+suchThat:
+. A \:subset?:/ U
+then:
+. \interior:of{A} = \interior:of{A}
+
+Theorem:
+given:
+. U is \set
+then:
+. forAll: A
+  where: A is \set
+  suchThat: A \:subset?:/ U
+  then:
+  . \interior:of{A} = \interior:of{A}
+. \\forAll{A is \set}:suchThat{A \:subset?:/ U}:then{\interior:of{A} = \interior:of{A}}
+. exists: A is \set
+  suchThat:
+  . A \:subset?:/ U
+  . \interior:of{A} = \interior:of{A}
+. existsUnique: A is \set
+  suchThat:
+  . A \:subset?:/ U
+  . \interior:of{A} = \interior:of{A}
+. \\exists{A is \set}:suchThat{A \:subset?:/ U; \interior:of{A} = \interior:of{A}}
+. \\existsUnique{A is \set}:suchThat{A \:subset?:/ U; \interior:of{A} = \interior:of{A}}
+"#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("such-that-propositions-quantifiers.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert!(
+            !event_log.has_errors(),
+            "unexpected check errors: {:#?}",
+            user_events(&event_log)
+        );
+    }
+
+    #[test]
+    fn check_assumes_and_such_that_support_predicate_kinds_conjunctions_and_validate_symbols() {
+        let temp_dir = TestDir::new();
+        let valid = temp_dir.path().join("assumes-predicates.mlg");
+
+        write_mlg_fixture(
+            &valid,
+            r#"[\set]
+Declares: X
+Requires:
+. capability: x_ "in" X :-> \\abstract
+Appendix:
+. written: "\operatorname{set}"
+
+[\pick:from{X}:element{x}]
+Defines: y "in" X
+when:
+. X is \set
+. x "in" X
+Appendix:
+. called: "pick"
+
+[\use.predicates:on{X}:with{x}]
+Defines: y := \pick:from{X}:element{x}
+when:
+. X is \set
+. x is \\object
+assumes:
+. allOf:
+  . X is? \set
+  . x "in"? X
+Appendix:
+. called: "use predicates"
+
+Theorem:
+given:
+. X
+. x
+suchThat:
+. allOf:
+  . X is? \set
+  . x "in"? X
+then:
+. \pick:from{X}:element{x} = x
+"#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("assumes-predicates.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert!(
+            !event_log.has_errors(),
+            "unexpected check errors: {:#?}",
+            user_events(&event_log)
+        );
+
+        let invalid = temp_dir.path().join("assumes-invalid-symbol.mlg");
+        write_mlg_fixture(
+            &invalid,
+            r#"[\set]
+Declares: X
+Appendix:
+. written: "\operatorname{set}"
+
+Theorem:
+given:
+. A is \set
+suchThat:
+. Z is? \set
+then:
+. A = A
+"#,
+        )
+        .unwrap();
+
+        let mut invalid_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("assumes-invalid-symbol.mlg")],
+            &mut invalid_log,
+        );
+        assert!(
+            invalid_log.has_errors(),
+            "expected unknown symbol in suchThat: to be diagnosed"
+        );
+    }
 }
 
 #[cfg(test)]

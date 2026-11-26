@@ -54,7 +54,9 @@ A concise high-level reference for the Mathlingua language. For in-depth specifi
 | <a id="supporting-sections"></a>**Supporting Sections** | | |
 | `using:` | `using: x is \set` | Fixed parameters or contextual variables in scope |
 | `when:` | `when: x != 0` | Preconditions or validity conditions for a definition or rule |
-| `where:` | `where: x "in" X` | Conditions constraining quantified variables |
+| `assumes:` | `assumes: A \:subset?:/ U` | Optional clauses after `when:` on definitions and relations implicitly asserted for type checking |
+| `where:` | `where: x "in" X` | Conditions constraining quantified variables or proposition givens |
+| `suchThat:` | `suchThat: A \:subset?:/ U` | Optional clauses on propositions (`Axiom`/`Theorem`/`Conjecture`), `forAll:`, `exists:`, and `existsUnique:` implicitly asserted for type checking |
 | `given:` | `given: x is \real` | Arbitrary given objects or hypotheses in a theorem, axiom, or conjecture |
 | `then:` | `then: P` | Conclusion or consequence of premises |
 | `iff:` | `iff: P` | Necessary and sufficient condition |

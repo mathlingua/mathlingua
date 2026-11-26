@@ -193,6 +193,7 @@ struct TheoremLikeSections<'a> {
     heading: Option<&'a CommandHeader>,
     given: Option<&'a GivenSection>,
     where_: Option<&'a WhereSection>,
+    such_that: Option<&'a SuchThatSection>,
     then: &'a ThenSection,
     iff: Option<&'a IffSection>,
     aliases: Option<&'a AliasesSection>,
@@ -200,10 +201,12 @@ struct TheoremLikeSections<'a> {
 }
 
 impl<'a> TheoremLikeSections<'a> {
+    #[allow(clippy::too_many_arguments)]
     fn new(
         heading: Option<&'a CommandHeader>,
         given: Option<&'a GivenSection>,
         where_: Option<&'a WhereSection>,
+        such_that: Option<&'a SuchThatSection>,
         then: &'a ThenSection,
         iff: Option<&'a IffSection>,
         aliases: Option<&'a AliasesSection>,
@@ -213,6 +216,7 @@ impl<'a> TheoremLikeSections<'a> {
             heading,
             given,
             where_,
+            such_that,
             then,
             iff,
             aliases,
@@ -2534,6 +2538,14 @@ fn validate_equivalent_item(
         registry,
         event_log,
     );
+    assume_optional_asserted_clauses(
+        &group.assumes,
+        &mut context,
+        path,
+        locator,
+        registry,
+        event_log,
+    );
 
     // Collect the members, validating command-ness and parameter-exactness.
     let mut members: Vec<EquivalentMember> = Vec::new();
@@ -3612,6 +3624,14 @@ fn validate_top_level_item_types(
                 event_log,
             );
             assume_destructured_parameter_components(&group.heading, &mut context, registry);
+            assume_optional_asserted_clauses(
+                &group.assumes,
+                &mut context,
+                path,
+                locator,
+                registry,
+                event_log,
+            );
             assume_extends_via_facts(
                 &group.declares,
                 group.extends.as_ref(),
@@ -3728,6 +3748,14 @@ fn validate_top_level_item_types(
                 event_log,
             );
             assume_destructured_parameter_components(&group.heading, &mut context, registry);
+            assume_optional_asserted_clauses(
+                &group.assumes,
+                &mut context,
+                path,
+                locator,
+                registry,
+                event_log,
+            );
             complete_introduced_declaration_statement(
                 &group.defines.argument,
                 &mut context,
@@ -3825,6 +3853,14 @@ fn validate_top_level_item_types(
                 event_log,
             );
             assume_destructured_parameter_components(&group.heading, &mut context, registry);
+            assume_optional_asserted_clauses(
+                &group.assumes,
+                &mut context,
+                path,
+                locator,
+                registry,
+                event_log,
+            );
             assume_realized_declaration_components(group, &mut context, registry);
             assume_optional_specifies(
                 &group.specifies,
@@ -3923,6 +3959,14 @@ fn validate_top_level_item_types(
                 &mut context,
                 registry,
             );
+            assume_optional_asserted_clauses(
+                &group.assumes,
+                &mut context,
+                path,
+                locator,
+                registry,
+                event_log,
+            );
             complete_introduced_declaration_statement(
                 &group.refines.argument,
                 &mut context,
@@ -4001,6 +4045,14 @@ fn validate_top_level_item_types(
                 registry,
                 event_log,
             );
+            assume_optional_asserted_clauses(
+                &group.assumes,
+                &mut context,
+                path,
+                locator,
+                registry,
+                event_log,
+            );
             reject_specification_clauses(&group.that.arguments, path, locator, event_log);
             for clause in &group.that.arguments {
                 check_clause(clause, &context, path, locator, registry, event_log);
@@ -4032,6 +4084,7 @@ fn validate_top_level_item_types(
                 group.heading.as_ref(),
                 group.given.as_ref(),
                 group.where_.as_ref(),
+                group.such_that.as_ref(),
                 &group.then,
                 group.iff.as_ref(),
                 group.aliases.as_ref(),
@@ -4048,6 +4101,7 @@ fn validate_top_level_item_types(
                 group.heading.as_ref(),
                 group.given.as_ref(),
                 group.where_.as_ref(),
+                group.such_that.as_ref(),
                 &group.then,
                 group.iff.as_ref(),
                 group.aliases.as_ref(),
@@ -4064,6 +4118,7 @@ fn validate_top_level_item_types(
                 group.heading.as_ref(),
                 group.given.as_ref(),
                 group.where_.as_ref(),
+                group.such_that.as_ref(),
                 &group.then,
                 group.iff.as_ref(),
                 group.aliases.as_ref(),
@@ -4131,6 +4186,14 @@ fn validate_top_level_item_types(
                 registry,
                 event_log,
             );
+            assume_optional_asserted_clauses(
+                &group.assumes,
+                &mut context,
+                path,
+                locator,
+                registry,
+                event_log,
+            );
             // Only a statement `specifies:` is checked; a prose `Text` description is not.
             if let Some(RelationSpecifies::Statement(clause)) =
                 group.specifies.as_ref().map(|specifies| &specifies.argument)
@@ -4190,6 +4253,13 @@ fn validate_local_specification_scopes(
                 locator,
                 event_log,
             );
+            validate_optional_clause_scope(
+                group.assumes.as_ref().map(|section| &section.arguments[..]),
+                "assumes:",
+                path,
+                locator,
+                event_log,
+            );
             validate_is_or_via_scope(
                 match &group.declares.argument {
                     DeclaresTarget::Declaration(statement) => Some(statement),
@@ -4229,6 +4299,13 @@ fn validate_local_specification_scopes(
             validate_optional_clause_scope(
                 group.when.as_ref().map(|section| &section.arguments[..]),
                 "when:",
+                path,
+                locator,
+                event_log,
+            );
+            validate_optional_clause_scope(
+                group.assumes.as_ref().map(|section| &section.arguments[..]),
+                "assumes:",
                 path,
                 locator,
                 event_log,
@@ -4273,6 +4350,13 @@ fn validate_local_specification_scopes(
                 locator,
                 event_log,
             );
+            validate_optional_clause_scope(
+                group.assumes.as_ref().map(|section| &section.arguments[..]),
+                "assumes:",
+                path,
+                locator,
+                event_log,
+            );
             validate_defines_specifies_scope(
                 &group.realizes.argument,
                 &group.specifies,
@@ -4313,6 +4397,13 @@ fn validate_local_specification_scopes(
                 locator,
                 event_log,
             );
+            validate_optional_clause_scope(
+                group.assumes.as_ref().map(|section| &section.arguments[..]),
+                "assumes:",
+                path,
+                locator,
+                event_log,
+            );
             if let Some(specifies) = &group.specifies {
                 validate_declaration_scope(
                     &[&group.refines.argument, &specifies.argument],
@@ -4348,11 +4439,19 @@ fn validate_local_specification_scopes(
                 locator,
                 event_log,
             );
+            validate_optional_clause_scope(
+                group.assumes.as_ref().map(|section| &section.arguments[..]),
+                "assumes:",
+                path,
+                locator,
+                event_log,
+            );
             validate_clause_scope(&group.that.arguments, "that:", path, locator, event_log);
         }
         TopLevelItem::Axiom(group) => validate_theorem_like_specification_scopes(
             group.given.as_ref(),
             group.where_.as_ref(),
+            group.such_that.as_ref(),
             &group.then,
             group.iff.as_ref(),
             path,
@@ -4362,6 +4461,7 @@ fn validate_local_specification_scopes(
         TopLevelItem::Theorem(group) => validate_theorem_like_specification_scopes(
             group.given.as_ref(),
             group.where_.as_ref(),
+            group.such_that.as_ref(),
             &group.then,
             group.iff.as_ref(),
             path,
@@ -4371,6 +4471,7 @@ fn validate_local_specification_scopes(
         TopLevelItem::Conjecture(group) => validate_theorem_like_specification_scopes(
             group.given.as_ref(),
             group.where_.as_ref(),
+            group.such_that.as_ref(),
             &group.then,
             group.iff.as_ref(),
             path,
@@ -4404,6 +4505,13 @@ fn validate_local_specification_scopes(
                 locator,
                 event_log,
             );
+            validate_optional_clause_scope(
+                group.assumes.as_ref().map(|section| &section.arguments[..]),
+                "assumes:",
+                path,
+                locator,
+                event_log,
+            );
         }
         TopLevelItem::Relation(group) => {
             validate_optional_declaration_scope(
@@ -4416,6 +4524,13 @@ fn validate_local_specification_scopes(
             validate_optional_clause_scope(
                 group.when.as_ref().map(|section| &section.arguments[..]),
                 "when:",
+                path,
+                locator,
+                event_log,
+            );
+            validate_optional_clause_scope(
+                group.assumes.as_ref().map(|section| &section.arguments[..]),
+                "assumes:",
                 path,
                 locator,
                 event_log,
@@ -4444,9 +4559,11 @@ fn validate_local_specification_scopes(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn validate_theorem_like_specification_scopes(
     given: Option<&GivenSection>,
     where_: Option<&WhereSection>,
+    such_that: Option<&SuchThatSection>,
     then: &ThenSection,
     iff: Option<&IffSection>,
     path: &Path,
@@ -4463,6 +4580,13 @@ fn validate_theorem_like_specification_scopes(
     validate_optional_clause_scope(
         where_.map(|section| &section.arguments[..]),
         "where:",
+        path,
+        locator,
+        event_log,
+    );
+    validate_optional_clause_scope(
+        such_that.map(|section| &section.arguments[..]),
+        "suchThat:",
         path,
         locator,
         event_log,
@@ -4797,6 +4921,16 @@ fn validate_nested_clause_scopes(
             validate_optional_clause_scope(
                 group.where_.as_ref().map(|section| &section.arguments[..]),
                 "where:",
+                path,
+                locator,
+                event_log,
+            );
+            validate_optional_clause_scope(
+                group
+                    .such_that
+                    .as_ref()
+                    .map(|section| &section.arguments[..]),
+                "suchThat:",
                 path,
                 locator,
                 event_log,
@@ -5814,6 +5948,12 @@ fn validate_theorem_like(
         }
     }
 
+    if let Some(such_that) = sections.such_that {
+        for clause in &such_that.arguments {
+            assume_asserted_clause(clause, &mut context, path, locator, registry, event_log);
+        }
+    }
+
     reject_specification_clauses(&sections.then.arguments, path, locator, event_log);
     for clause in &sections.then.arguments {
         check_clause(clause, &context, path, locator, registry, event_log);
@@ -6591,6 +6731,11 @@ fn collect_clause_referenced_labels(clause: &Clause, labels: &mut BTreeSet<Strin
                     collect_clause_referenced_labels(clause, labels);
                 }
             }
+            if let Some(section) = &group.such_that {
+                for clause in &section.arguments {
+                    collect_clause_referenced_labels(clause, labels);
+                }
+            }
             for clause in &group.then.arguments {
                 collect_clause_referenced_labels(clause, labels);
             }
@@ -6698,6 +6843,11 @@ fn collect_top_level_item_referenced_labels(
                     collect_clause_referenced_labels(clause, labels);
                 }
             }
+            if let Some(assumes) = &group.assumes {
+                for clause in &assumes.arguments {
+                    collect_clause_referenced_labels(clause, labels);
+                }
+            }
             if let Some(satisfies) = &group.satisfies {
                 for clause in &satisfies.arguments {
                     collect_clause_referenced_labels(clause, labels);
@@ -6713,6 +6863,11 @@ fn collect_top_level_item_referenced_labels(
             }
             if let Some(when) = &group.when {
                 for clause in &when.arguments {
+                    collect_clause_referenced_labels(clause, labels);
+                }
+            }
+            if let Some(assumes) = &group.assumes {
+                for clause in &assumes.arguments {
                     collect_clause_referenced_labels(clause, labels);
                 }
             }
@@ -6739,6 +6894,11 @@ fn collect_top_level_item_referenced_labels(
                     collect_clause_referenced_labels(clause, labels);
                 }
             }
+            if let Some(assumes) = &group.assumes {
+                for clause in &assumes.arguments {
+                    collect_clause_referenced_labels(clause, labels);
+                }
+            }
             if let Some(specifies) = &group.specifies {
                 for item in &specifies.arguments {
                     collect_is_or_via_referenced_labels(item, labels);
@@ -6762,6 +6922,11 @@ fn collect_top_level_item_referenced_labels(
                     collect_clause_referenced_labels(clause, labels);
                 }
             }
+            if let Some(assumes) = &group.assumes {
+                for clause in &assumes.arguments {
+                    collect_clause_referenced_labels(clause, labels);
+                }
+            }
             if let Some(specifies) = &group.specifies {
                 collect_declaration_referenced_labels(&specifies.argument, labels);
             }
@@ -6782,6 +6947,11 @@ fn collect_top_level_item_referenced_labels(
                     collect_clause_referenced_labels(clause, labels);
                 }
             }
+            if let Some(assumes) = &group.assumes {
+                for clause in &assumes.arguments {
+                    collect_clause_referenced_labels(clause, labels);
+                }
+            }
             for clause in &group.that.arguments {
                 collect_clause_referenced_labels(clause, labels);
             }
@@ -6794,6 +6964,11 @@ fn collect_top_level_item_referenced_labels(
             }
             if let Some(where_) = &group.where_ {
                 for clause in &where_.arguments {
+                    collect_clause_referenced_labels(clause, labels);
+                }
+            }
+            if let Some(such_that) = &group.such_that {
+                for clause in &such_that.arguments {
                     collect_clause_referenced_labels(clause, labels);
                 }
             }
@@ -6817,6 +6992,11 @@ fn collect_top_level_item_referenced_labels(
                     collect_clause_referenced_labels(clause, labels);
                 }
             }
+            if let Some(such_that) = &group.such_that {
+                for clause in &such_that.arguments {
+                    collect_clause_referenced_labels(clause, labels);
+                }
+            }
             for clause in &group.then.arguments {
                 collect_clause_referenced_labels(clause, labels);
             }
@@ -6837,6 +7017,11 @@ fn collect_top_level_item_referenced_labels(
             }
             if let Some(where_) = &group.where_ {
                 for clause in &where_.arguments {
+                    collect_clause_referenced_labels(clause, labels);
+                }
+            }
+            if let Some(such_that) = &group.such_that {
+                for clause in &such_that.arguments {
                     collect_clause_referenced_labels(clause, labels);
                 }
             }
@@ -6874,6 +7059,11 @@ fn collect_top_level_item_referenced_labels(
                     collect_clause_referenced_labels(clause, labels);
                 }
             }
+            if let Some(assumes) = &group.assumes {
+                for clause in &assumes.arguments {
+                    collect_clause_referenced_labels(clause, labels);
+                }
+            }
             for expr in &group.to.arguments {
                 collect_expression_referenced_labels(expr, labels);
             }
@@ -6886,6 +7076,11 @@ fn collect_top_level_item_referenced_labels(
             }
             if let Some(when) = &group.when {
                 for clause in &when.arguments {
+                    collect_clause_referenced_labels(clause, labels);
+                }
+            }
+            if let Some(assumes) = &group.assumes {
+                for clause in &assumes.arguments {
                     collect_clause_referenced_labels(clause, labels);
                 }
             }
@@ -6939,6 +7134,11 @@ fn validate_declares_justification_usage(
             collect_clause_referenced_labels(clause, &mut referenced);
         }
     }
+    if let Some(assumes) = &group.assumes {
+        for clause in &assumes.arguments {
+            collect_clause_referenced_labels(clause, &mut referenced);
+        }
+    }
     if let Some(satisfies) = &group.satisfies {
         for clause in &satisfies.arguments {
             collect_clause_referenced_labels(clause, &mut referenced);
@@ -6985,9 +7185,30 @@ fn validate_declares_justification_usage(
     }
 }
 
-/// Assumes an `asserting:` clause as true. Unlike [`assume_clause`], a spec or
-/// infix-spec *question* (`A \:subset?:/ B`) is taken as its underlying fact,
-/// because an assertion states that the statement holds.
+/// Assumes every clause of an optional `assumes:` or `suchThat:` section as true
+/// via [`assume_asserted_clause`].
+fn assume_optional_asserted_clauses<T>(
+    section: &Option<T>,
+    context: &mut TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) where
+    T: ClauseSection,
+{
+    if let Some(section) = section {
+        for clause in section.clauses() {
+            assume_asserted_clause(clause, context, path, locator, registry, event_log);
+        }
+    }
+}
+
+/// Assumes an `asserting:`, `assumes:`, or `suchThat:` clause as true. Unlike
+/// [`assume_clause`], predicate questions (`A \:subset?:/ B`, `x "in"? X`,
+/// `A is? \set`, `P is? \\statement`, `f is? \function.injective`) are validated
+/// and taken as their underlying facts so downstream type checks can rely on them
+/// without repeating them in `asserting:`.
 fn assume_asserted_clause(
     clause: &Clause,
     context: &mut TypeContext,
@@ -6996,27 +7217,114 @@ fn assume_asserted_clause(
     registry: &SignatureRegistry,
     event_log: &mut EventLog,
 ) {
-    if let Clause::Expression(expression) = clause
-        && let Some(fact) = asserted_fact_from_expression(expression, context)
-    {
-        let fact = context.normalize_fact(&fact);
-        context.add_fact(fact);
-        return;
+    match clause {
+        Clause::AllOf(group) => {
+            for clause in &group.all_of.arguments {
+                assume_asserted_clause(clause, context, path, locator, registry, event_log);
+            }
+        }
+        Clause::Equivalently(group) => {
+            for clause in &group.equivalently.arguments {
+                assume_asserted_clause(clause, context, path, locator, registry, event_log);
+            }
+        }
+        Clause::Expression(Expression {
+            kind: ExpressionKind::BuiltinCommand(command),
+            ..
+        }) if matches!(format_chain(&command.chain).as_str(), "and" | "allOf") => {
+            for clause in &parse_builtin_clause_arguments(
+                command,
+                &builtin_head_arguments(command),
+                path,
+                locator,
+                event_log,
+            ) {
+                assume_asserted_clause(clause, context, path, locator, registry, event_log);
+            }
+            check_builtin_tail_names(command, &[], path, locator, event_log);
+        }
+        Clause::Expression(expression) if is_asserted_predicate_expression(expression) => {
+            check_asserted_predicate_expression(
+                expression, context, path, locator, registry, event_log,
+            );
+            if let Some(fact) = asserted_fact_from_expression(expression, context) {
+                let fact = context.normalize_fact(&fact);
+                context.add_fact(fact);
+            }
+        }
+        _ => {
+            assume_clause(clause, context, path, locator, registry, event_log);
+        }
     }
-    assume_clause(clause, context, path, locator, registry, event_log);
 }
 
-/// The fact an `asserting:` item states. Like [`fact_from_expression_in_context`]
-/// but an infix-spec question (`A \:subset?:/ B`) yields its `A \:subset:/ B`
-/// fact rather than being ignored as a mere predicate.
+fn is_asserted_predicate_expression(expression: &Expression) -> bool {
+    match &expression.kind {
+        ExpressionKind::Grouped { expression, .. }
+        | ExpressionKind::Labeled { expression, .. } => {
+            is_asserted_predicate_expression(expression)
+        }
+        ExpressionKind::InfixSpecStatement { spec, .. } => spec.predicate,
+        ExpressionKind::SpecPredicate(_)
+        | ExpressionKind::IsPredicate { .. }
+        | ExpressionKind::IsBuiltinPredicate { .. }
+        | ExpressionKind::IsRefinedPredicate { .. } => true,
+        _ => false,
+    }
+}
+
+fn check_asserted_predicate_expression(
+    expression: &Expression,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    match &expression.kind {
+        ExpressionKind::Grouped { expression, .. }
+        | ExpressionKind::Labeled { expression, .. } => check_asserted_predicate_expression(
+            expression, context, path, locator, registry, event_log,
+        ),
+        ExpressionKind::IsBuiltinPredicate { subject, ty } => {
+            check_variadic_operand(subject, context, path, locator, registry, event_log);
+            check_type_expression(ty, context, path, locator, registry, event_log);
+        }
+        _ => check_expression(expression, context, path, locator, registry, event_log),
+    }
+}
+
+/// The fact an `asserting:`, `assumes:`, or `suchThat:` item states. Like
+/// [`fact_from_expression_in_context`], but predicate questions (`A \:subset?:/ B`,
+/// `x "in"? X`, `A is? \set`, `P is? \\statement`, `f is? \function.injective`)
+/// yield their underlying facts rather than being ignored as mere predicates.
 fn asserted_fact_from_expression(
     expression: &Expression,
     context: &TypeContext,
 ) -> Option<TypeFact> {
-    if let ExpressionKind::InfixSpecStatement { left, spec, right } = &expression.kind {
-        return fact_from_infix_spec_statement_in_context(left, spec, right, context);
+    match &expression.kind {
+        ExpressionKind::Grouped { expression, .. }
+        | ExpressionKind::Labeled { expression, .. } => {
+            asserted_fact_from_expression(expression, context)
+        }
+        ExpressionKind::InfixSpecStatement { left, spec, right } => {
+            fact_from_infix_spec_statement_in_context(left, spec, right, context)
+        }
+        ExpressionKind::SpecPredicate(statement) => Some(TypeFact::Spec {
+            subject: key_for_expression(&statement.subject),
+            operator: statement.operator.clone(),
+            target: statement.name.clone(),
+        }),
+        ExpressionKind::IsPredicate { subject, command } => fact_from_type_assertion_in_context(
+            subject,
+            &TypeExpression::Command(command.clone()),
+            context,
+        ),
+        ExpressionKind::IsBuiltinPredicate { subject, ty } => {
+            fact_from_type_assertion_in_context(subject, ty, context)
+        }
+        _ => fact_from_expression_in_context(expression, context),
     }
-    fact_from_expression_in_context(expression, context)
 }
 
 fn declare_declares_target(target: &DeclaresTarget, context: &mut TypeContext) {
@@ -8648,6 +8956,11 @@ fn collect_clause_names(clause: &Clause, names: &mut BTreeSet<String>) {
                     collect_clause_names(clause, names);
                 }
             }
+            if let Some(such_that) = &group.such_that {
+                for clause in &such_that.arguments {
+                    collect_clause_names(clause, names);
+                }
+            }
             for clause in &group.then.arguments {
                 collect_clause_names(clause, names);
             }
@@ -9595,7 +9908,7 @@ fn check_clause(
             }
             if let Some(section) = &group.such_that {
                 for clause in &section.arguments {
-                    assume_clause(clause, &mut child, path, locator, registry, event_log);
+                    assume_asserted_clause(clause, &mut child, path, locator, registry, event_log);
                 }
             }
         }
@@ -9606,7 +9919,7 @@ fn check_clause(
             }
             if let Some(section) = &group.such_that {
                 for clause in &section.arguments {
-                    assume_clause(clause, &mut child, path, locator, registry, event_log);
+                    assume_asserted_clause(clause, &mut child, path, locator, registry, event_log);
                 }
             }
         }
@@ -9618,6 +9931,11 @@ fn check_clause(
             if let Some(where_) = &group.where_ {
                 for clause in &where_.arguments {
                     assume_clause(clause, &mut child, path, locator, registry, event_log);
+                }
+            }
+            if let Some(such_that) = &group.such_that {
+                for clause in &such_that.arguments {
+                    assume_asserted_clause(clause, &mut child, path, locator, registry, event_log);
                 }
             }
             reject_specification_clauses(&group.then.arguments, path, locator, event_log);
@@ -9767,7 +10085,7 @@ fn check_builtin_command_expression(
                 locator,
                 event_log,
             ) {
-                assume_clause(clause, &mut child, path, locator, registry, event_log);
+                assume_asserted_clause(clause, &mut child, path, locator, registry, event_log);
             }
             check_builtin_tail_names(command, &["suchThat"], path, locator, event_log);
         }
@@ -9791,6 +10109,15 @@ fn check_builtin_command_expression(
             ) {
                 assume_clause(clause, &mut child, path, locator, registry, event_log);
             }
+            for clause in &parse_builtin_clause_arguments(
+                command,
+                &builtin_tail_arguments(command, "suchThat"),
+                path,
+                locator,
+                event_log,
+            ) {
+                assume_asserted_clause(clause, &mut child, path, locator, registry, event_log);
+            }
             let then_clauses = parse_builtin_clause_arguments(
                 command,
                 &builtin_tail_arguments(command, "then"),
@@ -9810,7 +10137,13 @@ fn check_builtin_command_expression(
             for clause in &then_clauses {
                 check_clause(clause, &child, path, locator, registry, event_log);
             }
-            check_builtin_tail_names(command, &["where", "then"], path, locator, event_log);
+            check_builtin_tail_names(
+                command,
+                &["where", "suchThat", "then"],
+                path,
+                locator,
+                event_log,
+            );
         }
         "if" => {
             let mut child = context.clone();

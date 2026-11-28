@@ -39,25 +39,26 @@ The main runtime paths are:
 ```text
 mlg check
   CLI
-  -> format the collection (unless formatOnCheck is false)
-  -> SourceCollection::load  (also generates any missing Id: sections)
+  -> format the collection (unless formatOnCheck is false or --read-only is set)
+  -> SourceCollection::load  (inserts missing Id: sections unless --read-only)
   -> SourceCollection check passes
       -> structural parsing (proto -> structural -> formulation)
       -> mlg code-fence syntax check
       -> semantic checking
+      -> LaTeX validation pass (emits Warning diagnostics when error-free)
   -> event output
 
 mlg view
   CLI
-  -> SourceCollection::load
-  -> SourceCollection check passes
-      -> structural parsing
-      -> semantic checking
+  -> SourceCollection::load (unless --read-only, inserts missing Id: sections)
+  -> SourceCollection view check passes (structural parsing, code-fence check,
+       semantic checking, and per-line expression type-info collection)
   -> view-model generation pass
       -> render registry
       -> proto parser for display layout
-  -> temporary collection.json
-  -> embedded HTTP server and static viewer assets
+  -> temporary collection.json (or incremental single-file refresh via --focus-file)
+  -> embedded HTTP server (/api/collection.json, /api/version, /api/focus,
+       /api/refresh) and static viewer assets
 
 mlg export
   -> the same collection checks and view-model generation as `mlg view`
@@ -83,6 +84,7 @@ depending on Rust AST internals.
 ├── goldens/     # parser goldens, plus goldens/examples/, a checkable collection
 ├── src/
 ├── testbed/     # a sample MathLingua collection ("Mathlore") used for testing
+├── tests/       # end-to-end CLI tests (`mlg_check_e2e.rs` and `mlg_check_cases/`)
 └── web/
 ```
 
@@ -134,7 +136,8 @@ Responsibilities:
 - `src/mlg/` contains command orchestration — `check`, `format`, `clean`,
   `export`, `init`, `lsp`, `release`, `search`, `structure`, `version`, `view`,
   and the hidden diagnostic commands `debug`, `extract`, `report`, and
-  `whte_rbt.obj` — plus completion and command-specific utilities (`util.rs`).
+  `whte_rbt.obj` — plus completion, file watching (`watch.rs`), embedded web
+  assets (`view_assets.rs`), and command-specific utilities (`util.rs`).
 
 ## Command Layer
 
@@ -146,8 +149,8 @@ The command layer is split between:
 
 The implemented top-level commands are:
 
-- `mlg check [--watch] [PATH...]`
-- `mlg format`
+- `mlg check [--json] [--diagnostic-schema] [--watch] [--read-only] [PATH...]`
+- `mlg format [--ids]`
 - `mlg clean`
 - `mlg export [--base-path PATH] [--cname DOMAIN] [--force]`
 - `mlg init`
@@ -155,11 +158,11 @@ The implemented top-level commands are:
 - `mlg search [--json] <QUERY>`
 - `mlg structure [--json]`
 - `mlg version`
-- `mlg view [--port PORT] [--watch]`
+- `mlg view [--port PORT] [--watch] [--read-only]` (plus hidden `--focus-file PATH`)
 
 The following commands are hidden (`#[command(hide = true)]`) but implemented:
 
-- `mlg lsp` — the editor language server over stdio.
+- `mlg lsp [--read-only]` — the editor language server over stdio.
 - `mlg debug` — internal diagnostics.
 - `mlg extract <ID>` — print the top-level item with the given `Id:`.
 - `mlg report <ID...>` — report on items by `Id:`.
@@ -368,11 +371,11 @@ Main files:
 
 - `parser.rs` — a single module that composes proto parsing with structural
   recognition. It parses every top-level group (`Declares`, `Defines`,
-  `Realizes`, `Refines`, `States`, `Theorem`, `Axiom`, `Conjecture`,
+  `Realizes`, `Refines`, `States`, `Theorem`, `Axiom`, `Conjecture`, `Example`,
   `Disambiguates`,
   `Relation`, `Equivalent`, `Topic`, `Resource`, `Person`, `Specify`, the prose
-  and clause groups, etc.), their nested support groups (documentation,
-  metadata, `Requires:`/`Enables:` items, resource items, justification items),
+  and clause groups, etc.), their nested support groups (`Appendix:` entries,
+  `Requires:`/`Enables:` items, resource items),
   clause groups, and the shared section/text/heading/formulation helpers.
 - `ast.rs` defines the typed structural AST.
 - `mod.rs` re-exports the public API.
@@ -448,7 +451,7 @@ UUID, unique) and that at most one `Writing:` item exists, then runs four broad
 semantic passes:
 
 1. Collect command definitions into a global signature registry (and reject
-   duplicate signatures, missing `Documented:` requirements, etc.).
+   duplicate signatures, missing documentation requirements in `Appendix:`, etc.).
 2. Collect the optional top-level `Specify:` numeric literal/index type
    categories into that registry.
 3. Validate command-like references against that registry.
@@ -472,10 +475,13 @@ Important files:
 - `typecheck.rs` implements symbol scope, facts, substitutions, requirements,
   subtyping through a `Declares:` target's `is` relation, destructuring,
   operator/member resolution, spec-operator reduction, numeric-literal fallback,
-  and variadic index-result checking. It also records what each `Defines:`
-  marked `abstractly:` leaves open (`SignatureRegistry::abstract_declarations`),
-  which is what a `Realizes:` is checked against and what its components inherit
-  their types from.
+  implicit-symbol hole unification, `assuming:`/`suchThat:` assertions,
+  `Defines:` command-value type inheritance, and variadic index-result checking.
+  It also records what each `Defines:` marked `abstractly:` leaves open
+  (`SignatureRegistry::abstract_declarations`), which is what a `Realizes:` is
+  checked against and what its components inherit their types from.
+- `typeinfo.rs` records per-line resolved expression types for LSP hover and
+  viewer inline type annotations.
 - `locator.rs` maps semantic diagnostics back to source locations.
 - `definition.rs` and `rename.rs` back LSP go-to-definition and rename; `uses.rs`
   finds command occurrences (also used by `mlg release`).
@@ -484,7 +490,7 @@ Important files:
 
 The signature registry is global across all checked files. Duplicate command
 signatures are rejected across `Declares`, `Defines`, `Realizes`, `Refines`,
-`States`, and named theorem-like groups. Mapping-parameter definitions additionally populate
+`States`, `Equivalent`, and named `Axiom`/`Theorem`/`Conjecture`/`Example` groups. Mapping-parameter definitions additionally populate
 a general-signature-to-specialized-signatures index. Several specialized
 definitions may share one general signature, but each specialized signature is
 still globally unique; an invocation must resolve to one uniquely most-specific
@@ -521,6 +527,8 @@ Main files:
   LSP hover previews).
 - `markdown.rs` (`render_group_markdown`) renders a `GroupView` into a compact
   Markdown-and-LaTeX representation used by `mlg lsp` hover previews.
+- `latex.rs` (`validate_latex`, `check_collection_latex`) validates rendered
+  LaTeX formulas during `mlg check` and emits `Level::Warning` diagnostics.
 - `render.rs` wires together rendering internals.
 - `render/registry.rs` builds rendering lookup tables from parsed files.
 - `render/signatures.rs` computes render signatures.
@@ -584,12 +592,11 @@ Key files:
   content, argument lists, type annotations, and LaTeX.
 
 Group cards divide their sections into primary content and supporting content.
-`Documented:`, `References:`, item-level `Writing:`,
-`Justification:`, and `Id:` are collapsed behind the supporting-sections toggle
-by default.
+`Appendix:` (and legacy `Provides:`) and `Id:` are collapsed behind the
+supporting-sections toggle by default.
 
 The viewer chrome (`web/components/viewer-chrome.tsx`) provides a slide-down
-settings toolbar triggered from the header. It consolidates three centered
+settings toolbar triggered from the header. It consolidates four centered
 controls:
 
 - **Font** (`web/components/viewer-font.ts`) — switches between `Default` and
@@ -599,20 +606,36 @@ controls:
   attribute, alongside a typographic `[ A− | A | A+ ]` stepper that decreases,
   resets, or increases the reader and outline font scale (`80%`–`140%`),
   persisted under `mlg-view-font-scale` and applied via `--viewer-font-scale`.
+- **Spacing** (`web/components/viewer-spacing.ts`) — switches between `Compact`,
+  `Comfortable` (default), and `Spacious` layout tiers, persisted under
+  `mlg-view-spacing` and applied via `data-spacing`.
 - **Expression types** — an interactive switch to display resolved expression
   types inline across cards and argument lists. Type annotations are computed
   during the semantic check pass, mapped to lines and byte spans, and serialized
   into the view model by `src/backend/view/builder.rs`.
-- **Theme** (`web/components/viewer-theme.ts`) — Classic, Mono, Flat Gray,
-  Sepia, Manuscript, Field Guide, Retro, LCD, and Atomic, each with light and
-  dark variants. Classic is the default; the selected theme is stored under
-  `mlg-view-theme` in browser local storage and applied through the root
+- **Theme** (`web/components/viewer-theme.ts`) — Atomic, Classic, Field Guide,
+  Flat Gray, Journal (default), LCD, Manuscript, Mono, Retro, and Sepia, paired
+  with `light`, `dark`, or `auto` mode (`mlg-view-theme-family`,
+  `mlg-view-theme-mode`, and `mlg-view-theme`), applied through the root
   `data-theme` attribute and matching `color-scheme`.
 
+Adding `?embedded` to the viewer URL (`web/components/viewer-shell.tsx`) sets
+`data-embedded="true"` to hide the top chrome, breadcrumbs, and navigation
+buttons for embedded previews.
+
 `mlg view` writes a temporary `collection.json` and serves it with the embedded
-assets from a small Rust HTTP server (along with an `/api/version` endpoint that
-`web/components/viewer-shell.tsx` polls to reload automatically when the
-collection is rebuilt). The web app reads only that JSON endpoint.
+assets from a small Rust HTTP server exposing:
+
+- `GET /api/collection.json` — the current serialized `CollectionView`.
+- `GET /api/version` — returns `{"version": N, "building": bool, "blocked": bool}`,
+  which `web/components/viewer-shell.tsx` polls to reload automatically when the
+  collection is rebuilt.
+- `POST /api/focus?path=...` — updates the focused file for incremental
+  single-file refresh (also configurable at startup with hidden `--focus-file`).
+- `POST /api/refresh` — triggers a full rebuild and returns the updated version
+  and status flags.
+
+The web app reads only these HTTP endpoints.
 It does not parse `.mlg` files and does not run semantic checks. Node.js and npm
 are frontend development dependencies, not runtime dependencies of `mlg view`
 or `mlg export`.
@@ -648,21 +671,23 @@ text value is left unchanged. Formatting runs before `mlg check` unless
 ```text
 main.rs
   -> Cli::parse
-  -> mlg::check_in
-  -> format_before_checking (unless formatOnCheck is false; before load, so
-       reported positions match the source the author reads)
-  -> SourceCollection::load
+  -> mlg::check_in (or read-only variant when --read-only is set)
+  -> format_before_checking (unless formatOnCheck is false or --read-only;
+       runs before load so reported positions match the source the author reads)
+  -> SourceCollection::load (or load_read_only)
       -> find collection root
       -> validate mlg.json when a collection root exists
       -> collect collection .mlg files (from content/ if present)
-      -> generate + write missing Id: sections
+      -> generate + write missing Id: sections (skipped in --read-only mode)
   -> SourceCollection::diagnostic_filter for explicit PATH arguments
   -> SourceCollection::run_check_passes_filtered
       -> frontend::parse_source_file for each .mlg file (proto -> structural
            -> formulation)
       -> backend::text_fence::check_text_fence_syntax (```mlg fences in prose)
-      -> backend::semantic::check_documents
+      -> backend::semantic::check_documents (allows missing Id: in --read-only mode)
       -> replay diagnostics accepted by the filter
+  -> backend::view::check_collection_latex (when error-free; emits Level::Warning
+       diagnostics for invalid LaTeX)
   -> EventLog summary
 ```
 
@@ -689,27 +714,31 @@ main.rs
   -> Cli::parse
   -> mlg::view_in
   -> bind the requested port once
-  -> SourceCollection::load
+  -> SourceCollection::load (or load_read_only when --read-only is set)
       -> find collection root
       -> validate mlg.json when a collection root exists
       -> collect collection .mlg files
-  -> SourceCollection::run_check_passes
+  -> SourceCollection::run_view_check_passes (or run_single_file_view_check_passes
+       for incremental --focus-file refreshes)
       -> frontend::parse_source_file for each .mlg file
-      -> backend::semantic::check_documents
-  -> SourceCollection::build_view
+      -> backend::text_fence::check_text_fence_syntax
+      -> backend::semantic::check_documents + per-line type-info collection
+  -> SourceCollection::build_view (or build_single_file_view)
       -> backend::view::build_collection_view
           -> build render registry
           -> rerun proto parser for display layout
           -> create CollectionView
   -> write temporary collection.json
-  -> serve collection.json and the embedded viewer assets from Rust
+  -> serve collection.json, /api/{version,focus,refresh}, and the embedded viewer assets
 ```
 
-`mlg view --watch` also survives errors in the initial source: it keeps the
-port reserved, waits for a change, clears the interactive terminal, and retries
-until it can start the server. Once running, an invalid edit keeps the last
-valid `collection.json`; a later valid edit replaces it. The shared metadata
-poller for check and view watch modes lives in `src/mlg/watch.rs`.
+`mlg view --watch` starts the HTTP server immediately even when the initial
+source contains errors (serving whatever rendered content is available, or an
+empty `CollectionView` while `/api/version` reports `blocked: true`), then
+refreshes in the background as files change. Once a valid view has been built,
+a subsequent invalid edit keeps the last valid `collection.json` while reporting
+`blocked: true`; a later valid edit replaces it. The shared metadata poller for
+check and view watch modes lives in `src/mlg/watch.rs`.
 
 The viewer command treats parser and semantic errors as blocking, because the
 rendered output would otherwise be misleading.
@@ -755,7 +784,8 @@ per release. The whole update set is computed in memory before anything is
 written, and `mlg.json` is bumped last.
 
 A real (non-dry-run) release finishes by regenerating the published site: the CLI
-(`src/main.rs`) runs `mlg clean` then `mlg export`, replacing `docs/` so it
+(`src/main.rs`) runs `mlg clean` then `mlg export`, replacing `config.output_dir()`
+(configured by `outputDir` in `mlg.json`, defaulting to `docs/`) so it
 matches the release just recorded. This orchestration lives at the binary level
 because it composes whole commands, each with its own console listener; the
 `release` library entry point itself only writes the release metadata.

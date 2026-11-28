@@ -1,9 +1,12 @@
--- Number types, used by the numeric-literal `Specify:` above and by the
--- operator-disambiguation and cast examples below.
+-- Number types, arithmetic operations, ordering relations, and operator
+-- disambiguation.
 
 
 [\natural]
 Declares: n
+Enables:
+. view:
+  as: r := \natural.to.real{n} is \real
 Appendix:
 . called: "natural number"
 Id: "1a102108-da2b-47b8-9435-8dce9a5d5f36"
@@ -16,13 +19,23 @@ Appendix:
 Id: "a6deadf6-fcfa-4de9-bf31-d9fce2181151"
 
 
+-- Embedding of natural numbers into the reals, used by the `view:` above.
+[\natural.to.real{n}]
+Defines: r is \real
+when: n is \natural
+Appendix:
+. called: "real embedding of $n?$"
+. written: "n?"
+Id: "f1a2b3c4-2222-4aaa-8bbb-000000000001"
+
+
 -- `Defines` introduces a command naming a *value*, so a use is written
--- `y := \the.command` rather than `y is \the.command`. A declared value must
--- state its type.
+-- `y := \the.command` rather than `y is \the.command`.
 [\zero]
 Defines: z is \natural
 Appendix:
 . called: "zero"
+. written: "0"
 Id: "d5c731fe-427f-4ccd-bb74-e2a576ac565d"
 
 
@@ -30,7 +43,30 @@ Id: "d5c731fe-427f-4ccd-bb74-e2a576ac565d"
 Defines: u is \natural
 Appendix:
 . called: "one"
+. written: "1"
 Id: "8e3440d0-13a0-428a-98c2-252004727775"
+
+
+-- The sets of natural and real numbers, with capabilities linking set
+-- membership to the corresponding number types in both directions.
+[\naturals.set]
+Defines: N := \set@{n_ : n_ is \natural}
+Enables:
+. capability: n_ "in" N :<->: n_ is \natural
+Appendix:
+. called: "the set of natural numbers"
+. written: "\mathbb{N}"
+Id: "f1a2b3c4-2222-4aaa-8bbb-000000000002"
+
+
+[\reals.set]
+Defines: R := \set@{r_ : r_ is \real}
+Enables:
+. capability: r_ "in" R :<->: r_ is \real
+Appendix:
+. called: "the set of real numbers"
+. written: "\mathbb{R}"
+Id: "8ec56012-f504-44d1-a1eb-04301de15075"
 
 
 [n \.natural.plus./ m]
@@ -49,17 +85,45 @@ Appendix:
 Id: "b8441c4c-a230-4ac1-a540-3edebae751f8"
 
 
--- An `else:` branch is checked with nothing assumed about the operands, so its
--- target must be requirement-free — here, a command taking no arguments.
-[\unspecified.sum]
-Defines: g is \real
+[r \.real.minus./ s]
+Defines: d is \real
+when: r, s is \real
 Appendix:
-. called: "unspecified sum"
-Id: "969760a2-f402-4b97-b227-b578f7095d1e"
+. written: "r? - s?"
+Id: "f1a2b3c4-2222-4aaa-8bbb-000000000003"
 
 
--- `Disambiguates` resolves one ambiguous operator into typed branches. Each
--- `when:`/`to:` pair is tried in order, and `else:` is the fallback.
+[\real.neg{r}]
+Defines: y is \real
+when: r is \real
+expresses: (r \.real.plus./ y) = \natural.to.real{\zero}
+Appendix:
+. called: "additive inverse of $r?$"
+. written: "-r+?"
+Id: "f1a2b3c4-2222-4aaa-8bbb-000000000004"
+
+
+[r \.real.times./ s]
+Defines: p is \real
+when: r, s is \real
+Appendix:
+. written: "r+? \cdot s+?"
+Id: "f1a2b3c4-2222-4aaa-8bbb-000000000005"
+
+
+[r \.real.lt./ s]
+States:
+when: r, s is \real
+that: r != s
+Appendix:
+. called: "$r?$ is less than $s?$"
+. written: "r? < s?"
+Id: "f1a2b3c4-2222-4aaa-8bbb-000000000006"
+
+
+-- `Disambiguates` resolves one overloaded operator into typed branches. Each
+-- `when:`/`to:` pair is tried in source order, and `else:` falls back to the
+-- common-owner colon-qualified capability `:+:`.
 [x_ + y_]
 Disambiguates:
 when: x_, y_ is \natural
@@ -68,5 +132,51 @@ when: x_, y_ is \real
 to: x_ \.real.plus./ y_
 else: x_ :+: y_
 Appendix:
-. called: "plus"
+. called: "addition"
 Id: "173a6ede-2b98-4da4-a5b0-40b44635add7"
+
+
+[x_ - y_]
+Disambiguates:
+when: x_, y_ is \real
+to: x_ \.real.minus./ y_
+else: x_ :-: y_
+Appendix:
+. called: "subtraction"
+Id: "f1a2b3c4-2222-4aaa-8bbb-000000000007"
+
+
+[-x_]
+Disambiguates:
+when: x_ is \real
+to: \real.neg{x_}
+Appendix:
+. called: "negation"
+Id: "f1a2b3c4-2222-4aaa-8bbb-000000000008"
+
+
+[x_ < y_]
+Disambiguates:
+when: x_, y_ is \real
+to: x_ \.real.lt./ y_
+Appendix:
+. called: "less than"
+Id: "f1a2b3c4-2222-4aaa-8bbb-000000000010"
+
+
+-- Absolute value on the reals, illustrating a `piecewise:` definition with
+-- `if:`/`then:`, `elseIf:`/`then:`, and `else:` inside `expresses:`.
+[\abs{x}]
+Defines: y is \real
+when: x is \real
+expresses:
+. piecewise:
+  if: x < 0.0
+  then: y = -x
+  elseIf: x = 0.0
+  then: y = 0.0
+  else: y = x
+Appendix:
+. called: "absolute value of $x?$"
+. written: "\lvert x? \rvert"
+Id: "f1a2b3c4-2222-4aaa-8bbb-000000000011"

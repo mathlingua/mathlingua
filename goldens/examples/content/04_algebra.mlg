@@ -1,61 +1,85 @@
--- How a `Declares` says what it extends, and how `specifies:` types the parts
--- of a destructuring target.
+-- Algebraic hierarchy: how `Declares` extends supertypes with `via`, how
+-- `specifies:` types tuple components and multi-view slices, and how
+-- `satisfies:` records the algebraic axioms.
 
 
--- The `Declares:` target may state the type this definition extends. `via X`
--- names the view used to regard a magma as a set, and types `X` at the same
--- time, so `specifies:` only has to type what the `via` does not reach.
+-- A magma pairs a carrier set `X` with a binary operation `*`. `is \set via X`
+-- regards the magma as a set through `X` and types `X` as `\set`, so
+-- `specifies:` only has to type `*`.
 [\magma]
 Declares: M ::= (X, *) is \set via X
-specifies: * is \operation:on{M}
+specifies: * is \operation:on{X}
+Enables:
+. capability: x_ "in" M :<->: x_ "in" X
 Appendix:
 . called: "magma"
 Id: "0e5be05c-2b6d-48cc-8dec-d656eb6bb8b7"
 
 
--- A second component, typed in `specifies:`. `X` is not repeated: a symbol is
--- specified exactly once.
+-- A monoid extends a magma with an associative operation and a two-sided
+-- identity element `e`. `via (X, *)` types both `X` and `*` positionally.
 [\monoid]
 Declares: M ::= (X, *, e) is \magma via (X, *)
 specifies: e "in" X
+satisfies:
+. forAll: a, b, c "in" X
+  then: (a * b) * c = a * (b * c)
+. forAll: a "in" X
+  then:
+  . e * a = a
+  . a * e = a
 Appendix:
 . called: "monoid"
 Id: "b41b952a-239a-49de-b27a-a896f0494b30"
 
 
--- A `via` tuple maps positionally onto the extended type's own components, so
--- `X`, `*` and `e` all inherit their types here and no `specifies:` is needed.
+-- A group is a monoid in which every element has a two-sided inverse.
+-- Because `via (X, *, e)` covers every tuple component, no `specifies:` is needed.
 [\group]
 Declares: G ::= (X, *, e) is \monoid via (X, *, e)
+satisfies:
+. forAll: a "in" X
+  then:
+  . exists: b "in" X
+    suchThat:
+    . a * b = e
+    . b * a = e
 Appendix:
 . called: "group"
 Id: "bc7fdaea-a45a-4569-8607-78555d8a03eb"
 
 
--- A refinement preserves its base type's component types.
+-- A refinement preserves its base type's component types and adds commutativity.
 [\(abelian)::group]
 Refines: G ::= (X, *, e)
+satisfies:
+. forAll: a, b "in" X
+  then: a * b = b * a
 Appendix:
 . adjective: "abelian"
 Id: "9ed8036e-561f-4fb9-80bf-2bd214428bc7"
 
 
--- Subtype views may live in `specifies:` when different slices of the target
--- tuple implement different types. The shared `X` component is valid because
--- both the abelian group and monoid views specify it as a set.
+-- Subtype views may live in `specifies:` when different slices of one tuple
+-- implement different structures. Both views specify the shared carrier `X` as
+-- `\set`, and `satisfies:` adds the left and right distributive laws.
 [\ring]
-Declares: R ::= (X, +, *, 0, 1)
+Declares: R ::= (X, +_R, *_R, 0, 1)
 specifies:
-. R is \(abelian)::group via (X, +, 0)
-. R is \monoid via (X, *, 1)
+. R is \(abelian)::group via (X, +_R, 0)
+. R is \monoid via (X, *_R, 1)
+satisfies:
+. forAll: a, b, c "in" X
+  then:
+  . (a *_R (b +_R c)) = ((a *_R b) +_R (a *_R c))
+  . ((a +_R b) *_R c) = ((a *_R c) +_R (b *_R c))
 Appendix:
 . called: "ring"
 Id: "a73b420d-f146-4142-bf5d-270916506a47"
 
 
--- `extends:` is the same clause written as a section. It exists for what a
--- target cannot express: extending several types at once, each through a
--- different view of the tuple.
+-- `extends:` is the section form of extension, used when a structure extends
+-- several types at once through different views of the same tuple.
 [\bimagma]
 Declares: B ::= (X, *, +)
 extends:
@@ -66,29 +90,42 @@ Appendix:
 Id: "fde4a779-17a4-48a3-997b-ad20380eb324"
 
 
--- Subtyping is recursive, so a group is a magma and therefore a set.
+-- Subtyping is recursive, so every group is a monoid, a magma, and a set, and
+-- every element's inverse is unique.
+[\group.identity.unique]
 Theorem:
-given: G ::= (X, *, e) is \group
+given:
+. G ::= (X, *, e) is \group
+. e' "in" X
+where:
+. forAll: x "in" X
+  then: x * e' = x
 then:
 . G is? \monoid
 . G is? \magma
 . G is? \set
 . X is? \set
 . e "in"? X
+. e' = e
+Proof: "Since {. e "in"? X .}, the right-identity property of {. e' .} gives
+        {. e * e' = e .}, while the left-identity property of {. e .} gives
+        {. e * e' = e' .}. Therefore {. e' = e .}."
 Appendix:
-. called: "a group is a set"
+. called: "uniqueness of the identity in a group"
 Id: "da7562a6-f7e7-4e0e-ba84-30ed132faeb1"
 
 
--- Both subtype slices contribute component facts to the resulting type.
+-- Both subtype slices of a ring contribute facts and component types.
 Theorem:
-given: R ::= (X, +, *, 0, 1) is \ring
+given: R ::= (X, +_R, *_R, 0, 1) is \ring
 then:
 . R is? \(abelian)::group
 . R is? \monoid
 . X is? \set
 . 0 "in"? X
 . 1 "in"? X
+. forAll: a, b "in" X
+  then: (a +_R b) = (b +_R a)
 Appendix:
-. called: "a ring inherits both subtype views"
+. called: "a ring inherits both its additive group and multiplicative monoid"
 Id: "60f94c0e-e5c7-40cb-b082-f2ab7bb0f6db"

@@ -105,8 +105,9 @@ The proto parser does not know what kind of heading this is. The structural pars
 
 ### Line labels on arguments
 
-A `. ` argument line (for a single-line formulation or text literal, including a
-`references:` resource item inside `Appendix:`) may begin with a `[label]: ` prefix:
+A `. ` argument line (for a single-line formulation or text literal, excluding
+`references:` resource items inside `Appendix:`, which require `for: (:label:)` /
+`entry:`) may begin with a `[label]: ` prefix:
 
 ```text
 . [label]: <argument content>
@@ -116,8 +117,8 @@ where `label` is a non-empty label header (`extract_line_label`). The proto
 parser strips `[label]: ` before classifying the rest of the line as a text
 literal or single-line formulation and attaches `label` to the resulting
 `TextLiteral` or `Formulation` node. Inline section arguments (written on the
-same line as `section:`) cannot carry `[label]: ` prefixes (`Inline section
-arguments cannot have labels`).
+same line as `section:`) cannot carry `[label]: ` prefixes (`Inline arguments
+cannot have labels; write \`. [label]: ...\` on a new line instead`).
 
 ### Text literals
 
@@ -291,8 +292,8 @@ An empty document is supported by the current implementation because `Document.i
 - **`Writing`** — `TopLevelWritingGroup`, heading: none. Sections: `Writing: WritingAlias+` (each alias is a double-quoted string of the form `"name :~> body"`; the LHS must be a `Name` and the body is raw LaTeX)
 - **`Disambiguates`** — `DisambiguatesGroup`, heading: operator/function form. Sections: `Disambiguates:`, zero or more ordered `when: Clause+`/`to: Expression` branches, `else?: Expression`, `Appendix?: AppendixItem+`
 - **`Declares`** — `DeclaresGroup`, heading: command. Sections: `Declares: DeclaresTarget [via FormOrDeclaration]`, `using?: DeclarationStatement+`, `when?: Clause+`, `assuming?: Clause+`, `extends?: ExtendsItem+`, `specifies?: IsOrViaItem+`, `satisfies?: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Appendix?: AppendixItem+`. `DeclaresTarget` is tried as a `FormOrDeclaration` first, then as a `DeclarationStatement` whose `is` relation may name a refined command, allowing typed or value-bearing targets such as `X := value is \set`. That relation is what the definition extends (see `language.md`), and an `is` relation may be followed by `via <FormOrDeclaration>`, stored on the section rather than the target. An `ExtendsItem` is the same `DeclarationStatement [via FormOrDeclaration]` pair; the `extends?:` section spells out the same clauses and exists to allow more than one, so a target that states a relation and an `extends?:` section are mutually exclusive. `extends_clauses` in `structural::ast` normalizes the two spellings into one borrowed list that every consumer works from
-- **`Defines`** — `DefinesGroup`, heading: command. Sections: `Defines: DeclarationStatement`, `abstractly?` (marker, no arguments), `using?: DeclarationStatement+`, `when?: Clause+`, `assuming?: Clause+`, `specifies?: IsOrViaItem+`, `expresses?: Clause`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Appendix?: AppendixItem+`. `abstractly:` is stored as `DefinesGroup::abstractly`; it marks the `specifies:` items that state a specification without a value as abstract, for a `RealizesGroup` to supply
-- **`Realizes`** — `RealizesGroup`, heading: command. Sections: `Realizes: DeclarationStatement`, `using?: DeclarationStatement+`, `when?: Clause+`, `assuming?: Clause+`, `specifies?: IsOrViaItem+`, `expresses?: Clause`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Appendix?: AppendixItem+`. The target names the realized declaration with `:=` (`Realizes: Nb := \naturals`), which must be a `Defines` marked `abstractly:`; `specifies:` must supply every symbol that declaration left abstract
+- **`Defines`** — `DefinesGroup`, heading: command. Sections: `Defines: DeclarationStatement`, `abstractly?` (marker, no arguments), `using?: DeclarationStatement+`, `when?: Clause+`, `assuming?: Clause+`, `specifies?: IsOrViaItem+`, `expresses?: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Appendix?: AppendixItem+`. `abstractly:` is stored as `DefinesGroup::abstractly`; it marks the `specifies:` items that state a specification without a value as abstract, for a `RealizesGroup` to supply
+- **`Realizes`** — `RealizesGroup`, heading: command. Sections: `Realizes: DeclarationStatement`, `using?: DeclarationStatement+`, `when?: Clause+`, `assuming?: Clause+`, `specifies?: IsOrViaItem+`, `expresses?: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Appendix?: AppendixItem+`. The target names the realized declaration with `:=` (`Realizes: Nb := \naturals`), which must be a `Defines` marked `abstractly:`; `specifies:` must supply every symbol that declaration left abstract
 - **`Refines`** — `RefinesGroup`, heading: refined command or refined spec-infix command (for example, `[A \:(nonempty)::subset:/ B]`). Sections: `Refines: RefinedDeclarationStatement`, `implicitly?` (marker, no arguments), `explicitly?` (marker, no arguments), `using?: DeclarationStatement+`, `when?: Clause+`, `assuming?: Clause+`, `specifies?: RefinedDeclarationStatement`, `satisfies?: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Appendix?: AppendixItem+`. The `Refines:` target may repeat the base `Declares:` target or omit its expansion and then its subject structure down to a bare name; every included shape must match the base. `implicitly:`/`explicitly:` are optional, mutually exclusive, zero-argument marker sections stored as an `Option<RefinementKind>` (`Implicit`/`Explicit`); see the validation rules under `Refines` refinement markers in `language.md`
 - **`States`** — `StatesGroup`, heading: command. Sections: `States:` (marker, no arguments), `using?: DeclarationStatement+`, `when?: Clause+`, `assuming?: Clause+`, `that: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Appendix?: AppendixItem+`
 - **`Axiom`** — `AxiomGroup`, heading: command?. Sections: `Axiom:`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `suchThat?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Appendix?: AppendixItem+`
@@ -466,10 +467,10 @@ If a clause section contains:
 - **`allOf`** — `AllOfGroup`, heading: label?. Sections: `allOf: Clause+`
 - **`anyOf`** — `AnyOfGroup`, heading: label?. Sections: `anyOf: Clause+`
 - **`oneOf`** — `OneOfGroup`, heading: label?. Sections: `oneOf: Clause+`
-- **`exists`** — `ExistsGroup`, heading: label?. Sections: `exists: BindingOrSpec`, `suchThat?: Clause+`
-- **`existsUnique`** — `ExistsUniqueGroup`, heading: label?. Sections: `existsUnique: BindingOrSpec`, `suchThat?: Clause+`
-- **`forAll`** — `ForAllGroup`, heading: label?. Sections: `forAll: BindingOrSpec`, `where?: Clause+`, `suchThat?: Clause+`, `then: Clause+`
-- **`let`** — `LetGroup`, heading: label?. Sections: `let: BindingOrSpec`, `where?: Clause+`, `then: Clause+`
+- **`exists`** — `ExistsGroup`, heading: label?. Sections: `exists: BindingOrSpec+`, `suchThat?: Clause+`
+- **`existsUnique`** — `ExistsUniqueGroup`, heading: label?. Sections: `existsUnique: BindingOrSpec+`, `suchThat?: Clause+`
+- **`forAll`** — `ForAllGroup`, heading: label?. Sections: `forAll: BindingOrSpec+`, `where?: Clause+`, `suchThat?: Clause+`, `then: Clause+`
+- **`let`** — `LetGroup`, heading: label?. Sections: `let: BindingOrSpec+`, `where?: Clause+`, `then: Clause+`
 - **`if`** — `IfGroup`, heading: label?. Sections: `if: Clause+`, `then: Clause+`
 - **`have`** — `IffGroup`, heading: label?. Sections: `have: Clause+`, `iff: Clause+`. A `have:` group without `iff:` is instead a `HaveGroup` (`Clause::Have`): `have: Clause+`, `asserting?: Clause+`, `by?: Expression+`, `because?: BecauseItem+` — an escape hatch that checks the `have:` item using the surrounding facts plus any `asserting:` items (also accepted as a `specifies:` item). `by:` and `because:` (accepting text or clauses) are justification the checker only reference-validates, never proves.
 - **`piecewise`** — `PiecewiseGroup`, heading: label?. Sections: `piecewise:`, `if: Clause+`, `then: Clause+`, `(elseIf: Clause+ then: Clause+)*`, `else?: Clause+`
@@ -489,6 +490,7 @@ Required on:
 
 - `Declares`
 - `Defines`
+- `Realizes`
 - `Refines`
 - `States`
 - `Equivalent`
@@ -498,21 +500,30 @@ Optional on:
 - `Axiom`
 - `Theorem`
 - `Conjecture`
+- `Example`
 
 These headings must parse with `parse_command_header`.
+
+### Disambiguates headings
+
+Required on:
+
+- `Disambiguates`
+
+Parsed as a `FormOrDeclaration` operator or function form (for example `[x_ + y_]`, `[-x_]`, `[x_ !]`, `[f(x_)]`).
 
 ### Label headings
 
 Optional on:
 
 - alias items
+- requires items (`capability:`, `definition:`)
 - enables items
 - documented items
-- specify items
 - clause groups
 - justification and reference `for:` items
 
-These headings must parse with `parse_label_header`.
+These headings must parse with `parse_label_header`. (Note: `Specify:` items reject headings.)
 
 ### Author headings
 
@@ -530,6 +541,14 @@ Required on:
 
 These headings must parse with `parse_resource_header`.
 
+### Topic headings
+
+Required on:
+
+- `Topic`
+
+These headings must parse with `parse_topic_header`.
+
 ## Formulation Parsers Used by Structural Sections
 
 The structural parser delegates section content to formulation parsers as follows:
@@ -539,14 +558,19 @@ The structural parser delegates section content to formulation parsers as follow
   `parse_refined_declaration_statement`
 - `DeclarationStatement` — `parse_refined_declaration_statement`
 - `RefinedDeclarationStatement` — `parse_refined_declaration_statement`
+- `TypeExpression` — `parse_type_expression` (used by `Specify:` `is:`)
+- `ExpressionBinding` — `parse_expression_binding` (used by `Enables:` `from:` `as:`)
+- `DefinitionRequirement` — `<command> is <type-or-spec>` (used by `Requires:` `definition:`)
 - `IsOrViaItem` — try `parse_is_via_statement`, then `parse_refined_declaration_statement`
 - `BindingOrSpec` — `parse_refined_declaration_statement`
 - `AliasKind` — try `parse_expression_alias`, then `parse_spec_operator_alias`
 - `MappingWritingTarget` — accept a function declaration form or function-call expression; semantic checking restricts it to the enclosing `Declares:` mapping
-- `WritingAlias` — `parse_writing_alias`, applied to the contents of each double-quoted `Writing:` argument (used by the collection-wide `Writing:` group)
+- `WritingAlias` — `parse_writing_alias`, applied to the contents of each double-quoted `Writing:` argument (used by the collection-wide `Writing:` group and `Appendix:` `. writing:`)
+- `LabelReferences` — `parse_label_references` (used by `for:` in `Appendix:` `. justification:` and `. references:`)
 - `ResourceHeader` — `parse_resource_header`
 - `CommandHeader` — `parse_command_header`
 - `AuthorHeader` — `parse_author_header`
+- `TopicHeader` — `parse_topic_header`
 - `LabelHeader` — `parse_label_header`
 
 Clause formulation arguments are tried as `parse_refined_declaration_statement`, then `parse_expression`. This means helper-only forms such as comma-separated `is` subjects or quoted operators with spaces are represented as declaration statements, while expression-compatible facts can still be parsed as declaration statements when they appear in clause position.
@@ -562,10 +586,10 @@ Conventions used below:
 
 - `[CommandHeader]` means the heading is required and must parse as a formulation command header.
 - `[CommandHeader]?` means the heading is optional, but if present must parse as a formulation command header.
-- `[LabelHeader]?` means an optional structural label heading. `HaveGroup`
-  requires a `for:` section when the group is an item of `Justification:`.
+- `[LabelHeader]?` means an optional structural label heading. Inside `Appendix:` `. justification:`, each `HaveGroup` accepts an optional `for: (:label:)` section and/or a `[label]` heading.
 - `[AuthorHeader]` means a required author heading.
 - `[ResourceHeader]` means a required resource heading.
+- `[TopicHeader]` means a required topic heading.
 - If no heading line is shown, the group must not have a heading.
 - `Text<T>` means a quoted text literal that the structural parser strips into wrapper type `T`.
 
@@ -785,7 +809,7 @@ using?: <DeclarationStatement>+
 when?: <ClauseUnion>+
 assuming?: <ClauseUnion>+
 specifies?: <IsOrViaItemUnion>+
-expresses?: <ClauseUnion>
+expresses?: <ClauseUnion>+
 Requires?: <RequiresItemUnion>+
 Enables?: <EnablesItemUnion>+
 Appendix?: <AppendixItemUnion>+
@@ -798,7 +822,7 @@ using?: <DeclarationStatement>+
 when?: <ClauseUnion>+
 assuming?: <ClauseUnion>+
 specifies?: <IsOrViaItemUnion>+
-expresses?: <ClauseUnion>
+expresses?: <ClauseUnion>+
 Requires?: <RequiresItemUnion>+
 Enables?: <EnablesItemUnion>+
 Appendix?: <AppendixItemUnion>+
@@ -988,7 +1012,7 @@ specifies: <OpenText>
 A top-level `Topic:` names a documentation topic. Its required heading is a
 `TopicHeader` — a `#` sigil followed by a dotted name path (for example
 `[#real.analysis]`) — which renders as a human title by title-casing the path
-("Real Analysis") unless the `Documented:called:` text overrides it. `Topic:`
+("Real Analysis") unless an `Appendix:` `. called:` text overrides it. `Topic:`
 carries optional descriptive prose and `within?:` names a parent topic to make
 this a sub-topic. `Related?:` records how the topic relates to others: each
 `TopicRelatedItem` pairs one or more `to:` targets with a `specifies:`
@@ -1002,8 +1026,8 @@ value is a **signature** — a `\command` with its arguments removed, e.g.
 of it. With `called:` (already quoted), the four quoted-text fields are `within:`,
 `to:`, `specifies:`, and `called:`.
 
-`Documented?:` accepts only `called:` (a `CalledDocumentedItem`); other
-documentation fields are rejected. The item is stated, not checked: topic and
+On `Topic:`, `Appendix?:` accepts only `called:` (a `CalledGroup`); other
+documentation or appendix entries are rejected. The item is stated, not checked: topic and
 signature references need not resolve, and it registers no command signatures or
 type facts.
 
@@ -1095,14 +1119,11 @@ discoverer: <OpenText>*
 
 ```group
 [LabelHeader]?
+for?: <LabelReferences>+
 have: <ClauseUnion>+
 asserting?: <ClauseUnion>+
 by?: <Expression>+
 because?: <BecauseItemUnion>+
-```
-
-```group
-id: <OpenText>
 ```
 
 ```group
@@ -1215,19 +1236,19 @@ oneOf: <ClauseUnion>+
 
 ```group
 [LabelHeader]?
-exists: <BindingOrSpecUnion>
+exists: <BindingOrSpecUnion>+
 suchThat?: <ClauseUnion>+
 ```
 
 ```group
 [LabelHeader]?
-existsUnique: <BindingOrSpecUnion>
+existsUnique: <BindingOrSpecUnion>+
 suchThat?: <ClauseUnion>+
 ```
 
 ```group
 [LabelHeader]?
-forAll: <BindingOrSpecUnion>
+forAll: <BindingOrSpecUnion>+
 where?: <ClauseUnion>+
 suchThat?: <ClauseUnion>+
 then: <ClauseUnion>+
@@ -1235,7 +1256,7 @@ then: <ClauseUnion>+
 
 ```group
 [LabelHeader]?
-let: <BindingOrSpecUnion>
+let: <BindingOrSpecUnion>+
 where?: <ClauseUnion>+
 then: <ClauseUnion>+
 ```
@@ -1293,7 +1314,7 @@ Examples:
 - `using:` is lowercase
 - `Requires:` is capitalized
 - `Enables:` is capitalized
-- `Metadata:` is capitalized
+- `Appendix:` is capitalized, while its nested entries (`called:`, `justification:`, `aliases:`, `writing:`, `references:`, `metadata:`) are lowercase
 - `that:` is lowercase
 
 ### Singular structural sections keep only the first parsed value
@@ -1312,8 +1333,8 @@ Examples of affected sections:
 
 - `Declares:`
 - `Defines:`
-- `specifies:`
-- `expresses:`
+- `Refines:` `specifies:`
+- `not:`
 - `overview:`
 - all singular resource item sections
 
@@ -1348,15 +1369,18 @@ because declaration statements accept `is` facts, comma-separated subjects, and
 quoted operators. If a line is not a declaration statement, it is then tried as
 a formulation expression.
 
-### Empty-but-required sections are real
+### Marker sections and empty-but-required sections
 
-Sections like:
+Several sections are required zero-argument marker sections that **reject** any inline or body content:
 
 - `States:`
-- `Axiom:`
+- `Axiom:`, `Theorem:`, `Conjecture:`
+- `Equivalent:`
+- `Disambiguates:`
 - `piecewise:`
+- `abstractly:`, `implicitly:`, `explicitly:`, `view:`
 
-are required as sections even though their contents are `OpenText*` and may therefore be empty.
+By contrast, sections whose contents are `OpenText*` — `Relation:`, `Topic:`, and `discoverer:` — are required as sections and may either be left empty or carry quoted prose.
 
 ### Reserved-word field names gain trailing underscores in Rust
 

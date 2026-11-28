@@ -1,59 +1,74 @@
--- The `Defines` family: concrete values, values with parts, abstract
--- declarations, and the realizations that fill them in.
+-- The `Defines` family: concrete values, values inheriting types from defined
+-- commands, values with destructured parts, abstract declarations, and the
+-- realizations that implement them.
 
 
--- A value built with `\type@value` states its type through the build.
+-- The empty set, coerced to `\set` with a vacuous builder condition.
 [\empty.set]
-Defines: E := \set@{x : ...}
+Defines: E := \set@{x_ : x_ "in" \naturals.set | x_ != x_}
 Appendix:
 . called: "the empty set"
+. written: "\emptyset"
 Id: "57e85a10-0056-47f9-99e6-29fecbcb150a"
 
 
+-- A singleton set of a natural number, built via `\set@{...}`.
 [\unit.set]
-Defines: U := \set@{x : ...}
+Defines: U := \set@{n_ : n_ is \natural | n_ = \zero}
 Appendix:
-. called: "the unit set"
+. called: "the singleton zero set"
+. written: "\{0\}"
 Id: "1e934b9d-74dd-4899-87c2-b0aba62c4216"
 
 
+-- A `Defines` target may omit `is <type>` when it assigns another `Defines`
+-- command, automatically inheriting that command's output type (`\set`).
+[\zero.singleton.alias]
+Defines: S := \unit.set
+Appendix:
+. called: "alias of the singleton zero set"
+Id: "f1a2b3c4-3333-4aaa-8bbb-000000000001"
+
+
+-- A distinguished element of `\unit.set`, defined indirectly via `expresses:`.
 [\the.point]
 Defines: p is \element:of{\unit.set}
+expresses: p = \zero
 Appendix:
-. called: "the distinguished point"
+. called: "the distinguished element of the zero singleton"
 Id: "99bc0132-e074-4af8-abb4-ebfb31053bd7"
 
 
--- `specifies:` says what each part of a destructuring target is. Every item
--- must supply a value, with `:=` here or indirectly through `expresses:`.
-[\unit.pair]
-Defines: P ::= (L, R)
+-- `specifies:` supplies each component of a destructuring target directly with
+-- `:=` or indirectly through `expresses:`.
+[\unit.interval.bounds]
+Defines: P ::= (low, high)
 specifies:
-. L := \zero
-. R := \one
+. low := \zero
+. high := \one
 Appendix:
-. called: "the unit pair"
+. called: "the unit interval bounds"
 Id: "7a8868cb-2094-4205-977b-21d11a5e629e"
 
 
--- A `specifies:` item may instead state a type and leave the value to
--- `expresses:`. That is what `expresses:` is for: defining something
--- indirectly.
-[\sign.pair]
-Defines: S ::= (low, high)
+-- A `specifies:` item may state a component's type and leave its defining
+-- equation to `expresses:`.
+[\unit.clamp.triple]
+Defines: T ::= (low, high, clamp)
 specifies:
-. low is \natural
-. high := \one
+. low := 0.0
+. high := 1.0
+. clamp is \function:on{\reals.set}:to{\reals.set}
 expresses:
-. low := \zero
+. clamp := (x_ "in" \reals.set) => x_
 Appendix:
-. called: "the sign pair"
+. called: "the unit clamping triple"
 Id: "c8118a7a-7309-4654-b2a3-7533ff37c41a"
 
 
--- `abstractly:` leaves the `is`/`"op"` items of `specifies:` open, for a
--- `Realizes:` to supply. A `Declares` is an interface, an abstract `Defines` is
--- an abstract base class, and a plain `Defines` is a concrete one.
+-- `abstractly:` leaves the typed `specifies:` items open for a `Realizes:` to
+-- supply. `Enables: view:` lets `\pointed.system` also be viewed as its carrier
+-- set `S`.
 [\pointed.system]
 Defines: Ps ::= (S, p, f)
 abstractly:
@@ -61,13 +76,16 @@ specifies:
 . S is \set
 . p "in" S
 . f is \function:on{S}:to{S}
+Enables:
+. view:
+  as: X := S is \set
 Appendix:
-. called: "a pointed system"
+. called: "a pointed dynamical system"
 Id: "1f8c9fc8-0e72-4759-9d5b-8f141a5267b2"
 
 
--- A `Realizes` names the declaration it realizes with `:=`, and must supply
--- every symbol that declaration left abstract.
+-- A `Realizes` names the abstract declaration with `:=` and supplies every
+-- component that declaration left open.
 [\unit.system]
 Realizes: Ps := \pointed.system
 specifies:
@@ -75,33 +93,35 @@ specifies:
 . p := \the.point
 . f := \identity:on{\unit.set}
 Appendix:
-. called: "the unit pointed system"
+. called: "the trivial pointed system on the zero singleton"
 Id: "2fd0eff6-585a-4a78-acee-5ad00b69f90e"
 
 
--- A realization may define indirectly through `expresses:` too, and takes the
--- same support sections as `Defines`.
-[\lazy.unit.system]
+-- A realization may also define components indirectly through `expresses:`,
+-- here implementing the successor system on the natural numbers.
+[\successor.system]
 Realizes: Ps := \pointed.system
-using: k is \natural
+using: step is \natural
 specifies:
-. S := \unit.set
-. p := \the.point
+. S := \naturals.set
+. p := \zero
 . f is \function:on{S}:to{S}
 expresses:
-. f := \identity:on{\unit.set}
+. f := (n_ is \natural) => n_ + \one
 Appendix:
-. called: "the lazily described unit system"
+. called: "the successor system on the natural numbers"
 Id: "c9ec2e4f-2ec0-408a-907a-cdee2c79e1c4"
 
 
--- A realized value carries the types its declaration gave its components, so
--- destructuring either one proves the same facts.
+-- A realized value carries the types its abstract declaration gave its
+-- components, and direct `..` access reaches components without destructuring.
 Theorem:
 given: Ps ::= (S, p, f) := \unit.system
 then:
 . S is? \set
 . p "in"? S
+. f(p) = p
+. \unit.system..p = p
 Appendix:
-. called: "a realization keeps its declaration's types"
+. called: "a realization preserves its abstract declaration's types"
 Id: "6c1f5583-6be5-4fbf-bbdc-fd3276bf6a6a"

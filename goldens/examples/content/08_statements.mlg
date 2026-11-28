@@ -1,108 +1,170 @@
--- `States`, the theorem-like items, and every clause group.
+-- `States`, propositions (`Axiom`, `Theorem`, `Conjecture`), `Example`, and
+-- every structural clause group in realistic mathematical context.
 
 
--- `States` defines a named statement with a `that:` body. The `States:` section
--- itself takes no argument; prose describing it goes in `Documented:`.
-[\commutes:with{y}]
+-- `States` defines a named proposition with a `that:` body. The `States:`
+-- section itself is a marker; documentation lives under `Appendix:`.
+[\commutes:in{M ::= (X, *)}:with{y}]
 States:
-when: y is \element:of{\unit.set}
+when:
+. M is \magma
+. y "in" M
 that:
-. forAll: x is \element:of{\unit.set}
-  then: x "in" \unit.set
+. forAll: x "in" M
+  then: x * y = y * x
 Appendix:
-. called: "commutes with $y?$"
-. description: "Order does not matter."
+. called: "$y?$ commutes with every element of $M?$"
+. description: "States that $y$ lies in the center of the magma $M$."
 Id: "bc970e75-9dfb-4274-b470-6fa57ea77741"
 
 
--- Theorem-like items share one shape: `then:` is required, and `given:`,
--- `where:` and `iff:` are optional. Without a heading, the item is anonymous.
+-- An anonymous theorem with `given:`, `where:`, `suchThat:`, and `Proof:`.
 Theorem:
 given:
-. A is \set
-. B is \set
-where: A \:subset:/ B
-then: A \:subset?:/ B
+. A, B, C is \set
+where:
+. A \:subset:/ B
+. B \:subset:/ C
+suchThat: A \:subset?:/ C
+then:
+. forAll: x "in" A
+  then: x "in"? C
+Proof: "Any element {. x "in" A .} satisfies {. x "in"? B .} and hence
+        {. x "in"? C .}."
 Appendix:
-. called: "a subset is a subset"
+. called: "transitivity of subset inclusion"
 Id: "1706b3ba-b789-448c-a5c4-d2bc619e1933"
 
 
--- With a heading, the result registers a command and can be referenced.
-[\membership.axiom]
+-- With a command heading, an `Axiom` registers a signature that prose can cite
+-- with `{: \extensionality.axiom :}` and `have:` can cite with `by:`.
+[\extensionality.axiom]
 Axiom:
-given: X is \set
-then: X is? \set
+given: A, B is \set
+then:
+. have: A = B
+  iff:
+  . forAll: x "in" A
+    then: x "in"? B
+  . forAll: y "in" B
+    then: y "in"? A
 Appendix:
-. called: "the membership axiom"
+. called: "axiom of extensionality"
 Id: "d570056b-6eb9-41fb-8284-4adbe6ddeda8"
 
 
-[\open.question]
+-- A `Conjecture` states an unproven hypothesis about real or natural numbers.
+[\collatz.like.hypothesis]
 Conjecture:
 given: n is \natural
-then: n is? \natural
+then:
+. exists: m is \natural
+  suchThat:
+  . anyOf:
+    . n + m = n
+    . m + \one != \zero
 Appendix:
-. called: "an open question"
+. called: "an illustrative number-theoretic conjecture"
 Id: "e6d5caf7-f4bf-4333-8e6f-b3c65d38cfb2"
 
 
--- `iff:` states the converse alongside `then:`.
+-- `iff:` states a biconditional theorem characterizing mutual inclusion.
 Theorem:
-given: n is \natural
-then: n is? \natural
-iff: n is? \natural
+given: A, B is \set
+then: A = B
+iff:
+. A \:subset?:/ B
+. B \:subset?:/ A
 Appendix:
-. called: "a trivial equivalence"
+. called: "double inclusion characterizes set equality"
 Id: "862537de-6ab3-4b30-b4e9-2651927ab166"
 
 
--- Every clause group, in one place.
+-- Every structural clause group (`allOf:`, `anyOf:`, `oneOf:`, `not:`,
+-- `forAll:` with `where:`/`suchThat:`, `exists:`, `existsUnique:`, `if:`,
+-- `let:`, `equivalently:`, `piecewise:` with `elseIf:`, and `have:`/`iff:`)
+-- demonstrated on real arithmetic and group algebra.
 Theorem:
-given: n is \natural
+given:
+. G ::= (X, *, e) is \group
+. x, y is \real
+. A, U is \set
+where: A \:subset:/ U
 then:
 . allOf:
-  . n = n
+  . x + y = y + x
   . anyOf:
-    . n = n
+    . x < y
     . oneOf:
-      . n = n
-      . not: n = n
-. forAll: m is \natural
-  where: m = m
-  then: m = m
-. exists: m is \natural
-  suchThat: m = m
-. existsUnique: m is \natural
-  suchThat: m = m
-. if: n = n
-  then: n = n
-. let: m := n
-  then: m = m
+      . x = y
+      . not: x = y
+. forAll: a "in" X
+  where: a != e
+  suchThat: a "in"? X
+  then: a * e = a
+. exists: b "in" X
+  suchThat: a_id := b * e = b
+. existsUnique: id "in" X
+  suchThat:
+  . forAll: a "in" X
+    then: id * a = a
+. if: x < y
+  then: y != x
+. let: s := x + y
+  where: s is \real
+  then: s - y = x
 . equivalently:
-  . n = n
-  . n = n
+  . x = y
+  . x - y = \natural.to.real{\zero}
 . piecewise:
-  if: n = n
-  then: n = n
-  else: n = n
-. have: n = n
-  iff: n = n
+  if: x < \natural.to.real{\zero}
+  then: \abs{x} = -x
+  elseIf: x = \natural.to.real{\zero}
+  then: \abs{x} = \natural.to.real{\zero}
+  else: \abs{x} = x
+. have: x + (-x) = \natural.to.real{\zero}
+  iff: -x + x = \natural.to.real{\zero}
 Appendix:
-. called: "every clause group"
+. called: "clauses in real arithmetic and group theory"
 Id: "85a7e92b-f346-4d3c-b618-b64c9b683d71"
 
 
--- A `have:`/`asserting:` group is the escape hatch: it asserts the `have:`
--- items hold given the `asserting:` items. `by:` and `because:` record
--- justification the checker only reference-checks.
+-- A `have:`/`asserting:` group discharges a step with local assumptions and
+-- records `by:` theorem references and `because:` prose or clauses.
 Theorem:
-given: n is \natural
+given:
+. A, B is \set
+where:
+. A \:subset:/ B
+. B \:subset:/ A
 then:
-. have: n = n
-  asserting: n = n
-  by: \membership.axiom
-  because: n = n
+. have: A = B
+  asserting:
+  . forAll: x "in" A
+    then: x "in"? B
+  . forAll: y "in" B
+    then: y "in"? A
+  by: \extensionality.axiom
+  because: "Two sets with identical elements are equal by extensionality."
 Appendix:
-. called: "an asserted step"
+. called: "mutual subsets are equal"
 Id: "9539b3b1-6b22-4a24-8fd2-84f87f9f8f5d"
+
+
+-- An `Example:` interleaves checked mathematical clauses with explanatory prose.
+[\identity.composition.example]
+Example:
+. "Take any set $X$ and form its identity function."
+. forAll: X is \set
+  then:
+  . let: id := \identity:on{X}
+    then:
+    . forAll: x "in" X
+      then: id(x) = x
+. "Applying the unit clamping triple's identity clamp to a real value preserves it."
+. forAll: r "in" \reals.set
+  then: \abs{r} = \abs{r}
+Appendix:
+. metadata:
+  . version: "1.0"
+Id: "f1a2b3c4-6666-4aaa-8bbb-000000000001"

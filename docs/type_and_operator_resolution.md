@@ -126,10 +126,17 @@ record TypeContext:
     defined_symbols: Set<Key>
     collection_literals: Map<Key, SetExpression>
     destructured_components: Map<Key, List<Key>>
+    variadic_index_types: Map<Key, TypeFact>
+    justifications: Map<Label, HaveGroup>
+    reference_labels: Set<Label>
+    local_aliases: List<AliasGroup>
     active_disambiguations: List<DisambiguationKey>
     defer_unresolved_provided_symbols: Boolean
 
 record SignatureRegistry:
+    definitions: Map<TypeSignature, DefinitionEntry>
+    placeholder_definitions: Map<TypeSignature, List<TypeSignature>>
+    definition_summaries: Map<TypeSignature, DefinitionSummary>
     type_infos: Map<TypeSignature, DefinitionTypeInfo>
     extension_rules: List<TypeExtensionRule>
     refinement_extension_rules: List<RefinementExtensionRule>
@@ -139,21 +146,31 @@ record SignatureRegistry:
     disambiguations: List<DisambiguationRule>
     provided_symbols: List<ProvidedSymbolRule>
     cast_as_rules: List<CastAsRule>
+    collection_type_signatures: List<TypeSignature>
+    abstract_declarations: Map<TypeSignature, AbstractDeclaration>
+    collection_bodies: Map<TypeSignature, SetExpression>
     numeric_specifications: NumericSpecifications
 
 record DefinitionTypeInfo:
     signature: TypeSignature
     type_key: TypeKey
     parameters: List<Key>
+    arg_groups: List<ArgGroupShape>
+    variadic_parameters: List<VariadicParameter>
     hidden_parameters: List<Key>
     using_parameters: List<Key>
+    given_parameters: List<Key>
+    inferred_parameters: List<Key>
     requirements: List<TypeFact>
     outputs: List<TypeFact>
     substitutions: List<(Key, Key)>
     defined_subject: Option<Key>
+    defined_value: Option<Key>
     described: Option<Key>
     component_types: List<TypeFact>
     component_refinements: List<TypeFact>
+    set_element_target: Option<SetTarget>
+    set_element_types: List<TypeFact>
     parameter_destructurings: List<DestructuredParameter>
 
 record TypeExtensionRule:
@@ -236,9 +253,9 @@ record NumericTypeSpecification:
 
 record NumericSpecifications:
     decimal: Option<NumericTypeSpecification>
-    zero_or_positive_integer: Option<NumericTypeSpecification>
-    positive_integer: Option<NumericTypeSpecification>
-    integer: Option<NumericTypeSpecification>
+    zero_or_positive_int: Option<NumericTypeSpecification>
+    positive_int: Option<NumericTypeSpecification>
+    int: Option<NumericTypeSpecification>
 ```
 
 `TypeContext` contains facts and symbols in the current lexical scope.
@@ -710,6 +727,58 @@ function FACT_HAS_TYPE_SIGNATURE(
 into the requirements recorded on its declaration. Requirements involving a
 `using:` parameter are excluded because that parameter is unavailable from the
 type fact alone. Hidden parameters receive stable internal placeholder keys.
+
+### Inherited `Defines:` output facts
+
+`DEFINED_OUTPUT_FACTS_FOR_KEY` looks up the output facts declared by a `Defines:`
+or `Realizes:` command. When a `Defines:` target omits an explicit `is <type>`
+and instead assigns another `Defines:` or `Realizes:` command expression (for
+example `Defines: X := \cmd{A}` or `Defines: X := A \.op./ B`), its
+`DefinitionTypeInfo` records `defined_value = Some(...)` while `outputs` may be
+empty. In that case `DEFINED_OUTPUT_FACTS_FOR_KEY` recursively resolves the
+assigned command's output facts (with a `visited` cycle guard) and rewrites
+their subject to the calling expression key.
+
+### Implicit-symbol holes and strict constraint unification
+
+At a command use site, three kinds of implicit parameters — `?`-suffixed
+inferred parameters (`inferred_parameters`), parameters of omitted optional
+tails (`hidden_parameters`), and unbound `using:` parameters
+(`using_parameters`) — are collected uniformly as **holes** (`collect_unbound_holes`)
+and solved together before checking the command's remaining requirements
+(`solve_command_holes`):
+
+1. Each requirement mentioning one or more holes is matched against facts known
+   in the calling `TypeContext` (including `Is`, `RefinedIs`, `Spec`,
+   `InfixSpec`, `MemberOf`, and `FunctionType` facts, plus subtype/view closure
+   where applicable) to produce candidate bindings for each hole.
+2. Candidate sets are intersected across all constraints mentioning the same
+   hole, with backtracking search when a requirement yields multiple candidate
+   assignments.
+3. If two constraints force incompatible bindings for the same hole (for
+   example, `A \:subset:/ U` and `B \:subset:/ V` with distinct ambient sets
+   `U != V` for a single implicit `U`), checking fails with a strict unification
+   conflict (`Unification conflict for implicit symbol ...`).
+4. If a hole remains unconstrained by any equality/containment binding (so no
+   unique concrete value is pinned), the checker still verifies that all type
+   requirements placed on that hole are mutually compatible.
+
+### Implicit type-checking assertions (`assuming:` and `suchThat:`)
+
+Optional `assuming:` sections (on `Declares`, `Defines`, `Realizes`, `Refines`,
+`States`, `Equivalent`, and `Relation`) and `suchThat:` sections (on `Axiom`,
+`Theorem`, `Conjecture`, `forAll:`, `exists:`, and `existsUnique:`) are checked
+as clauses and then implicitly asserted into the subsequent checking context via
+`assume_asserted_clause`:
+
+- `x is? T` adds `Is("x", T)` (or `RefinedIs` for refined commands).
+- `x "op"? Y` adds `Spec("x", "op", "Y")`.
+- `x \:spec?:/ Y` adds `InfixSpec("x", ...)`.
+- `\\and{...}` / `\\allOf{...}` and `allOf:` recursively assert each conjunct.
+
+Those asserted facts are then available to discharge requirements in later
+sections (such as `specifies:`, `satisfies:`, `expresses:`, `that:`, `to:`,
+`then:`, `iff:`, and `Proof:`).
 
 For a defined command with a direct view, the initial candidate rule is
 intentional. If `\naturals` is a `Defines:` value with `Enables: view: as: X :=

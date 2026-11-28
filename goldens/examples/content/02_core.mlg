@@ -1,20 +1,24 @@
--- The handful of definitions the rest of the collection builds on.
+-- Core set-theoretic and functional foundations that the rest of the
+-- collection builds on.
 
 
--- The simplest `Declares`: a name, and what it is called. `Requires:` states
--- what a use of `\set` must establish; `\\abstract` is the builtin standing for
--- "no further obligation".
+-- The foundational `Declares`: `\set` requires an abstract membership relation
+-- (`\\abstract` stands for "no further reduction obligation"), and enables
+-- reducing membership on coerced set-builder literals through `memberOf`.
 [\set]
 Declares: X
 Requires:
 . capability: x_ "in" X :-> \\abstract
+Enables:
+. from: Y ::= {y__ : ...}
+  capability: x_ "in" X :<->: x_ memberOf Y
 Appendix:
 . called: "set"
 Id: "5c194a16-3f2b-4a32-9a03-6fbafb40a8df"
 
 
--- A `Declares` target may state a spec relation, which is the type every value
--- of the defined type inherits.
+-- A `Declares` target may state a spec relation, which every value of the
+-- defined type inherits.
 [\element:of{X}]
 Declares: x "in" X
 when: X is \set
@@ -23,39 +27,75 @@ Appendix:
 Id: "85df16c5-71d3-4e68-b87c-bbb3a85e2df8"
 
 
--- A function type describes call behavior: parenthesized specs on both sides,
--- with each parameter written `_`.
+-- A function type describes call behavior with parenthesized spec literals on
+-- both sides, using `_` for each parameter.
 [\function:on{A}:to{B}]
 Declares: f(x__) is (_ "in" A) -> (_ "in" B)
 when: A, B is \set
 Appendix:
 . called: "function from $A?$ to $B?$"
+. written: "A? \rightarrow B?"
 Id: "98fa5602-43ab-4c75-b505-1795fa6884c8"
 
 
--- An infix command, written `\.name./` between its operands.
+-- An infix command, written `\.name./` between its operands, defining the
+-- Cartesian product as a coerced set builder.
 [A \.cross./ B]
 Defines: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
 when: A, B is \set
 Appendix:
-. called: "cross product of $A?$ and $B?$"
+. called: "Cartesian product of $A?$ and $B?$"
+. written: "A+? \times B+?"
 Id: "674ead6f-ab2b-4682-b1a2-1921630d7b52"
 
 
--- An operator-form target states its type about the operator itself, so this
--- says `*` is a function on pairs drawn from `X`.
+-- Set union and intersection defined as coerced set-builder expressions.
+[A \.union./ B]
+Defines: U := \set@{x_ : x_ "in" A; x_ "in" B}
+when: A, B is \set
+Appendix:
+. called: "union of $A?$ and $B?$"
+. written: "A+? \cup B+?"
+Id: "f1a2b3c4-1111-4aaa-8bbb-000000000001"
+
+
+-- An operator-form target states its type about the operator itself, so `*` is
+-- a binary operation taking two elements of `X` and returning an element of `X`.
 [\operation:on{X}]
-Declares: x_ * y_ is \function:on{X \.cross./ X}:to{X}
+Declares: x_ * y_ is (_ "in" X, _ "in" X) -> (_ "in" X)
 when: X is \set
 Appendix:
-. called: "operation on $X?$"
+. called: "binary operation on $X?$"
 Id: "da1c3fe8-35fc-46b0-95ff-63ec39bfd5ef"
 
 
--- A value whose type is a function type, used below to realize a successor.
+-- The identity function on any set, with `expresses:` specifying its action on
+-- every element of `X`.
 [\identity:on{X}]
 Defines: f(x__) is \function:on{X}:to{X}
 when: X is \set
+expresses:
+. forAll: x "in" X
+  then: f(x) = x
 Appendix:
-. called: "the identity on $X?$"
+. called: "the identity function on $X?$"
+. written: "\operatorname{id}_{X?}"
 Id: "3c86ff2d-f2e5-4b70-acb6-5c8502af9fe4"
+
+
+-- Function composition, illustrating multi-parameter `when:` requirements and
+-- an `expresses:` equation characterizing the composite at every point.
+[g \.compose./ f]
+Defines: h(x__) is \function:on{A}:to{C}
+using:
+. A, B, C is \set
+when:
+. f is \function:on{A}:to{B}
+. g is \function:on{B}:to{C}
+expresses:
+. forAll: x "in" A
+  then: h(x) = g(f(x))
+Appendix:
+. called: "composition of $g?$ and $f?$"
+. written: "g+? \circ f+?"
+Id: "f1a2b3c4-1111-4aaa-8bbb-000000000002"

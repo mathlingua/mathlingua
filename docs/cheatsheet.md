@@ -53,20 +53,25 @@ A concise high-level reference for the Mathlingua language. For in-depth specifi
 | `equivalently` | `equivalently:` | Asserts that all nested clauses are mutually equivalent |
 | <a id="supporting-sections"></a>**Supporting Sections** | | |
 | `using:` | `using: x is \set` | Fixed parameters or contextual variables in scope |
-| `when:` | `when: x != 0` | Preconditions or validity conditions for a definition or rule |
+| `when:` | `when: x is \real` | Parameter typing or spec preconditions for a definition, relation, or disambiguation branch |
 | `assuming:` | `assuming: A \:subset?:/ U` | Optional clauses after `when:` on definitions and relations implicitly asserted for type checking |
-| `where:` | `where: x "in" X` | Conditions constraining quantified variables or proposition givens |
+| `where:` | `where: x "in" X` | Conditions constraining quantified variables, `let:` bindings, or proposition givens |
 | `suchThat:` | `suchThat: A \:subset?:/ U` | Optional clauses on propositions (`Axiom`/`Theorem`/`Conjecture`), `forAll:`, `exists:`, and `existsUnique:` implicitly asserted for type checking |
 | `given:` | `given: x is \real` | Arbitrary given objects or hypotheses in a theorem, axiom, or conjecture |
 | `then:` | `then: P` | Conclusion or consequence of premises |
 | `iff:` | `iff: P` | Necessary and sufficient condition |
+| `that:` | `that: P` | Body clauses of a `States:` definition |
+| `to:` | `to: \cmd` | Target expression(s) of `Equivalent:`, `Disambiguates:`, directed `Relation:`, or `Topic:` `Related:` |
+| `specifies:` | `specifies: e "in" X` | Component types/values on `Declares`/`Defines`/`Realizes`, inherited refinement on `Refines`, or relationship meaning on `Relation`/`Topic` |
 | `satisfies:` | `satisfies: x > 0` | Invariant or property guaranteed by a declaration or refinement |
 | `extends:` | `extends: X is \group` | Declares inheritance or specialization of base types or structures |
-| `abstractly:` | `abstractly:` | Marks a definition specification as abstract, requiring realization |
-| `expresses:` | `expresses: P` | Logical expression that a definition or realization equates to |
+| `abstractly:` | `abstractly:` | Marks a `Defines:` specification as abstract, requiring realization via `Realizes:` |
+| `implicitly:` / `explicitly:` | `implicitly:` | Marks a `Refines:` entry as inheriting vs. overriding a supertype's refinement |
+| `expresses:` | `expresses: P` | One or more clauses that define a `Defines:` or `Realizes:` value indirectly |
+| `by:` / `because:` | `by: \thm` | Optional theorem reference(s) and prose/clause rationale on `have:` and `Appendix:` `. justification:` |
 | `Requires:` | `Requires:` | Prerequisites (capabilities or definitions) needed to use an entry |
 | `Enables:` | `Enables:` | Capabilities, views, or conversions provided by an entry |
-| `Proof:` | `Proof: "..."` | Informal or formal proof body for a theorem |
+| `Proof:` | `Proof: "..."` | Informal or formal proof body for a theorem (placed before `Appendix:`) |
 | `Appendix:` | `Appendix:` | Container for auxiliary sections (`called:`, `written:`, `adjective:`, `description:`, `overview:`, `related:`, `discoverer:`, `writing:`, `justification:`, `aliases:`, `references:`, `metadata:`) |
 | `. called:` / `. written:` / `. description:` | `. called: "set"` | Human-readable documentation entries directly inside `Appendix:` |
 | `. justification:` | `. justification:` | Deductive steps inside `Appendix:` discharging formulation labels (`[:label:]`) |
@@ -98,17 +103,20 @@ A concise high-level reference for the Mathlingua language. For in-depth specifi
 | Infix Spec Query | `a \:subset?:/ b` | Boolean predicate testing an infix specification |
 | Adjective Refinement | `\(nonempty)::set` | Modifies a command type with a refined adjective constraint |
 | Coercion | `\set@{...}` | Coerces a raw value to a command type |
-| Function Literal | `(x_) => x_ + 1` | Anonymous lambda/mapping literal from inputs to an expression |
+| Function Literal | `(x_ is \real) => x_ + 1` | Anonymous lambda/mapping literal from typed inputs to an expression |
 | Function Type | `(_ is \real) -> (_ is \real)` | Type signature for functions mapping domain to codomain |
+| Named Function Call | `f[| x := 1, ... := 0 |]` | Calls a function with explicit `param := value` bindings |
+| Membership / Satisfies | `x memberOf X` / `x satisfies S` | Built-in collection membership and specification-satisfaction predicates |
+| Command Context | `\cmd{A}#using{X := S}` | Supplies `#using{...}` or `#given{...}` context bindings at a command use site |
 | Expression Alias | `f(x_) :=> x + x` | Expression or operator alias mapping a form to an expression reduction |
 | Directed Spec Alias | `x_ "in" R :-> x is \real` | Directed specification capability asserting that the LHS implies the RHS |
 | Equivalence Spec Alias | `x_ "in" S :<->: x is \integer` | Bidirectional specification capability asserting LHS and RHS equivalence |
-| Named Infix Operator | `a \|*\| b` | Infix named operator invocation (also `a :\|*\| b`, `a \|*\|: b`, `a :\|*\|: b`) |
-| Member Access / Call | `M.*` / `M.*(x, y)` | Accesses or invokes a field/operation of a structured object |
+| Named Operators | `a \|op\| b`, `neg\| x`, `x \|prime` | Infix (`\|op\|`, `:\|op\|`, `\|op\|:`, `:\|op\|:`), prefix (`name\|`), and postfix (`\|name`) named operators |
+| Member Access / Call | `M.*` / `M.*(x, y)` / `\reals..0` | Accesses or invokes a component of a structured object (`.` on variables, `..` on commands) |
 | Set Literal / Builder | `{x_ : x_ "in" X}` | Set comprehension or collection literal |
 | Tuple | `(a, b)` | Ordered sequence of two or more elements |
 | Variadic / Slice | `x...` / `x[1...n]` | Represents an arbitrary sequence of arguments or array slice |
-| Inferred Symbol | `x?` / `x?_` | Parameter whose value is inferred from context |
+| Inferred Symbol | `x?` / `x?_` | Parameter whose value is inferred from context (or inferred mapping selector in named calls) |
 | Inline Label | `(x + y)[:label:]` | Labels a grouped formulation (referenced via `(:label:)` in `Appendix:` `justification:`, `references:`, or prose) |
 | Label Reference | `(:label:)` / `(:l1, l2:)` | Refers to a defined label in `Appendix:` `justification:` `. for:`, `references:` `. for:`, or prose |
 | Line Label | `. [label]: x + y` | Labels a single-line formulation or text argument in a section |
@@ -117,7 +125,7 @@ A concise high-level reference for the Mathlingua language. For in-depth specifi
 | Builtin Capability Target | `\\abstract` | Placeholder target for abstract specification capabilities in `:->` or `:<->:` |
 | Builtin Connectives | `\\not{P}`, `\\and{...}`, `\\or{...}`, `\\oneOf{...}` | Formulation-level logical connectives (also `\\allOf`, `\\anyOf`) |
 | Builtin Quantifiers | `\\forAll{...}:then{...}`, `\\exists{...}`, `\\let{...}` | Formulation-level quantifiers (`\\forAll`, `\\exists`, `\\existsUnique`, `\\let`) |
-| Builtin Conditionals | `\\if{...}:then{...}`, `\\have{...}:iff{...}`, `\\piecewise{}` | Formulation-level conditional statements (`\\if`, `\\have`, `\\piecewise`) |
+| Builtin Conditionals | `\\if{...}:then{...}`, `\\have{...}:iff{...}`, `\\piecewise:if{...}:then{...}:else{...}` | Formulation-level conditional statements (`\\if`, `\\have`, `\\piecewise`) |
 | Builtin Variadic Commands | `\\map{...}:to{...}`, `\\leftReduce{...}:on{...}` | Pointwise slice mapping (`\\map`) and reductions (`\\leftReduce`, `\\rightReduce`) |
 | <a id="prose-delimiters-and-citations"></a>**Prose Delimiters and Citations** | | |
 | Inline Formulation | `{. x + y .}` | Embeds an inline math expression inside prose text |
@@ -126,14 +134,14 @@ A concise high-level reference for the Mathlingua language. For in-depth specifi
 | Labeled Prose Quote | `''quote''[:ref:]` | Labels a quoted phrase in prose (can be cited via `Appendix:` `. references:` `. for: (:ref:)`) |
 | Scoped Context | `<<scope>> ... <</scope>>` | Constrains mathematical context and notations within prose |
 | <a id="command-line-interface-cli"></a>**Command-Line Interface (CLI)** | | |
-| Check | `mlg check` | Type-checks and validates all `.mlg` files in the collection |
-| Search | `mlg search <query>` | Searches collection for matching symbols, commands, or text |
-| Structure | `mlg structure` | Validates and visualizes collection document hierarchy and links |
-| Format | `mlg format` | Formats `.mlg` files into canonical indentation and style |
-| View | `mlg view` | Launches local web viewer server to browse knowledge base |
-| Export | `mlg export` | Exports collection to static HTML website |
-| Clean | `mlg clean` | Removes build artifacts and cached output files |
-| Init | `mlg init` | Initializes a new Mathlingua collection in current directory |
-| Release | `mlg release` | Creates a distribution bundle or archive of collection |
-| LSP | `mlg lsp` | Starts Language Server Protocol server for IDE integration |
+| Check | `mlg check [--watch] [--json] [--diagnostic-schema] [--read-only] [PATH...]` | Type-checks, validates LaTeX, and checks all `.mlg` files in the collection |
+| Search | `mlg search [--json] <query>` | Searches collection for matching symbols, commands, or text |
+| Structure | `mlg structure [--json]` | Inspects collection document hierarchy, TOC, and items |
+| Format | `mlg format [--ids]` | Formats `.mlg` files to the configured margin (`--ids` also inserts missing `Id:` sections) |
+| View | `mlg view [--port PORT] [--watch] [--read-only]` | Launches local web viewer server to browse the collection |
+| Export | `mlg export [--base-path PATH] [--cname DOMAIN] [--force]` | Exports collection to a static HTML website in `outputDir` (default `docs/`) |
+| Clean | `mlg clean` | Removes the generated `outputDir` directory |
+| Init | `mlg init` | Scaffolds `mlg.json` and `content/` in the current directory |
+| Release | `mlg release --summary TEXT [--dry-run] [--diff]` | Records a versioned release snapshot in `metadata/`, bumps `mlg.json`, and re-exports the site |
 | Version | `mlg version` | Prints installed Mathlingua version information |
+| Hidden Commands | `mlg lsp [--read-only]`, `mlg debug`, `mlg extract <ID>`, `mlg report <ID...>`, `mlg whte_rbt.obj` | Editor LSP server and internal/diagnostic subcommands |

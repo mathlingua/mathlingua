@@ -4,25 +4,32 @@ Title: "MathLingua by Example"
 Id: "e339210e-a8dd-4648-b3aa-4ad4abbf3dec"
 
 
-SectionTitle: "Sets"
+SectionTitle: "Sets and Algebraic Structures"
 Id: "d4d97fa3-a9a5-4f61-9552-0d4fcf75fee2"
 
 
-SubsectionTitle: "Membership"
+SubsectionTitle: "Membership, Operations, and Proofs"
 Id: "716bb969-0c46-422e-a34b-843734b58cab"
 
 
-Text: "Prose is Markdown with embedded LaTeX such as $x \in A$."
+Text: "This collection demonstrates every top-level construct, clause form,
+       heading shape, and support section in MathLingua through connected
+       definitions and theorems from set theory, arithmetic, and abstract
+       algebra. Prose is Markdown with embedded LaTeX such as $x \in A$, and may
+       also embed checked MathLingua fragments."
 Id: "724c00ef-7f11-469b-9efd-016d0193842a"
 
 
 -- Collection-wide rendering aliases: `name :~> LaTeX body`.
 Writing:
 . "naturals :~> \mathbb{N}"
+. "reals :~> \mathbb{R}"
+. "alpha :~> \alpha"
+. "epsilon :~> \varepsilon"
 Id: "a90bd793-1b41-4306-a07d-e8b84939f359"
 
 
--- Which types the numeric literal spellings fall back to.
+-- Which types the numeric literal and variadic-index spellings fall back to.
 Specify:
 . decimal:
   is: \real

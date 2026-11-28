@@ -26,7 +26,7 @@ the same territory.
 A MathLingua source file has two syntax layers.
 
 1. The structural layer is line-oriented. It recognizes groups such as
-   `Declares`, `Theorem`, `Documented`, and `forAll`.
+   `Declares`, `Theorem`, `Appendix`, and `forAll`.
 2. The formulation layer is expression-oriented. It recognizes mathematical
    forms such as `f(x_)`, `x "in" A`, `\function:on{A}:to{B}`,
    `(_ "in" A) -> (_ "in" B)`, and `G is \set via X`.
@@ -55,8 +55,8 @@ group kind.
 
 Section labels are case-sensitive and order-sensitive. Optional sections may be
 omitted, but if present they must appear in the order defined for that group.
-For example, `using:` must come before `when:`, and `Justification:` must come
-after `Documented:` in definition groups.
+For example, `using:` must come before `when:`, and `Requires:` and `Enables:`
+must come before `Appendix:` in definition groups.
 
 Lines whose trimmed text starts with `--` are comments. At the top level, blank
 lines and comments are skipped before the next group; inside a group or section,
@@ -272,15 +272,10 @@ operators (level 8) bind **tighter** — they are not the same level. Powers
 associate to the right; the arithmetic and named-operator levels associate to
 the left, so `a |f| b |g| c` is a left-associated chain.
 
-Subset expressions are intentionally narrow. The supported forms are:
-
-```text
-x[i]
-x[i, j]
-x[i[j]]
-```
-
-The names inside subset brackets must be names, not arbitrary expressions.
+Indexed expressions support the three name-only subset forms (`x[i]`, `x[i, j]`,
+`x[i[j]]`) as well as one- or two-dimensional indexed calls with arbitrary
+expression indices when the target is a plain name (such as `x[i + 1]` or
+`A[i + 1, j - 1]`).
 
 Expression labels are written after grouped expressions (using `[:...:]`), as
 a `[label]` heading on a group, or as a `[label]: ` prefix on a single-line `. ` argument.
@@ -293,7 +288,7 @@ Each section of code can have at most one label (chained labels `[:a:][:b:]` and
 . [sum]: x + y = y + x
 ```
 
-To refer to a label `abc` (for example in `Justification:`, `References:`, or prose),
+To refer to a label `abc` (for example in `Appendix:` `. justification:`, `Appendix:` `. references:`, or prose),
 use `(:abc:)` (or `(:l1, l2:)`).
 
 ## Commands and Signatures
@@ -405,8 +400,11 @@ arguments through the command.
 Reusing a length name constrains groups to the same number of arguments:
 
 ```text
-[\foo{x...n}:bar{y...n}]  # equal lengths
-[\foo{x...n}:bar{y...m}]  # independent lengths
+-- equal lengths
+[\dot.product:of{x...n}:with{y...n}]
+
+-- independent lengths
+[\bipartite.graph:left{x...n}:right{y...m}]
 ```
 
 Elements are referenced with indexed syntax such as `x[0]`, `x[1]`, `x[i_]`,
@@ -469,13 +467,13 @@ x[(i_, j_) := (1,1)...]
 x[(i_, j_) := (0,0)...]
 ```
 
-For example, `\foo{x[(i_, j_) := (1,1)...(m,n)]}` accepts a
+For example, `\matrix{a[(i_, j_) := (1,1)...(m,n)]}` accepts a
 semicolon-separated rectangular argument:
 
 ```text
-\foo{a, b, c;
-     x, y, z;
-     q, r, s}
+\matrix{a_11, a_12, a_13;
+        a_21, a_22, a_23;
+        a_31, a_32, a_33}
 ```
 
 Commas separate columns and semicolons separate rows. Every row must have the
@@ -569,7 +567,7 @@ require a separate `when:` entry. The mapping owner may still require one (for
 example, `when: f is \function`), and a selector may appear in `when:` when an
 additional refinement is useful, but omission of that selector entry is valid.
 
-In a `Documented:written:` template for one of these headings, the mapping
+In an `Appendix:` `. written:` template for one of these headings, the mapping
 owner placeholder denotes the mapping body rather than the entire anonymous
 mapping, and selector placeholders denote the parameters chosen at the use
 site. For example, `written: "\frac{d}{d x_?} f?"` renders
@@ -605,10 +603,11 @@ tail optional at reference sites:
 
 This declares both `\function:on` and `\function:on:to`. Multiple optional
 tails may be independently omitted as long as the remaining tails keep the order
-from the heading, so `[\foo:?baz{A}:?bar{B}]` accepts `\foo`,
-`\foo:baz`, `\foo:bar`, and `\foo:baz:bar`, but not `\foo:bar:baz`.
-The `:?` spelling is only for command declaration headings; expressions use
-plain `:baz` or `:bar` for the optional parts they include.
+from the heading, so `[\norm:?on{V}:?with{p}]` accepts `\norm`,
+`\norm:on`, `\norm:with`, and `\norm:on:with`, but not `\norm:with:on`.
+In command expressions, ordinary calls use plain `:on` or `:with` for the
+optional parts they include; a `:?` tail in a command expression is treated as a
+conditional optional tail active only when its argument names are in scope.
 
 Infix commands use `\.` and `./`:
 
@@ -680,9 +679,10 @@ form or declaration.
 - **Spec literals** are `\\specification` values written with an anonymous `_`
   subject — `_ is \set`, `_ "in" X` — and are instantiated by a `satisfies:`
   clause.
-- **Inferred parameters** are command arguments written `X?`: the first
-  occurrence introduces `X` with the type its position requires; later uses are
-  the plain name.
+- **Inferred parameters** are written `X?` (in command arguments, infix-spec
+  targets/tails such as `A \:subset:/ U?`, and quoted-spec targets such as
+  `x "in" U?`): the first occurrence introduces `X` as an implicit hole unified
+  from context requirements; later uses are the plain name.
 - **`memberOf`** (`x memberOf X`) is the builtin collection-membership form,
   and **`satisfies`** applies a spec literal to a subject.
 - A command may carry a **context suffix** `#using{...}` or `#given{...}`
@@ -772,15 +772,15 @@ For all {.a, b is \function:on{A?}:to{B?}.},
 ```
 
 Groups with command headings introduce command signatures: `Declares`,
-`Defines`, `Refines`, `States`, `Equivalent`, and theorem-like groups that have
-an optional heading. Duplicate signatures are rejected across all of these
-definition kinds.
+`Defines`, `Realizes`, `Refines`, `States`, `Equivalent`, and named `Axiom`,
+`Theorem`, `Conjecture`, and `Example` groups. Duplicate signatures are rejected
+across all of these definition kinds.
 
-`Declares`, `Defines`, and `States` must include a `called:` **or** `written:`
-item somewhere in their `Documented:` section. `Refines` must instead include an
-`adjective:` item (and its `Documented:` rejects `called:`). Theorem-like groups
-(`Axiom`, `Theorem`, `Conjecture`) may have documentation but require no such
-item.
+`Declares`, `Defines`, `Realizes`, and `States` must include a `called:` **or**
+`written:` item directly inside their `Appendix:` section. `Refines` must instead
+include an `adjective:` item (and its `Appendix:` rejects `called:`). Theorem-like
+groups (`Axiom`, `Theorem`, `Conjecture`) may have documentation in `Appendix:`
+but require no such item.
 
 ## Definition Groups
 
@@ -799,12 +799,14 @@ Optional sections, in order:
 ```text
 using:
 when:
+assuming:
 extends:
 specifies:
 satisfies:
 Requires:
 Enables:
 Appendix:
+. called: / . written: / . description: / . overview: / . related: / . discoverer: / . writing: ... as:
 . justification:
 . aliases:
 . writing:
@@ -826,27 +828,38 @@ of that part.
 optional `:=` definition, or both.
 
 ```text
-[\foo{s}]
-Defines: x is \bar{s}
+[\singleton:of{a}]
+Defines: S := \set@{x_ : x_ = a}
+when: a is \anything
 Appendix:
-. called: "foo"
+. called: "singleton of $a?$"
+. written: "\{a?\}"
 ```
 
-It accepts `abstractly:`, `using:`, `when:`, `specifies:`, `expresses:`, and the
-same support sections as `Declares`.
+It accepts `abstractly:`, `using:`, `when:`, `assuming:`, `specifies:`,
+`expresses:`, and the same support sections as `Declares`.
 
 A declaration whose target destructures a tuple says what each part is in
 `specifies:`:
 
 ```text
-[\foo]
-Defines: X ::= (A, B, C)
+[\sign.pair]
+Defines: P ::= (low, high, clamp(x_))
 specifies:
-. A := ...
-. B := ...
-. C is \real.function
+. low := \zero
+. high := \one
+. clamp is \function:on{\reals}:to{\reals}
 expresses:
-. piecewise: ...
+. forAll: x is \real
+  then:
+  . piecewise:
+    if: x < 0
+    then: clamp(x) = low
+    elseIf: x > 1
+    then: clamp(x) = high
+    else: clamp(x) = x
+Appendix:
+. called: "unit clamping triple"
 ```
 
 Every item must supply a **value**, either directly with `:=` or indirectly:
@@ -912,8 +925,8 @@ interface, a `Defines` marked `abstractly:` is an abstract base class, and a
   abstract declaration does.
 
 `Realizes` accepts the same support sections as `Defines` (`using:`, `when:`,
-`specifies:`, `expresses:`, `Requires:`, `Enables:`, `Documented:`, and the
-rest).
+`assuming:`, `specifies:`, `expresses:`, `Requires:`, `Enables:`, `Appendix:`,
+and `Id:`).
 
 `Refines` introduces a refined command.
 
@@ -1000,8 +1013,8 @@ Appendix:
 
 - `implicitly:` — the group merely restates the inherited definition. The body
   must contain **nothing beyond** the inherited `specifies:` clause (the scaffolding
-  `using:`/`when:` sections are allowed). Adding `satisfies:`, `Requires:`,
-  `Enables:`, or `Justification:` is an error — mark it `explicitly:` instead.
+  `using:`/`when:`/`assuming:` sections are allowed). Adding `satisfies:`, `Requires:`,
+  `Enables:`, or `Appendix:` `. justification:` is an error — mark it `explicitly:` instead.
   Furthermore, the `specifies:` clause must **literally name the parent type's
   refinement**: the same adjective(s) applied to a supertype of the refined base
   type (above, `\(finite)::magma`, because `\group` extends `\magma`). A
@@ -1022,41 +1035,44 @@ checking the definition body and stored so a value of the type carries them (see
 [Subtyping: The Type A `Declares` Extends](#subtyping-the-type-a-declares-extends)).
 
 `States` defines a command-backed statement body. The `States:` section itself
-takes no argument; prose describing the statement goes in `Documented:`:
+takes no argument; prose describing the statement goes in `Appendix:`:
 
 ```text
-[\commutative{S}]
+[\commutative:in{M}]
 States:
-when: S is \set
+when: M ::= (X, *) is \magma
 that:
-. forAll: x, y is \element.of{S}
+. forAll: x, y "in" X
   then:
   . x * y = y * x
 Appendix:
-. called: "commutative"
+. called: "commutative in $M?$"
 . description: "Order does not matter."
 ```
 
 ## Theorem-Like Groups
 
 `Axiom`, `Theorem`, and `Conjecture` share the same assertion shape. `then:` is
-required. `given:`, `where:`, `suchThat:`, `iff:`, and support sections are
-optional. A `Conjecture:` records an unproved statement. Its optional
-`Justification:` can capture supporting rationale or evidence, but does not
-claim a proof.
+required. `given:`, `where:`, `suchThat:`, `iff:`, `Proof:` (on `Theorem:` only),
+and `Appendix:` are optional. A `Conjecture:` records an unproved statement. Its
+optional `Appendix:` `. justification:` can capture supporting rationale or
+evidence, but does not claim a proof.
 
 The head section (`Axiom:`/`Theorem:`/`Conjecture:`) takes no argument. A
-result's name is given in `Documented:` `called:`, exactly as for the definition
+result's name is given in `Appendix:` `. called:`, exactly as for the definition
 items, and renders as the card's title (whether or not the item has a command
 heading).
 
 ```text
 Theorem:
 given:
-. X, Y is \set
-. f is \function:on{X}:to{Y}
+. G ::= (X, *, e) is \group
+. x "in" X
 then:
-. f is? \function:on{X}:to{Y}
+. x * e = x
+. e * x = x
+Appendix:
+. called: "identity law in a group"
 ```
 
 Items in `given:` introduce available type/spec facts and declared symbols for
@@ -1078,33 +1094,36 @@ requirements. For example, if a callee requires `A \:subset:/ U`, a definition
 with `using: U is \set`, `when: A is \set`, and `assuming: A \:subset?:/ U` can
 invoke it directly without a `have: ... asserting:` escape hatch.
 
-A theorem's optional `Proof:` appears after `Documented:` and before the
-remaining support sections (`Justification:`, `Aliases:`, `Writing:`,
-`References:`, and `Metadata:`). Although those support sections follow it in
-source order, the proof is checked and rendered against the complete item: it
-may use aliases and item-level writing overrides declared below it, and it may
-cite resources listed in `References:`. The viewer renders the proof as prose
-after the theorem card and offers a source toggle for the `Proof:` section.
+A theorem's optional `Proof:` appears after `then:`/`iff?:` and **before**
+`Appendix:`. Although `Appendix:` follows it in source order, the proof is
+checked and rendered against the complete item: it may use aliases and
+item-level writing overrides declared below it, and it may cite resources listed
+in `Appendix:` `. references:`. The viewer renders the proof as prose after the
+theorem card and offers a source toggle for the `Proof:` section.
 
 ### Examples
 
 `Example:` records worked mathematical content without claiming a proposition.
-Its body may be empty and may freely interleave declarations, expressions,
-nested clause groups, and quoted Markdown prose. The checker processes clause
-items in order, so declarations and assumptions established earlier are
-available to later items. An optional command heading names the example.
+Its body may be empty and may freely interleave checked clauses (such as `let:`,
+`forAll:`, `exists:`, or expressions) and quoted Markdown prose. Each clause
+item is checked against the example's context (using `let:` or quantifiers to
+bind local variables). An optional command heading names the example.
 
 ```text
 [\identity.example]
 Example:
-. X is \set
-. "Choose an element $x$ of $X$."
-. x is X
-. x = x
+. "For any set $X$, the identity function fixes every member of $X$."
+. forAll: X is \set
+  then:
+  . let: f := \identity:on{X}
+    then:
+    . forAll: x "in" X
+      then: f(x) = x
 ```
 
-Examples accept `Justification:`, `Aliases:`, `Writing:`, `References:`, and
-`Metadata:` support sections, but not `Documented:`.
+Examples accept an optional `Appendix:` containing `justification:`, `aliases:`,
+`writing:`, `references:`, and `metadata:` (no documentation items such as
+`called:` or `written:`).
 
 If a theorem-like group has a command heading, that heading introduces a
 signature and participates in duplicate-signature and reference checks.
@@ -1128,16 +1147,20 @@ expressions.
   an optional `where:` guard, and checks `then:` with those bindings and
   assumptions available.
 - **`if`** — assumes `if:`, checks `then:`.
-- **`have`** — assumes `iff:`, checks `have:`.
+- **`have`** — either a biconditional (`have:` / `iff:`, which assumes `iff:`
+  and checks `have:`) or an asserted step (`have:` with optional `asserting:`,
+  `by:`, and `because:`, which checks `have:` using the surrounding facts plus
+  any `asserting:` items).
 - **`equivalently`** — a chain of biconditionals — sugar for pairwise `iff`.
 - **`piecewise`** — assumes `if:`, checks `then:`, then accepts zero or more
   `elseIf:`/`then:` pairs; the optional `else:` is checked in the outer context.
-For example, a `let:` clause can introduce a member for use in its body:
+
+For example, a `let:` clause can introduce a local binding for use in its body:
 
 ```text
-. let: n "in" X
-  where: n != x
-  then: n = n
+. let: y := f(x)
+  where: y "in" B
+  then: g(y) = x
 ```
 
 The formulation language also provides builtin *command* forms used inline in
@@ -1210,37 +1233,47 @@ The separate sections are for communication: `Requires:` describes what the
 construct has by definition, while `Enables:` describes further operations that
 the construct supports.
 
-`Documented:` accepts:
+### `Appendix:`
+
+Auxiliary documentation, justifications, local aliases, item-level writing
+overrides, references, and metadata all live inside a single `Appendix:` section
+immediately before `Id:`. Documentation entries sit directly under `Appendix:`:
 
 - `written:`
 - `called:`
-- `adjective:` (required by `Refines`)
+- `adjective:` (required by `Refines`; `Refines:` rejects `called:`)
 - `description:`
-- `writing:`
+- `writing:` (with `as:`, for mapping-rendering templates)
 - `overview:`
 - `related:`
 - `discoverer:`
-- `notes:`
 
-`Justification:` (placed after `Documented:`) accepts `for:`/`have:` or `[label]`-headed
-`have:` groups, each targeting a labeled formulation (either via a `for:` section
-specifying one or more label references `(:label:)` or a `[label]` group heading)
-and an optional `asserting:`, `by:`, or `because:` section. The `because:` section
-accepts text `"..."` or clauses. Any
-group (`[label]`), single-line `. ` argument (`. [label]: ...`), or grouped
-expression, statement, or specification (`(...)[:label:]` or `(. ... .)[:label:]`)
-elsewhere in the item may define a label. For example, both a `specifies:` item
-`(.x is \foo.)[:1:]` and a `satisfies:` clause
+Alongside those documentation entries, `Appendix:` accepts up to one each of the
+lowercase container entries `justification:`, `aliases:`, `writing:` (without
+`as:`, for item-level `:~>` overrides), `references:`, and `metadata:` (restricted
+to the subset valid for that group kind — for instance `Topic:` accepts only
+`called:`, `Equivalent:` accepts documentation, `justification:`, and
+`references:`, and `Example:` omits documentation items).
+
+`. justification:` accepts `for:`/`have:` or `[label]`-headed `have:` groups,
+each targeting a labeled formulation (either via a `for:` section specifying one
+or more label references `(:label:)` or a `[label]` group heading) and an
+optional `asserting:`, `by:`, or `because:` section. The `because:` section
+accepts text `"..."` or clauses. Any group (`[label]`), single-line `. `
+argument (`. [label]: ...`), or grouped expression, statement, or specification
+(`(...)[:label:]` or `(. ... .)[:label:]`) elsewhere in the item may define a
+label. For example, both a `specifies:` item `(.H is \set.)[:1:]` and a
+`satisfies:` clause
 ``(.*' := \restriction:of{`*`}:on{X' \.set.cross./ X'}.)[:2:]`` can be referenced
-by `. for: (:1:)` and `. for: (:2:)` in `Justification:`. A matching entry
-establishes the labeled formulation using any `asserting:` items (exactly as an
-inline `have:` group would); when `asserting:` is absent, only the surrounding
-facts are used. Its `have:` must restate that formulation, an unmatched label is
-checked inline as usual, and every `Justification:` entry must reference a
-defined label.
+by `. for: (:1:)` and `. for: (:2:)` in `Appendix:` `. justification:`. A
+matching entry establishes the labeled formulation using any `asserting:` items
+(exactly as an inline `have:` group would); when `asserting:` is absent, only
+the surrounding facts are used. Its `have:` must restate that formulation, an
+unmatched label is checked inline as usual, and every `. justification:` entry
+must reference a defined label.
 
-`Aliases:` accepts `alias:` groups. `Metadata:` accepts `version:`.
-`References:` contains item-wide resource references such as `$book.chapter` (the
+`. aliases:` accepts `alias:` groups. `. metadata:` accepts `version:`.
+`. references:` contains item-wide resource references such as `$book.chapter` (the
 quoted form `"$book.chapter"` is accepted too), as well as label-specific
 `for:`/`entry:` groups:
 
@@ -1256,14 +1289,14 @@ where `for:` takes one or more label references (`(:ref1:)`) and `entry:` takes
 one or more resource references (`$book.chapter`). Labels can be defined on
 groups (`[ref1]`), lines (`. [ref1]: ...`), grouped formulations
 (`(...)[:ref1:]` or `(. ... .)[:ref1:]`), or quoted prose (`''quoted text''[:ref1:]`),
-and referenced in `References:` (`for: (:ref1:)`), `Justification:` (`for: (:ref1:)`),
-or prose (`(:ref1:)`). Duplicate label references in `References:` and references
+and referenced in `. references:` (`for: (:ref1:)`), `. justification:` (`for: (:ref1:)`),
+or prose (`(:ref1:)`). Duplicate label references in `. references:` and references
 to unknown labels are rejected. A resolved reference renders as the
 resource title followed by its authors in parentheses. If the resource has a
 URL, the citation links to it. PDF resources also accept `:page{n}`; the link's
 physical PDF page is `n + offset - 1`, where `offset` defaults to `1`.
-In the viewer, `References:` is a supporting section and is collapsed by
-default alongside `Documented:` and `Id:`.
+In the viewer, `Appendix:` is a supporting section and is collapsed by default
+alongside `Id:`.
 
 ### Mapping writing templates
 
@@ -1311,10 +1344,10 @@ Expression aliases use `:=>`.
 alias: f(x_) :=> x + x
 ```
 
-The alias left-hand side may be a form/declaration, a simple command header, or
-an infix command header. Refined command headers are not accepted on the
-left-hand side. The right-hand expression is parsed, but the current semantic
-reference walker does not validate command references inside that expression.
+The alias left-hand side may be a form/declaration, a simple command header, an
+infix command header, or a member access/call form (`x.inv`, `x.f(a_)`). Refined
+command headers are not accepted on the left-hand side. Command references inside
+the right-hand expression are validated by the semantic reference walker.
 
 Spec-operator aliases use `:->` for implication and `:<->:` for equivalence.
 
@@ -1366,11 +1399,12 @@ Each alias is a double-quoted string. Quotes are required because the body after
 `:~>` is raw non-empty LaTeX, not parsed formulation syntax, and could otherwise
 be misread as a formulation.
 
-Every top-level non-prose item (`Declares:`, `Defines:`, `Refines:`, `States:`,
-`Axiom:`, `Theorem:`, `Conjecture:`, `Relation:`, and `Disambiguates:`) may carry
-its own optional `Writing:` section immediately after `Aliases:`. It uses the same
-double-quoted `"name :~> body"` form and overrides, for that item only, how the
-named identifiers render — layered on top of the collection-wide `Writing:` group.
+Top-level items supporting full or example appendices (`Declares:`, `Defines:`,
+`Realizes:`, `Refines:`, `States:`, `Axiom:`, `Theorem:`, `Conjecture:`,
+`Example:`, `Relation:`, and `Disambiguates:`) may carry an optional
+`. writing:` entry inside `Appendix:`. It uses the same double-quoted
+`"name :~> body"` form and overrides, for that item only, how the named
+identifiers render — layered on top of the collection-wide `Writing:` group.
 
 ```text
 [\natural]
@@ -1383,12 +1417,15 @@ Appendix:
 
 ## Checks Performed by `mlg check`
 
-`mlg check` runs a fixed pipeline over the collection and reports every problem
-it finds as a `Level::Error` diagnostic (the checker itself emits no warnings).
+`mlg check` runs a fixed pipeline over the collection, reporting parsing and
+semantic problems as `Level::Error` diagnostics and (when error-free) validating
+rendered LaTeX formulas as `Level::Warning` diagnostics.
 It finishes with either `Checked N file(s)` or `Found N issue(s).`. Before
-checking, unless `mlg.json` sets `"formatOnCheck": false`, the collection is
-formatted first (`Formatted N file(s)`), and any top-level item missing an `Id:`
-has one generated and written back.
+checking, unless `mlg.json` sets `"formatOnCheck": false` or `--read-only` is
+passed, the collection is formatted first (`Formatted N file(s)`), and any
+top-level item missing an `Id:` has one generated and written back. Passing
+`--read-only` skips both formatting and on-disk `Id:` insertion and permits
+missing `Id:` sections during checking.
 
 The stages below run in order; each is enumerated so this section is the
 authoritative catalog of what the tool validates. Error text is shown as a
@@ -1423,9 +1460,9 @@ Parsing has three layers, each with its own diagnostics:
 
 - **Proto (line/indentation)** — line shape, section indentation, `:` on
   section lines, argument bullets, and `. [label]: ` prefixes on single-line
-  arguments (rejected on inline section arguments with `Inline section arguments
-  cannot have labels`). Single-quoted formulations are rejected
-  (`Single-quoted formulations are not allowed`).
+  arguments (rejected on inline section arguments with `Inline arguments cannot
+  have labels; write \`. [label]: ...\` on a new line instead`). Single-quoted
+  formulations are rejected (`Single-quoted formulations are not allowed`).
 - **Structural (groups/sections)** — each group must match its section
   pattern: a required (non-`?`) section that is missing reports
   `Expected section \`{name}\``, an out-of-order section reports `Expected
@@ -1458,15 +1495,15 @@ section`) holding a quoted UUID (`\`Id:\` section must contain a quoted UUID`,
 `Writing:` item is allowed. Command signatures must be unique across definition
 kinds (`Duplicate command signature \`{sig}\` ...`); mapping-parameter headers
 use their specialized signature for this check, so distinct specialized
-signatures may share one general signature. Each operator/function key may have
-at most one `Disambiguates` (`Duplicate disambiguation for
-\`{key}\``). Spec-infix headings (`\:...:/`) are allowed only on `Declares`, and
-refined headings (`::`) only on `Refines`.
+signatures may share one general signature. Each operator/function key may have at most one `Disambiguates` (`Duplicate
+disambiguation for \`{key}\``). Unrefined spec-infix headings (`\:...:/`) are
+allowed only on `Declares`, and refined headings (`::`, including refined
+spec-infix headings `\:(adj)::...:/`) only on `Refines`.
 
 `SourceCollection::load` normally inserts a fresh UUID `Id:` into a missing
-top-level item before these checks run, so `mlg check`, `mlg view`, and
-`mlg export` may update source files. Hand-authored or copied IDs must still be
-valid and unique.
+top-level item before these checks run (unless `--read-only` is passed), so
+`mlg check`, `mlg view`, and `mlg export` may update source files. Hand-authored
+or copied IDs must still be valid and unique.
 
 Within one semantic scope, a symbol may be introduced as a defined binding only
 once. Duplicate header parameters, repeated `:=` bindings, a nested quantifier
@@ -1479,9 +1516,10 @@ name introduced by the form may not.
 ### 6. Documentation requirements
 
 `Declares`, `Defines`, `Realizes`, and `States` must include a `called:` **or**
-`written:` item in `Documented:` (`{kind} entries must include either a \`called:\` or a
-\`written:\` item in \`Documented:\``). `Refines` must include an `adjective:`
-item instead (`Refines entries must include an \`adjective:\` item ...`).
+`written:` item directly inside `Appendix:` (reported as `{kind} entries must
+include either a \`called:\` or a \`written:\` item in \`Documented:\``).
+`Refines` must include an `adjective:` item instead (`Refines entries must
+include an \`adjective:\` item ...`).
 
 ### 7. Command references and argument shapes
 
@@ -1571,17 +1609,19 @@ at most once (`Duplicate definition for target symbol ...`). A `specifies:` item
 assigns its subject, and a destructuring subject counts as assigned once
 `specifies:` supplies each of its components.
 
-A `Defines` value **must state its type** — either `... is <type>` or a
-top-level coercion `\<type>@<value>`:
+A `Defines` value **must state its type** — through `... is <type>`, a
+top-level coercion `\<type>@<value>`, or by assigning a `Defines:`/`Realizes:`
+command expression (such as `X := \cmd{...}` or `X := A \.op./ B`), in which
+case it inherits that command's declared output type:
 
 ```text
 ` `Defines:` target `X` must state its type: use `... is <type>` or a
   top-level `\...@...` coercion (e.g. `\set@{...}`) `
 ```
 
-A bare `X := {…}` is rejected even when the type is inferable. A declaration
-that states its parts in `specifies:` is exempt: `specifies:` states the type
-instead.
+A bare literal `X := {…}` is rejected even when the type is inferable. A
+declaration that states its parts in `specifies:` is exempt: `specifies:` states
+the type instead.
 
 **`Defines`/`Realizes` `specifies:` items.** Each must supply a **value**,
 directly with `:=` or indirectly by stating a type and defining it in
@@ -1607,12 +1647,15 @@ because \`{subject}\` is not a parameter of this definition`) and only with
 ### 10. Specifications vs. statements
 
 An `is` specification or infix specification (`\:...:/`) *introduces* a symbol,
-so it is only allowed in binding positions (`exists:`, `given:`, `forAll:`,
-`let:`, `where:`, `when:`, `suchThat:`). In a statement position (`then:`, `iff:`,
-`that:`, `if:`, `not:`, `allOf:`, …) it is rejected in favor of the predicate
-form `is?` / `\:...?:/` (`An \`is\` specification introduces a symbol and is only
-allowed in \`exists:\`, \`given:\`, \`forAll:\`, or \`let:\`; use the statement form
-\`is?\` here`).
+so it is only allowed in binding positions (`exists:`, `existsUnique:`,
+`given:`, `forAll:`, `let:`, `where:`, `when:`, `assuming:`, `suchThat:`). In a
+statement position (`then:`, `iff:`, `that:`, `if:`, `elseIf:`, `else:`, `not:`,
+`allOf:`, …) it is rejected in favor of the predicate form `is?` / `\:...?:/`
+(`An \`is\` specification introduces a symbol and is only allowed in \`exists:\`,
+\`given:\`, \`forAll:\`, or \`let:\`; use the statement form \`is?\` here`).
+Note that `assuming:` and `suchThat:` also accept predicate forms (`is?`,
+`"op"?`, `\:...?:/`) and implicitly assert their underlying facts for downstream
+type checking.
 
 ### 11. Symbol scope
 
@@ -1656,7 +1699,7 @@ function ...`, `\`{name}\` is not a known type`).
 - **Marker sections** — `States:`, `Equivalent:`, `Disambiguates:`, the
   theorem-like heads, `abstractly:`, and `implicitly:`/`explicitly:` take no
   argument (`Section \`{label}\` does not accept content`). Prose describing
-  such an item belongs in `Documented:`.
+  such an item belongs in `Appendix:`.
 - **`Declares:` extended type** — a `Declares:` target that states an `is`/spec
   relation may not also have an `extends:` section; the two spellings are
   equivalent, so exactly one of them carries the clauses.
@@ -1679,7 +1722,7 @@ function ...`, `\`{name}\` is not a known type`).
   marker sections must take no arguments and are mutually exclusive. Either
   marker requires the refined base type to be a subtype of another type;
   `implicitly:` additionally requires the body to contain only the inherited
-  `specifies:` clause (no `satisfies:`/`Requires:`/`Enables:`/`Justification:`) and
+  `specifies:` clause (no `satisfies:`/`Requires:`/`Enables:`/`Appendix:` `. justification:`) and
   that clause to literally name the parent type's refinement (the same
   adjective(s) applied to a direct supertype of the refined base type), while
   `explicitly:` requires at least one such property beyond the inherited
@@ -1764,10 +1807,22 @@ specified outside of `when:`, and `via X` is a recognized structural view.
 ## Type Facts and Requirements
 
 A command definition declares use-site requirements through `when:`. A `using:`
-declaration introduces auxiliary symbols and facts for the definition itself;
-facts that mention an unbound `using:` symbol are therefore not obligations at
-an ordinary call site. If a call supplies that symbol explicitly with a
-`#using{...}` context, requirements involving it are instantiated and checked.
+declaration introduces auxiliary symbols and facts for the definition itself.
+At a call site, any unbound `using:` parameters, omitted optional-tail
+parameters (`:?`), and `?`-suffixed inferred parameters (`X?`) are unified
+together as **implicit holes** with strict constraint unification:
+
+- Requirements mentioning holes are matched against facts in the calling
+  context (with candidate-set backtracking when multiple witnesses exist).
+- If two constraints force incompatible bindings for the same hole (for
+  example, two subsets of distinct ambient sets `U` and `V` passed to a command
+  requiring one shared implicit `U`), checking fails with
+  `Unification conflict for implicit symbol ...`.
+- If a hole remains unsolved by any concrete binding, the checker still verifies
+  that all type constraints placed on it are mutually compatible.
+- If a call supplies a `using:` symbol explicitly with `#using{...}`,
+  requirements involving it are instantiated with that supplied value directly.
+
 The remaining requirements must be provable whenever the command is used as an
 expression or predicate, and whenever a parameterized command type expression is
 used in an `is` statement.
@@ -1869,11 +1924,11 @@ Appendix:
 This means that if the checker knows `G is \group`, it can prove `G is \set`.
 The implication is recursive, so subtype chains are followed.
 
-`Declares: X is \foo` and
+`Declares: X is \magma` and
 
 ```text
 Declares: X
-extends: X is \foo
+extends: X is \magma
 ```
 
 mean exactly the same thing. The `extends:` section exists for what a target
@@ -1881,11 +1936,11 @@ cannot express: **extending several types at once**, typically through different
 views of the same tuple.
 
 ```text
-[\foo]
-Declares: X ::= (A, B, C)
+[\ring]
+Declares: R ::= (X, +, *, 0, 1)
 extends:
-. X is \bar via (A, B)
-. X is \baz via (B, C)
+. R is \(abelian)::group via (X, +, 0)
+. R is \monoid via (X, *, 1)
 ```
 
 The type may name a refined command, as in
@@ -2205,7 +2260,7 @@ They are parsed, semantically checked, and rendered as mathematics or linked
 citations. For example:
 
 ```text
-Text: "Let {. A is \\anything .}. By {: \\identity.thm :}, {{. A = A .}}."
+Text: "Let {. G ::= (X, *, e) is \group .} and {. x "in" X .}. By {: \identity.law :}, {{. x * e = x .}}."
 ```
 
 The `{: ... :}` syntax is reserved exclusively for referencing axioms, conjectures,
@@ -2215,26 +2270,28 @@ not permitted inside `{. ... .}` or `{{. ... .}}`.
 
 Labeled prose quotes `''quoted text''[:label:]` render the text between
 double single-quotes (`''...''`) in italics followed by a bracketed citation link
-when `References:` includes a matching `. for: (:label:) / entry: $resource` entry.
+when `Appendix:` `. references:` includes a matching `. for: (:label:) / entry: $resource` entry.
 Standalone label references `(:label:)` in prose refer to any label defined in the
 enclosing item.
 
 A declaration fragment using `is`, a quoted specification operator, or `:=`
 introduces names for later fragments in the same text value. The initial scope
 inherits the enclosing item's available symbols. Theorem proof prose can use
-heading, `given:`, and `where:` names, but not names local to the conclusion.
+heading, `given:`, `where:`, `suchThat:`, and item-local alias names, but not
+names local to the conclusion.
 
 Use balanced, properly nested `<<name>>` and `<</name>>` markers to delimit a
 local prose scope. Its bindings disappear when it closes; the markers themselves
 do not render. Without an explicit marker, the scope lasts for one text value.
 Malformed fragments, unmatched markers, and out-of-scope names are errors.
 
-Fragment and scope-marker scanning also runs inside Markdown backticks and code
-fences. To discuss literal delimiters without activating them, use HTML character
-references in ordinary prose, such as `&#123;.` for an opening brace and dot.
-This is separate from the structural checking of full `mlg` fences; tagging a
-fence `mlg-fragment` skips that structural check but does not disable embedded
-prose-fragment scanning.
+Inline Markdown code spans (`` `...` ``) and fenced code blocks
+(```` ```...``` ````) are skipped during prose-fragment and scope-marker
+scanning, so literal delimiters inside code spans or fences do not trigger
+fragment parsing. Outside of code spans and `$...$`/`$$...$$` math, HTML
+character entities (named, decimal, and hex) are decoded during rendering.
+Fenced blocks tagged `mlg` are structurally syntax-checked as standalone
+documents; blocks tagged `mlg-fragment` skip that check.
 
 ## Rendering Metadata
 
@@ -2345,13 +2402,13 @@ fallback branch is omitted, the conditional renders nothing when the variables
 are not all present. Conditional fragments may be nested.
 
 The renderer uses these entries to display commands, forms, and definitions.
-The semantic checker requires `Declares`, `Defines`, and `States` to include at
-least one `called:` or `written:` item. A `Refines:` group instead requires an
-`adjective:` item and rejects `called:`.
+The semantic checker requires `Declares`, `Defines`, `Realizes`, and `States` to
+include at least one `called:` or `written:` item directly under `Appendix:`. A
+`Refines:` group instead requires an `adjective:` item and rejects `called:`.
 
 ### Card titles
 
-When a `Documented:` section supplies both a `called:` and a `written:` form, the
+When an `Appendix:` section supplies both a `called:` and a `written:` form, the
 item's card is titled with both: the human name, a wide space, then the written
 notation, which the viewer renders muted so it reads as "and here is its symbol"
 rather than as a second, competing title.
@@ -2368,10 +2425,8 @@ That card is titled "Empty set  $\emptyset$" (with `$\emptyset$` muted). An item
 documented with only one of the two forms is titled with that form alone.
 
 The title always shows the name first and the notation second, whichever order
-the two are listed in. Listing order still decides which single form names the
-item *inline* — `called:` first makes `X is \empty.set` read "X is empty set",
-`written:` first makes it read "X is $\emptyset$" — but it does not reorder the
-card title.
+the two are listed in. When rendering `is` statements inline, `written:` takes
+precedence over `called:` whenever present (falling back to `called:` otherwise).
 
 A `written:` nested inside a `called:` group documents that called form, so it
 pairs with it in the title just as a top-level `written:` would.

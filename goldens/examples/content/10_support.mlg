@@ -1,36 +1,44 @@
--- Every support section, shown one at a time.
+-- Every support section (`Requires:`, `Enables:`, and all `Appendix:` entries:
+-- documentation items, mapping `writing:`/`as:`, `justification:`, `aliases:`,
+-- item-level `writing:`, `references:`, and `metadata:`).
 
 
--- `Documented:` carries all of an item's human-facing text and rendering.
-[\documented.showcase]
-Declares: X ::= x(i_)
+-- Mapping-rendering templates (`writing:`/`as:`) and full documentation fields
+-- directly inside `Appendix:`.
+[\real.sequence]
+Declares: X ::= x(i_) is \function:on{\naturals.set}:to{\reals.set}
 Appendix:
-. called: "documented showcase"
-. written: "\operatorname{showcase}"
+. called: "real sequence"
+. written: "\{x_n\}"
 . writing: x(i)
   as: "x?_{i?}"
-. overview: "A one-line summary."
-. description: "A longer description of the idea."
+. writing: x(i_)
+  as: "\left(x?_{i_?}\right)_{i_?=0}^{\infty}"
+. overview: "An infinite sequence of real numbers indexed by the natural
+             numbers."
+. description: "A real sequence assigns a real value to each natural-number
+                index."
 . related: "#algebra"
 . discoverer: "@emmy.noether"
 Id: "0b81f148-f5c4-411d-bbaa-6f5dd4566db6"
 
 
--- `Requires:` states what a *use* of the command must establish beforehand.
--- A `capability:` provides a spec operator; a `definition:` requires that a
--- named command exist with a given type.
-[\requires.showcase]
+-- `Requires:` states what a *use* of the command must establish beforehand:
+-- a `capability:` provides a spec operator, and a `definition:` requires a
+-- named `Defines:` command to establish a fact.
+[\pointed.natural.set]
 Declares: X
 Requires:
 . capability: x_ "in" X :-> \\abstract
 . definition: \zero is \natural
 Appendix:
-. called: "requires showcase"
+. called: "pointed set over the naturals"
 Id: "b4643f0c-2a8e-4b8c-9c45-daf810276e37"
 
 
--- `Enables:` states what knowing the type lets the checker do afterwards.
-[\enables.showcase]
+-- `Enables:` states what knowing the type allows downstream: capabilities,
+-- `from:` coerced-literal capabilities, and `view:` conversions.
+[\carrier.magma]
 Declares: G ::= (X, *) is \set via X
 specifies: * is \operation:on{G}
 Enables:
@@ -39,55 +47,62 @@ Enables:
 . from: Y ::= {y__ : ...}
   capability: x_ "in" G :-> x_ memberOf Y
 . view:
-  as: S := \unit.set is \set
+  as: S := X is \set
 Appendix:
-. called: "enables showcase"
+. called: "magma with carrier element capability"
 Id: "80bdeb53-b07a-411c-b7e2-7bd81e2059cb"
 
 
--- `Justification:` holds labelled `have:` groups. A `[:label:]` on an item in
--- the body points at one, and the checker takes that item as given.
-[\justification.showcase]
-Declares: X ::= (A, B)
+-- `Appendix:` `. justification:` holds labeled `have:` groups. A `[:label:]`
+-- on a specification or clause points at a matching `for: (:label:)` entry.
+[\product.pair.set]
+Declares: P ::= (A, B)
 specifies:
 . A is \set
-. (.B is \set.)[:carrier:]
+. (.B is \set.)[:second_factor:]
 Appendix:
-. called: "justification showcase"
+. called: "ordered pair of sets"
 . justification:
-  . for: (:carrier:)
+  . for: (:second_factor:)
     have: B is \set
     asserting: B is \set
+    because: "Both factors of the pair are assumed to be sets."
 Id: "decbcbc2-aa62-430f-aa16-d044ea928c10"
 
 
--- `Aliases:` name an expression or a spec operator locally; `Writing:` gives
--- item-local rendering aliases; `References:` cites resources; `Metadata:`
--- records release bookkeeping.
-[\alias.showcase]
+-- `Appendix:` `. aliases:`, item-local `. writing:`, `. references:` (both
+-- item-wide `$resource` and label-specific `. for:`/`. entry:`), and
+-- `. metadata:` `. version:`.
+[\squaring.magma]
 Declares: G ::= (X, *) is \set via X
-specifies: * is \operation:on{G}
+specifies: * is \operation:on{X}
+satisfies:
+. [closure]
+  forAll: x "in" X
+  then: x * x "in"? X
 Appendix:
-. called: "alias showcase"
+. called: "magma with squaring notation"
 . aliases:
-  . alias: twice(x_) :=> x_ * x_
+  . alias: square(x_) :=> x_ * x_
     written: "x_?^{2}"
 . writing:
   . "carrier :~> \mathrm{carrier}"
 . references:
   . $bourbaki.algebra
+  . for: (:closure:)
+    entry: $bourbaki.algebra:page{12}
 . metadata:
   . version: "1.0"
 Id: "9b8fdb86-1a09-4859-83ac-dc03c3d46fd2"
 
 
--- The capability above reduces a membership spec fact to a type fact.
+-- The `Enables:` capability on `\carrier.magma` reduces a membership spec fact
+-- `y "in" G` to the type fact `y is \element:of{X}`.
 Theorem:
 given:
-. G ::= (X, *) is \enables.showcase
-. y is \element:of{X}
-where: y "in" G
+. G ::= (X, *) is \carrier.magma
+. y "in" G
 then: y is? \element:of{X}
 Appendix:
-. called: "a capability reduces membership"
+. called: "an enabled capability reduces magma membership to carrier elements"
 Id: "6f2caf05-a403-49ae-9ffd-28530e77efec"

@@ -1,41 +1,51 @@
--- Items that relate definitions to each other or to documentation.
+-- Items that relate definitions to each other (`Equivalent`, `Relation`) or
+-- carry documentation taxonomy and bibliographic metadata (`Topic`, `Person`,
+-- `Resource`).
 
 
-[\left.identity:in{M}]
-Declares: e
+[\left.identity:in{M ::= (X, *)}]
+Declares: e "in" X
 when: M is \magma
+satisfies:
+. forAll: x "in" X
+  then: e * x = x
 Appendix:
 . called: "left identity in $M?$"
 Id: "fadd40a3-bcdd-48e1-a884-3daa2350930d"
 
 
-[\right.identity:in{M}]
-Declares: e
+[\right.identity:in{M ::= (X, *)}]
+Declares: e "in" X
 when: M is \magma
+satisfies:
+. forAll: x "in" X
+  then: x * e = x
 Appendix:
 . called: "right identity in $M?$"
 Id: "30e3180b-c8e2-4964-944b-693b83a682b8"
 
 
--- `Equivalent` declares several commands interchangeable under one name. The
--- `Equivalent:` section takes no argument; say why in `Documented:`.
+-- `Equivalent` declares interchangeable commands under one shared name. The
+-- `Equivalent:` section is a marker; documentation lives under `Appendix:`.
 [\identity:in{M}]
 Equivalent:
-when: M is \magma
+when: M is \(commutative)::magma
 to:
 . \left.identity:in{M}
 . \right.identity:in{M}
 Appendix:
-. called: "identity in $M?$"
+. called: "identity element in a commutative magma $M?$"
+. description: "In a commutative magma, left and right identities coincide."
 Id: "5d6aee8a-a36d-4873-8849-42a254e85305"
 
 
--- `Relation` records a relationship between two concepts, topics, or
--- definitions. Each side is a declaration or a quoted reference.
+-- `Relation` records an undirected (`between:`/`and:`) or directed
+-- (`from:`/`to:`) relationship between concepts, topics, or definitions.
 Relation:
-between: G is \group
-and: M is \magma
-specifies: "Every group is a magma under the same operation."
+between: G ::= (X, *, e) is \group
+and: M ::= (Y, +) is \magma
+specifies: "Every group determines an underlying magma by forgetting the
+            identity and inverse axioms."
 Appendix:
 . called: "a group underlies a magma"
 Id: "ff71ef02-ec19-4e54-8dc8-4dd4f54ecfa2"
@@ -45,42 +55,48 @@ Id: "ff71ef02-ec19-4e54-8dc8-4dd4f54ecfa2"
 Relation:
 between: "#algebra"
 and: "\group"
-specifies: "Groups are the subject matter of algebra."
+specifies: "Groups are a central object of study in abstract algebra."
 Id: "960ef264-b87a-4366-a17a-0b5f4d41679b"
 
 
--- `from:`/`to:` records a one-way relationship, analogous to a directed edge.
+-- `from:`/`to:` records a directed relationship (a one-way edge).
 Relation:
 from: "\group"
 to: "#algebra"
-specifies: "The group definition belongs to the subject of algebra."
+specifies: "The definition of a group belongs to abstract algebra."
 Id: "8c67f45a-2473-4e99-8d86-e27ca89b0fd4"
 
 
--- `Topic` names documentation subject matter.
+-- `Topic` names documentation subject matter, with optional parent (`within:`)
+-- and cross-links (`Related:`).
 [#algebra]
-Topic: "The study of operations on sets."
+Topic: "The study of sets equipped with finitary operations and their
+        homomorphisms."
 Appendix:
-. called: "Algebra"
+. called: "Abstract Algebra"
 Id: "cd54e9f9-3233-4381-a49c-81151fb7f0fd"
 
 
 [#group.theory]
-Topic: "Algebra of invertible operations."
+Topic: "The branch of abstract algebra studying groups, subgroups, and
+        symmetries."
 within: "#algebra"
 Related:
-. to: "#algebra"
+. to:
+  . "#algebra"
   . "\group"
-  specifies: "Group theory is the part of algebra about groups."
+  specifies: "Group theory specializes abstract algebra to invertible
+              associative operations."
 Appendix:
 . called: "Group Theory"
 Id: "d38c98a5-6f04-49a0-8009-44bb6e34db82"
 
 
--- `Person` and `Resource` carry bibliography metadata.
+-- `Person` and `Resource` carry author and bibliography metadata.
 [@emmy.noether]
 Person: "Emmy Noether"
-biography: "Worked on abstract algebra and invariant theory."
+biography: "Pioneered structural abstract algebra, Noetherian rings, and
+            Noether's theorem in theoretical physics."
 Id: "0051d110-103e-4fc1-80dc-719045462cab"
 
 
@@ -88,25 +104,28 @@ Id: "0051d110-103e-4fc1-80dc-719045462cab"
 Person:
 . "Nicolas Bourbaki"
 . "N. Bourbaki"
+biography: "Collective pseudonym of a group of twentieth-century mathematicians
+            who authored Elements of Mathematics."
 Id: "6442745f-258c-4ebb-9382-8fe4e2d2f6d6"
 
 
 [$bourbaki.algebra]
 Resource:
-. title: "Algebra"
+. title: "Algebra I: Chapters 1-3"
 . author:
   . "Nicolas Bourbaki"
 . type: "book"
-. edition: "2nd"
-. editor: "An Editor"
-. institution: "An Institution"
-. journal: "A Journal"
-. publisher: "A Publisher"
+. edition: "2nd printing"
+. editor: "Springer Editorial Board"
+. institution: "Association des Collaborateurs de Nicolas Bourbaki"
+. journal: "Elements of Mathematics"
+. publisher: "Springer-Verlag"
 . volume: "1"
 . month: "January"
-. year: "1974"
-. offset: "Chapter II"
-. url: "https://example.com/algebra"
-. homepage: "https://example.com"
-. description: "Elements of Mathematics."
+. year: "1989"
+. offset: "1"
+. url: "https://link.springer.com/book/9783540642435"
+. homepage: "https://www.bourbaki.fr"
+. description: "Foundational treatment of algebraic structures, linear algebra,
+                and tensor algebra."
 Id: "6f862aad-8e36-40f6-ab19-22ae6560da4a"

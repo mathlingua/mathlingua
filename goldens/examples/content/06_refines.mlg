@@ -1,27 +1,32 @@
--- `Refines` defines a refined command — adjectives applied to another command.
+-- `Refines` defines adjective-refined commands on existing types and
+-- spec-infix relations, including `implicitly:`/`explicitly:` markers and
+-- composite `[[subject]]` refinements.
 
 
--- The plain form: a property added to an existing type.
+-- Nonempty sets: at least one element belongs to `X`.
 [\(nonempty)::set]
 Refines: X
 satisfies:
 . exists: x is \element:of{X}
-  suchThat: x "in" X
+  suchThat: x "in"? X
 Appendix:
 . adjective: "nonempty"
 Id: "dff130c9-4fc4-4bd5-a7b0-dd6ee7a1ff23"
 
 
+-- Commutative magmas: the binary operation satisfies `a * b = b * a`.
 [\(commutative)::magma]
 Refines: M ::= (X, *)
-satisfies: M is \magma
+satisfies:
+. forAll: a, b "in" X
+  then: a * b = b * a
 Appendix:
 . adjective: "commutative"
 Id: "b6c0c765-d12c-437c-80e1-7a0113e8b789"
 
 
--- `specifies:` names the refinement this one inherits from. `implicitly:` says
--- the group only restates that inherited clause...
+-- `implicitly:` declares that this subtype refinement merely restates the
+-- inherited refinement on `\set`.
 [\(nonempty)::magma]
 Refines: M ::= (X, *)
 implicitly:
@@ -31,32 +36,82 @@ Appendix:
 Id: "9411125d-e05c-41ff-9b1e-fc55f9547604"
 
 
--- ...and `explicitly:` says it adds at least one property of its own.
+-- `explicitly:` declares that this subtype refinement adds a concrete property
+-- beyond the inherited `specifies:` fact (here that the identity witnesses
+-- nonemptiness).
 [\(nonempty)::monoid]
 Refines: M ::= (X, *, e)
 explicitly:
 specifies: M is \(nonempty)::magma
-satisfies: M is \monoid
+satisfies: e "in"? X
 Appendix:
 . adjective: "nonempty"
 Id: "aeda535b-696d-426a-916c-da930f1d5d94"
 
 
--- A refined spec-infix command.
+-- Injective, surjective, and bijective functions, demonstrating composite
+-- refinement with `[[f]]` in `specifies:`.
+[\(injective)::function:on{A}:to{B}]
+Refines: f(x__)
+when: A, B is \set
+satisfies:
+. forAll: x, y "in" A
+  where: f(x) = f(y)
+  then: x = y
+Appendix:
+. adjective: "injective"
+Id: "f1a2b3c4-4444-4aaa-8bbb-000000000001"
+
+
+[\(surjective)::function:on{A}:to{B}]
+Refines: f(x__)
+when: A, B is \set
+satisfies:
+. forAll: y "in" B
+  then:
+  . exists: x "in" A
+    suchThat: f(x) = y
+Appendix:
+. adjective: "surjective"
+Id: "f1a2b3c4-4444-4aaa-8bbb-000000000002"
+
+
+[\(bijective)::function:on{A}:to{B}]
+Refines: f(x__)
+when: A, B is \set
+specifies: f is \(injective, surjective)::[[f]]
+Appendix:
+. adjective: "bijective"
+Id: "f1a2b3c4-4444-4aaa-8bbb-000000000003"
+
+
+-- A refined spec-infix command: a proper subset omits at least one element of
+-- the ambient set `B`.
 [A \:(proper)::subset:/ B]
 Refines: A
 when: B is \set
+satisfies:
+. exists: b "in" B
+  suchThat: \\not{b "in"? A}
 Appendix:
 . adjective: "proper"
+. written: "A? \subsetneq B?"
 Id: "9d1238e3-30db-4e78-a3ac-e53ccf6dd887"
 
 
--- A refinement of the base type is available on its subtypes, so a nonempty
--- group is reachable through `\group`'s chain up to `\set`.
+-- A refinement of a base type propagates through its subtype chain, and a
+-- composite refinement implies each individual adjective.
 Theorem:
-given: G ::= (X, *, e) is \group
-where: G is? \(nonempty)::monoid
-then: G is? \(nonempty)::magma
+given:
+. G ::= (X, *, e) is \group
+. A, B is \set
+. f is \(bijective)::function:on{A}:to{B}
+where: G is \(nonempty)::monoid
+then:
+. G is? \(nonempty)::magma
+. G is? \(nonempty)::set
+. f is? \(injective)::function:on{A}:to{B}
+. f is? \(surjective)::function:on{A}:to{B}
 Appendix:
-. called: "refinements follow the subtype chain"
+. called: "refinements follow subtype chains and composite adjectives"
 Id: "7474854b-5143-4d83-a0bb-50e943ace450"

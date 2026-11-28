@@ -41,6 +41,7 @@ The formulation subsystem does not have one single root grammar. It exposes seve
   its own way. Used by the structural parser for a `Declares:` target and each
   `extends:` clause, whose left sides are declaration statements rather than
   bare `is` statements.
+- **`parse_type_expression`** — `pub(crate)` type expressions (`<command>`, `<refined-command>`, `<builtin-type>`, function/tuple/set structural types, or type parameter name; used by `Specify:` `is:` and `is` targets).
 - **`parse_command_header`** — simple, infix, infix-spec, or refined command
   headers.
 - **`parse_writing_alias`** — `<form-or-declaration> :~> <raw body>`.
@@ -49,6 +50,7 @@ The formulation subsystem does not have one single root grammar. It exposes seve
   where each semicolon-separated target is an is-or-spec, `memberOf`, a
   placeholder-spec, or a builtin.
 - **`parse_label_header`** — dotted label header text.
+- **`parse_label_references`** — one or more comma-separated `(:label:)` references (used by `for:` in `Appendix:` `. justification:` and `. references:`).
 - **`parse_author_header`** — `@` followed by dotted parts.
 - **`parse_resource_header`** — `$` followed by dotted parts.
 - **`parse_topic_header`** — `#` followed by dotted parts.
@@ -157,18 +159,18 @@ So `x "less than" A` is rejected by `parse_expression`, but accepted by
 Grouped formulations support inline labels `[:...:]`:
 
 ```text
-[:part(.part)*(, part(.part)*)*:]
+[:part(.part)*:]
 ```
 
-and `Justification:`, `References:`, and prose refer to defined labels using `(:...:)`:
+and `Appendix:` `. justification:`, `Appendix:` `. references:`, and prose refer to defined labels using `(:...:)`:
 
 ```text
 (:part(.part)*(, part(.part)*)*:)
 ```
 
 Each `part` uses the same identifier-like rule as ordinary non-stropped names.
-Label definitions attach a single label (`[:label:]`), while label references in `Justification:`,
-`References:`, or prose may cite one or more labels (`(:label:)` or `(:l1, l2:)`).
+Label definitions attach a single label (`[:label:]`), while label references in `Appendix:` `. justification:`,
+`Appendix:` `. references:`, or prose may cite one or more labels (`(:label:)` or `(:l1, l2:)`).
 
 Important distinction:
 
@@ -418,7 +420,7 @@ The AST records whether the grouped form used the dot-delimited spelling.
 
 ```text
 LabeledExpression ::=
-    GroupedExpression Label+
+    GroupedExpression Label
 ```
 
 Only grouped formulations may be labeled directly. In a declaration-bearing
@@ -566,7 +568,7 @@ Many command-related syntaxes use a `Chain`:
 
 ```text
 Chain ::= ChainPart ("." ChainPart)*
-ChainPart ::= Name | "$" Name | SpecialOperator | "="
+ChainPart ::= Name | "$" Name | AnyOperator
 RawChain ::= RawChainPart ("." RawChainPart)*
 RawChainPart ::= Name | "$" Name | OperatorText
 ```
@@ -577,13 +579,13 @@ Examples:
 - `binary.op`
 - `$alias`
 - `<=`
+- `+`
 
 Raw helper parsers used for command headers, refined commands, and built-in
 spec-alias targets accept the broader `OperatorText` class for chain parts.
-Lexer-driven command expressions accept `SpecialOperator` chain parts. For
-single-character operator command names such as `+`, use a stropped name like
-``\`+\``` in expression syntax, or the raw command-header helper spelling
-where applicable.
+Lexer-driven command expressions accept `AnyOperator` (`SpecialOperator`, `+`,
+`-`, `*`, `/`, `=`, `^`) as chain parts, or a stropped operator name such as
+``\`+\``` in expression syntax.
 
 Named operators like `|plus|` are not chain parts.
 
@@ -1095,6 +1097,7 @@ InputExpression ::= Expression
 InputDeclarationStatement ::= DeclarationStatement
 InputExpressionBinding ::= ExpressionBinding
 InputFormOrDeclaration ::= FormOrDeclaration
+InputTypeExpression ::= TypeExpression
 InputIsOrSpec ::= IsOrSpec
 InputIsOrRefinedStatementSpec ::= IsOrRefinedStatementSpec
 InputIsViaStatement ::= IsViaStatement
@@ -1103,6 +1106,7 @@ InputWritingAlias ::= WritingAlias
 InputExpressionAlias ::= ExpressionAlias
 InputSpecOperatorAlias ::= SpecOperatorAlias
 InputLabelHeader ::= LabelHeader
+InputLabelReferences ::= LabelReference+
 InputAuthorHeader ::= AuthorHeader
 InputResourceHeader ::= ResourceHeader
 InputTopicHeader ::= TopicHeader
@@ -1298,7 +1302,8 @@ MemberExpression ::= MemberOwnerExpression "." Name ("(" ExpressionList ")")?
 MemberOwnerExpression ::= Name | GroupedExpression
 
 FunctionNamedExpressionElement ::= FunctionNamedExpressionElementLhs ":=" SpecOrPredicateExpression
-FunctionNamedExpressionElementLhs ::= Name | InferredParameterName | SubsetNameCall
+FunctionNamedExpressionElementLhs ::= Name | Name "?" | Placeholder | MagneticPlaceholder
+                                    | InferredParameterName | SubsetNameCall
                                     | RangedMappingSelector | "..."
 InferredParameterName ::= Name "?_"
 RangedMappingSelector ::= Placeholder "[" Placeholder
@@ -1318,7 +1323,7 @@ SubsetExpression ::= SubsetNameCall
 
 ```text
 Chain ::= ChainPart ("." ChainPart)*
-ChainPart ::= Name | "$" Name | SpecialOperator | "="
+ChainPart ::= Name | "$" Name | AnyOperator
 RawChain ::= RawChainPart ("." RawChainPart)*
 RawChainPart ::= Name | "$" Name | OperatorText
 
@@ -1451,7 +1456,7 @@ MemberAliasLhs ::= Name "." Name
 ExpressionAlias ::= ExpressionAliasLhs (":=>" | ":->") Expression
 SpecOperatorAlias ::= PlaceholderSpecStatement (":->" | ":<->:") SpecOperatorAliasTargets
 SpecOperatorAliasTargets ::= SpecOperatorAliasTarget (";" SpecOperatorAliasTarget)*
-SpecOperatorAliasTarget ::= IsOrSpec
+SpecOperatorAliasTarget ::= IsOrRefinedStatementSpec
                           | MemberOfExpression
                           | PlaceholderSpecStatement
                           | "\\" "\\" RawChain
@@ -1480,10 +1485,9 @@ The old grammar drafts implied several forms that the current code does not acce
 
 ## Current Implementation Notes and Footguns
 
-### `parse_expression` does not parse refined command expressions
+### Refined command expressions are not standalone atoms in `parse_expression`
 
-Refined command expressions are accepted through refined declaration statements
-and `parse_is_or_refined_statement_spec`.
+`parse_expression` does not parse a refined command expression (such as `\(nonempty)::set`) as a standalone atomic expression. Refined command expressions are accepted inside refined declaration statements, `parse_is_or_refined_statement_spec`, and inside `parse_expression` specifically as the target of `is` / `is?` or inside a refined infix-spec expression (`\:(adj)::name:/` or `\:(adj)::name?:/`).
 
 ### Helper `is` statements use different subject syntax than `is` expressions
 

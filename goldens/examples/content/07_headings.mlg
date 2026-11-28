@@ -1,63 +1,107 @@
--- The shapes a command heading can take.
+-- Command heading shapes: multi-tail headers, optional tails (`:?`), spec-infix
+-- headings, `assuming:` implicit assertions, 1D/2D variadic parameters, and
+-- mapping-parameter selectors.
 
 
--- Curly arguments, with a `:tail{...}` chain.
-[\module:over{R}:with{S}]
-Declares: M
-when: R, S is \set
+-- A multi-tail command header defining a left `R`-module on carrier `M` with
+-- scalar multiplication `s` and ambient ring `R`.
+[\module:over{R ::= (K, +_R, *_R, 0_R, 1_R)}:with{S}]
+Declares: M ::= (X, +_M, 0, s) is \(abelian)::group via (X, +_M, 0)
+when:
+. R is \ring
+. S is \set
+specifies: s is (_ "in" K, _ "in" X) -> (_ "in" X)
+satisfies:
+. forAll: r "in" K
+  then:
+  . forAll: x, y "in" X
+    then: s(r, x +_M y) = (s(r, x) +_M s(r, y))
 Appendix:
-. called: "module over $R?$ with $S?$"
+. called: "module over $R?$ with parameter set $S?$"
 Id: "c259c92b-6f91-4b41-95d6-ad435836be8c"
 
 
--- A `?` marks an optional tail; a definition is registered for each
--- combination, so `\norm`, `\norm:on{V}` and `\norm:on{V}:with{P}` all resolve.
-[\norm:?on{V}:?with{P}]
-Declares: N
-when: V, P is \set
+-- `?` marks an optional tail; a definition is registered for each combination,
+-- so `\norm`, `\norm:on{V}`, `\norm:with{p}`, and `\norm:on{V}:with{p}` all
+-- resolve, and omitted tails act as implicit holes unified at call sites.
+[\norm:?on{V}:?with{p}]
+Declares: N(v_) is \function:on{V}:to{\reals.set}
+when:
+. V is \set
+. p is \real
+satisfies:
+. forAll: v "in" V
+  then: \\not{N(v) < \natural.to.real{\zero}}
 Appendix:
-. called: "norm"
+. called: "norm@[V]{ on $V?$}:{}@[p]{ with exponent $p?$}"
+. written: "\lVert \cdot \rVert@[p]{_{p?}}"
 Id: "fe2341bc-c21b-4a78-8cec-1089da4af4f2"
 
 
 -- A spec-infix command, `\:name:/`, is sugar for a command whose left operand
--- is the symbol being defined. That symbol is stated on the `Declares:` target,
--- and so may not appear in `when:`.
+-- is the symbol being defined. That symbol is stated on the `Declares:` target
+-- and therefore may not appear in `when:`.
 [A \:subset:/ B]
 Declares: A is \set
 when: B is \set
+satisfies:
+. forAll: x "in" A
+  then: x "in"? B
 Requires:
 . capability: x_ "in" A :-> x_ "in" B
 Appendix:
 . written: "A? \subseteq B?"
+. called: "$A?$ is a subset of $B?$"
 Id: "2acb059b-46d8-4cca-a4fc-aaae4bf9b135"
 
 
--- An optional tail on a spec-infix heading.
+-- An optional tail on a spec-infix heading, plus `assuming:` demonstrating an
+-- implicit type-checking assertion after `when:`.
 [A \:contained:?within{U}:/ B]
 Declares: A is \set
 when:
 . U is \set
 . B \:subset:/ U
+assuming: A \:subset?:/ B
+satisfies:
+. A \:subset?:/ U
 Appendix:
-. written: "A? \subseteq_{U?} B?"
+. written: "A? \subseteq@[U]{_{U?}} B?"
+. called: "$A?$ is contained in $B?$@[U]{ within $U?$}"
 Id: "07e8e611-08e0-490d-8f62-030af8f9e7e8"
 
 
-[\reals.set]
-Defines: R := \set@{r : ...}
+-- A 1D variadic command reducing a magma's binary operation over `n` elements
+-- using `\\leftReduce`.
+[\magma.product:in{M ::= (X, *)}:of{x[i_ := 1...n]}]
+Defines: p := \\leftReduce{`*`}:on{x[1...n]} is \element:of{X}
+when:
+. M is \magma
+. x[1...n] "in" M
 Appendix:
-. called: "the set of reals"
-Id: "8ec56012-f504-44d1-a1eb-04301de15075"
+. called: "product of $x?$ in $M?$"
+. written: "x?{...*...}"
+Id: "f1a2b3c4-5555-4aaa-8bbb-000000000001"
 
 
--- A mapping parameter picks one input of a mapping declared in another curly
--- group, so `\partial:of{f(x_)}:in{f.x_}` names a partial derivative.
+-- A 2D variadic command declaring an `m`-by-`n` real matrix.
+[\real.matrix{a[(i_, j_) := (1,1)...(m,n)]}]
+Declares: M
+when: a[..., ...] is \real
+Appendix:
+. called: "real matrix"
+. written: "\left[ a?{{...,...}\\} \right]"
+Id: "f1a2b3c4-5555-4aaa-8bbb-000000000002"
+
+
+-- A mapping-parameter header selects one input of a mapping declared in another
+-- curly group, so `\partial:of{f(x_)}:in{f.x_}` names a partial derivative.
 [\partial:of{f(x_)}:in{f.x_}]
-Defines: v is \real
+Defines: df(t_) is \function:on{\reals.set}:to{\reals.set}
 when: f is \function:on{\reals.set}:to{\reals.set}
 Appendix:
-. called: "partial derivative"
+. called: "derivative of $f?$ with respect to $x_?$"
+. written: "\frac{d}{d x_?} f?"
 Id: "086ac065-d2bf-41a9-a291-34a747dc2e6d"
 
 
@@ -65,11 +109,10 @@ Id: "086ac065-d2bf-41a9-a291-34a747dc2e6d"
 -- membership in the smaller set reduce to membership in the larger one.
 Theorem:
 given:
-. A is \set
-. B is \set
+. A, B is \set
 . x is \element:of{A}
 where: A \:subset:/ B
 then: x "in"? B
 Appendix:
-. called: "a subset passes membership along"
+. called: "subset inclusion transfers element membership"
 Id: "b13ec219-c558-42b6-8d28-57d8ea23126e"

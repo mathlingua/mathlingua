@@ -15133,7 +15133,6 @@ given:
 . A
 where:
 . A is \set
-suchThat:
 . A \:subset?:/ U
 then:
 . \interior:of{A} = \interior:of{A}
@@ -15142,7 +15141,7 @@ Axiom:
 given:
 . U is \set
 . A is \set
-suchThat:
+where:
 . A \:subset?:/ U
 then:
 . \interior:of{A} = \interior:of{A}
@@ -15151,7 +15150,7 @@ Conjecture:
 given:
 . U is \set
 . A is \set
-suchThat:
+where:
 . A \:subset?:/ U
 then:
 . \interior:of{A} = \interior:of{A}
@@ -15161,11 +15160,12 @@ given:
 . U is \set
 then:
 . forAll: A
-  where: A is \set
-  suchThat: A \:subset?:/ U
+  where:
+  . A is \set
+  . A \:subset?:/ U
   then:
   . \interior:of{A} = \interior:of{A}
-. \\forAll{A is \set}:suchThat{A \:subset?:/ U}:then{\interior:of{A} = \interior:of{A}}
+. \\forAll{A is \set}:where{A \:subset?:/ U}:then{\interior:of{A} = \interior:of{A}}
 . exists: A is \set
   suchThat:
   . A \:subset?:/ U
@@ -15233,7 +15233,7 @@ Theorem:
 given:
 . X
 . x
-suchThat:
+where:
 . allOf:
   . X is? \set
   . x "in"? X
@@ -15268,7 +15268,7 @@ Appendix:
 Theorem:
 given:
 . A is \set
-suchThat:
+where:
 . Z is? \set
 then:
 . A = A
@@ -15284,7 +15284,37 @@ then:
         );
         assert!(
             invalid_log.has_errors(),
-            "expected unknown symbol in suchThat: to be diagnosed"
+            "expected unknown symbol in where: to be diagnosed"
+        );
+
+        let rejected_such_that = temp_dir.path().join("rejected-such-that.mlg");
+        write_mlg_fixture(
+            &rejected_such_that,
+            r#"[\set]
+Declares: X
+Appendix:
+. written: "\operatorname{set}"
+
+Theorem:
+given:
+. A is \set
+suchThat:
+. A is? \set
+then:
+. A = A
+"#,
+        )
+        .unwrap();
+
+        let mut rejected_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("rejected-such-that.mlg")],
+            &mut rejected_log,
+        );
+        assert!(
+            rejected_log.has_errors(),
+            "expected suchThat: on Theorem: to be rejected"
         );
     }
 

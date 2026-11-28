@@ -763,13 +763,13 @@ and solved together before checking the command's remaining requirements
    unique concrete value is pinned), the checker still verifies that all type
    requirements placed on that hole are mutually compatible.
 
-### Implicit type-checking assertions (`assuming:` and `suchThat:`)
+### Implicit type-checking assertions (`assuming:`, `where:`, and `suchThat:`)
 
 Optional `assuming:` sections (on `Declares`, `Defines`, `Realizes`, `Refines`,
-`States`, `Equivalent`, and `Relation`) and `suchThat:` sections (on `Axiom`,
-`Theorem`, `Conjecture`, `forAll:`, `exists:`, and `existsUnique:`) are checked
-as clauses and then implicitly asserted into the subsequent checking context via
-`assume_asserted_clause`:
+`States`, `Equivalent`, and `Relation`), `where:` sections (on `Axiom`,
+`Theorem`, `Conjecture`, and `forAll:`), and `suchThat:` sections (on `exists:`
+and `existsUnique:`) are checked as clauses and then implicitly asserted into
+the subsequent checking context via `assume_asserted_clause`:
 
 - `x is? T` adds `Is("x", T)` (or `RefinedIs` for refined commands).
 - `x "op"? Y` adds `Spec("x", "op", "Y")`.

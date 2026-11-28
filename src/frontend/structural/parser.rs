@@ -1425,7 +1425,7 @@ pub(super) fn parse_for_all_clause(
         "forAll",
         &group.sections,
         tracker,
-        &["forAll", "where?", "suchThat?", "then"],
+        &["forAll", "where?", "then"],
     )?;
     Some(ForAllGroup {
         heading,
@@ -1439,10 +1439,6 @@ pub(super) fn parse_for_all_clause(
         where_: sections.get("where").copied().and_then(|section| {
             parse_required_clauses(section, "where", tracker)
                 .map(|arguments| WhereSection { arguments })
-        }),
-        such_that: sections.get("suchThat").copied().and_then(|section| {
-            parse_required_clauses(section, "suchThat", tracker)
-                .map(|arguments| SuchThatSection { arguments })
         }),
         then: ThenSection {
             arguments: parse_required_clauses(section(&sections, "then")?, "then", tracker)?,
@@ -3617,7 +3613,6 @@ pub(in crate::frontend::structural::parser) fn parse_axiom(
             heading,
             given,
             where_,
-            such_that,
             then,
             iff,
             justification,
@@ -3632,7 +3627,6 @@ pub(in crate::frontend::structural::parser) fn parse_axiom(
                 heading,
                 given,
                 where_,
-                such_that,
                 then,
                 iff,
                 justification,
@@ -3656,7 +3650,6 @@ pub(in crate::frontend::structural::parser) fn parse_theorem(
             heading,
             given,
             where_,
-            such_that,
             then,
             iff,
             justification,
@@ -3671,7 +3664,6 @@ pub(in crate::frontend::structural::parser) fn parse_theorem(
                 heading,
                 given,
                 where_,
-                such_that,
                 then,
                 iff,
                 justification,
@@ -3696,7 +3688,6 @@ pub(in crate::frontend::structural::parser) fn parse_conjecture(
             heading,
             given,
             where_,
-            such_that,
             then,
             iff,
             justification,
@@ -3711,7 +3702,6 @@ pub(in crate::frontend::structural::parser) fn parse_conjecture(
                 heading,
                 given,
                 where_,
-                such_that,
                 then,
                 iff,
                 justification,
@@ -3742,7 +3732,6 @@ pub(in crate::frontend::structural::parser) fn parse_argument_theorem_like(
     Option<crate::frontend::formulation::ast::CommandHeader>,
     Option<GivenSection>,
     Option<WhereSection>,
-    Option<SuchThatSection>,
     ThenSection,
     Option<IffSection>,
     Option<JustificationSection>,
@@ -3755,7 +3744,7 @@ pub(in crate::frontend::structural::parser) fn parse_argument_theorem_like(
 )> {
     let heading = parse_optional_command_heading(group, tracker)?;
     let section_name = name;
-    let mut section_specs = vec![section_name, "given?", "where?", "suchThat?", "then", "iff?"];
+    let mut section_specs = vec![section_name, "given?", "where?", "then", "iff?"];
     if accepts_proof {
         section_specs.push("Proof?");
     }
@@ -3777,10 +3766,6 @@ pub(in crate::frontend::structural::parser) fn parse_argument_theorem_like(
         sections.get("where").copied().and_then(|section| {
             parse_required_clauses(section, "where", tracker)
                 .map(|arguments| WhereSection { arguments })
-        }),
-        sections.get("suchThat").copied().and_then(|section| {
-            parse_required_clauses(section, "suchThat", tracker)
-                .map(|arguments| SuchThatSection { arguments })
         }),
         ThenSection {
             arguments: parse_required_clauses(section(&sections, "then")?, "then", tracker)?,

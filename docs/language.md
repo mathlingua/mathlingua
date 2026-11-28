@@ -1053,8 +1053,8 @@ Appendix:
 ## Theorem-Like Groups
 
 `Axiom`, `Theorem`, and `Conjecture` share the same assertion shape. `then:` is
-required. `given:`, `where:`, `suchThat:`, `iff:`, `Proof:` (on `Theorem:` only),
-and `Appendix:` are optional. A `Conjecture:` records an unproved statement. Its
+required. `given:`, `where:`, `iff:`, `Proof:` (on `Theorem:` only), and
+`Appendix:` are optional. A `Conjecture:` records an unproved statement. Its
 optional `Appendix:` `. justification:` can capture supporting rationale or
 evidence, but does not claim a proof.
 
@@ -1078,21 +1078,21 @@ Appendix:
 Items in `given:` introduce available type/spec facts and declared symbols for
 the theorem body. Theorem-like `given:` sections accept refined command type
 expressions. Items in `where:` are local assumptions or declarations available
-while checking `then:` and `iff:`. Items in `suchThat:` are validated and
-implicitly asserted as true (extending `asserting:` in `have:` groups): any
-predicate statement such as `A \:subset?:/ U`, `x "in"? X`, or `A is? \set`
-establishes its underlying type fact (`A \:subset:/ U`, `x "in" X`, `A is \set`)
-for checking `then:` and `iff:` without needing to repeat it in an `asserting:`
-group.
+while checking `then:` and `iff:`; they are validated and implicitly asserted
+as true (extending `asserting:` in `have:` groups), so any predicate statement
+such as `A \:subset?:/ U`, `x "in"? X`, or `A is? \set` establishes its
+underlying type fact (`A \:subset:/ U`, `x "in" X`, `A is \set`) for checking
+`then:` and `iff:` without needing to repeat it in an `asserting:` group.
 
 Similarly, definitions (`Declares`, `Defines`, `Realizes`, `Refines`, `States`,
 `Equivalent`) and `Relation` accept an optional `assuming:` section immediately
 after `when:` containing one or more clauses. Clauses in `assuming:` are
 validated and implicitly asserted in the definition's checking context (just
-like `suchThat:` and `asserting:`), without adding caller-side `when:`
-requirements. For example, if a callee requires `A \:subset:/ U`, a definition
-with `using: U is \set`, `when: A is \set`, and `assuming: A \:subset?:/ U` can
-invoke it directly without a `have: ... asserting:` escape hatch.
+like `where:` on propositions/`forAll:`, `suchThat:` on `exists:`/`existsUnique:`,
+and `asserting:`), without adding caller-side `when:` requirements. For example,
+if a callee requires `A \:subset:/ U`, a definition with `using: U is \set`,
+`when: A is \set`, and `assuming: A \:subset?:/ U` can invoke it directly
+without a `have: ... asserting:` escape hatch.
 
 A theorem's optional `Proof:` appears after `then:`/`iff?:` and **before**
 `Appendix:`. Although `Appendix:` follows it in source order, the proof is
@@ -1141,8 +1141,9 @@ expressions.
 - **`exists`** — creates a child context from its declaration and asserts
   optional `suchThat:` clauses (including `?` predicates as underlying facts).
 - **`existsUnique`** — same as `exists`, with unique-existence intent.
-- **`forAll`** — creates a child context, assumes `where:`, asserts optional
-  `suchThat:` clauses (including `?` predicates), and checks `then:`.
+- **`forAll`** — creates a child context, assumes and implicitly asserts
+  optional `where:` clauses (including `?` predicates as underlying facts), and
+  checks `then:`.
 - **`let`** — introduces one or more local bindings in a child context, assumes
   an optional `where:` guard, and checks `then:` with those bindings and
   assumptions available.

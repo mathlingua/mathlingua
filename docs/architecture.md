@@ -475,7 +475,7 @@ Important files:
 - `typecheck.rs` implements symbol scope, facts, substitutions, requirements,
   subtyping through a `Declares:` target's `is` relation, destructuring,
   operator/member resolution, spec-operator reduction, numeric-literal fallback,
-  implicit-symbol hole unification, `assuming:`/`suchThat:` assertions,
+  implicit-symbol hole unification, `assuming:`/`where:`/`suchThat:` assertions,
   `Defines:` command-value type inheritance, and variadic index-result checking.
   It also records what each `Defines:` marked `abstractly:` leaves open
   (`SignatureRegistry::abstract_declarations`), which is what a `Realizes:` is

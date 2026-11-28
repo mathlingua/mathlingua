@@ -814,7 +814,6 @@ pub struct AxiomGroup {
     pub heading: Option<CommandHeader>,
     pub given: Option<GivenSection>,
     pub where_: Option<WhereSection>,
-    pub such_that: Option<SuchThatSection>,
     pub then: ThenSection,
     pub iff: Option<IffSection>,
     pub justification: Option<JustificationSection>,
@@ -830,7 +829,6 @@ pub struct TheoremGroup {
     pub heading: Option<CommandHeader>,
     pub given: Option<GivenSection>,
     pub where_: Option<WhereSection>,
-    pub such_that: Option<SuchThatSection>,
     pub then: ThenSection,
     pub iff: Option<IffSection>,
     pub justification: Option<JustificationSection>,
@@ -860,7 +858,6 @@ pub struct ConjectureGroup {
     pub heading: Option<CommandHeader>,
     pub given: Option<GivenSection>,
     pub where_: Option<WhereSection>,
-    pub such_that: Option<SuchThatSection>,
     pub then: ThenSection,
     pub iff: Option<IffSection>,
     pub justification: Option<JustificationSection>,
@@ -994,7 +991,6 @@ pub struct ForAllGroup {
     pub heading: Option<LabelHeader>,
     pub for_all: ForAllSection,
     pub where_: Option<WhereSection>,
-    pub such_that: Option<SuchThatSection>,
     pub then: ThenSection,
 }
 

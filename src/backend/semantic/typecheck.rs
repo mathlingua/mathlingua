@@ -193,7 +193,6 @@ struct TheoremLikeSections<'a> {
     heading: Option<&'a CommandHeader>,
     given: Option<&'a GivenSection>,
     where_: Option<&'a WhereSection>,
-    such_that: Option<&'a SuchThatSection>,
     then: &'a ThenSection,
     iff: Option<&'a IffSection>,
     aliases: Option<&'a AliasesSection>,
@@ -206,7 +205,6 @@ impl<'a> TheoremLikeSections<'a> {
         heading: Option<&'a CommandHeader>,
         given: Option<&'a GivenSection>,
         where_: Option<&'a WhereSection>,
-        such_that: Option<&'a SuchThatSection>,
         then: &'a ThenSection,
         iff: Option<&'a IffSection>,
         aliases: Option<&'a AliasesSection>,
@@ -216,7 +214,6 @@ impl<'a> TheoremLikeSections<'a> {
             heading,
             given,
             where_,
-            such_that,
             then,
             iff,
             aliases,
@@ -4084,7 +4081,6 @@ fn validate_top_level_item_types(
                 group.heading.as_ref(),
                 group.given.as_ref(),
                 group.where_.as_ref(),
-                group.such_that.as_ref(),
                 &group.then,
                 group.iff.as_ref(),
                 group.aliases.as_ref(),
@@ -4101,7 +4097,6 @@ fn validate_top_level_item_types(
                 group.heading.as_ref(),
                 group.given.as_ref(),
                 group.where_.as_ref(),
-                group.such_that.as_ref(),
                 &group.then,
                 group.iff.as_ref(),
                 group.aliases.as_ref(),
@@ -4118,7 +4113,6 @@ fn validate_top_level_item_types(
                 group.heading.as_ref(),
                 group.given.as_ref(),
                 group.where_.as_ref(),
-                group.such_that.as_ref(),
                 &group.then,
                 group.iff.as_ref(),
                 group.aliases.as_ref(),
@@ -4451,7 +4445,6 @@ fn validate_local_specification_scopes(
         TopLevelItem::Axiom(group) => validate_theorem_like_specification_scopes(
             group.given.as_ref(),
             group.where_.as_ref(),
-            group.such_that.as_ref(),
             &group.then,
             group.iff.as_ref(),
             path,
@@ -4461,7 +4454,6 @@ fn validate_local_specification_scopes(
         TopLevelItem::Theorem(group) => validate_theorem_like_specification_scopes(
             group.given.as_ref(),
             group.where_.as_ref(),
-            group.such_that.as_ref(),
             &group.then,
             group.iff.as_ref(),
             path,
@@ -4471,7 +4463,6 @@ fn validate_local_specification_scopes(
         TopLevelItem::Conjecture(group) => validate_theorem_like_specification_scopes(
             group.given.as_ref(),
             group.where_.as_ref(),
-            group.such_that.as_ref(),
             &group.then,
             group.iff.as_ref(),
             path,
@@ -4563,7 +4554,6 @@ fn validate_local_specification_scopes(
 fn validate_theorem_like_specification_scopes(
     given: Option<&GivenSection>,
     where_: Option<&WhereSection>,
-    such_that: Option<&SuchThatSection>,
     then: &ThenSection,
     iff: Option<&IffSection>,
     path: &Path,
@@ -4580,13 +4570,6 @@ fn validate_theorem_like_specification_scopes(
     validate_optional_clause_scope(
         where_.map(|section| &section.arguments[..]),
         "where:",
-        path,
-        locator,
-        event_log,
-    );
-    validate_optional_clause_scope(
-        such_that.map(|section| &section.arguments[..]),
-        "suchThat:",
         path,
         locator,
         event_log,
@@ -4921,16 +4904,6 @@ fn validate_nested_clause_scopes(
             validate_optional_clause_scope(
                 group.where_.as_ref().map(|section| &section.arguments[..]),
                 "where:",
-                path,
-                locator,
-                event_log,
-            );
-            validate_optional_clause_scope(
-                group
-                    .such_that
-                    .as_ref()
-                    .map(|section| &section.arguments[..]),
-                "suchThat:",
                 path,
                 locator,
                 event_log,
@@ -5944,12 +5917,6 @@ fn validate_theorem_like(
 
     if let Some(where_) = sections.where_ {
         for clause in &where_.arguments {
-            assume_clause(clause, &mut context, path, locator, registry, event_log);
-        }
-    }
-
-    if let Some(such_that) = sections.such_that {
-        for clause in &such_that.arguments {
             assume_asserted_clause(clause, &mut context, path, locator, registry, event_log);
         }
     }
@@ -6731,11 +6698,6 @@ fn collect_clause_referenced_labels(clause: &Clause, labels: &mut BTreeSet<Strin
                     collect_clause_referenced_labels(clause, labels);
                 }
             }
-            if let Some(section) = &group.such_that {
-                for clause in &section.arguments {
-                    collect_clause_referenced_labels(clause, labels);
-                }
-            }
             for clause in &group.then.arguments {
                 collect_clause_referenced_labels(clause, labels);
             }
@@ -6967,11 +6929,6 @@ fn collect_top_level_item_referenced_labels(
                     collect_clause_referenced_labels(clause, labels);
                 }
             }
-            if let Some(such_that) = &group.such_that {
-                for clause in &such_that.arguments {
-                    collect_clause_referenced_labels(clause, labels);
-                }
-            }
             for clause in &group.then.arguments {
                 collect_clause_referenced_labels(clause, labels);
             }
@@ -6989,11 +6946,6 @@ fn collect_top_level_item_referenced_labels(
             }
             if let Some(where_) = &group.where_ {
                 for clause in &where_.arguments {
-                    collect_clause_referenced_labels(clause, labels);
-                }
-            }
-            if let Some(such_that) = &group.such_that {
-                for clause in &such_that.arguments {
                     collect_clause_referenced_labels(clause, labels);
                 }
             }
@@ -7017,11 +6969,6 @@ fn collect_top_level_item_referenced_labels(
             }
             if let Some(where_) = &group.where_ {
                 for clause in &where_.arguments {
-                    collect_clause_referenced_labels(clause, labels);
-                }
-            }
-            if let Some(such_that) = &group.such_that {
-                for clause in &such_that.arguments {
                     collect_clause_referenced_labels(clause, labels);
                 }
             }
@@ -7204,7 +7151,8 @@ fn assume_optional_asserted_clauses<T>(
     }
 }
 
-/// Assumes an `asserting:`, `assuming:`, or `suchThat:` clause as true. Unlike
+/// Assumes an `asserting:`, `assuming:`, `where:` (on propositions and `forAll:`),
+/// or `suchThat:` (on `exists:`/`existsUnique:`) clause as true. Unlike
 /// [`assume_clause`], predicate questions (`A \:subset?:/ B`, `x "in"? X`,
 /// `A is? \set`, `P is? \\statement`, `f is? \function.injective`) are validated
 /// and taken as their underlying facts so downstream type checks can rely on them
@@ -8956,11 +8904,6 @@ fn collect_clause_names(clause: &Clause, names: &mut BTreeSet<String>) {
                     collect_clause_names(clause, names);
                 }
             }
-            if let Some(such_that) = &group.such_that {
-                for clause in &such_that.arguments {
-                    collect_clause_names(clause, names);
-                }
-            }
             for clause in &group.then.arguments {
                 collect_clause_names(clause, names);
             }
@@ -9930,11 +9873,6 @@ fn check_clause(
             }
             if let Some(where_) = &group.where_ {
                 for clause in &where_.arguments {
-                    assume_clause(clause, &mut child, path, locator, registry, event_log);
-                }
-            }
-            if let Some(such_that) = &group.such_that {
-                for clause in &such_that.arguments {
                     assume_asserted_clause(clause, &mut child, path, locator, registry, event_log);
                 }
             }
@@ -10107,15 +10045,6 @@ fn check_builtin_command_expression(
                 locator,
                 event_log,
             ) {
-                assume_clause(clause, &mut child, path, locator, registry, event_log);
-            }
-            for clause in &parse_builtin_clause_arguments(
-                command,
-                &builtin_tail_arguments(command, "suchThat"),
-                path,
-                locator,
-                event_log,
-            ) {
                 assume_asserted_clause(clause, &mut child, path, locator, registry, event_log);
             }
             let then_clauses = parse_builtin_clause_arguments(
@@ -10137,13 +10066,7 @@ fn check_builtin_command_expression(
             for clause in &then_clauses {
                 check_clause(clause, &child, path, locator, registry, event_log);
             }
-            check_builtin_tail_names(
-                command,
-                &["where", "suchThat", "then"],
-                path,
-                locator,
-                event_log,
-            );
+            check_builtin_tail_names(command, &["where", "then"], path, locator, event_log);
         }
         "if" => {
             let mut child = context.clone();

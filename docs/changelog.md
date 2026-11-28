@@ -5,18 +5,19 @@ and CLI behavior implemented in this repository. It is intentionally rule-focuse
 each section captures not only the feature, but also the conditions under which
 the feature is valid.
 
-## Optional `assuming:` And `suchThat:` Implicit Type-Checking Assertions
+## Optional `assuming:` And Implicit Type-Checking Assertions In `where:` / `suchThat:`
 
 - **Definitions & Relations (`assuming:`)**: `Declares`, `Defines`, `Realizes`,
-  `Refines`, `States`, `Equivalent`, and `Relation` now accept an optional
+  `Refines`, `States`, `Equivalent`, and `Relation` accept an optional
   `assuming:` section immediately after `when:` taking one or more clauses.
-- **Propositions & Quantifiers (`suchThat:`)**: `Axiom`, `Theorem`,
-  `Conjecture`, `forAll:` (and inline `\\forAll{...}:where{...}:suchThat{...}:then{...}`)
-  now accept an optional `suchThat:` section immediately after `where:` taking
-  one or more clauses. `exists:` and `existsUnique:` (and `\\exists` /
-  `\\existsUnique`) continue to accept optional `suchThat:`.
-- **Implicit Assertions Extending `asserting:`**: Clauses in `assuming:` and
-  `suchThat:` are validated and asserted into the checking context via
+- **Propositions & Quantifiers (`where:` and `suchThat:`)**: `Axiom`, `Theorem`,
+  `Conjecture`, and `forAll:` (and inline `\\forAll{...}:where{...}:then{...}`)
+  use their optional `where:` section directly for implicit type-checking
+  assertions (no separate `suchThat:` section). `exists:` and `existsUnique:`
+  (and `\\exists` / `\\existsUnique`) continue to accept optional `suchThat:`.
+- **Implicit Assertions Extending `asserting:`**: Clauses in `assuming:`,
+  `where:` (on propositions and `forAll:`), and `suchThat:` (on `exists:` and
+  `existsUnique:`) are validated and asserted into the checking context via
   `assume_asserted_clause` (extending `have:`/`asserting:` groups). Predicate
   forms (`A \:subset?:/ U`, `x "in"? X`, `A is? \set`, `P is? \\statement`,
   `f is? \cmd.refined`, and conjunctions via `allOf:`/`equivalently:`/`\\and`)

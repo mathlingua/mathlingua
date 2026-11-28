@@ -296,10 +296,10 @@ An empty document is supported by the current implementation because `Document.i
 - **`Realizes`** — `RealizesGroup`, heading: command. Sections: `Realizes: DeclarationStatement`, `using?: DeclarationStatement+`, `when?: Clause+`, `assuming?: Clause+`, `specifies?: IsOrViaItem+`, `expresses?: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Appendix?: AppendixItem+`. The target names the realized declaration with `:=` (`Realizes: Nb := \naturals`), which must be a `Defines` marked `abstractly:`; `specifies:` must supply every symbol that declaration left abstract
 - **`Refines`** — `RefinesGroup`, heading: refined command or refined spec-infix command (for example, `[A \:(nonempty)::subset:/ B]`). Sections: `Refines: RefinedDeclarationStatement`, `implicitly?` (marker, no arguments), `explicitly?` (marker, no arguments), `using?: DeclarationStatement+`, `when?: Clause+`, `assuming?: Clause+`, `specifies?: RefinedDeclarationStatement`, `satisfies?: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Appendix?: AppendixItem+`. The `Refines:` target may repeat the base `Declares:` target or omit its expansion and then its subject structure down to a bare name; every included shape must match the base. `implicitly:`/`explicitly:` are optional, mutually exclusive, zero-argument marker sections stored as an `Option<RefinementKind>` (`Implicit`/`Explicit`); see the validation rules under `Refines` refinement markers in `language.md`
 - **`States`** — `StatesGroup`, heading: command. Sections: `States:` (marker, no arguments), `using?: DeclarationStatement+`, `when?: Clause+`, `assuming?: Clause+`, `that: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Appendix?: AppendixItem+`
-- **`Axiom`** — `AxiomGroup`, heading: command?. Sections: `Axiom:`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `suchThat?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Appendix?: AppendixItem+`
-- **`Theorem`** — `TheoremGroup`, heading: command?. Sections: `Theorem:`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `suchThat?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Proof?: OpenText`, `Appendix?: AppendixItem+`
+- **`Axiom`** — `AxiomGroup`, heading: command?. Sections: `Axiom:`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Appendix?: AppendixItem+`
+- **`Theorem`** — `TheoremGroup`, heading: command?. Sections: `Theorem:`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Proof?: OpenText`, `Appendix?: AppendixItem+`
 - **`Example`** — `ExampleGroup`, heading: command?. Sections: `Example: ExampleItem*`, `Appendix?: AppendixItem+` (accepts `justification:`, `aliases:`, `writing:`, `references:`, `metadata:`). Each `ExampleItem` is quoted `OpenText`, a declaration or expression, or a nested clause group; items retain their source order
-- **`Conjecture`** — `ConjectureGroup`, heading: command?. Sections: `Conjecture:`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `suchThat?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Appendix?: AppendixItem+`. It records a theorem-shaped statement that is not claimed to have a proof
+- **`Conjecture`** — `ConjectureGroup`, heading: command?. Sections: `Conjecture:`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Appendix?: AppendixItem+`. It records a theorem-shaped statement that is not claimed to have a proof
 - **`Person`** — `PersonGroup`, heading: author. Sections: `Person: OpenText+`, `biography?: OpenText`
 - **`Resource`** — `ResourceGroup`, heading: resource. Sections: `Resource: ResourceItem+`
 - **`Specify`** — `SpecifyGroup`, heading: none. Sections: `Specify: SpecifyItem+`
@@ -469,7 +469,7 @@ If a clause section contains:
 - **`oneOf`** — `OneOfGroup`, heading: label?. Sections: `oneOf: Clause+`
 - **`exists`** — `ExistsGroup`, heading: label?. Sections: `exists: BindingOrSpec+`, `suchThat?: Clause+`
 - **`existsUnique`** — `ExistsUniqueGroup`, heading: label?. Sections: `existsUnique: BindingOrSpec+`, `suchThat?: Clause+`
-- **`forAll`** — `ForAllGroup`, heading: label?. Sections: `forAll: BindingOrSpec+`, `where?: Clause+`, `suchThat?: Clause+`, `then: Clause+`
+- **`forAll`** — `ForAllGroup`, heading: label?. Sections: `forAll: BindingOrSpec+`, `where?: Clause+`, `then: Clause+`
 - **`let`** — `LetGroup`, heading: label?. Sections: `let: BindingOrSpec+`, `where?: Clause+`, `then: Clause+`
 - **`if`** — `IfGroup`, heading: label?. Sections: `if: Clause+`, `then: Clause+`
 - **`have`** — `IffGroup`, heading: label?. Sections: `have: Clause+`, `iff: Clause+`. A `have:` group without `iff:` is instead a `HaveGroup` (`Clause::Have`): `have: Clause+`, `asserting?: Clause+`, `by?: Expression+`, `because?: BecauseItem+` — an escape hatch that checks the `have:` item using the surrounding facts plus any `asserting:` items (also accepted as a `specifies:` item). `by:` and `because:` (accepting text or clauses) are justification the checker only reference-validates, never proves.
@@ -860,7 +860,6 @@ Appendix?: <AppendixItemUnion>+
 Axiom:
 given?: <RefinedDeclarationStatement>+
 where?: <ClauseUnion>+
-suchThat?: <ClauseUnion>+
 then: <ClauseUnion>+
 iff?: <ClauseUnion>+
 Appendix?: <AppendixItemUnion>+
@@ -871,7 +870,6 @@ Appendix?: <AppendixItemUnion>+
 Theorem:
 given?: <RefinedDeclarationStatement>+
 where?: <ClauseUnion>+
-suchThat?: <ClauseUnion>+
 then: <ClauseUnion>+
 iff?: <ClauseUnion>+
 Proof?: <OpenText>
@@ -893,7 +891,6 @@ ExampleItemUnion ::= OpenText | ClauseUnion
 Conjecture:
 given?: <RefinedDeclarationStatement>+
 where?: <ClauseUnion>+
-suchThat?: <ClauseUnion>+
 then: <ClauseUnion>+
 iff?: <ClauseUnion>+
 Appendix?: <AppendixItemUnion>+
@@ -1250,7 +1247,6 @@ suchThat?: <ClauseUnion>+
 [LabelHeader]?
 forAll: <BindingOrSpecUnion>+
 where?: <ClauseUnion>+
-suchThat?: <ClauseUnion>+
 then: <ClauseUnion>+
 ```
 

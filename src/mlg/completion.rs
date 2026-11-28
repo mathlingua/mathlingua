@@ -322,7 +322,6 @@ const THEOREM_LIKE_AXIOM: &[Section] = &[
     ("Axiom", true),
     ("given", false),
     ("where", false),
-    ("suchThat", false),
     ("then", true),
     ("iff", false),
     ("Appendix", false),
@@ -333,7 +332,6 @@ const THEOREM_LIKE_THEOREM: &[Section] = &[
     ("Theorem", true),
     ("given", false),
     ("where", false),
-    ("suchThat", false),
     ("then", true),
     ("iff", false),
     ("Proof", false),
@@ -345,7 +343,6 @@ const THEOREM_LIKE_CONJECTURE: &[Section] = &[
     ("Conjecture", true),
     ("given", false),
     ("where", false),
-    ("suchThat", false),
     ("then", true),
     ("iff", false),
     ("Appendix", false),
@@ -399,12 +396,7 @@ const NESTED_GROUPS: &[(&str, &[Section])] = &[
     ),
     (
         "forAll",
-        &[
-            ("forAll", true),
-            ("where", false),
-            ("suchThat", false),
-            ("then", true),
-        ],
+        &[("forAll", true), ("where", false), ("then", true)],
     ),
     ("let", &[("let", true), ("where", false), ("then", true)]),
     ("if", &[("if", true), ("then", true)]),
@@ -1266,7 +1258,7 @@ mod tests {
     fn next_section_inside_forall_skips_present() {
         let text = "Theorem:\nthen:\n. forAll: x\n  where: y\n  ";
         let got = labels(&complete(text, 4, 2));
-        assert_eq!(got, vec!["suchThat".to_string(), "then".to_string()]);
+        assert_eq!(got, vec!["then".to_string()]);
     }
 
     #[test]
@@ -1409,10 +1401,10 @@ mod tests {
     }
 
     #[test]
-    fn theorem_offers_such_that_after_where() {
+    fn theorem_offers_then_after_where_without_such_that() {
         let text = "Theorem:\ngiven: X\nwhere: X is \\set\n";
         let got = labels(&complete(text, 3, 0));
-        assert!(got.contains(&"suchThat".to_string()));
+        assert!(!got.contains(&"suchThat".to_string()));
         assert!(got.contains(&"then".to_string()));
     }
 

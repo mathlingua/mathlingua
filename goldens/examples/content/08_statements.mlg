@@ -18,14 +18,14 @@ Appendix:
 Id: "bc970e75-9dfb-4274-b470-6fa57ea77741"
 
 
--- An anonymous theorem with `given:`, `where:`, `suchThat:`, and `Proof:`.
+-- An anonymous theorem with `given:`, `where:`, and `Proof:`.
 Theorem:
 given:
 . A, B, C is \set
 where:
 . A \:subset:/ B
 . B \:subset:/ C
-suchThat: A \:subset?:/ C
+. A \:subset?:/ C
 then:
 . forAll: x "in" A
   then: x "in"? C
@@ -81,7 +81,7 @@ Id: "862537de-6ab3-4b30-b4e9-2651927ab166"
 
 
 -- Every structural clause group (`allOf:`, `anyOf:`, `oneOf:`, `not:`,
--- `forAll:` with `where:`/`suchThat:`, `exists:`, `existsUnique:`, `if:`,
+-- `forAll:` with `where:`, `exists:`, `existsUnique:`, `if:`,
 -- `let:`, `equivalently:`, `piecewise:` with `elseIf:`, and `have:`/`iff:`)
 -- demonstrated on real arithmetic and group algebra.
 Theorem:
@@ -99,8 +99,9 @@ then:
       . x = y
       . not: x = y
 . forAll: a "in" X
-  where: a != e
-  suchThat: a "in"? X
+  where:
+  . a != e
+  . a "in"? X
   then: a * e = a
 . exists: b "in" X
   suchThat: a_id := b * e = b

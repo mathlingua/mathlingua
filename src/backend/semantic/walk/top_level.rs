@@ -109,7 +109,6 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
             walk_theorem_like(
                 group.given.as_ref(),
                 group.where_.as_ref(),
-                group.such_that.as_ref(),
                 &group.then,
                 group.iff.as_ref(),
                 visit,
@@ -121,7 +120,6 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
             walk_theorem_like(
                 group.given.as_ref(),
                 group.where_.as_ref(),
-                group.such_that.as_ref(),
                 &group.then,
                 group.iff.as_ref(),
                 visit,
@@ -133,7 +131,6 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
             walk_theorem_like(
                 group.given.as_ref(),
                 group.where_.as_ref(),
-                group.such_that.as_ref(),
                 &group.then,
                 group.iff.as_ref(),
                 visit,
@@ -193,7 +190,6 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
 pub(in crate::backend::semantic) fn walk_theorem_like(
     given: Option<&GivenSection>,
     where_: Option<&WhereSection>,
-    such_that: Option<&SuchThatSection>,
     then: &ThenSection,
     iff: Option<&IffSection>,
     visit: &mut impl FnMut(&SignatureShape),
@@ -204,11 +200,6 @@ pub(in crate::backend::semantic) fn walk_theorem_like(
         }
     }
     if let Some(section) = where_ {
-        for clause in &section.arguments {
-            walk_clause(clause, visit);
-        }
-    }
-    if let Some(section) = such_that {
         for clause in &section.arguments {
             walk_clause(clause, visit);
         }
